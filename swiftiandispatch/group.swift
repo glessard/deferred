@@ -15,14 +15,14 @@ import Dispatch
 // MARK: Waiting on group
 public extension dispatch_group_t
 {
-  public final func wait(until: dispatch_time_t = DISPATCH_TIME_FOREVER)
+  public final func wait(until: dispatch_time_t = DISPATCH_TIME_FOREVER) -> Int
   {
-    dispatch_group_wait(self, until)
+    return dispatch_group_wait(self, until)
   }
 
-  public final func wait(forSeconds s: Double)
+  public final func wait(forSeconds s: Double) -> Int
   {
-    dispatch_group_wait(self, dispatch_time(DISPATCH_TIME_NOW, Int64(s*1e9)))
+    return dispatch_group_wait(self, dispatch_time(DISPATCH_TIME_NOW, Int64(s*1e9)))
   }
 }
 
