@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		03E60E321AAA571200F4B44B /* swiftiandispatch.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E60E311AAA571200F4B44B /* swiftiandispatch.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03E60E4B1AAA571C00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
-		03E60E4D1AAA571C00F4B44B /* group.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E4A1AAA571C00F4B44B /* group.swift */; };
 		03E60E551AAA577C00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E541AAA577C00F4B44B /* main.swift */; };
 		03E60E591AAA57A500F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
 		03E60E5E1AAA632D00F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
@@ -34,7 +33,6 @@
 		03E60E3D1AAA571200F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03E60E3E1AAA571200F4B44B /* swiftiandispatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = swiftiandispatchTests.swift; sourceTree = "<group>"; };
 		03E60E481AAA571C00F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = async.swift; sourceTree = "<group>"; };
-		03E60E4A1AAA571C00F4B44B /* group.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = group.swift; sourceTree = "<group>"; };
 		03E60E521AAA577C00F4B44B /* ExampleResultChain */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ExampleResultChain; sourceTree = BUILT_PRODUCTS_DIR; };
 		03E60E541AAA577C00F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		03E60E5D1AAA632D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
@@ -82,7 +80,6 @@
 			isa = PBXGroup;
 			children = (
 				03E60E481AAA571C00F4B44B /* async.swift */,
-				03E60E4A1AAA571C00F4B44B /* group.swift */,
 				03E60E311AAA571200F4B44B /* swiftiandispatch.h */,
 				03E60E2F1AAA571200F4B44B /* Supporting Files */,
 			);
@@ -229,7 +226,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03E60E4D1AAA571C00F4B44B /* group.swift in Sources */,
 				03E60E4B1AAA571C00F4B44B /* async.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -405,6 +401,7 @@
 				03E60E441AAA571200F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E60E561AAA577C00F4B44B /* Build configuration list for PBXNativeTarget "ExampleResultChain" */ = {
 			isa = XCConfigurationList;
@@ -413,6 +410,7 @@
 				03E60E581AAA577C00F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

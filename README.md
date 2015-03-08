@@ -23,14 +23,3 @@ println(result2.get())
 ```
 
 The `notify` methods on Result have the same possible parameters as the `async` functions.
-
-For good measure, similar `async` and `notify` methods were added as extensions on `dispatch_group_t`, in addition to `wait`
-
-```
-let g = dispatch_group_create()
-async(group: g) { sleep(2.0) }
-if g.wait(forSeconds: 1.0) != 0
-{
-  g.wait()
-}
-```
