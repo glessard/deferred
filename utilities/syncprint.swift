@@ -10,10 +10,10 @@
 import Dispatch
 import Foundation.NSThread
 
-private var PrintQueue: dispatch_queue_attr_t! =
-                        dispatch_queue_create("com.tffenterprises.syncprint", DISPATCH_QUEUE_SERIAL)
+private let PrintQueue = dispatch_queue_create("com.tffenterprises.syncprint", DISPATCH_QUEUE_SERIAL)
+private let PrintGroup = dispatch_group_create()
 
-private var PrintGroup: dispatch_group_t! = dispatch_group_create()
+private var silenceOutput: Int32 = 0
 
 /**
   A wrapper for println that runs all requests on a serial queue
@@ -25,15 +25,20 @@ private var PrintGroup: dispatch_group_t! = dispatch_group_create()
   conformances, in the following order of preference: `Streamable`,
   `Printable`, `DebugPrintable`.
 
-  :param: object the item to be printed
+  - parameter object: the item to be printed
 */
 
 public func syncprint<T>(object: T)
 {
   var message = NSThread.currentThread().isMainThread ? "[main] " : "[back] "
 
-  assert(PrintQueue != nil && PrintGroup != nil, "Init failure in logging.swift")
-  dispatch_group_async(PrintGroup, PrintQueue) { print(object, &message); println(message) }
+  dispatch_group_async(PrintGroup, PrintQueue) {
+    // There is no particularly straightforward way to ensure an atomic read
+    if OSAtomicAdd32(0, &silenceOutput) == 0
+    {
+      print(object, &message, appendNewline: false); print(message)
+    }
+  }
 }
 
 /**
@@ -46,8 +51,10 @@ public func syncprintwait()
   let res = dispatch_group_wait(PrintGroup, dispatch_time(DISPATCH_TIME_NOW, 200_000_000))
   if res != 0
   {
-    dispatch_suspend(PrintQueue)
-    NSThread.sleepForTimeInterval(0.1)
-    println("Giving up on waiting")
+    OSAtomicIncrement32Barrier(&silenceOutput)
+    dispatch_group_notify(PrintGroup, PrintQueue) {
+      print("Skipped output")
+      OSAtomicDecrement32Barrier(&silenceOutput)
+    }
   }
 }
