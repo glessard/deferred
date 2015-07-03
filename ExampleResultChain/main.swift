@@ -31,8 +31,8 @@ let result3 = result1.notify { return (3*$0).description }
 result3.notify { syncprint($0) }
 
 syncprint("Waiting")
-syncprint(result1.get())
-syncprint(result2.get())
-syncprint(result3.get())
+syncprint(result1.value)
+syncprint(result2.value)
+syncprint(result3.value)
 syncprint("Done")
 syncprintwait()

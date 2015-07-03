@@ -65,10 +65,10 @@ public func async(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> 
 
 public struct Result<T>
 {
-  let group: dispatch_group_t
-  let result: () -> T
+  internal let group: dispatch_group_t
+  internal let result: () -> T
 
-  public func get() -> T { return result() }
+  public var value: T { return result() }
 }
 
 // MARK: Asynchronous tasks with return values.
