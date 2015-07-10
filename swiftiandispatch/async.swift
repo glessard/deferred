@@ -26,32 +26,32 @@ import Dispatch
 
 // MARK: Asynchronous tasks (straight dispatch_async and dispatch_group_async shortcuts)
 
-public func async(task: () -> ())
+public func async(task: () -> Void)
 {
   dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), task)
 }
 
-public func async(group group: dispatch_group_t, task: () -> ())
+public func async(group group: dispatch_group_t, task: () -> Void)
 {
   dispatch_group_async(group, dispatch_get_global_queue(qos_class_self(), 0), task)
 }
 
-public func async(qos: qos_class_t, task: () -> ())
+public func async(qos: qos_class_t, task: () -> Void)
 {
   dispatch_async(dispatch_get_global_queue(qos, 0), task)
 }
 
-public func async(qos: qos_class_t, group: dispatch_group_t, task: () -> ())
+public func async(qos: qos_class_t, group: dispatch_group_t, task: () -> Void)
 {
   dispatch_group_async(group, dispatch_get_global_queue(qos, 0), task)
 }
 
-public func async(queue: dispatch_queue_t, task: () -> ())
+public func async(queue: dispatch_queue_t, task: () -> Void)
 {
   dispatch_async(queue, task)
 }
 
-public func async(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> ())
+public func async(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> Void)
 {
   dispatch_group_async(group, queue, task)
 }

@@ -107,34 +107,34 @@ public class Deferred<T>
 
 extension Deferred
 {
-  public func notify(task: (T) -> ())
+  public func notify(task: (T) -> Void)
   {
     return notify(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
-  public func notify(group group: dispatch_group_t, task: (T) -> ())
+  public func notify(group group: dispatch_group_t, task: (T) -> Void)
   {
     return notify(dispatch_get_global_queue(qos_class_self(), 0), group: group, task: task)
   }
 
-  public func notify(qos: qos_class_t, task: (T) -> ())
+  public func notify(qos: qos_class_t, task: (T) -> Void)
   {
     return notify(dispatch_get_global_queue(qos, 0), task: task)
   }
 
-  public func notify(qos: qos_class_t, group: dispatch_group_t, task: (T) -> ())
+  public func notify(qos: qos_class_t, group: dispatch_group_t, task: (T) -> Void)
   {
     return notify(dispatch_get_global_queue(qos, 0), group: group, task: task)
   }
 
-  public func notify(queue: dispatch_queue_t, task: (T) -> ())
+  public func notify(queue: dispatch_queue_t, task: (T) -> Void)
   {
     dispatch_group_notify(self.group, queue) {
       task(self.value)
     }
   }
 
-  public func notify(queue: dispatch_queue_t, group: dispatch_group_t, task: (T) -> ())
+  public func notify(queue: dispatch_queue_t, group: dispatch_group_t, task: (T) -> Void)
   {
     dispatch_group_enter(group)
     dispatch_group_notify(self.group, queue) {
