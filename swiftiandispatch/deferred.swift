@@ -8,11 +8,13 @@
 
 import Dispatch
 
+private enum State: Int32 { case Ready = 0, Running = 1, /* Canceled = 2, */ Completed = 3, Assigning = 99 }
+
 /**
   An asynchronous computation result.
 
-  The get() method will return the result, blocking until it is ready.
-  If the result is ready when get() is called, it will return immediately.
+  The `value` property will return the result, blocking until it is ready.
+  If the result is ready when `value` is called, it will return immediately.
 */
 
 public class Deferred<T>
@@ -55,6 +57,12 @@ public class Deferred<T>
     dispatch_group_enter(group)
   }
 
+  public init(result: T)
+  {
+    v = result
+    currentState = State.Completed.rawValue
+  }
+
   public convenience init(queue: dispatch_queue_t, task: () -> T)
   {
     self.init()
@@ -92,8 +100,6 @@ public class Deferred<T>
     return v
   }
 }
-
-private enum State: Int32 { case Ready = 0, Running = 1, /* Canceled = 2, */ Completed = 3, Assigning = 99 }
 
 
 
