@@ -8,7 +8,7 @@
 
 import Dispatch
 
-private enum State: Int32 { case Ready = 0, Running = 1, /* Canceled = 2, */ Completed = 3, Assigning = 99 }
+public enum DeferredState: Int32 { case Ready = 0, Running = 1, /* Canceled = 2, */ Completed = 3, Assigning = 99 }
 
 /**
   An asynchronous computation result.
@@ -22,45 +22,19 @@ public class Deferred<T>
   private var v: T! = nil
   private let group = dispatch_group_create()
 
-  private var currentState: Int32 = State.Ready.rawValue
+  private var currentState: Int32 = DeferredState.Ready.rawValue
 
-  private func setState(newState: State) -> Bool
-  {
-    switch newState
-    {
-    case .Ready:
-      return currentState == State.Ready.rawValue
-
-    case .Running:
-      return OSAtomicCompareAndSwap32Barrier(State.Ready.rawValue, State.Running.rawValue, &currentState)
-
-//    case .Canceled:
-//      let s = currentState
-//      if s == State.Completed.rawValue { return false }
-//      return OSAtomicCompareAndSwap32Barrier(s, State.Canceled.rawValue, &currentState)
-
-    case .Assigning:
-      return OSAtomicCompareAndSwap32Barrier(State.Running.rawValue, State.Assigning.rawValue, &currentState)
-
-    case .Completed:
-      if OSAtomicCompareAndSwap32Barrier(State.Assigning.rawValue, State.Completed.rawValue, &currentState)
-      {
-        dispatch_group_leave(group)
-        return true
-      }
-      return false
-    }
-  }
+  // MARK: Initializers
 
   private init()
   {
     dispatch_group_enter(group)
   }
 
-  public init(result: T)
+  public init(value: T)
   {
-    v = result
-    currentState = State.Completed.rawValue
+    v = value
+    currentState = DeferredState.Completed.rawValue
   }
 
   public convenience init(queue: dispatch_queue_t, task: () -> T)
@@ -73,27 +47,73 @@ public class Deferred<T>
     }
   }
 
-  public convenience init(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> T)
+  public convenience init(qos: qos_class_t, task: () -> T)
   {
-    dispatch_group_enter(group)
-    self.init(queue: queue) {
-      let result = task()
-      dispatch_group_leave(group)
-      return result
-    }
+    self.init(queue: dispatch_get_global_queue(qos, 0), task: task)
   }
 
-  private func setValue(result: T)
+  public convenience init(_ task: () -> T)
   {
-    guard setState(.Assigning) else { fatalError("Could not begin assignment of result in \(__FUNCTION__)") }
+    self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  // MARK: private methods
+
+  private func setState(newState: DeferredState) -> Bool
+  {
+    switch newState
+    {
+    case .Ready:
+      return currentState == DeferredState.Ready.rawValue
+
+    case .Running:
+      return OSAtomicCompareAndSwap32Barrier(DeferredState.Ready.rawValue, DeferredState.Running.rawValue, &currentState)
+
+      //    case .Canceled:
+      //      let s = currentState
+      //      if s == DeferredState.Completed.rawValue { return false }
+      //      return OSAtomicCompareAndSwap32Barrier(s, DeferredState.Canceled.rawValue, &currentState)
+
+    case .Assigning:
+      return OSAtomicCompareAndSwap32Barrier(DeferredState.Running.rawValue, DeferredState.Assigning.rawValue, &currentState)
+
+    case .Completed:
+      if OSAtomicCompareAndSwap32Barrier(DeferredState.Assigning.rawValue, DeferredState.Completed.rawValue, &currentState)
+      {
+        dispatch_group_leave(group)
+        return true
+      }
+      return currentState == DeferredState.Completed.rawValue
+    }
+  }
+  
+  private func setValue(result: T)
+  { // A very simple turnstile to ensure only one thread can succeed
+    guard setState(.Assigning) else { fatalError("Probable attempt at setting a Deferred value twice with \(__FUNCTION__)") }
 
     v = result
 
     guard setState(.Completed) else { fatalError("Could not complete assignment of result in \(__FUNCTION__)") }
+    // The result is now available for the world
+  }
+
+  // MARK: public interface
+
+  public var state: DeferredState { return DeferredState(rawValue: currentState)! }
+
+  public var isComplete: Bool { return currentState == DeferredState.Completed.rawValue }
+
+  public func peek() -> T?
+  {
+    if currentState != DeferredState.Completed.rawValue
+    {
+      return nil
+    }
+    return v
   }
 
   public var value: T {
-    if currentState != State.Completed.rawValue
+    if currentState != DeferredState.Completed.rawValue
     {
       dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
     }
@@ -103,7 +123,7 @@ public class Deferred<T>
 
 
 
-// MARK: Asynchronous tasks with input parameters and no return values.
+// MARK: Notify: chain asynchronous tasks with input parameters and no return values.
 
 extension Deferred
 {
@@ -112,75 +132,103 @@ extension Deferred
     return notify(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
-  public func notify(group group: dispatch_group_t, task: (T) -> Void)
-  {
-    return notify(dispatch_get_global_queue(qos_class_self(), 0), group: group, task: task)
-  }
-
   public func notify(qos: qos_class_t, task: (T) -> Void)
   {
     return notify(dispatch_get_global_queue(qos, 0), task: task)
   }
 
-  public func notify(qos: qos_class_t, group: dispatch_group_t, task: (T) -> Void)
-  {
-    return notify(dispatch_get_global_queue(qos, 0), group: group, task: task)
-  }
-
   public func notify(queue: dispatch_queue_t, task: (T) -> Void)
   {
-    dispatch_group_notify(self.group, queue) {
-      task(self.value)
-    }
-  }
-
-  public func notify(queue: dispatch_queue_t, group: dispatch_group_t, task: (T) -> Void)
-  {
-    dispatch_group_enter(group)
-    dispatch_group_notify(self.group, queue) {
-      task(self.value)
-      dispatch_group_leave(group)
-    }
+    dispatch_group_notify(self.group, queue) { task(self.v) }
   }
 }
 
-// MARK: Asynchronous tasks with input parameters and return values
+// MARK: Map: chain asynchronous tasks with input parameters and return values
 
 extension Deferred
 {
-  public func notify<U>(task: (T) -> U) -> Deferred<U>
+  public func map<U>(task: (T) -> U) -> Deferred<U>
   {
-    return notify(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    return map(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
-  public func notify<U>(group group: dispatch_group_t, task: (T) -> U) -> Deferred<U>
+  public func map<U>(qos: qos_class_t, task: (T) -> U) -> Deferred<U>
   {
-    return notify(dispatch_get_global_queue(qos_class_self(), 0), group: group, task: task)
+    return map(dispatch_get_global_queue(qos, 0), task: task)
   }
 
-  public func notify<U>(qos: qos_class_t, task: (T) -> U) -> Deferred<U>
+  public func map<U>(queue: dispatch_queue_t, task: (T) -> U) -> Deferred<U>
   {
-    return notify(dispatch_get_global_queue(qos, 0), task: task)
-  }
-
-  public func notify<U>(qos: qos_class_t, group: dispatch_group_t, task: (T) -> U) -> Deferred<U>
-  {
-    return notify(dispatch_get_global_queue(qos, 0), group: group, task: task)
-  }
-
-  public func notify<U>(queue: dispatch_queue_t, task: (T) -> U) -> Deferred<U>
-  {
-    return Deferred<U>(queue: queue) { task(self.value) }
-  }
-
-  public func notify<U>(queue: dispatch_queue_t, group: dispatch_group_t, task: (T) -> U) -> Deferred<U>
-  {
-    dispatch_group_enter(group)
-
-    return Deferred<U>(queue: queue, group: group) {
-      let result = task(self.value)
-      dispatch_group_leave(group)
-      return result
+    let deferred = Deferred<U>()
+    self.notify(queue) {
+      (result: T) -> Void in
+      deferred.setState(.Running)
+      deferred.setValue(task(result))
     }
+    return deferred
+  }
+}
+
+// MARK: Bind: chain asynchronous tasks with input parameters and return values
+
+extension Deferred
+{
+  public func bind<U>(task: (T) -> Deferred<U>) -> Deferred<U>
+  {
+    return bind(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  public func bind<U>(qos: qos_class_t, task: (T) -> Deferred<U>) -> Deferred<U>
+  {
+    return bind(dispatch_get_global_queue(qos, 0), task: task)
+  }
+
+  public func bind<U>(queue: dispatch_queue_t, task: (T) -> Deferred<U>) -> Deferred<U>
+  {
+    let deferred = Deferred<U>()
+    self.notify(queue) {
+      (result: T) -> Void in
+      deferred.setState(.Running)
+      task(result).notify(queue) { deferred.setValue($0) }
+    }
+    return deferred
+  }
+}
+
+
+extension Deferred
+{
+  public func combine<U>(other: Deferred<U>) -> Deferred<(T,U)>
+  {
+    return bind { (t: T) in other.map { (u: U) in (t,u) } }
+  }
+
+  public func combine<U,V>(o1: Deferred<U>, _ o2: Deferred<V>) -> Deferred<(T,U,V)>
+  {
+    return combine(o1).bind { (t: T, u: U) in o2.map { (v: V) in (t,u,v) } }
+  }
+
+  public func combine(other: [Deferred<T>]) -> Deferred<[T]>
+  {
+    let mappedSelf = map { (t: T) in [t] }
+
+    if other.count == 0
+    {
+      return mappedSelf
+    }
+
+    let combined = other.reduce(mappedSelf) {
+      (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
+      return element.bind {
+        (t: T) in
+        combiner.map {
+          (var values: [T]) -> [T] in
+          values.append(t)
+          return values
+        }
+      }
+    }
+
+    return combined
   }
 }

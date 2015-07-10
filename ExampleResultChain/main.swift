@@ -18,7 +18,7 @@ let result1 = async {
   return 10.1
 }
 
-let result2 = result1.notify {
+let result2 = result1.map {
   (d: Double) -> Int in
   syncprint("Starting result2")
   sleep(1)
@@ -26,13 +26,16 @@ let result2 = result1.notify {
   return Int(floor(2*d))
 }
 
-let result3 = result1.notify { return (3*$0).description }
+let result3 = result1.map { return (3*$0).description }
 
 result3.notify { syncprint($0) }
+
+let result4 = result3.combine(result2)
 
 syncprint("Waiting")
 syncprint(result1.value)
 syncprint(result2.value)
 syncprint(result3.value)
+syncprint(result4.value)
 syncprint("Done")
 syncprintwait()
