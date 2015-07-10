@@ -60,22 +60,30 @@ public func async(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> 
 
 public func async<T>(task: () -> T) -> Deferred<T>
 {
-  return async(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  return Deferred(task)
 }
 
 public func async<T>(group group: dispatch_group_t, task: () -> T) -> Deferred<T>
 {
-  return async(dispatch_get_global_queue(qos_class_self(), 0), group: group, task: task)
+  dispatch_group_enter(group)
+  return Deferred {
+    defer { dispatch_group_leave(group) }
+    return task()
+  }
 }
 
 public func async<T>(qos: qos_class_t, task: () -> T) -> Deferred<T>
 {
-  return async(dispatch_get_global_queue(qos, 0), task: task)
+  return Deferred(qos: qos, task: task)
 }
 
 public func async<T>(qos: qos_class_t, group: dispatch_group_t, task: () -> T) -> Deferred<T>
 {
-  return async(dispatch_get_global_queue(qos, 0), group: group, task: task)
+  dispatch_group_enter(group)
+  return Deferred(qos: qos) {
+    defer { dispatch_group_leave(group) }
+    return task()
+  }
 }
 
 public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Deferred<T>
@@ -85,5 +93,9 @@ public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Deferred<T>
 
 public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> T) -> Deferred<T>
 {
-  return Deferred(queue: queue, group: group, task: task)
+  dispatch_group_enter(group)
+  return Deferred(queue: queue) {
+    defer { dispatch_group_leave(group) }
+    return task()
+  }
 }
