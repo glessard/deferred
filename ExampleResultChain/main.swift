@@ -9,24 +9,27 @@
 import Darwin
 
 syncprint("Starting")
+let sleeptime = 50_000
 
 let result1 = async {
   _ -> Double in
-  syncprint("Starting result1")
-  sleep(1)
-  syncprint("Finishing result1")
+  syncprint("Computing result1")
+  usleep(numericCast(sleeptime))
   return 10.1
 }
 
 let result2 = result1.map {
   (d: Double) -> Int in
-  syncprint("Starting result2")
-  sleep(1)
-  syncprint("Finishing result2")
+  syncprint("Computing result2")
+  usleep(numericCast(sleeptime))
   return Int(floor(2*d))
 }
 
-let result3 = result1.map { return (3*$0).description }
+let result3 = result1.map {
+  (d: Double) -> String in
+  syncprint("Computing result3")
+  return (3*d).description
+}
 
 result3.notify { syncprint($0) }
 

@@ -296,4 +296,41 @@ extension Deferred
     }
     return combined
   }
+
+  public func combine(others: [Deferred<T>]) -> Deferred<[T]>
+  {
+    return combine(AnyRandomAccessCollection(others))
+  }
+}
+
+public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
+{
+  if deferreds.count == 0
+  {
+    return Deferred(value: Array<T>())
+  }
+
+  let head = deferreds[0]
+
+  if deferreds.count == 1
+  {
+    return head.map { t in [t] }
+  }
+
+  let tail = deferreds[1..<deferreds.count]
+  return head.combine(tail)
+}
+
+public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
+{
+  let first = Deferred<T>()
+  for d in deferreds.shuffle()
+  {
+    d.notify {
+      (result: T) in
+      first.setState(.Running)
+      first.setValue(result, trapOnFailure: false)
+    }
+  }
+  return first
 }
