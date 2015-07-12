@@ -43,7 +43,7 @@ public class Deferred<T>
 
     guard setState(.Running) else { fatalError("Could not start task in \(__FUNCTION__)") }
     dispatch_async(queue) {
-      self.setValue(task())
+      self.value = task()
     }
   }
 
@@ -87,14 +87,15 @@ public class Deferred<T>
     }
   }
   
-  private func setValue(result: T)
+  private func setValue(result: T, trapOnFailure: Bool = true)
   { // A very simple turnstile to ensure only one thread can succeed
-    guard setState(.Assigning) else { fatalError("Probable attempt at setting a Deferred value twice with \(__FUNCTION__)") }
-
-    v = result
-
-    guard setState(.Completed) else { fatalError("Could not complete assignment of result in \(__FUNCTION__)") }
-    // The result is now available for the world
+    if setState(.Assigning)
+    {
+      v = result
+      guard setState(.Completed) else { fatalError("Could not complete assignment of result in \(__FUNCTION__)") }
+      // The result is now available for the world
+    }
+    else if trapOnFailure { fatalError("Probable attempt at setting a Deferred value twice with \(__FUNCTION__)") }
   }
 
   // MARK: public interface
@@ -112,16 +113,76 @@ public class Deferred<T>
     return v
   }
 
-  public var value: T {
-    if currentState != DeferredState.Completed.rawValue
-    {
-      dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+  public /* private(set) */ var value: T {
+    get {
+      if currentState != DeferredState.Completed.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
+      return v
     }
-    return v
+    set {
+      setValue(newValue, trapOnFailure: true)
+    }
   }
 }
 
+public func delay(ns: Int) -> Deferred<Void>
+{
+  return Deferred(value: ()).delay(ns)
+}
 
+public func delay(µs µs: Int) -> Deferred<Void>
+{
+  return delay(µs*1000)
+}
+
+public func delay(ms ms: Int) -> Deferred<Void>
+{
+  return delay(ms*1_000_000)
+}
+
+public func delay(seconds s: NSTimeInterval) -> Deferred<Void>
+{
+  return delay(Int(s*1e9))
+}
+
+extension Deferred
+{
+  public func delay(ns: Int) -> Deferred
+  {
+    if ns < 0 { return self }
+
+    let delayed = Deferred<T>()
+    delayed.setState(.Running)
+    let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns>0 ? ns:0))
+    dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
+      if self.currentState == DeferredState.Completed.rawValue
+      {
+        delayed.value = self.v
+        return
+      }
+
+      dispatch_group_notify(self.group, dispatch_get_global_queue(qos_class_self(), 0)) {
+        delayed.value = self.v
+      }
+    }
+
+    return delayed
+  }
+
+  public func delay(µs µs: Int) -> Deferred
+  {
+    return delay(µs*1000)
+  }
+
+  public func delay(ms ms: Int) -> Deferred
+  {
+    return delay(ms*1_000_000)
+  }
+
+  public func delay(seconds s: NSTimeInterval) -> Deferred
+  {
+    return delay(Int(s*1e9))
+  }
+}
 
 // MARK: Notify: chain asynchronous tasks with input parameters and no return values.
 
@@ -163,7 +224,7 @@ extension Deferred
     self.notify(queue) {
       (result: T) -> Void in
       deferred.setState(.Running)
-      deferred.setValue(task(result))
+      deferred.value = task(result)
     }
     return deferred
   }
@@ -189,7 +250,7 @@ extension Deferred
     self.notify(queue) {
       (result: T) -> Void in
       deferred.setState(.Running)
-      task(result).notify(queue) { deferred.setValue($0) }
+      task(result).notify(queue) { deferred.value = $0 }
     }
     return deferred
   }
@@ -203,21 +264,26 @@ extension Deferred
     return bind { (t: T) in other.map { (u: U) in (t,u) } }
   }
 
-  public func combine<U,V>(o1: Deferred<U>, _ o2: Deferred<V>) -> Deferred<(T,U,V)>
+  public func combine<U1,U2>(o1: Deferred<U1>, _ o2: Deferred<U2>) -> Deferred<(T,U1,U2)>
   {
-    return combine(o1).bind { (t: T, u: U) in o2.map { (v: V) in (t,u,v) } }
+    return combine(o1).bind { (t,u1) in o2.map { u2 in (t,u1,u2) } }
   }
 
-  public func combine(other: [Deferred<T>]) -> Deferred<[T]>
+  public func combine<U1,U2,U3>(o1: Deferred<U1>, _ o2: Deferred<U2>, _ o3: Deferred<U3>) -> Deferred<(T,U1,U2,U3)>
+  {
+    return combine(o1,o2).bind { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
+  }
+
+  public func combine<C: CollectionType where C.Generator.Element == Deferred<T>>(others: C) -> Deferred<[T]>
   {
     let mappedSelf = map { (t: T) in [t] }
 
-    if other.count == 0
+    if others.count == 0
     {
       return mappedSelf
     }
 
-    let combined = other.reduce(mappedSelf) {
+    let combined = others.reduce(mappedSelf) {
       (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
       return element.bind {
         (t: T) in
@@ -228,7 +294,6 @@ extension Deferred
         }
       }
     }
-
     return combined
   }
 }
