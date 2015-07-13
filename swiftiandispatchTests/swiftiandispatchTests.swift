@@ -205,11 +205,10 @@ class swiftiandispatchTests: XCTestCase
     let count = 10
 
     let inputs = (0..<count).map { _ in arc4random() }
+    let deferred = Deferred(value: inputs[0])
     let deferreds = (1..<count).map { i in Deferred(value: inputs[i]) }
 
-    let def = Deferred(value: inputs[0])
-
-    let defarray = def.combine(deferreds)
+    let defarray = deferred.combine(deferreds)
     let values = defarray.value
     for (a,b) in zip(inputs, values)
     {
@@ -223,6 +222,14 @@ class swiftiandispatchTests: XCTestCase
     {
       XCTAssert(a.value == b)
     }
+
+    let combined1 = combine([Deferred<Int>]())
+    XCTAssert(combined1.value == [])
+
+    let value = arc4random()
+    let deferred2 = Deferred(value: value)
+    let combined2 = deferred2.combine([])
+    XCTAssert(combined2.value == [value])
   }
 
   func testFirstCompleted()
