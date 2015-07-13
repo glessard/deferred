@@ -278,11 +278,6 @@ extension Deferred
   {
     let mappedSelf = map { (t: T) in [t] }
 
-    if others.count == 0
-    {
-      return mappedSelf
-    }
-
     let combined = others.reduce(mappedSelf) {
       (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
       return element.bind {
@@ -305,20 +300,18 @@ extension Deferred
 
 public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 {
-  if deferreds.count == 0
-  {
-    return Deferred(value: Array<T>())
+  let combined = deferreds.reduce(Deferred<[T]>(value: [])) {
+    (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
+    return element.bind {
+      (t: T) in
+      combiner.map {
+        (var values: [T]) -> [T] in
+        values.append(t)
+        return values
+      }
+    }
   }
-
-  let head = deferreds[0]
-
-  if deferreds.count == 1
-  {
-    return head.map { t in [t] }
-  }
-
-  let tail = deferreds[1..<deferreds.count]
-  return head.combine(tail)
+  return combined
 }
 
 public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>

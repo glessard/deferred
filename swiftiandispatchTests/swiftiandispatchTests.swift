@@ -215,6 +215,14 @@ class swiftiandispatchTests: XCTestCase
     {
       XCTAssert(a == b)
     }
+
+    let inputs2 = (0..<count).map { i in Deferred(value: arc4random()) }
+    let defarray2 = combine(inputs2)
+    let values2 = defarray2.value
+    for (a,b) in zip(inputs2, values2)
+    {
+      XCTAssert(a.value == b)
+    }
   }
 
   func testFirstCompleted()
