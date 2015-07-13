@@ -126,17 +126,17 @@ public func delay(ns: Int) -> Deferred<Void>
 
 public func delay(µs µs: Int) -> Deferred<Void>
 {
-  return delay(µs*1000)
+  return Deferred(value: ()).delay(µs: µs)
 }
 
 public func delay(ms ms: Int) -> Deferred<Void>
 {
-  return delay(ms*1_000_000)
+  return Deferred(value: ()).delay(ms: ms)
 }
 
 public func delay(seconds s: NSTimeInterval) -> Deferred<Void>
 {
-  return delay(Int(s*1e9))
+  return Deferred(value: ()).delay(seconds: s)
 }
 
 extension Deferred
