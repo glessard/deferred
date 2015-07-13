@@ -10,12 +10,12 @@ import XCTest
 
 import swiftiandispatch
 
-let sleeptime = 50_000
-
 class DeferredTests: XCTestCase
 {
   func testExample()
   {
+    let sleeptime = 50_000
+    
     syncprint("Starting")
 
     let result1 = async {
@@ -241,7 +241,7 @@ class DeferredTests: XCTestCase
       i -> Deferred<Int> in
       return Deferred {
         _ -> Int in
-        usleep(i == lucky ? 10_000 : 1_000_000)
+        usleep(i == lucky ? 100_000 : 1_000_000)
         return i
       }
     }

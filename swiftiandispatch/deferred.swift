@@ -20,16 +20,13 @@ public enum DeferredState: Int32 { case Ready = 0, Running = 1, /* Canceled = 2,
 public class Deferred<T>
 {
   private var v: T! = nil
-  private let group = dispatch_group_create()
 
   private var currentState: Int32 = DeferredState.Ready.rawValue
+  private var waiters = UnsafeMutablePointer<Waiter>(nil)
 
   // MARK: Initializers
 
-  private init()
-  {
-    dispatch_group_enter(group)
-  }
+  private init() {}
 
   public init(value: T)
   {
@@ -37,10 +34,8 @@ public class Deferred<T>
     currentState = DeferredState.Completed.rawValue
   }
 
-  public convenience init(queue: dispatch_queue_t, task: () -> T)
+  public init(queue: dispatch_queue_t, task: () -> T)
   {
-    self.init()
-
     guard setState(.Running) else { fatalError("Could not start task in \(__FUNCTION__)") }
     dispatch_async(queue) {
       self.setValue(task())
@@ -55,6 +50,20 @@ public class Deferred<T>
   public convenience init(_ task: () -> T)
   {
     self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  deinit
+  {
+    func stackDealloc(waiter: UnsafeMutablePointer<Waiter>)
+    {
+      if waiter != nil
+      {
+        stackDealloc(waiter)
+        waiter.destroy(1)
+        waiter.dealloc(1)
+      }
+    }
+    stackDealloc(waiters)
   }
 
   // MARK: private methods
@@ -80,8 +89,25 @@ public class Deferred<T>
     case .Completed:
       if OSAtomicCompareAndSwap32Barrier(DeferredState.Assigning.rawValue, DeferredState.Completed.rawValue, &currentState)
       {
-        dispatch_group_leave(group)
-        return true
+        while true
+        {
+          let stack = waiters
+          if CAS(stack, nil, &waiters)
+          {
+            func stackNotify(waiter: UnsafeMutablePointer<Waiter>)
+            {
+              if waiter != nil
+              {
+                stackNotify(waiter.memory.next)
+                waiter.memory.wake()
+                waiter.destroy(1)
+                waiter.dealloc(1)
+              }
+            }
+            stackNotify(stack)
+            return true
+          }
+        }
       }
       return currentState == DeferredState.Completed.rawValue
     }
@@ -114,8 +140,61 @@ public class Deferred<T>
   }
 
   public var value: T {
-    if currentState != DeferredState.Completed.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
+    if currentState != DeferredState.Completed.rawValue
+    {
+      let thread = mach_thread_self()
+      let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
+      waiter.initialize(Waiter(.Thread(thread)))
+      while true
+      {
+        let head = waiters
+        waiter.memory.next = head
+        if currentState != DeferredState.Completed.rawValue
+        {
+          if CAS(head, waiter, &waiters)
+          {
+            let kr = thread_suspend(thread)
+            guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
+            break
+          }
+        }
+        else
+        { // Deferred has a value now
+          waiter.destroy(1)
+          waiter.dealloc(1)
+          break
+        }
+      }
+    }
     return v
+  }
+
+  public func notify(queue: dispatch_queue_t, task: (T) -> Void)
+  {
+    if currentState != DeferredState.Completed.rawValue
+    {
+      let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
+      waiter.initialize(Waiter(.Dispatch(queue, { task(self.v) })))
+      while true
+      {
+        let head = waiters
+        waiter.memory.next = head
+        if currentState != DeferredState.Completed.rawValue
+        {
+          if CAS(head, waiter, &waiters)
+          {
+            return
+          }
+        }
+        else
+        { // Deferred has a value now
+          waiter.destroy(1)
+          waiter.dealloc(1)
+          break
+        }
+      }
+    }
+    dispatch_async(queue) { task(self.v) }
   }
 }
 
@@ -185,11 +264,6 @@ extension Deferred
   public func notify(qos: qos_class_t, task: (T) -> Void)
   {
     return notify(dispatch_get_global_queue(qos, 0), task: task)
-  }
-
-  public func notify(queue: dispatch_queue_t, task: (T) -> Void)
-  {
-    dispatch_group_notify(self.group, queue) { task(self.v) }
   }
 }
 
