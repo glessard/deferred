@@ -146,20 +146,14 @@ extension Deferred
     if ns < 0 { return self }
 
     let delayed = Deferred<T>()
-    delayed.setState(.Running)
-    let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns>0 ? ns:0))
-    dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
-      if self.currentState == DeferredState.Completed.rawValue
-      {
-        delayed.value = self.v
-        return
-      }
-
-      dispatch_group_notify(self.group, dispatch_get_global_queue(qos_class_self(), 0)) {
-        delayed.value = self.v
+    self.notify {
+      value in
+      delayed.setState(.Running)
+      let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
+        delayed.setValue(value)
       }
     }
-
     return delayed
   }
 
