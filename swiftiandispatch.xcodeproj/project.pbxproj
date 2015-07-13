@@ -14,6 +14,7 @@
 		03285E621B50486700F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
 		03285E641B521FAA00F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E631B521FAA00F4B44B /* shuffle.swift */; };
 		03285E681B53AA4C00F4B44B /* waiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E671B53AA4C00F4B44B /* waiter.swift */; };
+		034C0BAE1B547E5C00F4B44B /* deferred-extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */; };
 		03E60E321AAA571200F4B44B /* swiftiandispatch.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E60E311AAA571200F4B44B /* swiftiandispatch.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03E60E4B1AAA571C00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
 		03E60E551AAA577C00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E541AAA577C00F4B44B /* main.swift */; };
@@ -50,6 +51,7 @@
 		03285E5B1B50380C00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03285E631B521FAA00F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = shuffle.swift; sourceTree = "<group>"; };
 		03285E671B53AA4C00F4B44B /* waiter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = waiter.swift; sourceTree = "<group>"; };
+		034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "deferred-extras.swift"; sourceTree = "<group>"; };
 		03E60E2C1AAA571100F4B44B /* swiftiandispatch.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = swiftiandispatch.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		03E60E301AAA571200F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03E60E311AAA571200F4B44B /* swiftiandispatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = swiftiandispatch.h; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 				03285E181B4F223900F4B44B /* deferred.swift */,
 				03285E671B53AA4C00F4B44B /* waiter.swift */,
 				03285E631B521FAA00F4B44B /* shuffle.swift */,
+				034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */,
 				03E60E311AAA571200F4B44B /* swiftiandispatch.h */,
 				03E60E2F1AAA571200F4B44B /* Supporting Files */,
 			);
@@ -291,6 +294,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03285E191B4F223900F4B44B /* deferred.swift in Sources */,
+				034C0BAE1B547E5C00F4B44B /* deferred-extras.swift in Sources */,
 				03E60E4B1AAA571C00F4B44B /* async.swift in Sources */,
 				03285E641B521FAA00F4B44B /* shuffle.swift in Sources */,
 				03285E681B53AA4C00F4B44B /* waiter.swift in Sources */,
