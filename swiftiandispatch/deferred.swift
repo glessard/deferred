@@ -197,17 +197,17 @@ extension Deferred
 
 extension Deferred
 {
-  public func map<U>(task: (T) -> U) -> Deferred<U>
+  public func map<U>(transform: (T) -> U) -> Deferred<U>
   {
-    return map(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    return map(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
-  public func map<U>(qos: qos_class_t, task: (T) -> U) -> Deferred<U>
+  public func map<U>(qos: qos_class_t, transform: (T) -> U) -> Deferred<U>
   {
-    return map(dispatch_get_global_queue(qos, 0), task: task)
+    return map(dispatch_get_global_queue(qos, 0), transform: transform)
   }
 
-  public func map<U>(queue: dispatch_queue_t, task: (T) -> U) -> Deferred<U>
+  public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
   {
     let deferred = Deferred<U>()
     self.notify(queue) {
@@ -223,17 +223,17 @@ extension Deferred
 
 extension Deferred
 {
-  public func bind<U>(task: (T) -> Deferred<U>) -> Deferred<U>
+  public func bind<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return bind(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    return bind(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
-  public func bind<U>(qos: qos_class_t, task: (T) -> Deferred<U>) -> Deferred<U>
+  public func bind<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return bind(dispatch_get_global_queue(qos, 0), task: task)
+    return bind(dispatch_get_global_queue(qos, 0), transform: transform)
   }
 
-  public func bind<U>(queue: dispatch_queue_t, task: (T) -> Deferred<U>) -> Deferred<U>
+  public func bind<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
     let deferred = Deferred<U>()
     self.notify(queue) {
