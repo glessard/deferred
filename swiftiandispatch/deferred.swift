@@ -117,26 +117,33 @@ public class Deferred<T>
     if currentState != DeferredState.Completed.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
     return v
   }
-}
 
-public func delay(ns: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(ns)
-}
+  public func notify(queue: dispatch_queue_t, task: (T) -> Void)
+  {
+    dispatch_group_notify(self.group, queue) { task(self.v) }
+  }
 
-public func delay(µs µs: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(µs: µs)
-}
+  public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
+  {
+    let deferred = Deferred<U>()
+    self.notify(queue) {
+      value in
+      deferred.setState(.Running)
+      deferred.setValue(transform(value))
+    }
+    return deferred
+  }
 
-public func delay(ms ms: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(ms: ms)
-}
-
-public func delay(seconds s: Double) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(seconds: s)
+  public func bind<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  {
+    let deferred = Deferred<U>()
+    self.notify(queue) {
+      value in
+      deferred.setState(.Running)
+      transform(value).notify(queue) { transformedValue in deferred.setValue(transformedValue) }
+    }
+    return deferred
+  }
 }
 
 extension Deferred
@@ -156,151 +163,6 @@ extension Deferred
     }
     return delayed
   }
-
-  public func delay(µs µs: Int) -> Deferred
-  {
-    return delay(µs*1000)
-  }
-
-  public func delay(ms ms: Int) -> Deferred
-  {
-    return delay(ms*1_000_000)
-  }
-
-  public func delay(seconds s: Double) -> Deferred
-  {
-    return delay(Int(s*1e9))
-  }
-}
-
-// MARK: Notify: chain asynchronous tasks with input parameters and no return values.
-
-extension Deferred
-{
-  public func notify(task: (T) -> Void)
-  {
-    return notify(dispatch_get_global_queue(qos_class_self(), 0), task: task)
-  }
-
-  public func notify(qos: qos_class_t, task: (T) -> Void)
-  {
-    return notify(dispatch_get_global_queue(qos, 0), task: task)
-  }
-
-  public func notify(queue: dispatch_queue_t, task: (T) -> Void)
-  {
-    dispatch_group_notify(self.group, queue) { task(self.v) }
-  }
-}
-
-// MARK: Map: chain asynchronous tasks with input parameters and return values
-
-extension Deferred
-{
-  public func map<U>(transform: (T) -> U) -> Deferred<U>
-  {
-    return map(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
-  }
-
-  public func map<U>(qos: qos_class_t, transform: (T) -> U) -> Deferred<U>
-  {
-    return map(dispatch_get_global_queue(qos, 0), transform: transform)
-  }
-
-  public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
-  {
-    let deferred = Deferred<U>()
-    self.notify(queue) {
-      value in
-      deferred.setState(.Running)
-      deferred.setValue(transform(value))
-    }
-    return deferred
-  }
-}
-
-// MARK: Bind: chain asynchronous tasks with input parameters and return values
-
-extension Deferred
-{
-  public func bind<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
-  {
-    return bind(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
-  }
-
-  public func bind<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
-  {
-    return bind(dispatch_get_global_queue(qos, 0), transform: transform)
-  }
-
-  public func bind<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
-  {
-    let deferred = Deferred<U>()
-    self.notify(queue) {
-      value in
-      deferred.setState(.Running)
-      transform(value).notify(queue) { transformedValue in deferred.setValue(transformedValue) }
-    }
-    return deferred
-  }
-}
-
-
-extension Deferred
-{
-  public func combine<U>(other: Deferred<U>) -> Deferred<(T,U)>
-  {
-    return bind { (t: T) in other.map { (u: U) in (t,u) } }
-  }
-
-  public func combine<U1,U2>(o1: Deferred<U1>, _ o2: Deferred<U2>) -> Deferred<(T,U1,U2)>
-  {
-    return combine(o1).bind { (t,u1) in o2.map { u2 in (t,u1,u2) } }
-  }
-
-  public func combine<U1,U2,U3>(o1: Deferred<U1>, _ o2: Deferred<U2>, _ o3: Deferred<U3>) -> Deferred<(T,U1,U2,U3)>
-  {
-    return combine(o1,o2).bind { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
-  }
-
-  public func combine<C: CollectionType where C.Generator.Element == Deferred<T>>(others: C) -> Deferred<[T]>
-  {
-    let mappedSelf = map { (t: T) in [t] }
-
-    let combined = others.reduce(mappedSelf) {
-      (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-      return element.bind {
-        (t: T) in
-        combiner.map {
-          (var values: [T]) -> [T] in
-          values.append(t)
-          return values
-        }
-      }
-    }
-    return combined
-  }
-
-  public func combine(others: [Deferred<T>]) -> Deferred<[T]>
-  {
-    return combine(AnyRandomAccessCollection(others))
-  }
-}
-
-public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
-{
-  let combined = deferreds.reduce(Deferred<[T]>(value: [])) {
-    (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-    return element.bind {
-      (t: T) in
-      combiner.map {
-        (var values: [T]) -> [T] in
-        values.append(t)
-        return values
-      }
-    }
-  }
-  return combined
 }
 
 public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
@@ -315,49 +177,4 @@ public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
     }
   }
   return first
-}
-
-
-// MARK: Asynchronous tasks with return values.
-
-public func async<T>(task: () -> T) -> Deferred<T>
-{
-  return Deferred(task)
-}
-
-public func async<T>(group group: dispatch_group_t, task: () -> T) -> Deferred<T>
-{
-  dispatch_group_enter(group)
-  return Deferred {
-    defer { dispatch_group_leave(group) }
-    return task()
-  }
-}
-
-public func async<T>(qos: qos_class_t, task: () -> T) -> Deferred<T>
-{
-  return Deferred(qos: qos, task: task)
-}
-
-public func async<T>(qos: qos_class_t, group: dispatch_group_t, task: () -> T) -> Deferred<T>
-{
-  dispatch_group_enter(group)
-  return Deferred(qos: qos) {
-    defer { dispatch_group_leave(group) }
-    return task()
-  }
-}
-
-public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Deferred<T>
-{
-  return Deferred(queue: queue, task: task)
-}
-
-public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> T) -> Deferred<T>
-{
-  dispatch_group_enter(group)
-  return Deferred(queue: queue) {
-    defer { dispatch_group_leave(group) }
-    return task()
-  }
 }
