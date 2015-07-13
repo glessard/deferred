@@ -12,7 +12,7 @@ import swiftiandispatch
 
 let sleeptime = 50_000
 
-class swiftiandispatchTests: XCTestCase
+class DeferredTests: XCTestCase
 {
   func testExample()
   {
