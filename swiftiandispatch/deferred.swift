@@ -43,7 +43,7 @@ public class Deferred<T>
 
     guard setState(.Running) else { fatalError("Could not start task in \(__FUNCTION__)") }
     dispatch_async(queue) {
-      self.value = task()
+      self.setValue(task())
     }
   }
 
@@ -87,15 +87,15 @@ public class Deferred<T>
     }
   }
   
-  private func setValue(result: T, trapOnFailure: Bool = true)
+  private func setValue(value: T, trapOnFailure: Bool = true)
   { // A very simple turnstile to ensure only one thread can succeed
     if setState(.Assigning)
     {
-      v = result
-      guard setState(.Completed) else { fatalError("Could not complete assignment of result in \(__FUNCTION__)") }
+      v = value
+      guard setState(.Completed) else { fatalError("Could not complete assignment of value in \(__FUNCTION__)") }
       // The result is now available for the world
     }
-    else if trapOnFailure { fatalError("Probable attempt at setting a Deferred value twice with \(__FUNCTION__)") }
+    else if trapOnFailure { fatalError("Probable attempt to set value of Deferred twice with \(__FUNCTION__)") }
   }
 
   // MARK: public interface
@@ -113,14 +113,9 @@ public class Deferred<T>
     return v
   }
 
-  public /* private(set) */ var value: T {
-    get {
-      if currentState != DeferredState.Completed.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
-      return v
-    }
-    set {
-      setValue(newValue, trapOnFailure: true)
-    }
+  public var value: T {
+    if currentState != DeferredState.Completed.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
+    return v
   }
 }
 
@@ -222,9 +217,9 @@ extension Deferred
   {
     let deferred = Deferred<U>()
     self.notify(queue) {
-      (result: T) -> Void in
+      value in
       deferred.setState(.Running)
-      deferred.value = task(result)
+      deferred.setValue(transform(value))
     }
     return deferred
   }
@@ -248,9 +243,9 @@ extension Deferred
   {
     let deferred = Deferred<U>()
     self.notify(queue) {
-      (result: T) -> Void in
+      value in
       deferred.setState(.Running)
-      task(result).notify(queue) { deferred.value = $0 }
+      transform(value).notify(queue) { transformedValue in deferred.setValue(transformedValue) }
     }
     return deferred
   }
@@ -320,9 +315,9 @@ public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   for d in deferreds.shuffle()
   {
     d.notify {
-      (result: T) in
+      value in
       first.setState(.Running)
-      first.setValue(result, trapOnFailure: false)
+      first.setValue(value, trapOnFailure: false)
     }
   }
   return first
