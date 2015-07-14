@@ -237,16 +237,19 @@ class DeferredTests: XCTestCase
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
 
-    let deferreds = (1..<count).map {
+    let deferreds = (0..<count).map {
       i -> Deferred<Int> in
+      let e = expectationWithDescription(i.description)
       return Deferred {
-        _ -> Int in
-        usleep(i == lucky ? 10_000 : 1_000_000)
+        () -> Int in
+        usleep(i == lucky ? 10_000 : 200_000)
+        e.fulfill()
         return i
       }
     }
 
     let first = firstCompleted(deferreds)
     XCTAssert(first.value == lucky)
+    waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 }
