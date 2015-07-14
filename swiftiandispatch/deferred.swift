@@ -54,16 +54,7 @@ public class Deferred<T>
 
   deinit
   {
-    func stackDealloc(waiter: UnsafeMutablePointer<Waiter>)
-    {
-      if waiter != nil
-      {
-        stackDealloc(waiter)
-        waiter.destroy(1)
-        waiter.dealloc(1)
-      }
-    }
-    stackDealloc(waiters)
+    Waiter.stackDealloc(waiters)
   }
 
   // MARK: private methods
@@ -94,17 +85,7 @@ public class Deferred<T>
           let stack = waiters
           if CAS(stack, nil, &waiters)
           {
-            func stackNotify(waiter: UnsafeMutablePointer<Waiter>)
-            {
-              if waiter != nil
-              {
-                stackNotify(waiter.memory.next)
-                waiter.memory.wake()
-                waiter.destroy(1)
-                waiter.dealloc(1)
-              }
-            }
-            stackNotify(stack)
+            Waiter.stackNotify(stack)
             return true
           }
         }
@@ -171,7 +152,7 @@ public class Deferred<T>
 
   public func notify(queue: dispatch_queue_t, task: (T) -> Void)
   {
-    let block = { task(self.v) }
+    let block = { task(self.v) } // Should this be [unowned self] or [weak self] ?
 
     if currentState != DeferredState.Completed.rawValue
     {

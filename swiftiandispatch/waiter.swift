@@ -41,6 +41,30 @@ struct Waiter
   }
 }
 
+extension Waiter
+{
+  static func stackNotify(waiter: UnsafeMutablePointer<Waiter>)
+  {
+    if waiter != nil
+    {
+      stackNotify(waiter.memory.next)
+      waiter.memory.wake()
+      waiter.destroy(1)
+      waiter.dealloc(1)
+    }
+  }
+
+  static func stackDealloc(waiter: UnsafeMutablePointer<Waiter>)
+  {
+    if waiter != nil
+    {
+      stackDealloc(waiter)
+      waiter.destroy(1)
+      waiter.dealloc(1)
+    }
+  }
+}
+
 @inline(__always) func CAS<T>(o: UnsafeMutablePointer<T>, _ n: UnsafeMutablePointer<T>,
                               _ p: UnsafeMutablePointer<UnsafeMutablePointer<T>>) -> Bool
 {
