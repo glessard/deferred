@@ -134,7 +134,7 @@ public class Deferred<T>
     return deferred
   }
 
-  public func bind<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
     let deferred = Deferred<U>()
     self.notify(queue) {

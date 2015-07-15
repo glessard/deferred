@@ -123,18 +123,18 @@ extension Deferred
   }
 }
 
-// MARK: Bind: chain asynchronous tasks with input parameters and return values
+// MARK: flatMap: chain asynchronous tasks with input parameters and return values
 
 extension Deferred
 {
-  public func bind<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
+  public func flatMap<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return bind(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
+    return flatMap(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
-  public func bind<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  public func flatMap<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return bind(dispatch_get_global_queue(qos, 0), transform: transform)
+    return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
   }
 }
 
@@ -144,17 +144,17 @@ extension Deferred
 {
   public func combine<U>(other: Deferred<U>) -> Deferred<(T,U)>
   {
-    return bind { (t: T) in other.map { (u: U) in (t,u) } }
+    return flatMap { (t: T) in other.map { (u: U) in (t,u) } }
   }
 
   public func combine<U1,U2>(o1: Deferred<U1>, _ o2: Deferred<U2>) -> Deferred<(T,U1,U2)>
   {
-    return combine(o1).bind { (t,u1) in o2.map { u2 in (t,u1,u2) } }
+    return combine(o1).flatMap { (t,u1) in o2.map { u2 in (t,u1,u2) } }
   }
 
   public func combine<U1,U2,U3>(o1: Deferred<U1>, _ o2: Deferred<U2>, _ o3: Deferred<U3>) -> Deferred<(T,U1,U2,U3)>
   {
-    return combine(o1,o2).bind { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
+    return combine(o1,o2).flatMap { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
   }
 
   public func combine<C: CollectionType where C.Generator.Element == Deferred<T>>(others: C) -> Deferred<[T]>
@@ -163,7 +163,7 @@ extension Deferred
 
     let combined = others.reduce(mappedSelf) {
       (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-      return element.bind {
+      return element.flatMap {
         (t: T) in
         combiner.map {
           (var values: [T]) -> [T] in
@@ -180,7 +180,7 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 {
   let combined = deferreds.reduce(Deferred<[T]>(value: [])) {
     (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-    return element.bind {
+    return element.flatMap {
       (t: T) in
       combiner.map {
         (var values: [T]) -> [T] in
