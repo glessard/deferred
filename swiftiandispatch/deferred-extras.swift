@@ -90,6 +90,22 @@ extension Deferred
   {
     return delay(Int(s*1e9))
   }
+  
+  public func delay(ns: Int) -> Deferred
+  {
+    if ns < 0 { return self }
+
+    let delayed = Determinable<T>()
+    self.notify {
+      value in
+      delayed.beginWork()
+      let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
+        try! delayed.determine(value)
+      }
+    }
+    return delayed
+  }
 }
 
 
@@ -121,6 +137,17 @@ extension Deferred
   {
     return map(dispatch_get_global_queue(qos, 0), transform: transform)
   }
+
+  public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
+  {
+    let deferred = Determinable<U>()
+    self.notify(queue) {
+      value in
+      deferred.beginWork()
+      try! deferred.determine(transform(value))
+    }
+    return deferred
+  }
 }
 
 // MARK: flatMap: chain asynchronous tasks with input parameters and return values
@@ -136,6 +163,17 @@ extension Deferred
   {
     return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
   }
+
+  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  {
+    let deferred = Determinable<U>()
+    self.notify(queue) {
+      value in
+      deferred.beginWork()
+      transform(value).notify(queue) { transformedValue in try! deferred.determine(transformedValue) }
+    }
+    return deferred
+  }
 }
 
 extension Deferred
@@ -148,6 +186,20 @@ extension Deferred
   public func apply<U>(qos: qos_class_t, transform: Deferred<(T)->U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos, 0), transform: transform)
+  }
+
+  public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
+  {
+    let deferred = Determinable<U>()
+    self.notify(queue) {
+      value in
+      transform.notify(queue) {
+        transform in
+        deferred.beginWork()
+        try! deferred.determine(transform(value))
+      }
+    }
+    return deferred
   }
 }
 
@@ -203,4 +255,19 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
     }
   }
   return combined
+}
+
+public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
+{
+  let first = Determinable<T>()
+  for d in deferreds.shuffle()
+  {
+    d.notify {
+      value in
+      do {
+        try first.determine(value)
+      } catch { /* We don't care, it just means it's not the first completed */ }
+    }
+  }
+  return first
 }

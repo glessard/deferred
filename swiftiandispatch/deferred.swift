@@ -132,42 +132,6 @@ public class Deferred<T>
   {
     dispatch_group_notify(self.group, queue) { task(self.v) }
   }
-
-  public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
-  {
-    let deferred = Deferred<U>()
-    self.notify(queue) {
-      value in
-      deferred.setState(.Working)
-      try! deferred.setValue(transform(value))
-    }
-    return deferred
-  }
-
-  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
-  {
-    let deferred = Deferred<U>()
-    self.notify(queue) {
-      value in
-      deferred.setState(.Working)
-      transform(value).notify(queue) { transformedValue in try! deferred.setValue(transformedValue) }
-    }
-    return deferred
-  }
-
-  public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
-  {
-    let deferred = Deferred<U>()
-    self.notify(queue) {
-      value in
-      transform.notify(queue) {
-        transform in
-        deferred.setState(.Working)
-        try! deferred.setValue(transform(value))
-      }
-    }
-    return deferred
-  }
 }
 
 public class Determinable<T>: Deferred<T>
@@ -184,39 +148,4 @@ public class Determinable<T>: Deferred<T>
   {
     super.setState(.Working)
   }
-}
-
-extension Deferred
-{
-  public func delay(ns: Int) -> Deferred
-  {
-    if ns < 0 { return self }
-
-    let delayed = Deferred<T>()
-    self.notify {
-      value in
-      delayed.setState(.Working)
-      let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
-      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
-        try! delayed.setValue(value)
-      }
-    }
-    return delayed
-  }
-}
-
-public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
-{
-  let first = Deferred<T>()
-  for d in deferreds.shuffle()
-  {
-    d.notify {
-      value in
-      first.setState(.Working)
-      do {
-      try first.setValue(value)
-      } catch { /* We don't care, it just means it's not the first completed */ }
-    }
-  }
-  return first
 }
