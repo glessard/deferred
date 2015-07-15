@@ -204,10 +204,10 @@ class DeferredTests: XCTestCase
 
   func testApply2()
   {
-    let function = Determinable<Int->Double>()
+    let transform = Determinable<Int->Double>()
     let operand = Determinable<Int>()
-    let result = operand.apply(function)
-    let expect = expectationWithDescription("Applying a deferred function to a deferred operand")
+    let result = operand.apply(transform)
+    let expect = expectationWithDescription("Applying a deferred transform to a deferred operand")
 
     var v1 = 0
     var v2 = 0
@@ -222,7 +222,7 @@ class DeferredTests: XCTestCase
 
     g.delay(ms: 100).notify {
       v1 = Int(arc4random() & 0xffff + 10000)
-      try! function.determine { i in Double(v1*i) }
+      try! transform.determine { i in Double(v1*i) }
     }
 
     g.delay(ms: 200).notify {
@@ -232,8 +232,8 @@ class DeferredTests: XCTestCase
 
     XCTAssert(operand.peek() == nil)
     XCTAssert(operand.state == .Waiting)
-    XCTAssert(function.peek() == nil)
-    XCTAssert(function.state == .Waiting)
+    XCTAssert(transform.peek() == nil)
+    XCTAssert(transform.state == .Waiting)
 
     try! g.determine()
     waitForExpectationsWithTimeout(1.0, handler: nil)
