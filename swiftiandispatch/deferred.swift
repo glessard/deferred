@@ -71,10 +71,7 @@ public class Deferred<T>
     case .Working:
       return OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Working.rawValue, &currentState)
 
-      //    case .Canceled:
-      //      let s = currentState
-      //      if s == DeferredState.Determined.rawValue { return false }
-      //      return OSAtomicCompareAndSwap32Barrier(s, DeferredState.Canceled.rawValue, &currentState)
+    // case .Canceled:
 
     case .Assigning:
       return OSAtomicCompareAndSwap32Barrier(DeferredState.Working.rawValue, DeferredState.Assigning.rawValue, &currentState)
@@ -95,7 +92,7 @@ public class Deferred<T>
     {
       if currentState == DeferredState.Determined.rawValue
       {
-        throw DeferredError.AlreadyDetermined("Probable attempt to set value of Deferred twice with \(__FUNCTION__)")
+        throw DeferredError.AlreadyDetermined("Failed attempt to determine Deferred twice with \(__FUNCTION__)")
       }
       throw DeferredError.CannotDetermine("Deferred in wrong state at start of \(__FUNCTION__)")
     }
@@ -103,7 +100,9 @@ public class Deferred<T>
     v = value
 
     guard setState(.Determined) else
-    { throw DeferredError.CannotDetermine("Could not complete assignment of value in \(__FUNCTION__)") }
+    { // We cannot know where to go from here. Happily getting here seems impossible.
+      fatalError("Could not complete assignment of value in \(__FUNCTION__)")
+    }
 
     // The result is now available for the world
   }
