@@ -90,6 +90,22 @@ extension Deferred
   {
     return delay(Int(s*1e9))
   }
+  
+  public func delay(ns: Int) -> Deferred
+  {
+    if ns < 0 { return self }
+
+    let delayed = Determinable<T>()
+    self.notify {
+      value in
+      delayed.beginWork()
+      let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
+        try! delayed.determine(value)
+      }
+    }
+    return delayed
+  }
 }
 
 
@@ -121,20 +137,69 @@ extension Deferred
   {
     return map(dispatch_get_global_queue(qos, 0), transform: transform)
   }
+
+  public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
+  {
+    let deferred = Determinable<U>()
+    self.notify(queue) {
+      value in
+      deferred.beginWork()
+      try! deferred.determine(transform(value))
+    }
+    return deferred
+  }
 }
 
-// MARK: Bind: chain asynchronous tasks with input parameters and return values
+// MARK: flatMap: chain asynchronous tasks with input parameters and return values
 
 extension Deferred
 {
-  public func bind<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
+  public func flatMap<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return bind(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
+    return flatMap(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
-  public func bind<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  public func flatMap<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return bind(dispatch_get_global_queue(qos, 0), transform: transform)
+    return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
+  }
+
+  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  {
+    let deferred = Determinable<U>()
+    self.notify(queue) {
+      value in
+      deferred.beginWork()
+      transform(value).notify(queue) { transformedValue in try! deferred.determine(transformedValue) }
+    }
+    return deferred
+  }
+}
+
+extension Deferred
+{
+  public func apply<U>(transform: Deferred<(T)->U>) -> Deferred<U>
+  {
+    return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
+  }
+
+  public func apply<U>(qos: qos_class_t, transform: Deferred<(T)->U>) -> Deferred<U>
+  {
+    return apply(dispatch_get_global_queue(qos, 0), transform: transform)
+  }
+
+  public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
+  {
+    let deferred = Determinable<U>()
+    self.notify(queue) {
+      value in
+      transform.notify(queue) {
+        transform in
+        deferred.beginWork()
+        try! deferred.determine(transform(value))
+      }
+    }
+    return deferred
   }
 }
 
@@ -144,17 +209,17 @@ extension Deferred
 {
   public func combine<U>(other: Deferred<U>) -> Deferred<(T,U)>
   {
-    return bind { (t: T) in other.map { (u: U) in (t,u) } }
+    return flatMap { (t: T) in other.map { (u: U) in (t,u) } }
   }
 
   public func combine<U1,U2>(o1: Deferred<U1>, _ o2: Deferred<U2>) -> Deferred<(T,U1,U2)>
   {
-    return combine(o1).bind { (t,u1) in o2.map { u2 in (t,u1,u2) } }
+    return combine(o1).flatMap { (t,u1) in o2.map { u2 in (t,u1,u2) } }
   }
 
   public func combine<U1,U2,U3>(o1: Deferred<U1>, _ o2: Deferred<U2>, _ o3: Deferred<U3>) -> Deferred<(T,U1,U2,U3)>
   {
-    return combine(o1,o2).bind { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
+    return combine(o1,o2).flatMap { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
   }
 
   public func combine<C: CollectionType where C.Generator.Element == Deferred<T>>(others: C) -> Deferred<[T]>
@@ -163,7 +228,7 @@ extension Deferred
 
     let combined = others.reduce(mappedSelf) {
       (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-      return element.bind {
+      return element.flatMap {
         (t: T) in
         combiner.map {
           (var values: [T]) -> [T] in
@@ -180,7 +245,7 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 {
   let combined = deferreds.reduce(Deferred<[T]>(value: [])) {
     (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-    return element.bind {
+    return element.flatMap {
       (t: T) in
       combiner.map {
         (var values: [T]) -> [T] in
@@ -190,4 +255,19 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
     }
   }
   return combined
+}
+
+public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
+{
+  let first = Determinable<T>()
+  for d in deferreds.shuffle()
+  {
+    d.notify {
+      value in
+      do {
+        try first.determine(value)
+      } catch { /* We don't care, it just means it's not the first completed */ }
+    }
+  }
+  return first
 }

@@ -10,8 +10,6 @@ import XCTest
 
 import swiftiandispatch
 
-let sleeptime = 50_000
-
 class DeferredTests: XCTestCase
 {
   func testExample()
@@ -21,15 +19,14 @@ class DeferredTests: XCTestCase
     let result1 = async {
       _ -> Double in
       defer { syncprint("Computing result1") }
-      return 10.1
-    }.delay(sleeptime)
+      return 10.5
+    }.delay(ms: 50)
 
     let result2 = result1.map {
       (d: Double) -> Int in
       syncprint("Computing result2")
-      usleep(numericCast(sleeptime))
       return Int(floor(2*d))
-    }
+    }.delay(ms: 50)
 
     let result3 = result1.map {
       (d: Double) -> String in
@@ -39,7 +36,7 @@ class DeferredTests: XCTestCase
 
     result3.notify { syncprint($0) }
 
-    let result4 = result2.combine(result2)
+    let result4 = result2.combine(result1.map { Int($0*4) })
 
     syncprint("Waiting")
     syncprint("Result 1: \(result1.value)")
@@ -168,6 +165,77 @@ class DeferredTests: XCTestCase
       e3.fulfill()
     }
 
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testRace()
+  {
+    let count = 100
+    let g = Determinable<Void>()
+    let q = dispatch_get_global_queue(qos_class_self(), 0)
+
+    let e = (0..<count).map { i in expectationWithDescription(i.description) }
+
+    dispatch_async(q) {
+      for i in 0..<count
+      {
+        dispatch_async(q) { g.notify { e[i].fulfill() } }
+      }
+    }
+
+    dispatch_async(q) { try! g.determine() }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testApply1()
+  {
+    // a silly example curried function.
+    func curriedSum(a: Int)(_ b: Int) -> Int
+    {
+      return a+b
+    }
+
+    let value1 = Int(arc4random())
+    let value2 = Int(arc4random())
+    let deferred = Deferred(value: value1).apply(Deferred(value: curriedSum(value2)))
+    XCTAssert(deferred.value == value1+value2)
+  }
+
+  func testApply2()
+  {
+    let function = Determinable<Int->Double>()
+    let operand = Determinable<Int>()
+    let result = operand.apply(function)
+    let expect = expectationWithDescription("Applying a deferred function to a deferred operand")
+
+    var v1 = 0
+    var v2 = 0
+    result.notify {
+      result in
+      print("\(v1), \(v2), \(result)")
+      XCTAssert(result == Double(v1*v2))
+      expect.fulfill()
+    }
+
+    let g = Determinable<Void>()
+
+    g.delay(ms: 100).notify {
+      v1 = Int(arc4random() & 0xffff + 10000)
+      try! function.determine { i in Double(v1*i) }
+    }
+
+    g.delay(ms: 200).notify {
+      v2 = Int(arc4random() & 0xffff + 10000)
+      try! operand.determine(v2)
+    }
+
+    XCTAssert(operand.peek() == nil)
+    XCTAssert(operand.state == .Waiting)
+    XCTAssert(function.peek() == nil)
+    XCTAssert(function.state == .Waiting)
+
+    try! g.determine()
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 

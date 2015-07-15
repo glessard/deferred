@@ -122,9 +122,9 @@
 			children = (
 				03E60E481AAA571C00F4B44B /* async.swift */,
 				03285E181B4F223900F4B44B /* deferred.swift */,
+				034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */,
 				03285E671B53AA4C00F4B44B /* waiter.swift */,
 				03285E631B521FAA00F4B44B /* shuffle.swift */,
-				034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */,
 				03E60E311AAA571200F4B44B /* swiftiandispatch.h */,
 				03E60E2F1AAA571200F4B44B /* Supporting Files */,
 			);
