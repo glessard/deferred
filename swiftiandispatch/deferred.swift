@@ -137,11 +137,11 @@ public class Deferred<T>
       waiter.initialize(Waiter(.Thread(thread)))
       while true
       {
-        let head = waiters
-        waiter.memory.next = head
+        let tail = waiters
+        waiter.memory.prev = tail
         if syncread(&currentState) != DeferredState.Determined.rawValue
         {
-          if CAS(head, waiter, &waiters)
+          if CAS(tail, waiter, &waiters)
           {
             // OSAtomicIncrement32Barrier(&waiting)
             let kr = thread_suspend(thread)
@@ -172,11 +172,11 @@ public class Deferred<T>
       waiter.initialize(Waiter(.Dispatch(queue, block)))
       while true
       {
-        let head = waiters
-        waiter.memory.next = head
+        let tail = waiters
+        waiter.memory.prev = tail
         if syncread(&currentState) != DeferredState.Determined.rawValue
         {
-          if CAS(head, waiter, &waiters)
+          if CAS(tail, waiter, &waiters)
           {
             // OSAtomicIncrement32Barrier(&waiting)
             return
