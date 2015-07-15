@@ -56,7 +56,7 @@ public class Deferred<T>
 
   deinit
   {
-    WaitStack.stackDealloc(waiters)
+    WaitQueue.dealloc(waiters)
   }
 
   // MARK: private methods
@@ -81,12 +81,12 @@ public class Deferred<T>
       {
         while true
         {
-          let stack = waiters
-          if CAS(stack, nil, &waiters)
+          let queue = waiters
+          if CAS(queue, nil, &waiters)
           {
             // syncprint(syncread(&waiting))
-            // syncprint("Stack is \(stack)")
-            WaitStack.stackNotify(stack)
+            // syncprint("Queue tail is \(queue)")
+            WaitQueue.notifyAll(queue)
             return true
           }
         }
@@ -114,6 +114,29 @@ public class Deferred<T>
     // The result is now available for the world
   }
 
+  // private var waiting: Int32 = 0
+
+  private func enqueue(waiter: UnsafeMutablePointer<Waiter>) -> Bool
+  {
+    while true
+    {
+      let tail = waiters
+      waiter.memory.prev = tail
+      if syncread(&currentState) != DeferredState.Determined.rawValue
+      {
+        if CAS(tail, waiter, &waiters)
+        { // waiter is now enqueued
+          // OSAtomicIncrement32Barrier(&waiting)
+          return true
+        }
+      }
+      else
+      { // This Deferred has become determined; bail
+        return false
+      }
+    }
+  }
+
   // MARK: public interface
 
   public var state: DeferredState { return DeferredState(rawValue: currentState)! }
@@ -135,32 +158,21 @@ public class Deferred<T>
       let thread = mach_thread_self()
       let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
       waiter.initialize(Waiter(.Thread(thread)))
-      while true
+
+      if enqueue(waiter)
+      { // waiter will be deallocated after the thread is woken
+        let kr = thread_suspend(thread)
+        guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
+      }
+      else
       {
-        let tail = waiters
-        waiter.memory.prev = tail
-        if syncread(&currentState) != DeferredState.Determined.rawValue
-        {
-          if CAS(tail, waiter, &waiters)
-          {
-            // OSAtomicIncrement32Barrier(&waiting)
-            let kr = thread_suspend(thread)
-            guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
-            break
-          }
-        }
-        else
-        { // Deferred has a value now
-          waiter.destroy(1)
-          waiter.dealloc(1)
-          break
-        }
+        waiter.destroy(1)
+        waiter.dealloc(1)
       }
     }
+
     return v
   }
-
-  // private var waiting: Int32 = 0
 
   public func notify(queue: dispatch_queue_t, task: (T) -> Void)
   {
@@ -170,26 +182,18 @@ public class Deferred<T>
     {
       let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
       waiter.initialize(Waiter(.Dispatch(queue, block)))
-      while true
-      {
-        let tail = waiters
-        waiter.memory.prev = tail
-        if syncread(&currentState) != DeferredState.Determined.rawValue
-        {
-          if CAS(tail, waiter, &waiters)
-          {
-            // OSAtomicIncrement32Barrier(&waiting)
-            return
-          }
-        }
-        else
-        { // Deferred has a value now
-          waiter.destroy(1)
-          waiter.dealloc(1)
-          break
-        }
+
+      if enqueue(waiter)
+      { // waiter will be deallocated after the block is dispatched to GCD
+        return
+      }
+      else
+      { // Deferred has a value now
+        waiter.destroy(1)
+        waiter.dealloc(1)
       }
     }
+
     dispatch_async(queue, block)
   }
 }

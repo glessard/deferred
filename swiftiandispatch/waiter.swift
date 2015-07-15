@@ -35,16 +35,16 @@ struct Waiter
     case .Thread(let thread):
       while case let kr = thread_resume(thread) where kr != KERN_SUCCESS
       {
-        guard kr == KERN_FAILURE else { preconditionFailure("Thread resumption failed with code \(kr)") }
+        guard kr == KERN_FAILURE else { preconditionFailure("thread_resume() failed with code \(kr)") }
         // thread wasn't suspended yet
       }
     }
   }
 }
 
-struct WaitStack
+struct WaitQueue
 {
-  static func stackNotify(tail: UnsafeMutablePointer<Waiter>)
+  static func notifyAll(tail: UnsafeMutablePointer<Waiter>)
   {
     var waiter = fixlist(tail)
     while waiter != nil
@@ -58,7 +58,7 @@ struct WaitStack
     }
   }
 
-  static func stackDealloc(tail: UnsafeMutablePointer<Waiter>)
+  static func dealloc(tail: UnsafeMutablePointer<Waiter>)
   {
     var waiter = fixlist(tail)
     while waiter != nil
@@ -97,4 +97,13 @@ struct WaitStack
 @inline(__always) func syncread(p: UnsafeMutablePointer<Int32>) -> Int32
 {
   return OSAtomicAdd32Barrier(0, p)
+}
+
+@inline(__always) func syncread<T>(p: UnsafeMutablePointer<UnsafeMutablePointer<T>>) -> UnsafeMutablePointer<T>
+{
+  #if arch(x86_64) || arch(arm64)
+    return UnsafeMutablePointer(bitPattern: Word(OSAtomicAdd64Barrier(0, UnsafeMutablePointer<Int64>(p))))
+  #else
+    return UnsafeMutablePointer(bitPattern: Word(OSAtomicAdd32Barrier(0, UnsafeMutablePointer<Int32>(p))))
+  #endif
 }
