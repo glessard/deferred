@@ -56,7 +56,7 @@ public class Deferred<T>
 
   deinit
   {
-    Waiter.stackDealloc(waiters)
+    WaitStack.stackDealloc(waiters)
   }
 
   // MARK: private methods
@@ -71,10 +71,7 @@ public class Deferred<T>
     case .Working:
       return OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Working.rawValue, &currentState)
 
-      //    case .Canceled:
-      //      let s = currentState
-      //      if s == DeferredState.Determined.rawValue { return false }
-      //      return OSAtomicCompareAndSwap32Barrier(s, DeferredState.Canceled.rawValue, &currentState)
+    // case .Canceled:
 
     case .Assigning:
       return OSAtomicCompareAndSwap32Barrier(DeferredState.Working.rawValue, DeferredState.Assigning.rawValue, &currentState)
@@ -87,7 +84,9 @@ public class Deferred<T>
           let stack = waiters
           if CAS(stack, nil, &waiters)
           {
-            Waiter.stackNotify(stack)
+            // syncprint(syncread(&waiting))
+            // syncprint("Stack is \(stack)")
+            WaitStack.stackNotify(stack)
             return true
           }
         }
@@ -140,10 +139,11 @@ public class Deferred<T>
       {
         let head = waiters
         waiter.memory.next = head
-        if currentState != DeferredState.Determined.rawValue
+        if syncread(&currentState) != DeferredState.Determined.rawValue
         {
           if CAS(head, waiter, &waiters)
           {
+            // OSAtomicIncrement32Barrier(&waiting)
             let kr = thread_suspend(thread)
             guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
             break
@@ -160,9 +160,11 @@ public class Deferred<T>
     return v
   }
 
+  // private var waiting: Int32 = 0
+
   public func notify(queue: dispatch_queue_t, task: (T) -> Void)
   {
-    let block = { task(self.v) } // Should this be [unowned self] or [weak self] ?
+    let block = { task(self.v) } // This cannot be [weak self]
 
     if currentState != DeferredState.Determined.rawValue
     {
@@ -172,10 +174,11 @@ public class Deferred<T>
       {
         let head = waiters
         waiter.memory.next = head
-        if currentState != DeferredState.Determined.rawValue
+        if syncread(&currentState) != DeferredState.Determined.rawValue
         {
           if CAS(head, waiter, &waiters)
           {
+            // OSAtomicIncrement32Barrier(&waiting)
             return
           }
         }

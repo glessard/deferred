@@ -41,7 +41,7 @@ struct Waiter
   }
 }
 
-extension Waiter
+struct WaitStack
 {
   static func stackNotify(waiter: UnsafeMutablePointer<Waiter>)
   {
@@ -69,4 +69,9 @@ extension Waiter
                               _ p: UnsafeMutablePointer<UnsafeMutablePointer<T>>) -> Bool
 {
   return OSAtomicCompareAndSwapPtrBarrier(o, n, UnsafeMutablePointer(p))
+}
+
+@inline(__always) func syncread(p: UnsafeMutablePointer<Int32>) -> Int32
+{
+  return OSAtomicAdd32Barrier(0, p)
 }
