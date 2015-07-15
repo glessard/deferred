@@ -154,6 +154,21 @@ public class Deferred<T>
     }
     return deferred
   }
+
+public class Determinable<T>: Deferred<T>
+{
+  override public init() { super.init() }
+
+  public func determine(value: T) throws
+  {
+    super.setState(.Working)
+    try super.setValue(value)
+  }
+
+  public func beginWork()
+  {
+    super.setState(.Working)
+  }
 }
 
 extension Deferred
