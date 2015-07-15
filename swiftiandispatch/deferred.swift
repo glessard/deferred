@@ -155,6 +155,21 @@ public class Deferred<T>
     return deferred
   }
 
+  public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
+  {
+    let deferred = Deferred<U>()
+    self.notify(queue) {
+      value in
+      transform.notify(queue) {
+        transform in
+        deferred.setState(.Working)
+        try! deferred.setValue(transform(value))
+      }
+    }
+    return deferred
+  }
+}
+
 public class Determinable<T>: Deferred<T>
 {
   override public init() { super.init() }

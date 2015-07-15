@@ -138,6 +138,19 @@ extension Deferred
   }
 }
 
+extension Deferred
+{
+  public func apply<U>(transform: Deferred<(T)->U>) -> Deferred<U>
+  {
+    return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
+  }
+
+  public func apply<U>(qos: qos_class_t, transform: Deferred<(T)->U>) -> Deferred<U>
+  {
+    return apply(dispatch_get_global_queue(qos, 0), transform: transform)
+  }
+}
+
 // MARK: Combine two or more Deferred objects into one.
 
 extension Deferred
