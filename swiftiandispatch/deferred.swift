@@ -8,7 +8,7 @@
 
 import Dispatch
 
-public enum DeferredState: Int32 { case Ready = 0, Running = 1, /* Canceled = 2, */ Completed = 3, Assigning = 99 }
+public enum DeferredState: Int32 { case Waiting = 0, Working = 1, /* Canceled = 2, */ Determined = 3, Assigning = 99 }
 
 /**
   An asynchronous computation result.
@@ -22,7 +22,7 @@ public class Deferred<T>
   private var v: T! = nil
   private let group = dispatch_group_create()
 
-  private var currentState: Int32 = DeferredState.Ready.rawValue
+  private var currentState: Int32 = DeferredState.Waiting.rawValue
 
   // MARK: Initializers
 
@@ -34,14 +34,14 @@ public class Deferred<T>
   public init(value: T)
   {
     v = value
-    currentState = DeferredState.Completed.rawValue
+    currentState = DeferredState.Determined.rawValue
   }
 
   public convenience init(queue: dispatch_queue_t, task: () -> T)
   {
     self.init()
 
-    guard setState(.Running) else { fatalError("Could not start task in \(__FUNCTION__)") }
+    guard setState(.Working) else { fatalError("Could not start task in \(__FUNCTION__)") }
     dispatch_async(queue) {
       self.setValue(task())
     }
@@ -63,27 +63,27 @@ public class Deferred<T>
   {
     switch newState
     {
-    case .Ready:
-      return currentState == DeferredState.Ready.rawValue
+    case .Waiting:
+      return currentState == DeferredState.Waiting.rawValue
 
-    case .Running:
-      return OSAtomicCompareAndSwap32Barrier(DeferredState.Ready.rawValue, DeferredState.Running.rawValue, &currentState)
+    case .Working:
+      return OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Working.rawValue, &currentState)
 
       //    case .Canceled:
       //      let s = currentState
-      //      if s == DeferredState.Completed.rawValue { return false }
+      //      if s == DeferredState.Determined.rawValue { return false }
       //      return OSAtomicCompareAndSwap32Barrier(s, DeferredState.Canceled.rawValue, &currentState)
 
     case .Assigning:
-      return OSAtomicCompareAndSwap32Barrier(DeferredState.Running.rawValue, DeferredState.Assigning.rawValue, &currentState)
+      return OSAtomicCompareAndSwap32Barrier(DeferredState.Working.rawValue, DeferredState.Assigning.rawValue, &currentState)
 
-    case .Completed:
-      if OSAtomicCompareAndSwap32Barrier(DeferredState.Assigning.rawValue, DeferredState.Completed.rawValue, &currentState)
+    case .Determined:
+      if OSAtomicCompareAndSwap32Barrier(DeferredState.Assigning.rawValue, DeferredState.Determined.rawValue, &currentState)
       {
         dispatch_group_leave(group)
         return true
       }
-      return currentState == DeferredState.Completed.rawValue
+      return currentState == DeferredState.Determined.rawValue
     }
   }
   
@@ -92,7 +92,7 @@ public class Deferred<T>
     if setState(.Assigning)
     {
       v = value
-      guard setState(.Completed) else { fatalError("Could not complete assignment of value in \(__FUNCTION__)") }
+      guard setState(.Determined) else { fatalError("Could not complete assignment of value in \(__FUNCTION__)") }
       // The result is now available for the world
     }
     else if trapOnFailure { fatalError("Probable attempt to set value of Deferred twice with \(__FUNCTION__)") }
@@ -102,11 +102,11 @@ public class Deferred<T>
 
   public var state: DeferredState { return DeferredState(rawValue: currentState)! }
 
-  public var isComplete: Bool { return currentState == DeferredState.Completed.rawValue }
+  public var isDetermined: Bool { return currentState == DeferredState.Determined.rawValue }
 
   public func peek() -> T?
   {
-    if currentState != DeferredState.Completed.rawValue
+    if currentState != DeferredState.Determined.rawValue
     {
       return nil
     }
@@ -114,7 +114,7 @@ public class Deferred<T>
   }
 
   public var value: T {
-    if currentState != DeferredState.Completed.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
+    if currentState != DeferredState.Determined.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
     return v
   }
 
@@ -128,7 +128,7 @@ public class Deferred<T>
     let deferred = Deferred<U>()
     self.notify(queue) {
       value in
-      deferred.setState(.Running)
+      deferred.setState(.Working)
       deferred.setValue(transform(value))
     }
     return deferred
@@ -139,7 +139,7 @@ public class Deferred<T>
     let deferred = Deferred<U>()
     self.notify(queue) {
       value in
-      deferred.setState(.Running)
+      deferred.setState(.Working)
       transform(value).notify(queue) { transformedValue in deferred.setValue(transformedValue) }
     }
     return deferred
@@ -155,7 +155,7 @@ extension Deferred
     let delayed = Deferred<T>()
     self.notify {
       value in
-      delayed.setState(.Running)
+      delayed.setState(.Working)
       let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
       dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
         delayed.setValue(value)
@@ -172,7 +172,7 @@ public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   {
     d.notify {
       value in
-      first.setState(.Running)
+      first.setState(.Working)
       first.setValue(value, trapOnFailure: false)
     }
   }
