@@ -10,6 +10,8 @@ import Dispatch
 
 public enum DeferredState: Int32 { case Waiting = 0, Working = 1, /* Canceled = 2, */ Determined = 3, Assigning = 99 }
 
+public enum DeferredError: ErrorType { case AlreadyDetermined(String), CannotDetermine(String) }
+
 /**
   An asynchronous computation result.
 
@@ -43,7 +45,7 @@ public class Deferred<T>
 
     guard setState(.Working) else { fatalError("Could not start task in \(__FUNCTION__)") }
     dispatch_async(queue) {
-      self.setValue(task())
+      try! self.setValue(task())
     }
   }
 
@@ -87,15 +89,23 @@ public class Deferred<T>
     }
   }
   
-  private func setValue(value: T, trapOnFailure: Bool = true)
+  private func setValue(value: T) throws
   { // A very simple turnstile to ensure only one thread can succeed
-    if setState(.Assigning)
+    guard setState(.Assigning) else
     {
-      v = value
-      guard setState(.Determined) else { fatalError("Could not complete assignment of value in \(__FUNCTION__)") }
-      // The result is now available for the world
+      if currentState == DeferredState.Determined.rawValue
+      {
+        throw DeferredError.AlreadyDetermined("Probable attempt to set value of Deferred twice with \(__FUNCTION__)")
+      }
+      throw DeferredError.CannotDetermine("Deferred in wrong state at start of \(__FUNCTION__)")
     }
-    else if trapOnFailure { fatalError("Probable attempt to set value of Deferred twice with \(__FUNCTION__)") }
+
+    v = value
+
+    guard setState(.Determined) else
+    { throw DeferredError.CannotDetermine("Could not complete assignment of value in \(__FUNCTION__)") }
+
+    // The result is now available for the world
   }
 
   // MARK: public interface
@@ -129,7 +139,7 @@ public class Deferred<T>
     self.notify(queue) {
       value in
       deferred.setState(.Working)
-      deferred.setValue(transform(value))
+      try! deferred.setValue(transform(value))
     }
     return deferred
   }
@@ -140,7 +150,7 @@ public class Deferred<T>
     self.notify(queue) {
       value in
       deferred.setState(.Working)
-      transform(value).notify(queue) { transformedValue in deferred.setValue(transformedValue) }
+      transform(value).notify(queue) { transformedValue in try! deferred.setValue(transformedValue) }
     }
     return deferred
   }
@@ -158,7 +168,7 @@ extension Deferred
       delayed.setState(.Working)
       let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
       dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
-        delayed.setValue(value)
+        try! delayed.setValue(value)
       }
     }
     return delayed
@@ -173,7 +183,9 @@ public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
     d.notify {
       value in
       first.setState(.Working)
-      first.setValue(value, trapOnFailure: false)
+      do {
+      try first.setValue(value)
+      } catch { /* We don't care, it just means it's not the first completed */ }
     }
   }
   return first
