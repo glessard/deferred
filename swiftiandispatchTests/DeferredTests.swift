@@ -10,8 +10,6 @@ import XCTest
 
 import swiftiandispatch
 
-let sleeptime = 50_000
-
 class DeferredTests: XCTestCase
 {
   func testExample()
@@ -21,15 +19,14 @@ class DeferredTests: XCTestCase
     let result1 = async {
       _ -> Double in
       defer { syncprint("Computing result1") }
-      return 10.1
-    }.delay(sleeptime)
+      return 10.5
+    }.delay(ms: 50)
 
     let result2 = result1.map {
       (d: Double) -> Int in
       syncprint("Computing result2")
-      usleep(numericCast(sleeptime))
       return Int(floor(2*d))
-    }
+    }.delay(ms: 50)
 
     let result3 = result1.map {
       (d: Double) -> String in
@@ -39,7 +36,7 @@ class DeferredTests: XCTestCase
 
     result3.notify { syncprint($0) }
 
-    let result4 = result2.combine(result2)
+    let result4 = result2.combine(result1.map { Int($0*4) })
 
     syncprint("Waiting")
     syncprint("Result 1: \(result1.value)")
