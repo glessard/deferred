@@ -168,6 +168,26 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
+  func testRace()
+  {
+    let count = 100
+    let g = Determinable<Void>()
+    let q = dispatch_get_global_queue(qos_class_self(), 0)
+
+    let e = (0..<count).map { i in expectationWithDescription(i.description) }
+
+    dispatch_async(q) {
+      for i in 0..<count
+      {
+        dispatch_async(q) { g.notify { e[i].fulfill() } }
+      }
+    }
+
+    dispatch_async(q) { try! g.determine() }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
   func testApply1()
   {
     // a silly example curried function.
