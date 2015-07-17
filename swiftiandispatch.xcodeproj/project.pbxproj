@@ -19,6 +19,7 @@
 		03E60E551AAA577C00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E541AAA577C00F4B44B /* main.swift */; };
 		03E60E591AAA57A500F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
 		03E60E5E1AAA632D00F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
+		03EEC3291B58CB2E00F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EEC3281B58CB2E00F4B44B /* result.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 		03E60E521AAA577C00F4B44B /* ExampleResultChain */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ExampleResultChain; sourceTree = BUILT_PRODUCTS_DIR; };
 		03E60E541AAA577C00F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		03E60E5D1AAA632D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
+		03EEC3281B58CB2E00F4B44B /* result.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = result.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +126,7 @@
 				03E60E311AAA571200F4B44B /* swiftiandispatch.h */,
 				03E60E2F1AAA571200F4B44B /* Supporting Files */,
 				03285E631B521FAA00F4B44B /* shuffle.swift */,
+				03EEC3281B58CB2E00F4B44B /* result.swift */,
 			);
 			path = swiftiandispatch;
 			sourceTree = "<group>";
@@ -291,6 +294,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03285E191B4F223900F4B44B /* deferred.swift in Sources */,
+				03EEC3291B58CB2E00F4B44B /* result.swift in Sources */,
 				034C0BAE1B547E5C00F4B44B /* deferred-extras.swift in Sources */,
 				03E60E4B1AAA571C00F4B44B /* async.swift in Sources */,
 				03285E641B521FAA00F4B44B /* shuffle.swift in Sources */,
