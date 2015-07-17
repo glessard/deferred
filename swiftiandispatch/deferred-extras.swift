@@ -229,10 +229,10 @@ extension Deferred
     let combined = others.reduce(mappedSelf) {
       (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
       return element.flatMap {
-        (t: T) in
+        value in
         combiner.map {
           (var values: [T]) -> [T] in
-          values.append(t)
+          values.append(value)
           return values
         }
       }
@@ -246,10 +246,10 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
   let combined = deferreds.reduce(Deferred<[T]>(value: [])) {
     (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
     return element.flatMap {
-      (t: T) in
+      value in
       combiner.map {
         (var values: [T]) -> [T] in
-        values.append(t)
+        values.append(value)
         return values
       }
     }

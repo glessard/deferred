@@ -101,7 +101,7 @@ public class Deferred<T>
     {
       if currentState == DeferredState.Determined.rawValue
       {
-        throw DeferredError.AlreadyDetermined("Probable attempt to set value of Deferred twice with \(__FUNCTION__)")
+        throw DeferredError.AlreadyDetermined("Failed attempt to determine Deferred twice with \(__FUNCTION__)")
       }
       throw DeferredError.CannotDetermine("Deferred in wrong state at start of \(__FUNCTION__)")
     }
@@ -109,7 +109,9 @@ public class Deferred<T>
     v = value
 
     guard setState(.Determined) else
-    { throw DeferredError.CannotDetermine("Could not complete assignment of value in \(__FUNCTION__)") }
+    { // We cannot know where to go from here. Happily getting here seems impossible.
+      fatalError("Could not complete assignment of value in \(__FUNCTION__)")
+    }
 
     // The result is now available for the world
   }
