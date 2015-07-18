@@ -99,11 +99,11 @@ public enum Result<T>
   }
 }
 
-public func ?? <T> (possible: Result<T>, alternate: T) -> T
+public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> T) -> T
 {
   switch possible
   {
   case .Value(let value): return value
-  case .Error:            return alternate
+  case .Error:            return alternate()
   }
 }
