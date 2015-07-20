@@ -54,9 +54,9 @@ public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () 
   }
 }
 
-public func delay(ns: Int) -> Deferred<Void>
+public func delay(ns ns: Int) -> Deferred<Void>
 {
-  return Deferred(value: ()).delay(ns)
+  return Deferred(value: ()).delay(ns: ns)
 }
 
 public func delay(µs µs: Int) -> Deferred<Void>
@@ -78,27 +78,27 @@ extension Deferred
 {
   public func delay(µs µs: Int) -> Deferred
   {
-    return delay(µs*1000)
+    return delay(ns: µs*1000)
   }
 
   public func delay(ms ms: Int) -> Deferred
   {
-    return delay(ms*1_000_000)
+    return delay(ns: ms*1_000_000)
   }
 
   public func delay(seconds s: Double) -> Deferred
   {
-    return delay(Int(s*1e9))
+    return delay(ns: Int(s*1e9))
   }
   
-  public func delay(ns: Int) -> Deferred
+  public func delay(ns ns: Int) -> Deferred
   {
     if ns < 0 { return self }
 
-    let delayed = Determinable<T>()
+    let delayed = TBD<T>()
     self.notify {
       value in
-      delayed.beginWork()
+      delayed.beginExecution()
       let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
       dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
         try! delayed.determine(value)
@@ -140,10 +140,10 @@ extension Deferred
 
   public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
   {
-    let deferred = Determinable<U>()
+    let deferred = TBD<U>()
     self.notify(queue) {
       value in
-      deferred.beginWork()
+      deferred.beginExecution()
       try! deferred.determine(transform(value))
     }
     return deferred
@@ -166,10 +166,10 @@ extension Deferred
 
   public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    let deferred = Determinable<U>()
+    let deferred = TBD<U>()
     self.notify(queue) {
       value in
-      deferred.beginWork()
+      deferred.beginExecution()
       transform(value).notify(queue) { transformedValue in try! deferred.determine(transformedValue) }
     }
     return deferred
@@ -190,12 +190,12 @@ extension Deferred
 
   public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
   {
-    let deferred = Determinable<U>()
+    let deferred = TBD<U>()
     self.notify(queue) {
       value in
       transform.notify(queue) {
         transform in
-        deferred.beginWork()
+        deferred.beginExecution()
         try! deferred.determine(transform(value))
       }
     }
@@ -221,24 +221,6 @@ extension Deferred
   {
     return combine(o1,o2).flatMap { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
   }
-
-  public func combine<C: CollectionType where C.Generator.Element == Deferred<T>>(others: C) -> Deferred<[T]>
-  {
-    let mappedSelf = map { (t: T) in [t] }
-
-    let combined = others.reduce(mappedSelf) {
-      (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-      return element.flatMap {
-        value in
-        combiner.map {
-          (var values: [T]) -> [T] in
-          values.append(value)
-          return values
-        }
-      }
-    }
-    return combined
-  }
 }
 
 public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
@@ -259,7 +241,7 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 
 public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {
-  let first = Determinable<T>()
+  let first = TBD<T>()
   for d in deferreds.shuffle()
   {
     d.notify {

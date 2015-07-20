@@ -171,8 +171,8 @@ class DeferredTests: XCTestCase
   func testRace()
   {
     let count = 5000
-    let d1 = Determinable<Void>()
-    let d2 = d1.delay(0)
+    let d1 = TBD<Void>()
+    let d2 = d1.delay(ns: 0)
     let g = dispatch_group_create()
     let q = dispatch_get_global_queue(qos_class_self(), 0)
 
@@ -211,8 +211,8 @@ class DeferredTests: XCTestCase
 
   func testApply2()
   {
-    let transform = Determinable<Int->Double>()
-    let operand = Determinable<Int>()
+    let transform = TBD<Int->Double>()
+    let operand = TBD<Int>()
     let result = operand.apply(transform)
     let expect = expectationWithDescription("Applying a deferred transform to a deferred operand")
 
@@ -225,7 +225,7 @@ class DeferredTests: XCTestCase
       expect.fulfill()
     }
 
-    let g = Determinable<Void>()
+    let g = TBD<Void>()
 
     g.delay(ms: 100).notify {
       v1 = Int(arc4random() & 0xffff + 10000)
@@ -279,32 +279,17 @@ class DeferredTests: XCTestCase
   {
     let count = 10
 
-    let inputs = (0..<count).map { _ in arc4random() }
-    let deferred = Deferred(value: inputs[0])
-    let deferreds = (1..<count).map { i in Deferred(value: inputs[i]) }
-
-    let defarray = deferred.combine(deferreds)
-    let values = defarray.value
+    let inputs = (0..<count).map { i in Deferred(value: arc4random()) }
+    let combined = combine(inputs)
+    let values = combined.value
+    XCTAssert(values.count == count)
     for (a,b) in zip(inputs, values)
-    {
-      XCTAssert(a == b)
-    }
-
-    let inputs2 = (0..<count).map { i in Deferred(value: arc4random()) }
-    let defarray2 = combine(inputs2)
-    let values2 = defarray2.value
-    for (a,b) in zip(inputs2, values2)
     {
       XCTAssert(a.value == b)
     }
 
     let combined1 = combine([Deferred<Int>]())
-    XCTAssert(combined1.value == [])
-
-    let value = arc4random()
-    let deferred2 = Deferred(value: value)
-    let combined2 = deferred2.combine([])
-    XCTAssert(combined2.value == [value])
+    XCTAssert(combined1.value.count == 0)
   }
 
   func testFirstCompleted()

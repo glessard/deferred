@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		03285E191B4F223900F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E181B4F223900F4B44B /* deferred.swift */; };
-		03285E1A1B4F229700F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E181B4F223900F4B44B /* deferred.swift */; };
 		03285E5A1B50380C00F4B44B /* DeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E591B50380C00F4B44B /* DeferredTests.swift */; };
 		03285E5C1B50380C00F4B44B /* swiftiandispatch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E60E2C1AAA571100F4B44B /* swiftiandispatch.framework */; };
 		03285E621B50486700F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
@@ -17,9 +16,6 @@
 		034C0BAE1B547E5C00F4B44B /* deferred-extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */; };
 		03E60E321AAA571200F4B44B /* swiftiandispatch.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E60E311AAA571200F4B44B /* swiftiandispatch.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03E60E4B1AAA571C00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
-		03E60E551AAA577C00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E541AAA577C00F4B44B /* main.swift */; };
-		03E60E591AAA57A500F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
-		03E60E5E1AAA632D00F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,18 +27,6 @@
 			remoteInfo = swiftiandispatch;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		03E60E501AAA577C00F4B44B /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		03285E181B4F223900F4B44B /* deferred.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = deferred.swift; sourceTree = "<group>"; };
@@ -56,8 +40,6 @@
 		03E60E301AAA571200F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03E60E311AAA571200F4B44B /* swiftiandispatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = swiftiandispatch.h; sourceTree = "<group>"; };
 		03E60E481AAA571C00F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = async.swift; sourceTree = "<group>"; };
-		03E60E521AAA577C00F4B44B /* ExampleResultChain */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ExampleResultChain; sourceTree = BUILT_PRODUCTS_DIR; };
-		03E60E541AAA577C00F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		03E60E5D1AAA632D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -71,13 +53,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		03E60E281AAA571100F4B44B /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		03E60E4F1AAA577C00F4B44B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -102,7 +77,6 @@
 				03E60E2E1AAA571100F4B44B /* swiftiandispatch */,
 				03285E581B50380C00F4B44B /* swiftiandispatchTests */,
 				03E60E5C1AAA632D00F4B44B /* utilities */,
-				03E60E531AAA577C00F4B44B /* ExampleResultChain */,
 				03E60E2D1AAA571100F4B44B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -111,7 +85,6 @@
 			isa = PBXGroup;
 			children = (
 				03E60E2C1AAA571100F4B44B /* swiftiandispatch.framework */,
-				03E60E521AAA577C00F4B44B /* ExampleResultChain */,
 				03285E571B50380C00F4B44B /* swiftiandispatchTests.xctest */,
 			);
 			name = Products;
@@ -137,14 +110,6 @@
 				03E60E301AAA571200F4B44B /* Info.plist */,
 			);
 			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		03E60E531AAA577C00F4B44B /* ExampleResultChain */ = {
-			isa = PBXGroup;
-			children = (
-				03E60E541AAA577C00F4B44B /* main.swift */,
-			);
-			path = ExampleResultChain;
 			sourceTree = "<group>";
 		};
 		03E60E5C1AAA632D00F4B44B /* utilities */ = {
@@ -205,23 +170,6 @@
 			productReference = 03E60E2C1AAA571100F4B44B /* swiftiandispatch.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		03E60E511AAA577C00F4B44B /* ExampleResultChain */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 03E60E561AAA577C00F4B44B /* Build configuration list for PBXNativeTarget "ExampleResultChain" */;
-			buildPhases = (
-				03E60E4E1AAA577C00F4B44B /* Sources */,
-				03E60E4F1AAA577C00F4B44B /* Frameworks */,
-				03E60E501AAA577C00F4B44B /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = ExampleResultChain;
-			productName = ExampleResultChain;
-			productReference = 03E60E521AAA577C00F4B44B /* ExampleResultChain */;
-			productType = "com.apple.product-type.tool";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -236,9 +184,6 @@
 						CreatedOnToolsVersion = 7.0;
 					};
 					03E60E2B1AAA571100F4B44B = {
-						CreatedOnToolsVersion = 6.3;
-					};
-					03E60E511AAA577C00F4B44B = {
 						CreatedOnToolsVersion = 6.3;
 					};
 				};
@@ -257,7 +202,6 @@
 			targets = (
 				03E60E2B1AAA571100F4B44B /* swiftiandispatch */,
 				03285E561B50380C00F4B44B /* swiftiandispatchTests */,
-				03E60E511AAA577C00F4B44B /* ExampleResultChain */,
 			);
 		};
 /* End PBXProject section */
@@ -298,17 +242,6 @@
 				03E60E4B1AAA571C00F4B44B /* async.swift in Sources */,
 				03285E641B521FAA00F4B44B /* shuffle.swift in Sources */,
 				03285E681B53AA4C00F4B44B /* waiter.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		03E60E4E1AAA577C00F4B44B /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				03E60E5E1AAA632D00F4B44B /* syncprint.swift in Sources */,
-				03E60E591AAA57A500F4B44B /* async.swift in Sources */,
-				03285E1A1B4F229700F4B44B /* deferred.swift in Sources */,
-				03E60E551AAA577C00F4B44B /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -470,24 +403,6 @@
 			};
 			name = Release;
 		};
-		03E60E571AAA577C00F4B44B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		03E60E581AAA577C00F4B44B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -514,15 +429,6 @@
 			buildConfigurations = (
 				03E60E431AAA571200F4B44B /* Debug */,
 				03E60E441AAA571200F4B44B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		03E60E561AAA577C00F4B44B /* Build configuration list for PBXNativeTarget "ExampleResultChain" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				03E60E571AAA577C00F4B44B /* Debug */,
-				03E60E581AAA577C00F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

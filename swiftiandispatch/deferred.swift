@@ -8,14 +8,33 @@
 
 import Dispatch
 
-public enum DeferredState: Int32 { case Waiting = 0, Working = 1, /* Canceled = 2, */ Determined = 3, Assigning = 99 }
+/**
+  The states a Deferred can be in.
 
-public enum DeferredError: ErrorType { case AlreadyDetermined(String), CannotDetermine(String) }
+  Must be a top-level type because Deferred is generic.
+*/
+
+public enum DeferredState: Int32 { case Waiting = 0, Executing = 1, Determined = 3, Assigning = -1 }
 
 /**
-  An asynchronous computation result.
+  The errors a Deferred can throw.
 
-  The `value` property will return the result, blocking until it is ready.
+  Must be a top-level type because Deferred is generic.
+*/
+
+public enum DeferredError: ErrorType
+{
+  case AlreadyDetermined(String)
+  case CannotDetermine(String)
+}
+
+/**
+  An asynchronous computation.
+
+  A `Deferred` starts out undetermined, in the `.Waiting` state. It may then enter the `.Executing` state,
+  and will eventually become `.Determined`, and ready to supply a result.
+
+  The `value` property will return the result, blocking until it becomes determined.
   If the result is ready when `value` is called, it will return immediately.
 */
 
@@ -38,7 +57,7 @@ public class Deferred<T>
 
   public init(queue: dispatch_queue_t, task: () -> T)
   {
-    guard setState(.Working) else { fatalError("Could not start task in \(__FUNCTION__)") }
+    guard setState(.Executing) else { fatalError("Could not start task in \(__FUNCTION__)") }
     dispatch_async(queue) {
       try! self.setValue(task())
     }
@@ -68,13 +87,11 @@ public class Deferred<T>
     case .Waiting:
       return currentState == DeferredState.Waiting.rawValue
 
-    case .Working:
-      return OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Working.rawValue, &currentState)
-
-    // case .Canceled:
+    case .Executing:
+      return OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Executing.rawValue, &currentState)
 
     case .Assigning:
-      return OSAtomicCompareAndSwap32Barrier(DeferredState.Working.rawValue, DeferredState.Assigning.rawValue, &currentState)
+      return OSAtomicCompareAndSwap32Barrier(DeferredState.Executing.rawValue, DeferredState.Assigning.rawValue, &currentState)
 
     case .Determined:
       if OSAtomicCompareAndSwap32Barrier(DeferredState.Assigning.rawValue, DeferredState.Determined.rawValue, &currentState)
@@ -200,18 +217,22 @@ public class Deferred<T>
   }
 }
 
-public class Determinable<T>: Deferred<T>
+/**
+  A Deferred to be determined (TBD) manually.
+*/
+
+public class TBD<T>: Deferred<T>
 {
   override public init() { super.init() }
 
   public func determine(value: T) throws
   {
-    super.setState(.Working)
+    super.setState(.Executing)
     try super.setValue(value)
   }
 
-  public func beginWork()
+  public func beginExecution()
   {
-    super.setState(.Working)
+    super.setState(.Executing)
   }
 }
