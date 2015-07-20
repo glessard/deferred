@@ -175,6 +175,10 @@ public class Deferred<T>
     return result.value
   }
 
+  public var error: ErrorType? {
+    return result.error
+  }
+
   public func notify(queue: dispatch_queue_t, task: (Result<T>) -> Void)
   {
     dispatch_group_notify(self.group, queue) { task(self.r) }
