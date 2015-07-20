@@ -8,21 +8,39 @@
 
 import Dispatch
 
-public enum DeferredState: Int32 { case Waiting = 0, Working = 1, /* Canceled = 2, */ Determined = 3, Assigning = 99 }
+/**
+  The states a Deferred can be in.
 
-public enum DeferredError: ErrorType { case AlreadyDetermined(String), CannotDetermine(String) }
+  Must be a top-level type because Deferred is generic.
+*/
+
+public enum DeferredState: Int32 { case Waiting = 0, Executing = 1, Determined = 3, Assigning = -1 }
+
+/**
+  The errors a Deferred can throw.
+
+  Must be a top-level type because Deferred is generic.
+*/
+
+public enum DeferredError: ErrorType { case Canceled(String), AlreadyDetermined(String), CannotDetermine(String) }
 
 /**
   An asynchronous computation result.
 
-  The `value` property will return the result, blocking until it is ready.
-  If the result is ready when `value` is called, it will return immediately.
+  A `Deferred` starts out undetermined, in the `.Waiting` state. It may then enter the `.Executing` state,
+  and will eventually become `.Determined`, and ready to supply a result.
+
+  The `result` property will return the result, blocking until it becomes determined.
+  If the result is ready when `result` is called, it will return immediately.
 */
 
 public class Deferred<T>
 {
-  private var v: T! = nil
+  private var r: Result<T>! = nil
   private let group = dispatch_group_create()
+
+  // Swift does not have a facility to read and write enum values atomically.
+  // To get around this, we use a raw `Int32` value as a proxy for the enum value.
 
   private var currentState: Int32 = DeferredState.Waiting.rawValue
 
@@ -35,26 +53,37 @@ public class Deferred<T>
 
   public init(value: T)
   {
-    v = value
+    r = Result(value: value)
     currentState = DeferredState.Determined.rawValue
   }
 
-  public convenience init(queue: dispatch_queue_t, task: () -> T)
+  public convenience init(queue: dispatch_queue_t, task: () throws -> T)
   {
     self.init()
 
-    guard setState(.Working) else { fatalError("Could not start task in \(__FUNCTION__)") }
+    guard setState(.Executing) else { fatalError("Could not start task in \(__FUNCTION__)") }
     dispatch_async(queue) {
-      try! self.setValue(task())
+      let result: Result<T>
+      do {
+        let v = try task()
+        result = .Value(v)
+      }
+      catch {
+        result = .Error(error)
+      }
+      do {
+        try self.setResult(result)
+      }
+      catch { /* an error here means this `Deferred` was canceled before `task()` was complete. */ }
     }
   }
 
-  public convenience init(qos: qos_class_t, task: () -> T)
+  public convenience init(qos: qos_class_t, task: () throws -> T)
   {
     self.init(queue: dispatch_get_global_queue(qos, 0), task: task)
   }
 
-  public convenience init(_ task: () -> T)
+  public convenience init(_ task: () throws -> T)
   {
     self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
@@ -68,13 +97,11 @@ public class Deferred<T>
     case .Waiting:
       return currentState == DeferredState.Waiting.rawValue
 
-    case .Working:
-      return OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Working.rawValue, &currentState)
-
-    // case .Canceled:
+    case .Executing:
+      return OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Executing.rawValue, &currentState)
 
     case .Assigning:
-      return OSAtomicCompareAndSwap32Barrier(DeferredState.Working.rawValue, DeferredState.Assigning.rawValue, &currentState)
+      return OSAtomicCompareAndSwap32Barrier(DeferredState.Executing.rawValue, DeferredState.Assigning.rawValue, &currentState)
 
     case .Determined:
       if OSAtomicCompareAndSwap32Barrier(DeferredState.Assigning.rawValue, DeferredState.Determined.rawValue, &currentState)
@@ -86,7 +113,7 @@ public class Deferred<T>
     }
   }
   
-  private func setValue(value: T) throws
+  private func setResult(result: Result<T>) throws
   { // A very simple turnstile to ensure only one thread can succeed
     guard setState(.Assigning) else
     {
@@ -97,7 +124,7 @@ public class Deferred<T>
       throw DeferredError.CannotDetermine("Deferred in wrong state at start of \(__FUNCTION__)")
     }
 
-    v = value
+    r = result
 
     guard setState(.Determined) else
     { // We cannot know where to go from here. Happily getting here seems impossible.
@@ -113,23 +140,39 @@ public class Deferred<T>
 
   public var isDetermined: Bool { return currentState == DeferredState.Determined.rawValue }
 
+  public func cancel(reason: String = "") -> Bool
+  {
+    setState(.Executing)
+    do {
+      try setResult(Result(error: DeferredError.Canceled(reason)))
+      return true
+    }
+    catch {
+      return false
+    }
+  }
+
   public func peek() -> T?
   {
     if currentState != DeferredState.Determined.rawValue
     {
       return nil
     }
-    return v
+    return r.value
   }
 
-  public var value: T {
+  public var result: Result<T> {
     if currentState != DeferredState.Determined.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
-    return v
+    return r
   }
 
-  public func notify(queue: dispatch_queue_t, task: (T) -> Void)
+  public var value: T? {
+    return result.value
+  }
+
+  public func notify(queue: dispatch_queue_t, task: (Result<T>) -> Void)
   {
-    dispatch_group_notify(self.group, queue) { task(self.v) }
+    dispatch_group_notify(self.group, queue) { task(self.r) }
   }
 }
 
@@ -139,12 +182,22 @@ public class Determinable<T>: Deferred<T>
 
   public func determine(value: T) throws
   {
-    super.setState(.Working)
-    try super.setValue(value)
+    try determine(Result(value: value))
   }
 
-  public func beginWork()
+  public func determine(error: ErrorType) throws
   {
-    super.setState(.Working)
+    try determine(Result(error: error))
+  }
+
+  public func determine(result: Result<T>) throws
+  {
+    super.setState(.Executing)
+    try super.setResult(result)
+  }
+
+  public func beginExecution()
+  {
+    super.setState(.Executing)
   }
 }

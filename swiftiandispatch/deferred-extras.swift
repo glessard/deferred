@@ -97,11 +97,20 @@ extension Deferred
 
     let delayed = Determinable<T>()
     self.notify {
-      value in
-      delayed.beginWork()
-      let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
-      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
-        try! delayed.determine(value)
+      result in
+      switch result
+      {
+      case .Value:
+        delayed.beginExecution()
+        let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+        dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
+          do { try delayed.determine(result) }
+          catch { /* an error here means this `Deferred` was canceled before the end of the delay. */ }
+        }
+
+      case .Error:
+        do { try delayed.determine(result) }
+        catch { /* an error here means this `Deferred` was canceled before `determine` was called. */ }
       }
     }
     return delayed
@@ -109,48 +118,89 @@ extension Deferred
 }
 
 
-// MARK: Notify: chain asynchronous tasks with input parameters and no return values.
+// onValue: chain asynchronous tasks only when the result has a value
 
 extension Deferred
 {
-  public func notify(task: (T) -> Void)
+  public func onValue(task: (T) -> Void)
   {
-    return notify(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    onValue(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
-  public func notify(qos: qos_class_t, task: (T) -> Void)
+  public func onValue(qos: qos_class_t, task: (T) -> Void)
   {
-    return notify(dispatch_get_global_queue(qos, 0), task: task)
+    onValue(dispatch_get_global_queue(qos, 0), task: task)
+  }
+
+  public func onValue(queue: dispatch_queue_t, task: (T) -> Void)
+  {
+    notify(queue) { if let value = $0.value { task(value) } }
   }
 }
 
-// MARK: Map: chain asynchronous tasks with input parameters and return values
+// onError: chan asynchronous tasks only when the rusilt in an error
 
 extension Deferred
 {
-  public func map<U>(transform: (T) -> U) -> Deferred<U>
+  public func onError(task: (ErrorType) -> Void)
+  {
+    onError(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  public func onError(qos: qos_class_t, task: (ErrorType) -> Void)
+  {
+    onError(dispatch_get_global_queue(qos, 0), task: task)
+  }
+
+  public func onError(queue: dispatch_queue_t, task: (ErrorType) -> Void)
+  {
+    notify(queue) { if let error = $0.error { task(error) } }
+  }
+}
+
+// notify: chain asynchronous tasks with input parameters and no return values.
+
+extension Deferred
+{
+  public func notify(task: (Result<T>) -> Void)
+  {
+    notify(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  public func notify(qos: qos_class_t, task: (Result<T>) -> Void)
+  {
+    notify(dispatch_get_global_queue(qos, 0), task: task)
+  }
+}
+
+// map: chain asynchronous tasks with input parameters and return values
+
+extension Deferred
+{
+  public func map<U>(transform: (T) throws -> U) -> Deferred<U>
   {
     return map(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
-  public func map<U>(qos: qos_class_t, transform: (T) -> U) -> Deferred<U>
+  public func map<U>(qos: qos_class_t, transform: (T) throws -> U) -> Deferred<U>
   {
     return map(dispatch_get_global_queue(qos, 0), transform: transform)
   }
 
-  public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
+  public func map<U>(queue: dispatch_queue_t, transform: (T) throws -> U) -> Deferred<U>
   {
     let deferred = Determinable<U>()
     self.notify(queue) {
-      value in
-      deferred.beginWork()
-      try! deferred.determine(transform(value))
+      result in
+      let transformed = result.map(transform)
+      do { try deferred.determine(transformed) }
+      catch { /* an error here means this `Deferred` was canceled before `transform()` was complete. */ }
     }
     return deferred
   }
 }
 
-// MARK: flatMap: chain asynchronous tasks with input parameters and return values
+// flatMap: chain asynchronous tasks with input parameters and return values
 
 extension Deferred
 {
@@ -168,9 +218,15 @@ extension Deferred
   {
     let deferred = Determinable<U>()
     self.notify(queue) {
-      value in
-      deferred.beginWork()
-      transform(value).notify(queue) { transformedValue in try! deferred.determine(transformedValue) }
+      result in
+      deferred.beginExecution()
+      if let value = result.value {
+        transform(value).notify(queue) {
+          result in
+          do { try deferred.determine(result) }
+          catch { /* an error here means this `Deferred` was canceled before `transform()` was complete. */ }
+        }
+      }
     }
     return deferred
   }
@@ -178,32 +234,34 @@ extension Deferred
 
 extension Deferred
 {
-  public func apply<U>(transform: Deferred<(T)->U>) -> Deferred<U>
+  public func apply<U>(transform: Deferred<(T)throws->U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
-  public func apply<U>(qos: qos_class_t, transform: Deferred<(T)->U>) -> Deferred<U>
+  public func apply<U>(qos: qos_class_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos, 0), transform: transform)
   }
 
-  public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
+  public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
   {
     let deferred = Determinable<U>()
     self.notify(queue) {
-      value in
+      result in
       transform.notify(queue) {
         transform in
-        deferred.beginWork()
-        try! deferred.determine(transform(value))
+        deferred.beginExecution()
+        let transformed = result.apply(transform)
+        do { try deferred.determine(transformed) }
+        catch { /* an error here means this `Deferred` was canceled before `transform()` was complete. */ }
       }
     }
     return deferred
   }
 }
 
-// MARK: Combine two or more Deferred objects into one.
+// combine two or more Deferred objects into one.
 
 extension Deferred
 {
@@ -257,7 +315,7 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
   return combined
 }
 
-public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
+public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {
   let first = Determinable<T>()
   for d in deferreds.shuffle()

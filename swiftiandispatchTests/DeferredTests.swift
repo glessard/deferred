@@ -143,14 +143,14 @@ class DeferredTests: XCTestCase
     let e1 = expectationWithDescription("Pre-set Deferred")
     let d1 = Deferred(value: value)
     d1.notify {
-      XCTAssert( $0 == value )
+      XCTAssert( $0.value == value )
       e1.fulfill()
     }
 
     let e2 = expectationWithDescription("Properly Deferred")
     let d2 = delay(ms: 100).map { value }
     d2.notify {
-      XCTAssert( $0 == value )
+      XCTAssert( $0.value == value )
       e2.fulfill()
     }
 
@@ -179,7 +179,7 @@ class DeferredTests: XCTestCase
     dispatch_async(q) {
       for i in 0..<count
       {
-        dispatch_async(q) { g.notify { e[i].fulfill() } }
+        dispatch_async(q) { g.notify { _ in e[i].fulfill() } }
       }
     }
 
@@ -204,7 +204,7 @@ class DeferredTests: XCTestCase
 
   func testApply2()
   {
-    let transform = Determinable<Int->Double>()
+    let transform = Determinable<(Int)throws->Double>()
     let operand = Determinable<Int>()
     let result = operand.apply(transform)
     let expect = expectationWithDescription("Applying a deferred transform to a deferred operand")
@@ -214,18 +214,18 @@ class DeferredTests: XCTestCase
     result.notify {
       result in
       print("\(v1), \(v2), \(result)")
-      XCTAssert(result == Double(v1*v2))
+      XCTAssert(result.value == Double(v1*v2))
       expect.fulfill()
     }
 
     let g = Determinable<Void>()
 
-    g.delay(ms: 100).notify {
+    g.delay(ms: 100).notify { _ in
       v1 = Int(arc4random() & 0xffff + 10000)
       try! transform.determine { i in Double(v1*i) }
     }
 
-    g.delay(ms: 200).notify {
+    g.delay(ms: 200).notify { _ in
       v2 = Int(arc4random() & 0xffff + 10000)
       try! operand.determine(v2)
     }
@@ -248,8 +248,8 @@ class DeferredTests: XCTestCase
     let d2 = delay(ms: 200).map { v2 }
 
     let c = d1.combine(d2).value
-    XCTAssert(c.0 == v1)
-    XCTAssert(c.1 == v2)
+    XCTAssert(c?.0 == v1)
+    XCTAssert(c?.1 == v2)
   }
 
   func testCombine3()
@@ -260,12 +260,12 @@ class DeferredTests: XCTestCase
 
     let d1 = delay(ms: 100).map { v1 }
     let d2 = delay(ms: 200).map { v2 }
-    let d3 = Deferred { v3 }
+    let d3 = Deferred { _ in v3 }
 
     let c = d1.combine(d2,d3).value
-    XCTAssert(c.0 == v1)
-    XCTAssert(c.1 == v2)
-    XCTAssert(c.2 == v3)
+    XCTAssert(c?.0 == v1)
+    XCTAssert(c?.1 == v2)
+    XCTAssert(c?.2 == v3)
   }
 
   func testCombineArray()
@@ -277,30 +277,37 @@ class DeferredTests: XCTestCase
     let deferreds = (1..<count).map { i in Deferred(value: inputs[i]) }
 
     let defarray = deferred.combine(deferreds)
-    let values = defarray.value
-    for (a,b) in zip(inputs, values)
+    if let values = defarray.value
     {
-      XCTAssert(a == b)
+      for (a,b) in zip(inputs, values)
+      {
+        XCTAssert(a == b)
+      }
     }
+    else { XCTFail() }
 
     let inputs2 = (0..<count).map { i in Deferred(value: arc4random()) }
     let defarray2 = combine(inputs2)
-    let values2 = defarray2.value
-    for (a,b) in zip(inputs2, values2)
+    if let values2 = defarray2.value
     {
-      XCTAssert(a.value == b)
+      for (a,b) in zip(inputs2, values2)
+      {
+        XCTAssert(a.value == b)
+      }
     }
+    else { XCTFail() }
 
     let combined1 = combine([Deferred<Int>]())
-    XCTAssert(combined1.value == [])
+    XCTAssert(combined1.value?.count == 0)
 
     let value = arc4random()
     let deferred2 = Deferred(value: value)
     let combined2 = deferred2.combine([])
-    XCTAssert(combined2.value == [value])
+    XCTAssert(combined2.value?.count == 1)
+    XCTAssert(combined2.value?[0] == value)
   }
 
-  func testFirstCompleted()
+  func testFirstDetermined()
   {
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
@@ -316,7 +323,7 @@ class DeferredTests: XCTestCase
       }
     }
 
-    let first = firstCompleted(deferreds)
+    let first = firstDetermined(deferreds)
     XCTAssert(first.value == lucky)
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
