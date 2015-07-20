@@ -221,12 +221,18 @@ extension Deferred
     self.notify(queue) {
       result in
       deferred.beginExecution()
-      if let value = result.value {
+      switch result
+      {
+      case .Value(let value):
         transform(value).notify(queue) {
           result in
           do { try deferred.determine(result) }
           catch { /* an error here means this `Deferred` was canceled before `transform()` was complete. */ }
         }
+
+      case .Error(let error):
+        do { try deferred.determine(Result(error: error)) }
+        catch { /* an error here seems irrelevant. */ }
       }
     }
     return deferred
