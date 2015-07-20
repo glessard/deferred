@@ -16,8 +16,17 @@ import Dispatch
 
 public enum DeferredState: Int32 { case Waiting = 0, Executing = 1, Determined = 3, Assigning = -1 }
 
+/**
+  The errors a Deferred can throw.
 
-public enum DeferredError: ErrorType { case AlreadyDetermined(String), CannotDetermine(String) }
+  Must be a top-level type because Deferred is generic.
+*/
+
+public enum DeferredError: ErrorType
+{
+  case AlreadyDetermined(String)
+  case CannotDetermine(String)
+}
 
 /**
   An asynchronous computation.
