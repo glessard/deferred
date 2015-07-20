@@ -160,7 +160,7 @@ public class Determinable<T>: Deferred<T>
     try super.setValue(value)
   }
 
-  public func beginWork()
+  public func beginExecution()
   {
     super.setState(.Executing)
   }

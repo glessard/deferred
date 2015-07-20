@@ -98,7 +98,7 @@ extension Deferred
     let delayed = Determinable<T>()
     self.notify {
       value in
-      delayed.beginWork()
+      delayed.beginExecution()
       let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
       dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
         try! delayed.determine(value)
@@ -143,7 +143,7 @@ extension Deferred
     let deferred = Determinable<U>()
     self.notify(queue) {
       value in
-      deferred.beginWork()
+      deferred.beginExecution()
       try! deferred.determine(transform(value))
     }
     return deferred
@@ -169,7 +169,7 @@ extension Deferred
     let deferred = Determinable<U>()
     self.notify(queue) {
       value in
-      deferred.beginWork()
+      deferred.beginExecution()
       transform(value).notify(queue) { transformedValue in try! deferred.determine(transformedValue) }
     }
     return deferred
@@ -195,7 +195,7 @@ extension Deferred
       value in
       transform.notify(queue) {
         transform in
-        deferred.beginWork()
+        deferred.beginExecution()
         try! deferred.determine(transform(value))
       }
     }
