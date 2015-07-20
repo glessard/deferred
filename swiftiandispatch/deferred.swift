@@ -56,11 +56,7 @@ public class Deferred<T>
     dispatch_group_enter(group)
   }
 
-  public init(value: T)
-  {
-    r = Result(value: value)
-    currentState = DeferredState.Determined.rawValue
-  }
+  // Initialize with a background task to perform
 
   public convenience init(queue: dispatch_queue_t, task: () throws -> T)
   {
@@ -93,6 +89,24 @@ public class Deferred<T>
     self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
+  // Initialize to an already Determined state.
+
+  public init(result: Result<T>)
+  {
+    r = result
+    currentState = DeferredState.Determined.rawValue
+  }
+
+  convenience public init(value: T)
+  {
+    self.init(result: Result(value: value))
+  }
+
+  convenience public init(error: ErrorType)
+  {
+    self.init(result: Result(error: error))
+  }
+  
   // MARK: private methods
 
   private func setState(newState: DeferredState) -> Bool
