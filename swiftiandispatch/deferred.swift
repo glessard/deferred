@@ -22,10 +22,15 @@ public enum DeferredState: Int32 { case Waiting = 0, Executing = 1, Determined =
   Must be a top-level type because Deferred is generic.
 */
 
-public enum DeferredError: ErrorType { case Canceled(String), AlreadyDetermined(String), CannotDetermine(String) }
+public enum DeferredError: ErrorType
+{
+  case Canceled(String)
+  case AlreadyDetermined(String)
+  case CannotDetermine(String)
+}
 
 /**
-  An asynchronous computation result.
+  An asynchronous computation.
 
   A `Deferred` starts out undetermined, in the `.Waiting` state. It may then enter the `.Executing` state,
   and will eventually become `.Determined`, and ready to supply a result.
@@ -176,7 +181,11 @@ public class Deferred<T>
   }
 }
 
-public class Determinable<T>: Deferred<T>
+/**
+  A Deferred to be determined (TBD) manually.
+*/
+
+public class TBD<T>: Deferred<T>
 {
   override public init() { super.init() }
 

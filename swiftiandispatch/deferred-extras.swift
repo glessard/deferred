@@ -95,7 +95,7 @@ extension Deferred
   {
     if ns < 0 { return self }
 
-    let delayed = Determinable<T>()
+    let delayed = TBD<T>()
     self.notify {
       result in
       switch result
@@ -189,9 +189,10 @@ extension Deferred
 
   public func map<U>(queue: dispatch_queue_t, transform: (T) throws -> U) -> Deferred<U>
   {
-    let deferred = Determinable<U>()
+    let deferred = TBD<U>()
     self.notify(queue) {
       result in
+      deferred.beginExecution()
       let transformed = result.map(transform)
       do { try deferred.determine(transformed) }
       catch { /* an error here means this `Deferred` was canceled before `transform()` was complete. */ }
@@ -216,7 +217,7 @@ extension Deferred
 
   public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    let deferred = Determinable<U>()
+    let deferred = TBD<U>()
     self.notify(queue) {
       result in
       deferred.beginExecution()
@@ -246,7 +247,7 @@ extension Deferred
 
   public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
   {
-    let deferred = Determinable<U>()
+    let deferred = TBD<U>()
     self.notify(queue) {
       result in
       transform.notify(queue) {
@@ -299,7 +300,7 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 
 public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {
-  let first = Determinable<T>()
+  let first = TBD<T>()
   for d in deferreds.shuffle()
   {
     d.notify {
