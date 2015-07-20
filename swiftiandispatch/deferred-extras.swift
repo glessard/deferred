@@ -117,6 +117,40 @@ extension Deferred
   }
 }
 
+/**
+  A timeout utility
+*/
+
+extension Deferred
+{
+  public func timeout(µs µs: Int) -> Deferred
+  {
+    return timeout(ns: µs*1000)
+  }
+
+  public func timeout(ms ms: Int) -> Deferred
+  {
+    return timeout(ns: ms*1_000_000)
+  }
+
+  public func timeout(seconds s: Double) -> Deferred
+  {
+    return timeout(ns: Int(s*1e9))
+  }
+
+  public func timeout(ns ns: Int) -> Deferred
+  {
+    if !self.isDetermined || ns < 0 { return self }
+
+    let perishable = map { $0 }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(ns)), dispatch_get_global_queue(qos_class_self(), 0)) {
+      perishable.cancel("Operation timed out")
+    }
+
+    return perishable
+  }
+}
 
 // onValue: chain asynchronous tasks only when the result has a value
 
