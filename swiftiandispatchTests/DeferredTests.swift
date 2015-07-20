@@ -289,6 +289,15 @@ class DeferredTests: XCTestCase
 
     let combined1 = combine([Deferred<Int>]())
     XCTAssert(combined1.value?.count == 0)
+
+    let inputs2 = { _ -> [Deferred<UInt32>] in
+      var inputs = inputs
+      inputs.insert(Deferred(error: DeferredError.Canceled("")), atIndex: Int(arc4random_uniform(numericCast(inputs.count))))
+      return inputs
+    }()
+    let combined2 = combine(inputs2)
+    XCTAssert(combined2.value == nil)
+    XCTAssert(combined2.error != nil)
   }
 
   func testFirstDetermined()
