@@ -54,9 +54,9 @@ public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () 
   }
 }
 
-public func delay(ns: Int) -> Deferred<Void>
+public func delay(ns ns: Int) -> Deferred<Void>
 {
-  return Deferred(value: ()).delay(ns)
+  return Deferred(value: ()).delay(ns: ns)
 }
 
 public func delay(µs µs: Int) -> Deferred<Void>
@@ -78,20 +78,20 @@ extension Deferred
 {
   public func delay(µs µs: Int) -> Deferred
   {
-    return delay(µs*1000)
+    return delay(ns: µs*1000)
   }
 
   public func delay(ms ms: Int) -> Deferred
   {
-    return delay(ms*1_000_000)
+    return delay(ns: ms*1_000_000)
   }
 
   public func delay(seconds s: Double) -> Deferred
   {
-    return delay(Int(s*1e9))
+    return delay(ns: Int(s*1e9))
   }
   
-  public func delay(ns: Int) -> Deferred
+  public func delay(ns ns: Int) -> Deferred
   {
     if ns < 0 { return self }
 
