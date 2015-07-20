@@ -171,7 +171,7 @@ class DeferredTests: XCTestCase
   func testRace()
   {
     let count = 100
-    let g = Determinable<Void>()
+    let g = TBD<Void>()
     let q = dispatch_get_global_queue(qos_class_self(), 0)
 
     let e = (0..<count).map { i in expectationWithDescription(i.description) }
@@ -204,8 +204,8 @@ class DeferredTests: XCTestCase
 
   func testApply2()
   {
-    let transform = Determinable<Int->Double>()
-    let operand = Determinable<Int>()
+    let transform = TBD<Int->Double>()
+    let operand = TBD<Int>()
     let result = operand.apply(transform)
     let expect = expectationWithDescription("Applying a deferred transform to a deferred operand")
 
@@ -218,7 +218,7 @@ class DeferredTests: XCTestCase
       expect.fulfill()
     }
 
-    let g = Determinable<Void>()
+    let g = TBD<Void>()
 
     g.delay(ms: 100).notify {
       v1 = Int(arc4random() & 0xffff + 10000)

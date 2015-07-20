@@ -150,7 +150,11 @@ public class Deferred<T>
   }
 }
 
-public class Determinable<T>: Deferred<T>
+/**
+  A Deferred to be determined (TBD) manually.
+*/
+
+public class TBD<T>: Deferred<T>
 {
   override public init() { super.init() }
 
