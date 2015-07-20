@@ -260,10 +260,11 @@ class DeferredTests: XCTestCase
 
     let d1 = delay(ms: 100).map { v1 }
     let d2 = delay(ms: 200).map { v2 }
-    // let d3 = Deferred { v3 }                     // infers Deferred<()->String> rather than Deferred<String>
-    // let d3 = Deferred { () -> String in v3 }     // infers Deferred<()->String> rather than Deferred<String>
-    // let d3 = Deferred { _ in v3 }                // infers Deferred<String> as expected
-    let d3 = Deferred { () throws -> String in v3 } // infers Deferred<String> as expected
+    // let d3 = Deferred { v3 }                        // infers Deferred<()->String> rather than Deferred<String>
+    // let d3 = Deferred { () -> String in v3 }        // infers Deferred<()->String> rather than Deferred<String>
+    // let d3 = Deferred { _ in v3 }                   // infers Deferred<String> as expected
+    // let d3 = Deferred { () throws -> String in v3 } // infers Deferred<String> as expected
+    let d3 = Deferred( { v3 } )
 
     let c = d1.combine(d2,d3).value
     XCTAssert(c?.0 == v1)
