@@ -272,25 +272,12 @@ class DeferredTests: XCTestCase
   {
     let count = 10
 
-    let inputs = (0..<count).map { _ in arc4random() }
-    let deferred = Deferred(value: inputs[0])
-    let deferreds = (1..<count).map { i in Deferred(value: inputs[i]) }
-
-    let defarray = deferred.combine(deferreds)
-    if let values = defarray.value
+    let inputs = (0..<count).map { i in Deferred(value: arc4random()) }
+    let combined = combine(inputs)
+    if let values = combined.value
     {
+      XCTAssert(values.count == count)
       for (a,b) in zip(inputs, values)
-      {
-        XCTAssert(a == b)
-      }
-    }
-    else { XCTFail() }
-
-    let inputs2 = (0..<count).map { i in Deferred(value: arc4random()) }
-    let defarray2 = combine(inputs2)
-    if let values2 = defarray2.value
-    {
-      for (a,b) in zip(inputs2, values2)
       {
         XCTAssert(a.value == b)
       }
@@ -299,12 +286,6 @@ class DeferredTests: XCTestCase
 
     let combined1 = combine([Deferred<Int>]())
     XCTAssert(combined1.value?.count == 0)
-
-    let value = arc4random()
-    let deferred2 = Deferred(value: value)
-    let combined2 = deferred2.combine([])
-    XCTAssert(combined2.value?.count == 1)
-    XCTAssert(combined2.value?[0] == value)
   }
 
   func testFirstDetermined()

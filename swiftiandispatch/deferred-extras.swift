@@ -279,24 +279,6 @@ extension Deferred
   {
     return combine(o1,o2).flatMap { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
   }
-
-  public func combine<C: CollectionType where C.Generator.Element == Deferred<T>>(others: C) -> Deferred<[T]>
-  {
-    let mappedSelf = map { (t: T) in [t] }
-
-    let combined = others.reduce(mappedSelf) {
-      (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-      return element.flatMap {
-        value in
-        combiner.map {
-          (var values: [T]) -> [T] in
-          values.append(value)
-          return values
-        }
-      }
-    }
-    return combined
-  }
 }
 
 public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
