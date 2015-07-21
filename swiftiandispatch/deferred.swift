@@ -92,19 +92,20 @@ public class Deferred<T>
   private func setValue(value: T) throws
   {
     // A turnstile to ensure only one thread can succeed
-    repeat
+    while true
     { // Allow multiple tries in case another thread concurrently switches state from .Waiting to .Executing
       let initialState = currentState
       if initialState < DeferredState.Determined.rawValue
       {
-        OSAtomicCompareAndSwap32Barrier(initialState, transientState, &currentState)
+        guard OSAtomicCompareAndSwap32Barrier(initialState, transientState, &currentState) else { continue }
+        break
       }
       else
       {
         assert(currentState >= DeferredState.Determined.rawValue)
         throw DeferredError.AlreadyDetermined("Attempted to determine Deferred twice with \(__FUNCTION__)")
       }
-    } while currentState != transientState
+    }
 
     v = value
 
