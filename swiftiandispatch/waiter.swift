@@ -60,11 +60,11 @@ struct WaitQueue
 
   static func dealloc(tail: UnsafeMutablePointer<Waiter>)
   {
-    var waiter = fixlist(tail)
+    var waiter = tail
     while waiter != nil
     {
       let current = waiter
-      waiter = waiter.memory.next
+      waiter = waiter.memory.prev
 
       current.destroy(1)
       current.dealloc(1)
