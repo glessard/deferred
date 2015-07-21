@@ -16,9 +16,9 @@ A `Deferred` can schedule a block for execution once its value has been determin
 A `Deferred` can be transformed into another with `map`, `flatMap` and `apply` methods.
 
 ```
-let transform = Deferred { return { i in Double(Int(arc4random()&0xff)*i) } } // Deferred<Int->Double>
-let operand = Deferred { return Int(arc4random() & 0xff) }                    // Deferred<Int>
-let result = operand.apply(transform).map { $0.description }                  // Deferred<String>
+let transform = Deferred { i in Double(Int(arc4random()&0xff)*i) } // Deferred<Int->Double>
+let operand = Deferred { Int(arc4random() & 0xff) }                // Deferred<Int>
+let result = operand.apply(transform).map { $0.description }       // Deferred<String>
 print(result.value)
 ```
 The `value` property will block the current thread until it becomes determined. `Deferred` is thread-safe, implemented in a lock-free manner. Many thanks to Apple's libdispatch source for the teaching.
