@@ -168,6 +168,54 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
+  func testCancel()
+  {
+    let tbd1 = TBD<Void>()
+    let reason = "unused"
+    tbd1.cancel(reason)
+    XCTAssert(tbd1.value == nil)
+    switch tbd1.result
+    {
+    case .Value: XCTFail()
+    case .Error(let error):
+      if let e = error as? DeferredError, case .Canceled(let message) = e
+      {
+        XCTAssert(message == reason)
+      }
+      else { XCTFail() }
+    }
+
+    let tbd2 = Deferred(value: arc4random()).delay(ms: 5000)
+    if tbd2.cancel()
+    {
+      XCTAssert(tbd2.value == nil)
+    }
+    else
+    {
+      XCTFail()
+    }
+
+    let e = expectationWithDescription("Cancel before setting")
+    let tbd3 = TBD<UInt32>()
+    delay(ms: 100).notify { _ in
+      if tbd3.cancel() == false { XCTFail() }
+    }
+    delay(ms: 200).notify { _ in
+      do {
+        try tbd3.determine(arc4random())
+        XCTFail()
+      }
+      catch DeferredError.AlreadyDetermined {
+        e.fulfill()
+      }
+      catch {
+        XCTFail()
+      }
+    }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
   func testTimeout()
   {
     let value = arc4random()
