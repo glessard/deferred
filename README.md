@@ -21,6 +21,6 @@ let operand = Deferred { Int(arc4random() & 0xff) }                // Deferred<I
 let result = operand.apply(transform).map { $0.description }       // Deferred<String>
 print(result.value)
 ```
-The `value` property will block the current thread until it becomes determined. `Deferred` is thread-safe, implemented in a lock-free manner. Many thanks to Apple's libdispatch source for the teaching.
+The `value` property will block the current thread until it becomes determined. The rest of `Deferred` is implemented in a lock-free manner, relying largely on the properties of `dispatch_group_notify()`. It is thread-safe.
 
 `Deferred` can run its closure on a specified `dispatch_queue_t` or at the requested `qos_class_t`, as can the `notify`, `map`, `flatMap` and `apply` methods. Otherwise it uses the global concurrent queue at the current qos class.
