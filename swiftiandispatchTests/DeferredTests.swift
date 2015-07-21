@@ -26,7 +26,7 @@ class DeferredTests: XCTestCase
       (d: Double) -> Int in
       syncprint("Computing result2")
       return Int(floor(2*d))
-    }.delay(ms: 50)
+    }.delay(ms: 500)
 
     let result3 = result1.map {
       (d: Double) -> String in
@@ -38,11 +38,14 @@ class DeferredTests: XCTestCase
 
     let result4 = result2.combine(result1.map { Int($0*4) })
 
+    let result5 = result2.timeout(ms: 50)
+
     syncprint("Waiting")
-    syncprint("Result 1: \(result1.value)")
-    syncprint("Result 2: \(result2.value)")
-    syncprint("Result 3: \(result3.value)")
-    syncprint("Result 4: \(result4.value)")
+    syncprint("Result 1: \(result1.result)")
+    syncprint("Result 2: \(result2.result)")
+    syncprint("Result 3: \(result3.result)")
+    syncprint("Result 4: \(result4.result)")
+    syncprint("Result 5: \(result5.result)")
     syncprint("Done")
     syncprintwait()
   }

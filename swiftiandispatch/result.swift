@@ -10,7 +10,7 @@ import Foundation
 
 // A Result type, approximately like everyone else has done.
 
-public enum Result<T>
+public enum Result<T>: CustomStringConvertible
 {
   case Value(T)
   case Error(ErrorType)
@@ -59,6 +59,15 @@ public enum Result<T>
     {
     case .Value(let value): return value
     case .Error(let error): throw error
+    }
+  }
+
+
+  public var description: String {
+    switch self
+    {
+    case .Value(let value): return "\(value)"
+    case .Error(let error): return "Error: \(error)"
     }
   }
 
