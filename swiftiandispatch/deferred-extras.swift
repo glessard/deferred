@@ -140,11 +140,12 @@ extension Deferred
 
   public func timeout(ns ns: Int) -> Deferred
   {
-    if !self.isDetermined || ns < 0 { return self }
+    if self.isDetermined || ns < 0 { return self }
 
     let perishable = map { $0 }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(ns)), dispatch_get_global_queue(qos_class_self(), 0)) {
+    let timeout = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+    dispatch_after(timeout, dispatch_get_global_queue(qos_class_self(), 0)) {
       perishable.cancel("Operation timed out")
     }
 

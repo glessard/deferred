@@ -168,6 +168,22 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
+  func testTimeout()
+  {
+    let value = arc4random()
+    let d = Deferred(value: value)
+
+    let d1 = d.timeout(ms: 50)
+    XCTAssert(d1.value == value)
+
+    let d2 = d.delay(ms: 5000).timeout(ms: 50)
+    let e = expectationWithDescription("Timeout test")
+    d2.onValue { _ in XCTFail() }
+    d2.onError { _ in e.fulfill() }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
   func testRace()
   {
     let count = 100
