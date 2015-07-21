@@ -12,7 +12,7 @@ struct Waiter
 {
   enum Type
   {
-    case Dispatch(dispatch_queue_t, () -> Void)
+    case Closure(dispatch_queue_t, () -> Void)
     case Thread(thread_t)
   }
 
@@ -29,7 +29,7 @@ struct Waiter
   {
     switch waiter
     {
-    case .Dispatch(let queue, let task):
+    case .Closure(let queue, let task):
       dispatch_async(queue, task)
 
     case .Thread(let thread):

@@ -195,7 +195,7 @@ public class Deferred<T>
     if currentState != DeferredState.Determined.rawValue
     {
       let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
-      waiter.initialize(Waiter(.Dispatch(queue, block)))
+      waiter.initialize(Waiter(.Closure(queue, block)))
 
       if enqueue(waiter)
       { // waiter will be deallocated after the block is dispatched to GCD
