@@ -17,7 +17,7 @@ import Dispatch
 public enum DeferredState: Int32 { case Waiting = 0, Executing = 1, Determined = 3, Assigning = -1 }
 
 /**
-  The errors a Deferred can throw.
+  These errors can be thrown by a Deferred.
 
   Must be a top-level type because Deferred is generic.
 */
@@ -31,11 +31,14 @@ public enum DeferredError: ErrorType
 /**
   An asynchronous computation.
 
-  A `Deferred` starts out undetermined, in the `.Waiting` state. It may then enter the `.Executing` state,
-  and will eventually become `.Determined`, and ready to supply a result.
+  A `Deferred` starts out undetermined, in the `.Waiting` state.
+  It may then enter the `.Executing` state, and will eventually become `.Determined`.
+  Once it is `.Determined`, it is ready to supply a result.
 
   The `value` property will return the result, blocking until it becomes determined.
   If the result is ready when `value` is called, it will return immediately.
+
+  A closure supplied to the `notify` method will be called after the `Deferred` has become determined.
 */
 
 public class Deferred<T>
