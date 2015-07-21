@@ -1,25 +1,26 @@
 # swiftian-dispatch
-Lightweight, low-noise wrappers for libdispatch/GCD in Swift
+An alternative to NSOperation in Swift, based on closures.
 
-Increases the readability of Grand Central Dispatch in Swift by reducing the noise.
-Does not introduce incompatibility by unnecessarily introducing new wrapper types. You create and obtain queues the same way, you create dispatch groups the same way, you can use dispatch_{sg}et_context() the same way.
+`Deferred<T>` is useful in order to chain closures (blocks) together.
 
-```
-async { println("In the background") }
-```
-is equivalent to 
-```
-dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), { println("In the background") })
-```
-
-`async` has versions that can take a dispatch_queue_t or a qos_class_t, and optionally a dispatch_group_t.
-
-`Result<T>` is a new generic type; it's useful in order to chain blocks together.
+It is an approximation of module [Deferred](https://ocaml.janestreet.com/ocaml-core/111.25.00/doc/async_kernel/#Deferred) available in OCaml.
 
 ```
-let result1 = async { 1.0 }                     // Result<Double>
-let result2 = result1.notify { $0.description } // Result<String>
-println(result2.get())
+let d1 = Deferred { 1.0 }           // Deferred<Double>
+let d2 = d1.map { $0.description }  // Deferred<String>
+println(d2.value)
 ```
 
-The `notify` methods on Result have the same possible parameters as the `async` functions.
+A `Deferred` starts out with an undetermined value. It runs its closure in the background, and the return value of the closure will determine the `Deferred` at the time it completes.
+A `Deferred` can schedule a block for execution once its value has been determined, using the `notify` method.
+A `Deferred` can be transformed into another with `map`, `flatMap` and `apply` methods.
+
+```
+let transform = Deferred { return { i in Double(Int(arc4random()&0xff)*i) } } // Deferred<Int->Double>
+let operand = Deferred { return Int(arc4random() & 0xff) }                    // Deferred<Int>
+let result = operand.apply(transform).map { $0.description }                  // Deferred<String>
+print(result.value)
+```
+The `value` property will block the current thread until it becomes determined. `Deferred` is thread-safe, implemented in a lock-free manner. Many thanks to Apple's libdispatch source for the teaching.
+
+`Deferred` can run its closure on a specified `dispatch_queue_t` or at the requested `qos_class_t`, as can the `notify`, `map`, `flatMap` and `apply` methods. Otherwise it uses the global concurrent queue at the current qos class.
