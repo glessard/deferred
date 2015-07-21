@@ -61,7 +61,7 @@ class DeferredTests: XCTestCase
   {
     let value = 1
     let d1 = Deferred(value: value)
-    XCTAssert(d1.peek() == value)
+    XCTAssert(d1.peek()?.value == value)
 
     let d2 = delay(µs: 100).map { value }
     XCTAssert(d2.peek() == nil)
@@ -69,7 +69,7 @@ class DeferredTests: XCTestCase
     let expectation = expectationWithDescription("Waiting on Deferred")
 
     d2.notify { _ in
-      if d2.peek() == value
+      if d2.peek()?.value == value
       {
         expectation.fulfill()
       }

@@ -171,13 +171,13 @@ public class Deferred<T>
     }
   }
 
-  public func peek() -> T?
+  public func peek() -> Result<T>?
   {
     if currentState != DeferredState.Determined.rawValue
     {
       return nil
     }
-    return r.value
+    return result
   }
 
   public var result: Result<T> {
