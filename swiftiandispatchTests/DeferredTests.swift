@@ -63,7 +63,7 @@ class DeferredTests: XCTestCase
     let d1 = Deferred(value: value)
     XCTAssert(d1.peek()?.value == value)
 
-    let d2 = delay(µs: 100).map { value }
+    let d2 = Deferred(value: value).delay(µs: 100)
     XCTAssert(d2.peek() == nil)
 
     let expectation = expectationWithDescription("Waiting on Deferred")
@@ -151,7 +151,7 @@ class DeferredTests: XCTestCase
     }
 
     let e2 = expectationWithDescription("Properly Deferred")
-    let d2 = delay(ms: 100).map { value }
+    let d2 = Deferred(value: value).delay(ms: 100)
     d2.notify {
       XCTAssert( $0.value == value )
       e2.fulfill()
@@ -311,8 +311,8 @@ class DeferredTests: XCTestCase
     let v1 = Int(arc4random())
     let v2 = UInt64(arc4random())
 
-    let d1 = delay(ms: 100).map { v1 }
-    let d2 = delay(ms: 200).map { v2 }
+    let d1 = Deferred(value: v1).delay(ms: 100)
+    let d2 = Deferred(value: v2).delay(ms: 200)
 
     let c = d1.combine(d2).value
     XCTAssert(c?.0 == v1)
@@ -325,13 +325,13 @@ class DeferredTests: XCTestCase
     let v2 = UInt64(arc4random())
     let v3 = arc4random().description
 
-    let d1 = delay(ms: 100).map { v1 }
-    let d2 = delay(ms: 200).map { v2 }
+    let d1 = Deferred(value: v1).delay(ms: 100)
+    let d2 = Deferred(value: v2).delay(ms: 200)
+    let d3 = Deferred(value: v3)
     // let d3 = Deferred { v3 }                        // infers Deferred<()->String> rather than Deferred<String>
     // let d3 = Deferred { () -> String in v3 }        // infers Deferred<()->String> rather than Deferred<String>
     // let d3 = Deferred { _ in v3 }                   // infers Deferred<String> as expected
     // let d3 = Deferred { () throws -> String in v3 } // infers Deferred<String> as expected
-    let d3 = Deferred( { v3 } )
 
     let c = d1.combine(d2,d3).value
     XCTAssert(c?.0 == v1)
