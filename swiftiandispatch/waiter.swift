@@ -17,7 +17,6 @@ struct Waiter
   }
 
   let waiter: Type
-  var prev: UnsafeMutablePointer<Waiter> = nil
   var next: UnsafeMutablePointer<Waiter> = nil
 
   init(_ t: Type)
@@ -46,11 +45,11 @@ struct WaitQueue
 {
   static func notifyAll(tail: UnsafeMutablePointer<Waiter>)
   {
-    var waiter = fixlist(tail)
-    while waiter != nil
+    var head = reverseList(tail)
+    while head != nil
     {
-      let current = waiter
-      waiter = waiter.memory.next
+      let current = head
+      head = head.memory.next
 
       current.memory.wake()
       current.destroy(1)
@@ -64,27 +63,25 @@ struct WaitQueue
     while waiter != nil
     {
       let current = waiter
-      waiter = waiter.memory.prev
+      waiter = waiter.memory.next
 
       current.destroy(1)
       current.dealloc(1)
     }
   }
 
-  private static func fixlist(tail: UnsafeMutablePointer<Waiter>) -> UnsafeMutablePointer<Waiter>
+  private static func reverseList(var tail: UnsafeMutablePointer<Waiter>) -> UnsafeMutablePointer<Waiter>
   {
-    if tail != nil
+    var head: UnsafeMutablePointer<Waiter> = nil
+    while tail != nil
     {
-      var waiter = tail
-      while waiter.memory.prev != nil
-      {
-        waiter.memory.prev.memory.next = waiter
-        waiter = waiter.memory.prev
-      }
-      // We have reached the head of the queue
-      return waiter
+      let element = tail
+      tail = element.memory.next
+
+      element.memory.next = head
+      head = element
     }
-    return nil
+    return head
   }
 }
 

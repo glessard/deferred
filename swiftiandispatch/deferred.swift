@@ -135,7 +135,7 @@ public class Deferred<T>
     while true
     {
       let tail = waiters
-      waiter.memory.prev = tail
+      waiter.memory.next = tail
       if syncread(&currentState) != DeferredState.Determined.rawValue
       {
         if CAS(tail, waiter, &waiters)
