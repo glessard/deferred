@@ -6,6 +6,8 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 /*
   Definitions that rely on or extend Deferred, but do not need the fundamental, private stuff.
 */
