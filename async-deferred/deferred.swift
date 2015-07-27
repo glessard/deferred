@@ -159,12 +159,21 @@ public class Deferred<T>
 
     source.notify(queue) {
       result in
-      transform.notify {
-        transform in
+      switch result
+      {
+      case .Value:
+        transform.notify {
+          transform in
+          self.beginExecution()
+          let transformed = result.apply(transform)
+          do { try self.setResult(transformed) }
+          catch { /* an error here means `self` was canceled before `transform()` completed */ }
+        }
+
+      case .Error(let error):
         self.beginExecution()
-        let transformed = result.apply(transform)
-        do { try self.setResult(transformed) }
-        catch { /* an error here means `self` was canceled before `transform()` completed */ }
+        do { try self.setResult(Result(error: error)) }
+        catch { /* an error heer seems irrelevant */ }
       }
     }
   }
