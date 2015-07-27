@@ -220,9 +220,8 @@ public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   {
     d.notify {
       value in
-      do {
-        try first.determine(value)
-      } catch { /* We don't care, it just means it's not the first completed */ }
+      do { try first.determine(value) }
+      catch { /* We don't care, it just means it's not the first completed */ }
     }
   }
   return first
