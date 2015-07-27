@@ -146,7 +146,7 @@ public class Deferred<T>
 
       case .Error(let error):
         do { try self.setResult(Result(error: error)) }
-        catch { /* an error heer seems irrelevant */ }
+        catch { /* an error here seems irrelevant */ }
       }
     }
   }
@@ -173,7 +173,7 @@ public class Deferred<T>
       case .Error(let error):
         self.beginExecution()
         do { try self.setResult(Result(error: error)) }
-        catch { /* an error heer seems irrelevant */ }
+        catch { /* an error here seems irrelevant */ }
       }
     }
   }
