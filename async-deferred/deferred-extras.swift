@@ -12,7 +12,7 @@ import Dispatch
   Definitions that rely on or extend Deferred, but do not need the fundamental, private stuff.
 */
 
-// MARK: Asynchronous tasks with return values.
+// MARK: Create asynchronous tasks with return values.
 
 public func async<T>(task: () -> T) -> Deferred<T>
 {
@@ -56,6 +56,7 @@ public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () 
   }
 }
 
+// MARK: Delay: enforce a minimum time before a `Deferred` has a value
 
 extension Deferred
 {
@@ -84,8 +85,7 @@ extension Deferred
   }
 }
 
-
-// MARK: Notify: chain asynchronous tasks with input parameters and no return values.
+// MARK: Notify: execute a task with the result of an asynchronous computation.
 
 extension Deferred
 {
@@ -100,7 +100,7 @@ extension Deferred
   }
 }
 
-// MARK: Map: chain asynchronous tasks with input parameters and return values
+// MARK: Map: transform an asynchronous operand
 
 extension Deferred
 {
@@ -120,7 +120,7 @@ extension Deferred
   }
 }
 
-// MARK: flatMap: chain asynchronous tasks with input parameters and return values
+// MARK: flatMap: transform an asynchronous operand
 
 extension Deferred
 {
@@ -139,6 +139,8 @@ extension Deferred
     return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
+
+// MARK: Apply: apply an asynchronous transform to an asynchronous operand
 
 extension Deferred
 {
