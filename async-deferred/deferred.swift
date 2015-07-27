@@ -111,7 +111,65 @@ public class Deferred<T>
     self.init(result: Result(error: error))
   }
   
-  // MARK: private methods
+  // constructor used by `map`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) throws -> T)
+  {
+    self.init()
+
+    source.notify(queue) {
+      result in
+      self.beginExecution()
+      let transformed = result.map(transform)
+      do { try self.setResult(transformed) }
+      catch { /* an error here means `self` was canceled before `transform()` completed */ }
+    }
+  }
+
+  // constructor used by `flatMap`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
+  {
+    self.init()
+
+    source.notify(queue) {
+      result in
+      self.beginExecution()
+      switch result
+      {
+      case .Value(let value):
+        transform(value).notify(queue) {
+          transformed in
+          do { try self.setResult(transformed) }
+          catch { /* an error here means `self` was canceled before `transform()` completed */ }
+        }
+
+      case .Error(let error):
+        do { try self.setResult(Result(error: error)) }
+        catch { /* an error heer seems irrelevant */ }
+      }
+    }
+  }
+
+  // constructor used by `apply`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
+  {
+    self.init()
+
+    source.notify(queue) {
+      result in
+      transform.notify {
+        transform in
+        self.beginExecution()
+        let transformed = result.apply(transform)
+        do { try self.setResult(transformed) }
+        catch { /* an error here means `self` was canceled before `transform()` completed */ }
+      }
+    }
+  }
+
+ // MARK: private methods
 
   private func beginExecution()
   {

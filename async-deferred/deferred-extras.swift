@@ -226,15 +226,7 @@ extension Deferred
 
   public func map<U>(queue: dispatch_queue_t, transform: (T) throws -> U) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      result in
-      deferred.beginExecution()
-      let transformed = result.map(transform)
-      do { try deferred.determine(transformed) }
-      catch { /* an error here means this `Deferred` was canceled before `transform()` was complete. */ }
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
 
@@ -254,25 +246,7 @@ extension Deferred
 
   public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      result in
-      deferred.beginExecution()
-      switch result
-      {
-      case .Value(let value):
-        transform(value).notify(queue) {
-          result in
-          do { try deferred.determine(result) }
-          catch { /* an error here means this `Deferred` was canceled before `transform()` was complete. */ }
-        }
-
-      case .Error(let error):
-        do { try deferred.determine(Result(error: error)) }
-        catch { /* an error here seems irrelevant. */ }
-      }
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
 
@@ -290,18 +264,7 @@ extension Deferred
 
   public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      result in
-      transform.notify(queue) {
-        transform in
-        deferred.beginExecution()
-        let transformed = result.apply(transform)
-        do { try deferred.determine(transformed) }
-        catch { /* an error here means this `Deferred` was canceled before `transform()` was complete. */ }
-      }
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
 
