@@ -82,7 +82,49 @@ public class Deferred<T>
     self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
-  // MARK: private methods
+  // constructor used by `map`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> T)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      self.beginExecution()
+      try! self.setValue(transform(value))
+    }
+  }
+
+  // constructor used by `flatMap`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      self.beginExecution()
+      transform(value).notify { transformedValue in try! self.setValue(transformedValue) }
+    }
+  }
+
+  // constructor used by `apply`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) -> T>)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      transform.notify {
+        transform in
+        self.beginExecution()
+        try! self.setValue(transform(value))
+      }
+    }
+  }
+
+ // MARK: private methods
 
   private func beginExecution()
   {

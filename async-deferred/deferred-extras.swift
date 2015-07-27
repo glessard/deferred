@@ -142,13 +142,7 @@ extension Deferred
 
   public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      value in
-      deferred.beginExecution()
-      try! deferred.determine(transform(value))
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
 
@@ -168,13 +162,7 @@ extension Deferred
 
   public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      value in
-      deferred.beginExecution()
-      transform(value).notify(queue) { transformedValue in try! deferred.determine(transformedValue) }
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
 
@@ -192,16 +180,7 @@ extension Deferred
 
   public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      value in
-      transform.notify(queue) {
-        transform in
-        deferred.beginExecution()
-        try! deferred.determine(transform(value))
-      }
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
 
