@@ -12,7 +12,7 @@ import Dispatch
   Definitions that rely on or extend Deferred, but do not need the fundamental, private stuff.
 */
 
-// MARK: Asynchronous tasks with return values.
+// MARK: Create asynchronous tasks with return values.
 
 public func async<T>(task: () -> T) -> Deferred<T>
 {
@@ -56,25 +56,7 @@ public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () 
   }
 }
 
-public func delay(ns ns: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(ns: ns)
-}
-
-public func delay(µs µs: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(µs: µs)
-}
-
-public func delay(ms ms: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(ms: ms)
-}
-
-public func delay(seconds s: Double) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(seconds: s)
-}
+// MARK: Delay: enforce a minimum time before a `Deferred` has a value
 
 extension Deferred
 {
@@ -177,7 +159,7 @@ extension Deferred
   }
 }
 
-// notify: chain asynchronous tasks with input parameters and no return values.
+// MARK: Notify: execute a task with the result of an asynchronous computation.
 
 extension Deferred
 {
@@ -212,7 +194,7 @@ extension Deferred
   }
 }
 
-// flatMap: chain asynchronous tasks with input parameters and return values
+// MARK: flatMap: transform an asynchronous operand
 
 extension Deferred
 {
@@ -231,6 +213,8 @@ extension Deferred
     return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
+
+// MARK: Apply: apply an asynchronous transform to an asynchronous operand
 
 extension Deferred
 {
@@ -293,9 +277,8 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   {
     d.notify {
       result in
-      do {
-        try first.determine(result)
-      } catch { /* We don't care, it just means it's not the first completed */ }
+      do { try first.determine(result) }
+      catch { /* We don't care, it just means it's not the first completed */ }
     }
   }
   return first
