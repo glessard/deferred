@@ -116,7 +116,7 @@ public class Deferred<T>
 
     source.notify(queue) {
       value in
-      transform.notify {
+      transform.notify(queue) {
         transform in
         self.beginExecution()
         try! self.setValue(transform(value))
