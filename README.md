@@ -1,4 +1,4 @@
-# swiftian-dispatch
+# async & deferred
 An alternative to NSOperation in Swift, based on closures.
 
 `Deferred<T>` is useful in order to chain closures (blocks) together.
@@ -28,6 +28,11 @@ The `value` property will block the current thread until it becomes determined. 
 
 `Deferred` can run its closure on a specified `dispatch_queue_t` or concurrently at the requested `qos_class_t`, as can the `notify`, `map`, `flatMap` and `apply` methods. Otherwise it uses the global concurrent queue at the current qos class.
 
-This repo started out as a set of wrappers over dispatch_async, so that `async { println("In the background") }`
+This repo started out as a set of wrappers over dispatch_async, so that
+```
+async { println("In the background") }
+```
 is equivalent to 
-`dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), { println("In the background") })`
+```
+dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), { println("In the background") })
+```

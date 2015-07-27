@@ -9,11 +9,11 @@
 /* Begin PBXBuildFile section */
 		03285E191B4F223900F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E181B4F223900F4B44B /* deferred.swift */; };
 		03285E5A1B50380C00F4B44B /* DeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E591B50380C00F4B44B /* DeferredTests.swift */; };
-		03285E5C1B50380C00F4B44B /* swiftiandispatch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E60E2C1AAA571100F4B44B /* swiftiandispatch.framework */; };
+		03285E5C1B50380C00F4B44B /* async_deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E60E2C1AAA571100F4B44B /* async_deferred.framework */; };
 		03285E621B50486700F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
 		03285E641B521FAA00F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E631B521FAA00F4B44B /* shuffle.swift */; };
 		034C0BAE1B547E5C00F4B44B /* deferred-extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */; };
-		03E60E321AAA571200F4B44B /* swiftiandispatch.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E60E311AAA571200F4B44B /* swiftiandispatch.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		03E60E321AAA571200F4B44B /* async-deferred.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E60E311AAA571200F4B44B /* async-deferred.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03E60E4B1AAA571C00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
 		03E60E551AAA577C00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E541AAA577C00F4B44B /* main.swift */; };
 		03E60E591AAA57A500F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
@@ -33,14 +33,14 @@
 
 /* Begin PBXFileReference section */
 		03285E181B4F223900F4B44B /* deferred.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = deferred.swift; sourceTree = "<group>"; };
-		03285E571B50380C00F4B44B /* swiftiandispatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = swiftiandispatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		03285E571B50380C00F4B44B /* async_deferred_tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = async_deferred_tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		03285E591B50380C00F4B44B /* DeferredTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeferredTests.swift; sourceTree = "<group>"; };
 		03285E5B1B50380C00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03285E631B521FAA00F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = shuffle.swift; sourceTree = "<group>"; };
 		034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "deferred-extras.swift"; sourceTree = "<group>"; };
-		03E60E2C1AAA571100F4B44B /* swiftiandispatch.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = swiftiandispatch.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		03E60E2C1AAA571100F4B44B /* async_deferred.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = async_deferred.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		03E60E301AAA571200F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		03E60E311AAA571200F4B44B /* swiftiandispatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = swiftiandispatch.h; sourceTree = "<group>"; };
+		03E60E311AAA571200F4B44B /* async-deferred.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "async-deferred.h"; sourceTree = "<group>"; };
 		03E60E481AAA571C00F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = async.swift; sourceTree = "<group>"; };
 		03E60E5D1AAA632D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
 		03EEC3281B58CB2E00F4B44B /* result.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = result.swift; sourceTree = "<group>"; };
@@ -51,7 +51,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03285E5C1B50380C00F4B44B /* swiftiandispatch.framework in Frameworks */,
+				03285E5C1B50380C00F4B44B /* async_deferred.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,20 +65,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		03285E581B50380C00F4B44B /* swiftiandispatchTests */ = {
+		03285E581B50380C00F4B44B /* Tests */ = {
 			isa = PBXGroup;
 			children = (
 				03285E591B50380C00F4B44B /* DeferredTests.swift */,
 				03285E5B1B50380C00F4B44B /* Info.plist */,
 			);
-			path = swiftiandispatchTests;
+			name = Tests;
+			path = tests;
 			sourceTree = "<group>";
 		};
 		03E60E221AAA571100F4B44B = {
 			isa = PBXGroup;
 			children = (
-				03E60E2E1AAA571100F4B44B /* swiftiandispatch */,
-				03285E581B50380C00F4B44B /* swiftiandispatchTests */,
+				03E60E2E1AAA571100F4B44B /* async-deferred */,
+				03285E581B50380C00F4B44B /* Tests */,
 				03E60E5C1AAA632D00F4B44B /* utilities */,
 				03E60E2D1AAA571100F4B44B /* Products */,
 			);
@@ -87,24 +88,24 @@
 		03E60E2D1AAA571100F4B44B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				03E60E2C1AAA571100F4B44B /* swiftiandispatch.framework */,
-				03285E571B50380C00F4B44B /* swiftiandispatchTests.xctest */,
+				03E60E2C1AAA571100F4B44B /* async_deferred.framework */,
+				03285E571B50380C00F4B44B /* async_deferred_tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		03E60E2E1AAA571100F4B44B /* swiftiandispatch */ = {
+		03E60E2E1AAA571100F4B44B /* async-deferred */ = {
 			isa = PBXGroup;
 			children = (
 				03E60E481AAA571C00F4B44B /* async.swift */,
 				03285E181B4F223900F4B44B /* deferred.swift */,
 				034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */,
-				03E60E311AAA571200F4B44B /* swiftiandispatch.h */,
+				03E60E311AAA571200F4B44B /* async-deferred.h */,
 				03E60E2F1AAA571200F4B44B /* Supporting Files */,
 				03285E631B521FAA00F4B44B /* shuffle.swift */,
 				03EEC3281B58CB2E00F4B44B /* result.swift */,
 			);
-			path = swiftiandispatch;
+			path = "async-deferred";
 			sourceTree = "<group>";
 		};
 		03E60E2F1AAA571200F4B44B /* Supporting Files */ = {
@@ -130,16 +131,16 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03E60E321AAA571200F4B44B /* swiftiandispatch.h in Headers */,
+				03E60E321AAA571200F4B44B /* async-deferred.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		03285E561B50380C00F4B44B /* swiftiandispatchTests */ = {
+		03285E561B50380C00F4B44B /* async-deferred-tests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 03285E611B50380C00F4B44B /* Build configuration list for PBXNativeTarget "swiftiandispatchTests" */;
+			buildConfigurationList = 03285E611B50380C00F4B44B /* Build configuration list for PBXNativeTarget "async-deferred-tests" */;
 			buildPhases = (
 				03285E531B50380C00F4B44B /* Sources */,
 				03285E541B50380C00F4B44B /* Frameworks */,
@@ -150,14 +151,14 @@
 			dependencies = (
 				03285E5E1B50380C00F4B44B /* PBXTargetDependency */,
 			);
-			name = swiftiandispatchTests;
-			productName = swiftiandispatchTests;
-			productReference = 03285E571B50380C00F4B44B /* swiftiandispatchTests.xctest */;
+			name = "async-deferred-tests";
+			productName = "async-deferredTests";
+			productReference = 03285E571B50380C00F4B44B /* async_deferred_tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		03E60E2B1AAA571100F4B44B /* swiftiandispatch */ = {
+		03E60E2B1AAA571100F4B44B /* async-deferred */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 03E60E421AAA571200F4B44B /* Build configuration list for PBXNativeTarget "swiftiandispatch" */;
+			buildConfigurationList = 03E60E421AAA571200F4B44B /* Build configuration list for PBXNativeTarget "async-deferred" */;
 			buildPhases = (
 				03E60E271AAA571100F4B44B /* Sources */,
 				03E60E281AAA571100F4B44B /* Frameworks */,
@@ -168,9 +169,9 @@
 			);
 			dependencies = (
 			);
-			name = swiftiandispatch;
-			productName = swiftiandispatch;
-			productReference = 03E60E2C1AAA571100F4B44B /* swiftiandispatch.framework */;
+			name = "async-deferred";
+			productName = "async-deferred";
+			productReference = 03E60E2C1AAA571100F4B44B /* async_deferred.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -191,7 +192,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 03E60E261AAA571100F4B44B /* Build configuration list for PBXProject "swiftiandispatch" */;
+			buildConfigurationList = 03E60E261AAA571100F4B44B /* Build configuration list for PBXProject "async-deferred" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -203,8 +204,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				03E60E2B1AAA571100F4B44B /* swiftiandispatch */,
-				03285E561B50380C00F4B44B /* swiftiandispatchTests */,
+				03E60E2B1AAA571100F4B44B /* async-deferred */,
+				03285E561B50380C00F4B44B /* async-deferred-tests */,
 			);
 		};
 /* End PBXProject section */
@@ -253,7 +254,7 @@
 /* Begin PBXTargetDependency section */
 		03285E5E1B50380C00F4B44B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 03E60E2B1AAA571100F4B44B /* swiftiandispatch */;
+			target = 03E60E2B1AAA571100F4B44B /* async-deferred */;
 			targetProxy = 03285E5D1B50380C00F4B44B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -263,10 +264,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = swiftiandispatchTests/Info.plist;
+				INFOPLIST_FILE = tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.swiftiandispatchTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.async-deferred-tests";
+				PRODUCT_NAME = async_deferred_tests;
 			};
 			name = Debug;
 		};
@@ -274,10 +275,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = swiftiandispatchTests/Info.plist;
+				INFOPLIST_FILE = tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.swiftiandispatchTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.async-deferred-tests";
+				PRODUCT_NAME = async_deferred_tests;
 			};
 			name = Release;
 		};
@@ -378,11 +379,11 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = swiftiandispatch/Info.plist;
+				INFOPLIST_FILE = "async-deferred/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.async-deferred";
+				PRODUCT_NAME = async_deferred;
 				SKIP_INSTALL = YES;
 			};
 			name = Debug;
@@ -397,11 +398,11 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = swiftiandispatch/Info.plist;
+				INFOPLIST_FILE = "async-deferred/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.async-deferred";
+				PRODUCT_NAME = async_deferred;
 				SKIP_INSTALL = YES;
 			};
 			name = Release;
@@ -409,7 +410,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		03285E611B50380C00F4B44B /* Build configuration list for PBXNativeTarget "swiftiandispatchTests" */ = {
+		03285E611B50380C00F4B44B /* Build configuration list for PBXNativeTarget "async-deferred-tests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				03285E5F1B50380C00F4B44B /* Debug */,
@@ -418,7 +419,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		03E60E261AAA571100F4B44B /* Build configuration list for PBXProject "swiftiandispatch" */ = {
+		03E60E261AAA571100F4B44B /* Build configuration list for PBXProject "async-deferred" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				03E60E401AAA571200F4B44B /* Debug */,
@@ -427,7 +428,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		03E60E421AAA571200F4B44B /* Build configuration list for PBXNativeTarget "swiftiandispatch" */ = {
+		03E60E421AAA571200F4B44B /* Build configuration list for PBXNativeTarget "async-deferred" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				03E60E431AAA571200F4B44B /* Debug */,
