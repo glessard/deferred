@@ -185,10 +185,19 @@ public class Deferred<T>
     self.init()
 
     source.notify(queue) {
-      value in
+      result in
       self.beginExecution()
-      dispatch_after(delay, queue) {
-        try! self.setResult(value)
+      switch result
+      {
+      case .Value:
+        dispatch_after(delay, queue) {
+          do { try self.setResult(result) }
+          catch { /* an error here seems means `self` was canceled before the delay ended */ }
+        }
+
+      case .Error:
+        do { try self.setResult(result) }
+        catch { /* an error here seems irrelevant */ }
       }
     }
   }
