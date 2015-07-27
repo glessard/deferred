@@ -310,9 +310,9 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   for d in deferreds.shuffle()
   {
     d.notify {
-      value in
+      result in
       do {
-        try first.determine(value)
+        try first.determine(result)
       } catch { /* We don't care, it just means it's not the first completed */ }
     }
   }
