@@ -56,25 +56,6 @@ public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () 
   }
 }
 
-public func delay(ns ns: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(ns: ns)
-}
-
-public func delay(µs µs: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(µs: µs)
-}
-
-public func delay(ms ms: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(ms: ms)
-}
-
-public func delay(seconds s: Double) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(seconds: s)
-}
 
 extension Deferred
 {
