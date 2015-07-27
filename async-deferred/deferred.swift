@@ -162,7 +162,7 @@ public class Deferred<T>
       switch result
       {
       case .Value:
-        transform.notify {
+        transform.notify(queue) {
           transform in
           self.beginExecution()
           let transformed = result.apply(transform)
@@ -174,6 +174,21 @@ public class Deferred<T>
         self.beginExecution()
         do { try self.setResult(Result(error: error)) }
         catch { /* an error here seems irrelevant */ }
+      }
+    }
+  }
+
+  // constructor used by `delay`
+
+  public convenience init(queue: dispatch_queue_t, source: Deferred, delay: dispatch_time_t)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      self.beginExecution()
+      dispatch_after(delay, queue) {
+        try! self.setResult(value)
       }
     }
   }
