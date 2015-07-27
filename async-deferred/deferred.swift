@@ -124,6 +124,21 @@ public class Deferred<T>
     }
   }
 
+  // constructor used by `delay`
+
+  public convenience init(queue: dispatch_queue_t, source: Deferred, delay: dispatch_time_t)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      self.beginExecution()
+      dispatch_after(delay, queue) {
+        try! self.setValue(value)
+      }
+    }
+  }
+
  // MARK: private methods
 
   private func beginExecution()

@@ -97,16 +97,9 @@ extension Deferred
   {
     if ns < 0 { return self }
 
-    let delayed = TBD<T>()
-    self.notify {
-      value in
-      delayed.beginExecution()
-      let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
-      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
-        try! delayed.determine(value)
-      }
-    }
-    return delayed
+    let queue = dispatch_get_global_queue(qos_class_self(), 0)
+    let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+    return Deferred(queue: queue, source: self, delay: delay)
   }
 }
 
