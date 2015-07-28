@@ -139,7 +139,7 @@ public class Deferred<T>
     }
   }
 
- // MARK: private methods
+  // MARK: private methods
 
   private func beginExecution()
   {
