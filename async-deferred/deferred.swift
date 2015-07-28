@@ -69,16 +69,10 @@ public class Deferred<T>
     currentState = DeferredState.Executing.rawValue
     dispatch_async(queue) {
       let result: Result<T>
-      do {
-        let v = try task()
-        result = .Value(v)
-      }
-      catch {
-        result = .Error(error)
-      }
-      do {
-        try self.setResult(result)
-      }
+      do {    result = .Value(try task()) }
+      catch { result = .Error(error) }
+
+      do {  try self.setResult(result) }
       catch { /* an error here means this `Deferred` was canceled before `task()` was complete. */ }
     }
   }
