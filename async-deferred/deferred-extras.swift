@@ -1,16 +1,18 @@
 //
 //  deferred-extras.swift
-//  swiftiandispatch
+//  async-deferred
 //
 //  Created by Guillaume Lessard on 2015-07-13.
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 /*
   Definitions that rely on or extend Deferred, but do not need the fundamental, private stuff.
 */
 
-// MARK: Asynchronous tasks with return values.
+// MARK: Create asynchronous tasks with return values.
 
 public func async<T>(task: () -> T) -> Deferred<T>
 {
@@ -54,25 +56,7 @@ public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () 
   }
 }
 
-public func delay(ns ns: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(ns: ns)
-}
-
-public func delay(µs µs: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(µs: µs)
-}
-
-public func delay(ms ms: Int) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(ms: ms)
-}
-
-public func delay(seconds s: Double) -> Deferred<Void>
-{
-  return Deferred(value: ()).delay(seconds: s)
-}
+// MARK: Delay: enforce a minimum time before a `Deferred` has a value
 
 extension Deferred
 {
@@ -95,21 +79,13 @@ extension Deferred
   {
     if ns < 0 { return self }
 
-    let delayed = TBD<T>()
-    self.notify {
-      value in
-      delayed.beginExecution()
-      let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
-      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) {
-        try! delayed.determine(value)
-      }
-    }
-    return delayed
+    let queue = dispatch_get_global_queue(qos_class_self(), 0)
+    let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+    return Deferred(queue: queue, source: self, delay: delay)
   }
 }
 
-
-// MARK: Notify: chain asynchronous tasks with input parameters and no return values.
+// MARK: Notify: execute a task with the result of an asynchronous computation.
 
 extension Deferred
 {
@@ -124,7 +100,7 @@ extension Deferred
   }
 }
 
-// MARK: Map: chain asynchronous tasks with input parameters and return values
+// MARK: Map: transform an asynchronous operand
 
 extension Deferred
 {
@@ -140,17 +116,11 @@ extension Deferred
 
   public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      value in
-      deferred.beginExecution()
-      try! deferred.determine(transform(value))
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
 
-// MARK: flatMap: chain asynchronous tasks with input parameters and return values
+// MARK: flatMap: transform an asynchronous operand
 
 extension Deferred
 {
@@ -166,15 +136,11 @@ extension Deferred
 
   public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      value in
-      deferred.beginExecution()
-      transform(value).notify(queue) { transformedValue in try! deferred.determine(transformedValue) }
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
+
+// MARK: Apply: apply an asynchronous transform to an asynchronous operand
 
 extension Deferred
 {
@@ -190,16 +156,7 @@ extension Deferred
 
   public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
   {
-    let deferred = TBD<U>()
-    self.notify(queue) {
-      value in
-      transform.notify(queue) {
-        transform in
-        deferred.beginExecution()
-        try! deferred.determine(transform(value))
-      }
-    }
-    return deferred
+    return Deferred<U>(queue: queue, source: self, transform: transform)
   }
 }
 
@@ -246,9 +203,8 @@ public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   {
     d.notify {
       value in
-      do {
-        try first.determine(value)
-      } catch { /* We don't care, it just means it's not the first completed */ }
+      do { try first.determine(value) }
+      catch { /* We don't care, it just means it's not the first completed */ }
     }
   }
   return first

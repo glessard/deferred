@@ -1,6 +1,6 @@
 //
-//  swiftiandispatchTests.swift
-//  swiftiandispatchTests
+//  DeferredTests.swift
+//  async-deferred-tests
 //
 //  Created by Guillaume Lessard on 2015-07-10.
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
@@ -8,7 +8,7 @@
 
 import XCTest
 
-import swiftiandispatch
+import async_deferred
 
 class DeferredTests: XCTestCase
 {
@@ -45,6 +45,16 @@ class DeferredTests: XCTestCase
     syncprint("Result 4: \(result4.value)")
     syncprint("Done")
     syncprintwait()
+  }
+
+  func testExample2()
+  {
+    let d = Deferred {
+      () -> Double in
+      usleep(50000)
+      return 1.0
+    }
+    print(d.value)
   }
 
   func testValue()
@@ -244,6 +254,14 @@ class DeferredTests: XCTestCase
 
     try! g.determine()
     waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testApply3()
+  {
+    let transform = Deferred { Double(7*$0) }                    // Deferred<Int->Double>
+    let operand = Deferred { 6 }                                 // Deferred<Int>
+    let result = operand.apply(transform).map { $0.description } // Deferred<String>
+    print(result.value)                                          // 42.0
   }
 
   func testCombine2()

@@ -1,6 +1,6 @@
 //
 //  deferred.swift
-//  swiftiandispatch
+//  async-deferred
 //
 //  Created by Guillaume Lessard on 2015-07-09.
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
@@ -75,6 +75,63 @@ public class Deferred<T>
   public convenience init(_ task: () -> T)
   {
     self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  // constructor used by `map`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> T)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      self.beginExecution()
+      try! self.setValue(transform(value))
+    }
+  }
+
+  // constructor used by `flatMap`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      self.beginExecution()
+      transform(value).notify { transformedValue in try! self.setValue(transformedValue) }
+    }
+  }
+
+  // constructor used by `apply`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) -> T>)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      transform.notify(queue) {
+        transform in
+        self.beginExecution()
+        try! self.setValue(transform(value))
+      }
+    }
+  }
+
+  // constructor used by `delay`
+
+  public convenience init(queue: dispatch_queue_t, source: Deferred, delay: dispatch_time_t)
+  {
+    self.init()
+
+    source.notify(queue) {
+      value in
+      self.beginExecution()
+      dispatch_after(delay, queue) {
+        try! self.setValue(value)
+      }
+    }
   }
 
   deinit
