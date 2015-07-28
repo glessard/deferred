@@ -85,9 +85,7 @@ extension Deferred
   }
 }
 
-/**
-  A timeout utility
-*/
+// MARK: Timeout: enforce a maximum time before a `Deferred` has becomes determined
 
 extension Deferred
 {
@@ -119,7 +117,7 @@ extension Deferred
   }
 }
 
-// onValue: chain asynchronous tasks only when the result has a value
+// MARK: onValue: execute a task when (and only when) a computation succeeds
 
 extension Deferred
 {
@@ -139,7 +137,7 @@ extension Deferred
   }
 }
 
-// onError: chan asynchronous tasks only when the rusilt in an error
+// MARK: onError: execute a task when (and only when) a computation fails
 
 extension Deferred
 {
@@ -174,7 +172,7 @@ extension Deferred
   }
 }
 
-// map: chain asynchronous tasks with input parameters and return values
+// MARK: Map: transform an asynchronous operand
 
 extension Deferred
 {
