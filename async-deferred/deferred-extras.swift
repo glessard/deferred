@@ -214,6 +214,26 @@ extension Deferred
   }
 }
 
+// MARK: flatMap: transform an asynchronous operand
+
+extension Deferred
+{
+  public func flatMap<U>(transform: (T) -> Result<U>) -> Deferred<U>
+  {
+    return flatMap(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
+  }
+
+  public func flatMap<U>(qos: qos_class_t, transform: (T) -> Result<U>) -> Deferred<U>
+  {
+    return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
+  }
+  
+  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Result<U>) -> Deferred<U>
+  {
+    return Deferred<U>(queue: queue, source: self, transform: transform)
+  }
+}
+
 // MARK: Apply: apply an asynchronous transform to an asynchronous operand
 
 extension Deferred

@@ -151,6 +151,21 @@ public class Deferred<T>
     }
   }
 
+  // constructor used by `flatMap`
+
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Result<T>)
+  {
+    self.init()
+
+    source.notify(queue) {
+      result in
+      self.beginExecution()
+      let transformed = result.flatMap(transform)
+      do { try self.setResult(transformed) }
+      catch { /* an error here means `self` was canceled before `transform()` completed */ }
+    }
+  }
+
   // constructor used by `apply`
 
   public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
