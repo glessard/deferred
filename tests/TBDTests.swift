@@ -118,7 +118,7 @@ class TBDTests: XCTestCase
       do { try d.determine(i) }
       catch { XCTAssert(i == lucky) }
     }
-    
+
     XCTAssert(first.value == lucky)
   }
 }
