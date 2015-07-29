@@ -98,7 +98,7 @@ public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () 
   }
 }
 
-// MARK: Delay: enforce a minimum time before a `Deferred` has a value
+// MARK: minimum delay until a `Deferred` has a value
 
 extension Deferred
 {
@@ -143,14 +143,23 @@ extension Deferred
   }
 }
 
-// MARK: Notify: execute a task with the result of an asynchronous computation.
+// MARK: enqueue a closure which takes the value of a `Deferred`
 
 extension Deferred
 {
+  /// Enqueue a closure to be performed asynchronously after `self` becomes determined.
+  /// The closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter task: the closure to be enqueued
+
   public func notify(task: (T) -> Void)
   {
     return notify(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
+
+  /// Enqueue a closure to be performed asynchronously after `self` becomes determined.
+  /// The closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter task: the closure to be enqueued
 
   public func notify(qos: qos_class_t, task: (T) -> Void)
   {
@@ -158,19 +167,35 @@ extension Deferred
   }
 }
 
-// MARK: Map: transform an asynchronous operand
+// MARK: map: asynchronously transform a `Deferred` into another
 
 extension Deferred
 {
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
   public func map<U>(transform: (T) -> U) -> Deferred<U>
   {
     return map(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// The transforming closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
   public func map<U>(qos: qos_class_t, transform: (T) -> U) -> Deferred<U>
   {
     return map(dispatch_get_global_queue(qos, 0), transform: transform)
   }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
 
   public func map<U>(queue: dispatch_queue_t, transform: (T) -> U) -> Deferred<U>
   {
@@ -178,19 +203,35 @@ extension Deferred
   }
 }
 
-// MARK: flatMap: transform an asynchronous operand
+// MARK: flatMap: asynchronously transform a `Deferred` into another
 
 extension Deferred
 {
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
   public func flatMap<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
   {
     return flatMap(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// The transforming closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
   public func flatMap<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
     return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
   }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
 
   public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
@@ -198,7 +239,7 @@ extension Deferred
   }
 }
 
-// MARK: Apply: apply an asynchronous transform to an asynchronous operand
+// MARK: apply: asynchronously transform a `Deferred` into another
 
 extension Deferred
 {
@@ -207,10 +248,20 @@ extension Deferred
     return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
+  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
   public func apply<U>(qos: qos_class_t, transform: Deferred<(T)->U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos, 0), transform: transform)
   }
+
+  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
+  /// - returns: a `Deferred` reference representing the return value of the transform
 
   public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)->U>) -> Deferred<U>
   {
@@ -222,21 +273,54 @@ extension Deferred
 
 extension Deferred
 {
+  /// Combine `self` with another `Deferred` into a new `Deferred`.
+  /// The returned `Deferred` will become determined after both `self` and `other` are determined.
+  ///
+  /// Equivalent to but hopefully more efficient than:
+  /// ```
+  /// Deferred { (self.value, other.value) }
+  /// ```
+  /// - parameter other: a second `Deferred` to combine with `self`
+  /// - returns: a new `Deferred` whose value is a tuple of `self.value` and `other.value`
+
   public func combine<U>(other: Deferred<U>) -> Deferred<(T,U)>
   {
     return flatMap { (t: T) in other.map { (u: U) in (t,u) } }
   }
+
+  /// Combine `self` with two other `Deferred`s into a new `Deferred`.
+  /// The returned `Deferred` will become determined after all three input `Deferred`s are determined.
+  /// - parameter o1: another `Deferred` to combine with `self`
+  /// - parameter o2: another `Deferred` to combine with `self`
+  /// - returns: a new `Deferred` whose value is a tuple of `self.value`, `o1.value` and `o2.value`
 
   public func combine<U1,U2>(o1: Deferred<U1>, _ o2: Deferred<U2>) -> Deferred<(T,U1,U2)>
   {
     return combine(o1).flatMap { (t,u1) in o2.map { u2 in (t,u1,u2) } }
   }
 
+  /// Combine `self` with three other `Deferred`s into a new `Deferred`.
+  /// The returned `Deferred` will become determined after all three input `Deferred`s are determined.
+  /// - parameter o1: another `Deferred` to combine with `self`
+  /// - parameter o2: another `Deferred` to combine with `self`
+  /// - parameter o3: another `Deferred` to combine with `self`
+  /// - returns: a new `Deferred` whose value is a tuple of `self.value`, `o1.value`, `o2.value` and `o3.value`
+
   public func combine<U1,U2,U3>(o1: Deferred<U1>, _ o2: Deferred<U2>, _ o3: Deferred<U3>) -> Deferred<(T,U1,U2,U3)>
   {
     return combine(o1,o2).flatMap { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
   }
 }
+
+/// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.
+/// The returned `Deferred` will become determined after every input `Deferred` is determined.
+///
+/// Equivalent to but hopefully more efficient than:
+/// ```
+/// Deferred { deferreds.map { $0.value } }
+/// ```
+/// - parameter deferreds: an array of `Deferred`
+/// - returns: a new `Deferred`
 
 public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 {
@@ -253,6 +337,10 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
   }
   return combined
 }
+
+/// Return the value of the first of an array of `Deferred`s to be determined.
+/// - parameter deferreds: an array of `Deferred`
+/// - returns: a new `Deferred`
 
 public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {

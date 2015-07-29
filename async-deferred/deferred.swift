@@ -266,10 +266,10 @@ public class Deferred<T>
     return v
   }
 
-  /// Enqueue a computation to be performed upon the determination of this `Deferred`
+  /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined
   ///
   /// - parameter queue: the `dispatch_queue_t` upon which the computation should be enqueued
-  /// - parameter task:  the computation to be enqueued
+  /// - parameter task:  the closure to be enqueued
 
   public func notify(queue: dispatch_queue_t, task: (T) -> Void)
   {
