@@ -60,7 +60,10 @@ public class Deferred<T>
     dispatch_group_enter(group)
   }
 
-  // Initialize with a background task to perform
+  /// Initialize with a computation task to be performed in the background
+  ///
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be queued
+  /// - parameter task:  the computation to be performed
 
   public convenience init(queue: dispatch_queue_t, task: () throws -> T)
   {
@@ -77,17 +80,28 @@ public class Deferred<T>
     }
   }
 
+  /// Initialize with a computation task to be performed in the background
+  ///
+  /// - parameter qos:  the Quality-of-Service class at which the computation task should be performed
+  /// - parameter task: the computation to be performed
+
   public convenience init(qos: qos_class_t, task: () throws -> T)
   {
     self.init(queue: dispatch_get_global_queue(qos, 0), task: task)
   }
+
+  /// Initialize with a computation task to be performed in the background, at the current quality of service
+  ///
+  /// - parameter task: the computation to be performed
 
   public convenience init(_ task: () throws -> T)
   {
     self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
-  // Initialize to an already Determined state.
+  /// Initialize to an already determined state
+  ///
+  /// - parameter result: the result of this `Deferred`
 
   public init(result: Result<T>)
   {
@@ -95,17 +109,30 @@ public class Deferred<T>
     currentState = DeferredState.Determined.rawValue
   }
 
+  /// Initialize to an already determined state
+  ///
+  /// - parameter value: the value of this `Deferred`'s `Result`
+
   convenience public init(value: T)
   {
     self.init(result: Result(value: value))
   }
+
+  /// Initialize to an already determined state
+  ///
+  /// - parameter error: the error state of this `Deferred`'s `Result`
 
   convenience public init(error: ErrorType)
   {
     self.init(result: Result(error: error))
   }
   
-  // constructor used by `map`
+  /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// This constructor is used by `map`
+  ///
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
   public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) throws -> T)
   {
@@ -120,7 +147,12 @@ public class Deferred<T>
     }
   }
 
-  // constructor used by `flatMap`
+  /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// This constructor is used by `flatMap`
+  ///
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
   public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
   {
@@ -160,7 +192,12 @@ public class Deferred<T>
     }
   }
 
-  // constructor used by `apply`
+  /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// This constructor is used by `apply`
+  ///
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
   public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
   {
@@ -187,7 +224,12 @@ public class Deferred<T>
     }
   }
 
-  // constructor used by `delay`
+  /// Initialize with a `Deferred` source and a delay time to be applied
+  /// This constructor is used by `delay`
+  ///
+  /// - parameter queue:  the `dispatch_queue_t` onto which the created blocks should be queued
+  /// - parameter source: the `Deferred` whose value should be delayed
+  /// - parameter delay:  the amount of time by which to delay the determination of this `Deferred`
 
   public convenience init(queue: dispatch_queue_t, source: Deferred, delay: dispatch_time_t)
   {
@@ -211,12 +253,20 @@ public class Deferred<T>
     }
   }
 
- // MARK: private methods
+  // MARK: private methods
+
+  /// Change the state of this `Deferred` from `.Waiting` to `.Executing`
 
   private func beginExecution()
   {
     OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Executing.rawValue, &currentState)
   }
+
+  /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
+  /// None that a `Deferred` can only be determined once. On subsequente calls `setValue` will throw an `AlreadyDetermined` error.
+  ///
+  /// - parameter result: the intended `Result` to determine this `Deferred`
+  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
   private func setResult(result: Result<T>) throws
   {
@@ -249,7 +299,15 @@ public class Deferred<T>
 
   // MARK: public interface
 
+  /// Query the current state of this `Deferred`
+  ///
+  /// - returns: a `DeferredState` (`.Waiting`, `.Executing` or `.Determined`)
+
   public var state: DeferredState { return DeferredState(rawValue: currentState) ?? .Executing }
+
+  /// Query whether this `Deferred` has been determined.
+  ///
+  /// - returns: wheither this `Deferred` has been determined.
 
   public var isDetermined: Bool { return currentState == DeferredState.Determined.rawValue }
 
@@ -264,6 +322,11 @@ public class Deferred<T>
     }
   }
 
+  /// Get this `Deferred` value if it has been determined, `nil` otherwise.
+  /// (This call does not block)
+  ///
+  /// - returns: this `Deferred`'s value, or `nil`
+
   public func peek() -> Result<T>?
   {
     if currentState != DeferredState.Determined.rawValue
@@ -272,6 +335,10 @@ public class Deferred<T>
     }
     return result
   }
+
+  /// Get this `Deferred` value, blocking if necessary until it becomes determined.
+  ///
+  /// - returns: this `Deferred`'s value
 
   public var result: Result<T> {
     if currentState != DeferredState.Determined.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
@@ -286,6 +353,11 @@ public class Deferred<T>
     return result.error
   }
 
+  /// Enqueue a computation to be performed upon the determination of this `Deferred`
+  ///
+  /// - parameter queue: the `dispatch_queue_t` upon which the computation should be enqueued
+  /// - parameter task:  the computation to be enqueued
+
   public func notify(queue: dispatch_queue_t, task: (Result<T>) -> Void)
   {
     dispatch_group_notify(self.group, queue) { task(self.r) }
@@ -293,12 +365,20 @@ public class Deferred<T>
 }
 
 /**
-  A Deferred to be determined (TBD) manually.
+  A `Deferred` to be determined (`TBD`) manually.
 */
 
 public class TBD<T>: Deferred<T>
 {
+  /// Initialize an undetermined `Deferred`, `TBD`.
+
   override public init() { super.init() }
+
+  /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
+  /// None that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
+  ///
+  /// - parameter value: the intended value for this `Deferred`
+  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
   public func determine(value: T) throws
   {
@@ -314,6 +394,8 @@ public class TBD<T>: Deferred<T>
   {
     try super.setResult(result)
   }
+
+  /// Change the state of this `TBD` from `.Waiting` to `.Executing`
 
   public override func beginExecution()
   {
