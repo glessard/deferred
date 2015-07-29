@@ -89,7 +89,7 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testBlockingOfValue()
+  func testValueBlocks()
   {
     let start = dispatch_time(DISPATCH_TIME_NOW, 0)
     let waitns = 100_000_000 as dispatch_time_t
@@ -117,7 +117,7 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0) { _ in dispatch_semaphore_signal(s) }
   }
 
-  func testUnblockingOfValue()
+  func testValueUnblocks()
   {
     let start = dispatch_time(DISPATCH_TIME_NOW, 0)
     let waitns = 100_000_000 as dispatch_time_t
@@ -147,7 +147,7 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testNotify()
+  func testNotify1()
   {
     let value = arc4random()
     let e1 = expectationWithDescription("Pre-set Deferred")
@@ -156,25 +156,35 @@ class DeferredTests: XCTestCase
       XCTAssert( $0 == value )
       e1.fulfill()
     }
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
 
+  func testNotify2()
+  {
+    let value = arc4random()
     let e2 = expectationWithDescription("Properly Deferred")
     let d2 = Deferred(value: value).delay(ms: 100)
     d2.notify {
       XCTAssert( $0 == value )
       e2.fulfill()
     }
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
 
+  func testNotify3()
+  {
     let e3 = expectationWithDescription("Deferred forever")
     let d3 = Deferred { _ -> Int in
       let s3 = dispatch_semaphore_create(0)
       dispatch_semaphore_wait(s3, DISPATCH_TIME_FOREVER)
       return 42
     }
-    d3.notify { _ in XCTFail() }
+    d3.notify { _ in
+      XCTFail()
+    }
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
       e3.fulfill()
     }
-
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
@@ -305,26 +315,5 @@ class DeferredTests: XCTestCase
 
     let combined1 = combine([Deferred<Int>]())
     XCTAssert(combined1.value.count == 0)
-  }
-
-  func testFirstCompleted()
-  {
-    let count = 10
-    let lucky = Int(arc4random_uniform(numericCast(count)))
-
-    let deferreds = (0..<count).map {
-      i -> Deferred<Int> in
-      let e = expectationWithDescription(i.description)
-      return Deferred {
-        () -> Int in
-        usleep(i == lucky ? 10_000 : 200_000)
-        e.fulfill()
-        return i
-      }
-    }
-
-    let first = firstCompleted(deferreds)
-    XCTAssert(first.value == lucky)
-    waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 }
