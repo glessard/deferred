@@ -42,7 +42,7 @@ class TBDTests: XCTestCase
     try! tbd.determine(value)
 
     tbd.notify {
-      XCTAssert( $0 == value )
+      XCTAssert( $0.value == value )
       e1.fulfill()
     }
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -55,7 +55,7 @@ class TBDTests: XCTestCase
 
     var value = arc4random()
     tbd.notify {
-      XCTAssert( $0 == value )
+      XCTAssert( $0.value == value )
       e2.fulfill()
     }
 
@@ -97,7 +97,7 @@ class TBDTests: XCTestCase
       }
     }
 
-    let first = firstCompleted(deferreds)
+    let first = firstDetermined(deferreds)
     XCTAssert(first.value == lucky)
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
@@ -108,7 +108,7 @@ class TBDTests: XCTestCase
     let lucky = Int(arc4random_uniform(numericCast(count)))
 
     let deferreds = (0..<count).map { _ in TBD<Int>() }
-    let first = firstCompleted(deferreds)
+    let first = firstDetermined(deferreds)
 
     do { try deferreds[lucky].determine(lucky) }
     catch { XCTFail() }
