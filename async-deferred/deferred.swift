@@ -280,7 +280,7 @@ public class TBD<T>: Deferred<T>
   override public init() { super.init() }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
-  /// None that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
+  /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter value: the intended value for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
