@@ -81,7 +81,7 @@ class TBDTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testFirstCompletedDeferred()
+  func testFirstDeterminedDeferred()
   {
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
@@ -102,7 +102,7 @@ class TBDTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testFirstCompletedTBD()
+  func testFirstDeterminedTBD()
   {
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
