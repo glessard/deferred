@@ -196,7 +196,7 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
   return combined
 }
 
-public func firstCompleted<T>(deferreds: [Deferred<T>]) -> Deferred<T>
+public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {
   let first = TBD<T>()
   for d in deferreds.shuffle()

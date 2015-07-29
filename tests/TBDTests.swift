@@ -81,7 +81,7 @@ class TBDTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testFirstCompletedDeferred()
+  func testFirstDeterminedDeferred()
   {
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
@@ -97,18 +97,18 @@ class TBDTests: XCTestCase
       }
     }
 
-    let first = firstCompleted(deferreds)
+    let first = firstDetermined(deferreds)
     XCTAssert(first.value == lucky)
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testFirstCompletedTBD()
+  func testFirstDeterminedTBD()
   {
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
 
     let deferreds = (0..<count).map { _ in TBD<Int>() }
-    let first = firstCompleted(deferreds)
+    let first = firstDetermined(deferreds)
 
     do { try deferreds[lucky].determine(lucky) }
     catch { XCTFail() }
