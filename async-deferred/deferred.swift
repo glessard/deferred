@@ -177,7 +177,12 @@ public class Deferred<T>
     }
   }
 
-  // constructor used by `flatMap`
+  /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// This constructor is used by `flatMap`
+  ///
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
   public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Result<T>)
   {
@@ -311,6 +316,15 @@ public class Deferred<T>
 
   public var isDetermined: Bool { return currentState == DeferredState.Determined.rawValue }
 
+  /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
+  /// A successful cancellation will determine result in a `Deferred` equivalent as if it had been initialized as follows:
+  /// ```
+  /// Deferred<T>(error: DeferredError.Canceled(reason))
+  /// ```
+  ///
+  /// - parameter reason: a `String` detailing the reason for the attempted cancellation.
+  /// - returns: whether the cancellation was performed succesfully.
+
   public func cancel(reason: String = "") -> Bool
   {
     do {
@@ -318,6 +332,7 @@ public class Deferred<T>
       return true
     }
     catch {
+      // Could not cancel, probably because this `Deferred` had already become determined.
       return false
     }
   }
@@ -336,18 +351,30 @@ public class Deferred<T>
     return result
   }
 
-  /// Get this `Deferred` value, blocking if necessary until it becomes determined.
+  /// Get this `Deferred`'s value as a `Result`, blocking if necessary until it becomes determined.
   ///
-  /// - returns: this `Deferred`'s value
+  /// - returns: this `Deferred`'s determined result
 
   public var result: Result<T> {
     if currentState != DeferredState.Determined.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
     return r
   }
 
+  /// Get this `Deferred` value, blocking if necessary until it becomes determined.
+  /// If the `Deferred` is determined by a `Result` in the `.Error` state, return nil.
+  /// In either case, this property will block until `Deferred` is determined.
+  ///
+  /// - returns: this `Deferred`'s determined value, or `nil`
+
   public var value: T? {
     return result.value
   }
+
+  /// Get this `Deferred` value, blocking if necessary until it becomes determined.
+  /// If the `Deferred` is determined by a `Result` in the `.Error` state, return nil.
+  /// In either case, this property will block until `Deferred` is determined.
+  ///
+  /// - returns: this `Deferred`'s determined value, or `nil`
 
   public var error: ErrorType? {
     return result.error
@@ -375,7 +402,7 @@ public class TBD<T>: Deferred<T>
   override public init() { super.init() }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
-  /// None that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
+  /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter value: the intended value for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
@@ -385,10 +412,22 @@ public class TBD<T>: Deferred<T>
     try determine(Result(value: value))
   }
 
+  /// Set this `Deferred` to an error and change its state to `DeferredState.Determined`
+  /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
+  ///
+  /// - parameter error: the intended error for this `Deferred`
+  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
+
   public func determine(error: ErrorType) throws
   {
     try determine(Result(error: error))
   }
+
+  /// Set the `Result` of this `Deferred` and change its state to `DeferredState.Determined`
+  /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
+  ///
+  /// - parameter result: the intended `Result` for this `Deferred`
+  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
   public func determine(result: Result<T>) throws
   {
