@@ -200,10 +200,10 @@ class DeferredTests: XCTestCase
 
     let e = expectationWithDescription("Cancel before setting")
     let tbd3 = TBD<UInt32>()
-    delay(ms: 100).notify { _ in
+    Deferred(value: ()).delay(ms: 100).notify { _ in
       if tbd3.cancel() == false { XCTFail() }
     }
-    delay(ms: 200).notify { _ in
+    Deferred(value: ()).delay(ms: 200).notify { _ in
       do {
         try tbd3.determine(arc4random())
         XCTFail()
