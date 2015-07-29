@@ -102,28 +102,44 @@ public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () 
 
 extension Deferred
 {
+  /// Return a `Deferred` whose determination will occur at least `µs` microseconds from the time of evaluation.
+  /// - parameter µs: a number of microseconds
+  /// - returns: a `Deferred` reference
+
   public func delay(µs µs: Int) -> Deferred
   {
     return delay(ns: µs*1000)
   }
+
+  /// Return a `Deferred` whose determination will occur at least `ms` milliseconds from the time of evaluation.
+  /// - parameter ms: a number of milliseconds
+  /// - returns: a `Deferred` reference
 
   public func delay(ms ms: Int) -> Deferred
   {
     return delay(ns: ms*1_000_000)
   }
 
+  /// Return a `Deferred` whose determination will occur at least a number of seconds from the time of evaluation.
+  /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
+  /// - returns: a `Deferred` reference
+
   public func delay(seconds s: Double) -> Deferred
   {
     return delay(ns: Int(s*1e9))
   }
   
+  /// Return a `Deferred` whose determination will occur at least `ns` nanoseconds from the time of evaluation.
+  /// - parameter ns: a number of nanoseconds
+  /// - returns: a `Deferred` reference
+
   public func delay(ns ns: Int) -> Deferred
   {
     if ns < 0 { return self }
 
     let queue = dispatch_get_global_queue(qos_class_self(), 0)
-    let delay = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
-    return Deferred(queue: queue, source: self, delay: delay)
+    let until = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+    return Deferred(queue: queue, source: self, until: until)
   }
 }
 
