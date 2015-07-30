@@ -13,12 +13,10 @@
 		03285E621B50486700F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
 		03325F4A1B66D92D00F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F491B66D92D00F4B44B /* shuffle.swift */; };
 		03325F4D1B684ECC00F4B44B /* TBDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F4B1B684D0400F4B44B /* TBDTests.swift */; };
+		03325F501B69FB4E00F4B44B /* ResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F4E1B69FB4900F4B44B /* ResultTests.swift */; };
 		034C0BAE1B547E5C00F4B44B /* deferred-extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */; };
 		03E60E321AAA571200F4B44B /* async-deferred.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E60E311AAA571200F4B44B /* async-deferred.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03E60E4B1AAA571C00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
-		03E60E551AAA577C00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E541AAA577C00F4B44B /* main.swift */; };
-		03E60E591AAA57A500F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
-		03E60E5E1AAA632D00F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
 		03EEC3291B58CB2E00F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EEC3281B58CB2E00F4B44B /* result.swift */; };
 /* End PBXBuildFile section */
 
@@ -39,6 +37,7 @@
 		03285E5B1B50380C00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03325F491B66D92D00F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = shuffle.swift; sourceTree = "<group>"; };
 		03325F4B1B684D0400F4B44B /* TBDTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TBDTests.swift; sourceTree = "<group>"; };
+		03325F4E1B69FB4900F4B44B /* ResultTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResultTests.swift; sourceTree = "<group>"; };
 		034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "deferred-extras.swift"; sourceTree = "<group>"; };
 		03E60E2C1AAA571100F4B44B /* async_deferred.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = async_deferred.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		03E60E301AAA571200F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -72,6 +71,7 @@
 			children = (
 				03285E591B50380C00F4B44B /* DeferredTests.swift */,
 				03325F4B1B684D0400F4B44B /* TBDTests.swift */,
+				03325F4E1B69FB4900F4B44B /* ResultTests.swift */,
 				03285E5B1B50380C00F4B44B /* Info.plist */,
 			);
 			name = Tests;
@@ -103,9 +103,9 @@
 				03E60E481AAA571C00F4B44B /* async.swift */,
 				03285E181B4F223900F4B44B /* deferred.swift */,
 				034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */,
+				03EEC3281B58CB2E00F4B44B /* result.swift */,
 				03E60E311AAA571200F4B44B /* async-deferred.h */,
 				03E60E2F1AAA571200F4B44B /* Supporting Files */,
-				03EEC3281B58CB2E00F4B44B /* result.swift */,
 			);
 			path = "async-deferred";
 			sourceTree = "<group>";
@@ -237,6 +237,7 @@
 			files = (
 				03325F4D1B684ECC00F4B44B /* TBDTests.swift in Sources */,
 				03285E621B50486700F4B44B /* syncprint.swift in Sources */,
+				03325F501B69FB4E00F4B44B /* ResultTests.swift in Sources */,
 				03285E5A1B50380C00F4B44B /* DeferredTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
