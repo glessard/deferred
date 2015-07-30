@@ -229,31 +229,35 @@ public class Deferred<T>
     }
   }
 
-  /// Initialize with a `Deferred` source and a delay time to be applied
+  /// Initialize with a `Deferred` source and a time after which this `Deferred` may become determined.
+  /// The determination could be delayed further if `source` has not become determined yet,
+  /// but it will not happen earlier than the time referred to by `until`.
   /// This constructor is used by `delay`
   ///
   /// - parameter queue:  the `dispatch_queue_t` onto which the created blocks should be queued
   /// - parameter source: the `Deferred` whose value should be delayed
-  /// - parameter delay:  the amount of time by which to delay the determination of this `Deferred`
+  /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  public convenience init(queue: dispatch_queue_t, source: Deferred, delay: dispatch_time_t)
+  public convenience init(queue: dispatch_queue_t, source: Deferred, until: dispatch_time_t)
   {
     self.init()
 
     source.notify(queue) {
       result in
       self.beginExecution()
-      switch result
+
+      let now = dispatch_time(DISPATCH_TIME_NOW, 0)
+      if until > now, case .Value = result
       {
-      case .Value:
-        dispatch_after(delay, queue) {
+        dispatch_after(until, queue) {
           do { try self.setResult(result) }
           catch { /* an error here seems means `self` was canceled before the delay ended */ }
         }
-
-      case .Error:
+      }
+      else
+      {
         do { try self.setResult(result) }
-        catch { /* an error here seems irrelevant */ }
+        catch { /* an error here seems means `self` was canceled before `result` was ready */ }
       }
     }
   }
@@ -380,10 +384,10 @@ public class Deferred<T>
     return result.error
   }
 
-  /// Enqueue a computation to be performed upon the determination of this `Deferred`
+  /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined
   ///
   /// - parameter queue: the `dispatch_queue_t` upon which the computation should be enqueued
-  /// - parameter task:  the computation to be enqueued
+  /// - parameter task:  the closure to be enqueued
 
   public func notify(queue: dispatch_queue_t, task: (Result<T>) -> Void)
   {

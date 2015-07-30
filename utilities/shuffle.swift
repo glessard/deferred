@@ -9,28 +9,13 @@
 
 import Darwin
 
-/**
-  Get a sequence/generator that will return a collection's elements in a random order.
-  The input collection is not modified.
-
-  - parameter c: The collection to be shuffled
-  - returns: A `PermutationGenerator` of `c`'s elements, shuffled.
-*/
-
-func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, IndexShuffler<C.Index>>
-{
-  return PermutationGenerator(elements: c, indices: IndexShuffler(c.indices))
-}
-
-/**
-  Get a sequence/generator of this collection's elements in a random order.
-  The collection is not modified.
-
-  - returns: A `PermutationGenerator` of self's elements, shuffled.
-*/
-
 extension CollectionType
 {
+  /// Get a sequence/generator that will return a collection's elements in a random order.
+  /// The input collection is not modified.
+  ///
+  /// - returns: A `PermutationGenerator` of `c`'s elements, shuffled.
+
   func shuffle() -> PermutationGenerator<Self, IndexShuffler<Self.Index>>
   {
     return PermutationGenerator(elements: self, indices: IndexShuffler(self.indices))
@@ -38,11 +23,9 @@ extension CollectionType
 }
 
 
-/**
-  A stepwise (lazy-ish) implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle),
-  using a sequence of indices for the input. Elements (indices) from
-  the input sequence are returned in a random order until exhaustion.
-*/
+/// A stepwise (lazy-ish) implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle),
+/// using a sequence of indices for the input. Elements (indices) from
+/// the input sequence are returned in a random order until exhaustion.
 
 struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
 {
@@ -51,11 +34,6 @@ struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
   var i: [I]
 
   init<S: SequenceType where S.Generator.Element == I>(_ input: S)
-  {
-    self.init(Array(input))
-  }
-
-  init(_ input: Range<I>)
   {
     self.init(Array(input))
   }
@@ -82,12 +60,7 @@ struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
       // return the new random Index.
       return i[step]
     }
-
+    
     return nil
-  }
-
-  func generate() -> IndexShuffler
-  {
-    return self
   }
 }
