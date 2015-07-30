@@ -143,24 +143,43 @@ extension Deferred
   }
 }
 
-// MARK: Timeout: enforce a maximum time before a `Deferred` has becomes determined
+// MARK: maximum time until a `Deferred` becomes determined
 
 extension Deferred
 {
+  /// Return a `Deferred` whose determination will occur at most `µs` microseconds from the time of evaluation.
+  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be determined in an error state, `DeferredError.Canceled`.
+  /// - parameter µs: a number of microseconds
+  /// - returns: a `Deferred` reference
+
   public func timeout(µs µs: Int) -> Deferred
   {
     return timeout(ns: µs*1000)
   }
+
+  /// Return a `Deferred` whose determination will occur at most `ms` milliseconds from the time of evaluation.
+  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be determined in an error state, `DeferredError.Canceled`.
+  /// - parameter ms: a number of milliseconds
+  /// - returns: a `Deferred` reference
 
   public func timeout(ms ms: Int) -> Deferred
   {
     return timeout(ns: ms*1_000_000)
   }
 
+  /// Return a `Deferred` whose determination will occur at most a number of seconds from the time of evaluation.
+  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be determined in an error state, `DeferredError.Canceled`.
+  /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
+  /// - returns: a `Deferred` reference
+
   public func timeout(seconds s: Double) -> Deferred
   {
     return timeout(ns: Int(s*1e9))
   }
+
+  /// Return a `Deferred` whose determination will occur at most `ns` nanoseconds from the time of evaluation.
+  /// - parameter ns: a number of nanoseconds
+  /// - returns: a `Deferred` reference
 
   public func timeout(ns ns: Int) -> Deferred
   {
@@ -179,15 +198,29 @@ extension Deferred
 
 extension Deferred
 {
+  /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with a value
+  /// The closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter task: the closure to be enqueued
+
   public func onValue(task: (T) -> Void)
   {
     onValue(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
+  /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with a value
+  /// The closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter task: the closure to be enqueued
+
   public func onValue(qos: qos_class_t, task: (T) -> Void)
   {
     onValue(dispatch_get_global_queue(qos, 0), task: task)
   }
+
+  /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with a value
+  /// The closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
+  /// - parameter task: the closure to be enqueued
 
   public func onValue(queue: dispatch_queue_t, task: (T) -> Void)
   {
@@ -199,15 +232,29 @@ extension Deferred
 
 extension Deferred
 {
+  /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with an error
+  /// The closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter task: the closure to be enqueued
+
   public func onError(task: (ErrorType) -> Void)
   {
     onError(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
+  /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with an error
+  /// The closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter task: the closure to be enqueued
+
   public func onError(qos: qos_class_t, task: (ErrorType) -> Void)
   {
     onError(dispatch_get_global_queue(qos, 0), task: task)
   }
+
+  /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with an error
+  /// The closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
+  /// - parameter task: the closure to be enqueued
 
   public func onError(queue: dispatch_queue_t, task: (ErrorType) -> Void)
   {
@@ -315,16 +362,32 @@ extension Deferred
 
 extension Deferred
 {
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
   public func flatMap<U>(transform: (T) -> Result<U>) -> Deferred<U>
   {
     return flatMap(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// The transforming closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
 
   public func flatMap<U>(qos: qos_class_t, transform: (T) -> Result<U>) -> Deferred<U>
   {
     return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
   }
   
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
   public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Result<U>) -> Deferred<U>
   {
     return Deferred<U>(queue: queue, source: self, transform: transform)
