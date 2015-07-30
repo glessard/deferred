@@ -249,9 +249,7 @@ class DeferredTests: XCTestCase
 
     let e = expectationWithDescription("Cancel before setting")
     let tbd3 = TBD<UInt32>()
-    Deferred(value: ()).delay(ms: 100).notify { _ in
-      if tbd3.cancel() == false { XCTFail() }
-    }
+    Deferred(value: ()).delay(ms: 100).notify { _ in XCTAssert(tbd3.cancel() == true) }
     Deferred(value: ()).delay(ms: 200).notify { _ in
       do {
         try tbd3.determine(arc4random())
@@ -264,6 +262,10 @@ class DeferredTests: XCTestCase
         XCTFail()
       }
     }
+
+    // Set before canceling -- cancellation failure
+    let d4 = Deferred(value: arc4random())
+    XCTAssert(d4.cancel("message") == false)
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }

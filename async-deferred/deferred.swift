@@ -335,10 +335,8 @@ public class Deferred<T>
       try setResult(Result(error: DeferredError.Canceled(reason)))
       return true
     }
-    catch {
-      // Could not cancel, probably because this `Deferred` had already become determined.
-      return false
-    }
+    catch { /* Could not cancel, probably because this `Deferred` was already determined. */ }
+    return false
   }
 
   /// Get this `Deferred` value if it has been determined, `nil` otherwise.
