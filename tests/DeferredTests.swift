@@ -329,6 +329,25 @@ class DeferredTests: XCTestCase
     XCTAssert(c.2 == v3)
   }
 
+  func testCombine4()
+  {
+    let v1 = Int(arc4random())
+    let v2 = UInt64(arc4random())
+    let v3 = arc4random().description
+    let v4 = sin(Double(v2))
+
+    let d1 = Deferred(value: v1).delay(ms: 100)
+    let d2 = Deferred(value: v2).delay(ms: 200)
+    let d3 = Deferred(value: v3)
+    let d4 = Deferred(value: v4).delay(µs: 999)
+
+    let c = d1.combine(d2,d3,d4).value
+    XCTAssert(c.0 == v1)
+    XCTAssert(c.1 == v2)
+    XCTAssert(c.2 == v3)
+    XCTAssert(c.3 == v4)
+  }
+
   func testCombineArray()
   {
     let count = 10
