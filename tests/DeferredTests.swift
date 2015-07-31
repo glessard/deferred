@@ -16,7 +16,7 @@ class DeferredTests: XCTestCase
   {
     syncprint("Starting")
 
-    let result1 = async {
+    let result1 = async(QOS_CLASS_BACKGROUND) {
       _ -> Double in
       defer { syncprint("Computing result1") }
       return 10.5
@@ -34,7 +34,7 @@ class DeferredTests: XCTestCase
       return (3*d).description
     }
 
-    result3.notify { syncprint($0) }
+    result3.notify(QOS_CLASS_UTILITY) { syncprint($0) }
 
     let result4 = result2.combine(result1.map { Int($0*4) })
 
@@ -70,7 +70,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d2.value >= interval)
     XCTAssert(d2.value < 2*interval)
 
-    // a negative delay passes back the same reference
+    // a negative delay returns the same reference
     let d3 = d1.delay(ms: -1)
     XCTAssert(d3 === d1)
 
@@ -94,6 +94,7 @@ class DeferredTests: XCTestCase
     let value = 1
     let d = Deferred(value: value)
     XCTAssert(d.value == value)
+    XCTAssert(d.isDetermined)
   }
 
   func testPeek()
@@ -103,19 +104,15 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.peek()?.value == value)
 
     let d2 = Deferred(value: value).delay(µs: 100)
+    XCTAssert(d2.isDetermined == false)
     XCTAssert(d2.peek() == nil)
 
     let expectation = expectationWithDescription("Waiting on Deferred")
 
     d2.notify { _ in
-      if d2.peek()?.value == value
-      {
-        expectation.fulfill()
-      }
-      else
-      {
-        XCTFail()
-      }
+      XCTAssert(d2.peek()?.value == value)
+      XCTAssert(d2.isDetermined)
+      expectation.fulfill()
     }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -196,7 +193,7 @@ class DeferredTests: XCTestCase
     let value = arc4random()
     let e2 = expectationWithDescription("Properly Deferred")
     let d2 = Deferred(value: value).delay(ms: 100)
-    d2.notify {
+    d2.notify(QOS_CLASS_BACKGROUND) {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }
@@ -211,13 +208,22 @@ class DeferredTests: XCTestCase
       dispatch_semaphore_wait(s3, DISPATCH_TIME_FOREVER)
       return 42
     }
-    d3.notify { _ in
-      XCTFail()
+    d3.notify {
+      result in
+      guard case let .Error(e) = result,
+            let deferredErr = e as? DeferredError,
+            case .Canceled = deferredErr
+      else
+      {
+        XCTFail()
+        return
+      }
     }
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
       e3.fulfill()
     }
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+
+    waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
   }
 
   func testCancel()
@@ -316,7 +322,7 @@ class DeferredTests: XCTestCase
 
     let value1 = Int(arc4random())
     let value2 = Int(arc4random())
-    let deferred = Deferred(value: value1).apply(Deferred(value: curriedSum(value2)))
+    let deferred = Deferred(value: value1).apply(QOS_CLASS_USER_INITIATED, transform: Deferred(value: curriedSum(value2)))
     XCTAssert(deferred.value == value1+value2)
   }
 

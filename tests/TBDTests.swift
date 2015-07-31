@@ -15,15 +15,18 @@ class TBDTests: XCTestCase
   func testDetermine1()
   {
     let tbd = TBD<UInt32>()
+    tbd.beginExecution()
     let value = arc4random()
     do { try tbd.determine(value) }
     catch { XCTFail() }
+    XCTAssert(tbd.isDetermined)
     XCTAssert(tbd.value == value)
   }
 
   func testDetermine2()
   {
     let tbd = TBD<UInt32>()
+    tbd.beginExecution()
     var value = arc4random()
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000), dispatch_get_global_queue(qos_class_self(), 0)) {
       value = arc4random()
@@ -31,6 +34,7 @@ class TBDTests: XCTestCase
       catch { XCTFail() }
     }
 
+    XCTAssert(tbd.isDetermined == false)
     XCTAssert(tbd.value == value)
   }
 
@@ -72,13 +76,21 @@ class TBDTests: XCTestCase
   {
     let e3 = expectationWithDescription("TBD never determined")
     let d3 = TBD<Int>()
-    d3.notify { _ in
-      XCTFail()
+    d3.notify {
+      result in
+      guard case let .Error(e) = result,
+        let deferredErr = e as? DeferredError,
+        case .Canceled = deferredErr
+        else
+      {
+        XCTFail()
+        return
+      }
     }
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
       e3.fulfill()
     }
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
   }
 
   func testFirstDeterminedDeferred()

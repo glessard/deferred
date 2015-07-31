@@ -285,8 +285,7 @@ public class Deferred<T>
       let initialState = currentState
       if initialState < DeferredState.Determined.rawValue
       {
-        guard OSAtomicCompareAndSwap32Barrier(initialState, transientState, &currentState) else { continue }
-        break
+        if OSAtomicCompareAndSwap32Barrier(initialState, transientState, &currentState) { break }
       }
       else
       {
