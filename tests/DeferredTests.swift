@@ -409,10 +409,15 @@ class DeferredTests: XCTestCase
     let d1 = d.timeout(ms: 50)
     XCTAssert(d1.value == value)
 
-    let d2 = d.delay(ms: 5000).timeout(ms: 50)
-    let e = expectationWithDescription("Timeout test")
+    let d2 = d.delay(ms: 5000).timeout(µs: 5000)
+    let e2 = expectationWithDescription("Timeout test")
     d2.onValue { _ in XCTFail() }
-    d2.onError { _ in e.fulfill() }
+    d2.onError { _ in e2.fulfill() }
+
+    let d3 = d.delay(ms: 100).timeout(seconds: -1)
+    let e3 = expectationWithDescription("Unreasonable timeout test")
+    d3.onValue { _ in XCTFail() }
+    d3.onError { _ in e3.fulfill() }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
