@@ -226,6 +226,131 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
   }
 
+  func testNotify4()
+  {
+    let d4 = Deferred(value: arc4random()).delay(ms: 50)
+    let e4val = expectationWithDescription("Test onValue()")
+    d4.onValue { _ in e4val.fulfill() }
+    d4.onError { _ in XCTFail() }
+
+    let d5 = Deferred<Void>(error: NSError(domain: "", code: 0, userInfo: nil)).delay(ms: 50)
+    let e5err = expectationWithDescription("Test onError()")
+    d5.onValue(QOS_CLASS_USER_INITIATED) { _ in XCTFail() }
+    d5.onError(QOS_CLASS_UTILITY) { _ in e5err.fulfill() }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testMap()
+  {
+    let value = arc4random()
+    let error = arc4random()
+    let goodOperand = Deferred(value: value)
+    let badOperand  = Deferred<Double>(error: TestError.Error(error))
+
+    // good operand, good transform
+    let d1 = goodOperand.map(QOS_CLASS_DEFAULT) { Int($0)*2 }
+    XCTAssert(d1.value == Int(value)*2)
+    XCTAssert(d1.error == nil)
+
+    // good operand, transform throws
+    let d2 = goodOperand.map { (i:UInt32) throws -> AnyObject in throw TestError.Error(i) }
+    XCTAssert(d2.value == nil)
+    XCTAssert(d2.error as? TestError == TestError.Error(value))
+
+    // bad operand, transform short-circuited
+    let d3 = badOperand.map { (d: Double) throws -> Int in XCTFail(); return 0 }
+    XCTAssert(d3.value == nil)
+    XCTAssert(d3.error as? TestError == TestError.Error(error))
+  }
+
+  func testFlatMap1()
+  {
+    let value = arc4random()
+    let error = arc4random()
+    let goodOperand = Deferred(value: value)
+    let badOperand  = Deferred<Double>(error: TestError.Error(error))
+
+    // good operand, good transform
+    let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT) { Deferred(value: Int($0)*2) }
+    XCTAssert(d1.value == Int(value)*2)
+    XCTAssert(d1.error == nil)
+
+    // good operand, transform throws
+    let d2 = goodOperand.flatMap { Deferred<Double>(error: TestError.Error($0)) }
+    XCTAssert(d2.value == nil)
+    XCTAssert(d2.error as? TestError == TestError.Error(value))
+
+    // bad operand, transform short-circuited
+    let d3 = badOperand.flatMap { _ in Deferred<Void> { XCTFail() } }
+    XCTAssert(d3.value == nil)
+    XCTAssert(d3.error as? TestError == TestError.Error(error))
+  }
+  
+  func testFlatMap2()
+  {
+    let value = arc4random()
+    let error = arc4random()
+    let goodOperand = Deferred(value: value)
+    let badOperand  = Deferred<Double>(error: TestError.Error(error))
+
+    // good operand, good transform
+    let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT) { Result(value: Int($0)*2) }
+    XCTAssert(d1.value == Int(value)*2)
+    XCTAssert(d1.error == nil)
+
+    // good operand, transform throws
+    let d2 = goodOperand.flatMap { Result<Double>(error: TestError.Error($0)) }
+    XCTAssert(d2.value == nil)
+    XCTAssert(d2.error as? TestError == TestError.Error(value))
+
+    // bad operand, transform short-circuited
+    let d3 = badOperand.flatMap { _ in Result<Void> { XCTFail() } }
+    XCTAssert(d3.value == nil)
+    XCTAssert(d3.error as? TestError == TestError.Error(error))
+  }
+
+  func testApply()
+  {
+    let value = Int(arc4random() & 0xffff + 10000)
+    let error = arc4random()
+
+    let transform = Deferred { i throws -> Double in Double(value*i) }
+
+    // good operand, good transform
+    let o1 = Deferred(value: value)
+    let r1 = o1.apply(transform)
+    XCTAssert(r1.value == Double(value*value))
+    XCTAssert(r1.error == nil)
+
+    // bad operand, good transform
+    let o2 = Deferred<Int> { throw TestError.Error(error) }
+    let r2 = o2.apply(transform)
+    XCTAssert(r2.value == nil)
+    XCTAssert(r2.error as? TestError == TestError.Error(error))
+
+    // good operand, transform throws
+    let o3 = Deferred(value: error)
+    let t3 = Deferred { (i:UInt32) throws -> AnyObject in throw TestError.Error(i) }
+    let r3 = o3.apply(t3)
+    XCTAssert(r3.value == nil)
+    XCTAssert(r3.error as? TestError == TestError.Error(error))
+
+    // good operand, bad transform
+    let o4 = Deferred(value: value)
+    let t4 = Deferred(error: TestError.Error(error)) as Deferred<(Int) throws -> dispatch_group_t>
+    let r4 = o4.apply(t4)
+    XCTAssert(r4.value == nil)
+    XCTAssert(r4.error as? TestError == TestError.Error(error))
+
+    // bad operand: transform not applied
+    let o5 = Deferred<Int> { throw TestError.Error(error) }
+    let t5 = Deferred { (i:Int) throws -> Float in XCTFail(); return Float(i) }
+    let r5 = o5.apply(t5)
+    XCTAssert(r5.value == nil)
+    XCTAssert(r5.error as? TestError == TestError.Error(error))
+  }
+  
   func testCancel()
   {
     let tbd1 = TBD<Void>()

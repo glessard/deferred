@@ -21,6 +21,15 @@ class TBDTests: XCTestCase
     catch { XCTFail() }
     XCTAssert(tbd.isDetermined)
     XCTAssert(tbd.value == value)
+    XCTAssert(tbd.error == nil)
+
+    let tbe = TBD<Void>()
+    tbe.beginExecution()
+    do { try tbe.determine(TestError.Error(value)) }
+    catch { XCTFail() }
+    XCTAssert(tbe.isDetermined)
+    XCTAssert(tbe.value == nil)
+    XCTAssert(tbe.error as? TestError == TestError.Error(value))
   }
 
   func testDetermine2()
@@ -36,6 +45,7 @@ class TBDTests: XCTestCase
 
     XCTAssert(tbd.isDetermined == false)
     XCTAssert(tbd.value == value)
+    XCTAssert(tbd.error == nil)
   }
 
   func testNotify1()
