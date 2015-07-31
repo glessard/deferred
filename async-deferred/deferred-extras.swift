@@ -23,7 +23,7 @@ import Dispatch
 /// - parameter task: a closure with a return value, to be executed asynchronously.
 /// - returns: a `Deferred` reference, representing the return value of the closure
 
-public func async<T>(task: () -> T) -> Deferred<T>
+public func async<T>(task: () throws -> T) -> Deferred<T>
 {
   return Deferred(task)
 }
@@ -34,12 +34,12 @@ public func async<T>(task: () -> T) -> Deferred<T>
 /// - parameter task: a closure with a return value, to be executed asynchronously.
 /// - returns: a `Deferred` reference, representing the return value of the closure
 
-public func async<T>(group group: dispatch_group_t, task: () -> T) -> Deferred<T>
+public func async<T>(group group: dispatch_group_t, task: () throws -> T) -> Deferred<T>
 {
   dispatch_group_enter(group)
   return Deferred {
     defer { dispatch_group_leave(group) }
-    return task()
+    return try task()
   }
 }
 
@@ -49,7 +49,7 @@ public func async<T>(group group: dispatch_group_t, task: () -> T) -> Deferred<T
 /// - parameter task: a closure with a return value, to be executed asynchronously.
 /// - returns: a `Deferred` reference, representing the return value of the closure
 
-public func async<T>(qos: qos_class_t, task: () -> T) -> Deferred<T>
+public func async<T>(qos: qos_class_t, task: () throws -> T) -> Deferred<T>
 {
   return Deferred(qos: qos, task: task)
 }
@@ -61,12 +61,12 @@ public func async<T>(qos: qos_class_t, task: () -> T) -> Deferred<T>
 /// - parameter task: a closure with a return value, to be executed asynchronously.
 /// - returns: a `Deferred` reference, representing the return value of the closure
 
-public func async<T>(qos: qos_class_t, group: dispatch_group_t, task: () -> T) -> Deferred<T>
+public func async<T>(qos: qos_class_t, group: dispatch_group_t, task: () throws -> T) -> Deferred<T>
 {
   dispatch_group_enter(group)
   return Deferred(qos: qos) {
     defer { dispatch_group_leave(group) }
-    return task()
+    return try task()
   }
 }
 
@@ -77,7 +77,7 @@ public func async<T>(qos: qos_class_t, group: dispatch_group_t, task: () -> T) -
 /// - parameter task: a closure with a return value, to be executed asynchronously.
 /// - returns: a `Deferred` reference, representing the return value of the closure
 
-public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Deferred<T>
+public func async<T>(queue: dispatch_queue_t, task: () throws -> T) -> Deferred<T>
 {
   return Deferred(queue: queue, task: task)
 }
@@ -89,12 +89,12 @@ public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Deferred<T>
 /// - parameter task: a closure with a return value, to be executed asynchronously.
 /// - returns: a `Deferred` reference, representing the return value of the closure
 
-public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> T) -> Deferred<T>
+public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () throws -> T) -> Deferred<T>
 {
   dispatch_group_enter(group)
   return Deferred(queue: queue) {
     defer { dispatch_group_leave(group) }
-    return task()
+    return try task()
   }
 }
 
