@@ -68,9 +68,8 @@ class DeferredTests: XCTestCase
     let d1 = Deferred(value: NSDate())
     let d2 = d1.delay(seconds: interval).map { NSDate().timeIntervalSinceDate($0) }
 
-    // print(d2.value)
     XCTAssert(d2.value >= interval)
-    XCTAssert(d2.value < 2*interval)
+    XCTAssert(d2.value < 2.0*interval)
 
     // a negative delay returns the same reference
     let d3 = d1.delay(ms: -1)
@@ -82,12 +81,11 @@ class DeferredTests: XCTestCase
     // a longer calculation is not delayed (significantly)
     let d5 = Deferred {
       _ -> NSDate in
-      NSThread.sleepForTimeInterval(10*interval)
+      NSThread.sleepForTimeInterval(interval)
       return NSDate()
     }
-    let d6 = d5.delay(seconds: interval).map { NSDate().timeIntervalSinceDate($0) }
+    let d6 = d5.delay(seconds: interval/10).map { NSDate().timeIntervalSinceDate($0) }
     let actualDelay = d6.value
-    // print(actualDelay)
     XCTAssert(actualDelay < interval/10)
   }
 
