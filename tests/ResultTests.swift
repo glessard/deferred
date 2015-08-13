@@ -8,7 +8,11 @@
 
 import XCTest
 
-import async_deferred
+#if os(OSX)
+  import async_deferred
+#elseif os(iOS)
+  import async_deferred_ios
+#endif
 
 enum TestError: ErrorType, Equatable
 {

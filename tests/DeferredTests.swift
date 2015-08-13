@@ -8,7 +8,12 @@
 
 import XCTest
 
-import async_deferred
+#if os(OSX)
+  import async_deferred
+#elseif os(iOS)
+  import async_deferred_ios
+#endif
+
 
 class DeferredTests: XCTestCase
 {
@@ -62,13 +67,12 @@ class DeferredTests: XCTestCase
 
   func testDelay()
   {
-    let interval = 0.01
+    let interval = 0.1
     let d1 = Deferred(value: NSDate())
     let d2 = d1.delay(seconds: interval).map { NSDate().timeIntervalSinceDate($0) }
 
-    // print(d2.value)
     XCTAssert(d2.value >= interval)
-    XCTAssert(d2.value < 2*interval)
+    XCTAssert(d2.value < 2.0*interval)
 
     // a negative delay returns the same reference
     let d3 = d1.delay(ms: -1)
@@ -80,12 +84,11 @@ class DeferredTests: XCTestCase
     // a longer calculation is not delayed (significantly)
     let d5 = Deferred {
       _ -> NSDate in
-      NSThread.sleepForTimeInterval(10*interval)
+      NSThread.sleepForTimeInterval(interval)
       return NSDate()
     }
-    let d6 = d5.delay(seconds: interval).map { NSDate().timeIntervalSinceDate($0) }
+    let d6 = d5.delay(seconds: interval/10).map { NSDate().timeIntervalSinceDate($0) }
     let actualDelay = d6.value
-    // print(actualDelay)
     XCTAssert(actualDelay < interval/10)
   }
 
@@ -103,7 +106,7 @@ class DeferredTests: XCTestCase
     let d1 = Deferred(value: value)
     XCTAssert(d1.peek()?.value == value)
 
-    let d2 = Deferred(value: value).delay(µs: 100)
+    let d2 = Deferred(value: value).delay(µs: 10_000)
     XCTAssert(d2.isDetermined == false)
     XCTAssert(d2.peek() == nil)
 
@@ -120,8 +123,7 @@ class DeferredTests: XCTestCase
 
   func testValueBlocks()
   {
-    let start = dispatch_time(DISPATCH_TIME_NOW, 0)
-    let waitns = 100_000_000 as dispatch_time_t
+    let waitns = 100_000_000
 
     let value = arc4random()
 
@@ -132,14 +134,17 @@ class DeferredTests: XCTestCase
     }
 
     let expectation = expectationWithDescription("Timing out on Deferred")
+    let fulfillTime = dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns))
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       let v = busy.value
       XCTAssert(v == value)
+
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
-      if now-start < waitns { XCTFail("delayed.value unblocked too soon") }
+      if now < fulfillTime { XCTFail("delayed.value unblocked too soon") }
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns)), dispatch_get_global_queue(qos_class_self(), 0)) {
+
+    dispatch_after(fulfillTime, dispatch_get_global_queue(qos_class_self(), 0)) {
       expectation.fulfill()
     }
 
@@ -148,8 +153,7 @@ class DeferredTests: XCTestCase
 
   func testValueUnblocks()
   {
-    let start = dispatch_time(DISPATCH_TIME_NOW, 0)
-    let waitns = 100_000_000 as dispatch_time_t
+    let waitns = 100_000_000
 
     let value = arc4random()
 
@@ -160,16 +164,18 @@ class DeferredTests: XCTestCase
     }
 
     let expectation = expectationWithDescription("Unblocking a Deferred")
+    let fulfillTime = dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns))
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       let v = busy.value
       XCTAssert(v == value)
 
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
-      if now-start < waitns { XCTFail("delayed.value unblocked too soon") }
-      else                  { expectation.fulfill() }
+      if now < fulfillTime { XCTFail("delayed.value unblocked too soon") }
+      else                 { expectation.fulfill() }
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns)), dispatch_get_global_queue(qos_class_self(), 0)) {
+
+    dispatch_after(fulfillTime, dispatch_get_global_queue(qos_class_self(), 0)) {
       dispatch_semaphore_signal(s)
     }
 
