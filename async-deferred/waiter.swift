@@ -99,8 +99,8 @@ struct WaitQueue
 @inline(__always) func syncread<T>(p: UnsafeMutablePointer<UnsafeMutablePointer<T>>) -> UnsafeMutablePointer<T>
 {
   #if arch(x86_64) || arch(arm64)
-    return UnsafeMutablePointer(bitPattern: Word(OSAtomicAdd64Barrier(0, UnsafeMutablePointer<Int64>(p))))
+    return UnsafeMutablePointer(bitPattern: Int(OSAtomicAdd64Barrier(0, UnsafeMutablePointer<Int64>(p))))
   #else
-    return UnsafeMutablePointer(bitPattern: Word(OSAtomicAdd32Barrier(0, UnsafeMutablePointer<Int32>(p))))
+    return UnsafeMutablePointer(bitPattern: Int(OSAtomicAdd32Barrier(0, UnsafeMutablePointer<Int32>(p))))
   #endif
 }

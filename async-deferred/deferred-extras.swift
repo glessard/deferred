@@ -243,13 +243,19 @@ extension Deferred
 
 extension Deferred
 {
+  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
   public func apply<U>(transform: Deferred<(T)->U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// The transforming closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter qos: the quality-of-service to associate with the closure
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 

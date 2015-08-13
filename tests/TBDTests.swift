@@ -8,29 +8,37 @@
 
 import XCTest
 
-import async_deferred
+#if os(OSX)
+  import async_deferred
+#elseif os(iOS)
+  import async_deferred_ios
+#endif
 
 class TBDTests: XCTestCase
 {
   func testDetermine1()
   {
     let tbd = TBD<UInt32>()
+    tbd.beginExecution()
     let value = arc4random()
     do { try tbd.determine(value) }
     catch { XCTFail() }
+    XCTAssert(tbd.isDetermined)
     XCTAssert(tbd.value == value)
   }
 
   func testDetermine2()
   {
     let tbd = TBD<UInt32>()
+    tbd.beginExecution()
     var value = arc4random()
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000), dispatch_get_global_queue(qos_class_self(), 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
       value = arc4random()
       do { try tbd.determine(value) }
       catch { XCTFail() }
     }
 
+    XCTAssert(tbd.isDetermined == false)
     XCTAssert(tbd.value == value)
   }
 

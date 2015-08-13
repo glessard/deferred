@@ -8,7 +8,12 @@
 
 import XCTest
 
-import async_deferred
+#if os(OSX)
+  import async_deferred
+#elseif os(iOS)
+  import async_deferred_ios
+#endif
+
 
 class DeferredTests: XCTestCase
 {
@@ -16,7 +21,7 @@ class DeferredTests: XCTestCase
   {
     syncprint("Starting")
 
-    let result1 = async {
+    let result1 = async(QOS_CLASS_BACKGROUND) {
       _ -> Double in
       defer { syncprint("Computing result1") }
       return 10.5
@@ -34,7 +39,7 @@ class DeferredTests: XCTestCase
       return (3*d).description
     }
 
-    result3.notify { syncprint($0) }
+    result3.notify(QOS_CLASS_UTILITY) { syncprint($0) }
 
     let result4 = result2.combine(result1.map { Int($0*4) })
 
@@ -59,15 +64,14 @@ class DeferredTests: XCTestCase
 
   func testDelay()
   {
-    let interval = 0.01
+    let interval = 0.1
     let d1 = Deferred(value: NSDate())
     let d2 = d1.delay(seconds: interval).map { NSDate().timeIntervalSinceDate($0) }
 
-    // print(d2.value)
     XCTAssert(d2.value >= interval)
-    XCTAssert(d2.value < 2*interval)
+    XCTAssert(d2.value < 2.0*interval)
 
-    // a negative delay passes back the same reference
+    // a negative delay returns the same reference
     let d3 = d1.delay(ms: -1)
     XCTAssert(d3 === d1)
 
@@ -77,12 +81,11 @@ class DeferredTests: XCTestCase
     // a longer calculation is not delayed (significantly)
     let d5 = Deferred {
       _ -> NSDate in
-      NSThread.sleepForTimeInterval(10*interval)
+      NSThread.sleepForTimeInterval(interval)
       return NSDate()
     }
-    let d6 = d5.delay(seconds: interval).map { NSDate().timeIntervalSinceDate($0) }
+    let d6 = d5.delay(seconds: interval/10).map { NSDate().timeIntervalSinceDate($0) }
     let actualDelay = d6.value
-    // print(actualDelay)
     XCTAssert(actualDelay < interval/10)
   }
 
@@ -91,6 +94,7 @@ class DeferredTests: XCTestCase
     let value = 1
     let d = Deferred(value: value)
     XCTAssert(d.value == value)
+    XCTAssert(d.isDetermined)
   }
 
   func testPeek()
@@ -99,20 +103,16 @@ class DeferredTests: XCTestCase
     let d1 = Deferred(value: value)
     XCTAssert(d1.peek() == value)
 
-    let d2 = Deferred(value: value).delay(µs: 100)
+    let d2 = Deferred(value: value).delay(µs: 10_000)
+    XCTAssert(d2.isDetermined == false)
     XCTAssert(d2.peek() == nil)
 
     let expectation = expectationWithDescription("Waiting on Deferred")
 
     d2.notify { _ in
-      if d2.peek() == value
-      {
-        expectation.fulfill()
-      }
-      else
-      {
-        XCTFail()
-      }
+      XCTAssert(d2.peek() == value)
+      XCTAssert(d2.isDetermined)
+      expectation.fulfill()
     }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -120,8 +120,7 @@ class DeferredTests: XCTestCase
 
   func testValueBlocks()
   {
-    let start = dispatch_time(DISPATCH_TIME_NOW, 0)
-    let waitns = 100_000_000 as dispatch_time_t
+    let waitns = 100_000_000
 
     let value = arc4random()
 
@@ -132,14 +131,17 @@ class DeferredTests: XCTestCase
     }
 
     let expectation = expectationWithDescription("Timing out on Deferred")
+    let fulfillTime = dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns))
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       let v = busy.value
       XCTAssert(v == value)
+
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
-      if now-start < waitns { XCTFail("delayed.value unblocked too soon") }
+      if now < fulfillTime { XCTFail("delayed.value unblocked too soon") }
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns)), dispatch_get_global_queue(qos_class_self(), 0)) {
+
+    dispatch_after(fulfillTime, dispatch_get_global_queue(qos_class_self(), 0)) {
       expectation.fulfill()
     }
 
@@ -148,8 +150,7 @@ class DeferredTests: XCTestCase
 
   func testValueUnblocks()
   {
-    let start = dispatch_time(DISPATCH_TIME_NOW, 0)
-    let waitns = 100_000_000 as dispatch_time_t
+    let waitns = 100_000_000
 
     let value = arc4random()
 
@@ -160,16 +161,18 @@ class DeferredTests: XCTestCase
     }
 
     let expectation = expectationWithDescription("Unblocking a Deferred")
+    let fulfillTime = dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns))
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       let v = busy.value
       XCTAssert(v == value)
 
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
-      if now-start < waitns { XCTFail("delayed.value unblocked too soon") }
-      else                  { expectation.fulfill() }
+      if now < fulfillTime { XCTFail("delayed.value unblocked too soon") }
+      else                 { expectation.fulfill() }
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns)), dispatch_get_global_queue(qos_class_self(), 0)) {
+
+    dispatch_after(fulfillTime, dispatch_get_global_queue(qos_class_self(), 0)) {
       dispatch_semaphore_signal(s)
     }
 
@@ -193,7 +196,7 @@ class DeferredTests: XCTestCase
     let value = arc4random()
     let e2 = expectationWithDescription("Properly Deferred")
     let d2 = Deferred(value: value).delay(ms: 100)
-    d2.notify {
+    d2.notify(QOS_CLASS_BACKGROUND) {
       XCTAssert( $0 == value )
       e2.fulfill()
     }
@@ -254,7 +257,7 @@ class DeferredTests: XCTestCase
 
     let value1 = Int(arc4random())
     let value2 = Int(arc4random())
-    let deferred = Deferred(value: value1).apply(Deferred(value: curriedSum(value2)))
+    let deferred = Deferred(value: value1).apply(QOS_CLASS_USER_INITIATED, transform: Deferred(value: curriedSum(value2)))
     XCTAssert(deferred.value == value1+value2)
   }
 
@@ -334,6 +337,25 @@ class DeferredTests: XCTestCase
     XCTAssert(c.0 == v1)
     XCTAssert(c.1 == v2)
     XCTAssert(c.2 == v3)
+  }
+
+  func testCombine4()
+  {
+    let v1 = Int(arc4random())
+    let v2 = UInt64(arc4random())
+    let v3 = arc4random().description
+    let v4 = sin(Double(v2))
+
+    let d1 = Deferred(value: v1).delay(ms: 100)
+    let d2 = Deferred(value: v2).delay(ms: 200)
+    let d3 = Deferred(value: v3)
+    let d4 = Deferred(value: v4).delay(µs: 999)
+
+    let c = d1.combine(d2,d3,d4).value
+    XCTAssert(c.0 == v1)
+    XCTAssert(c.1 == v2)
+    XCTAssert(c.2 == v3)
+    XCTAssert(c.3 == v4)
   }
 
   func testCombineArray()
