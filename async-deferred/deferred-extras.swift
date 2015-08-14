@@ -330,18 +330,17 @@ extension Deferred
 
 public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 {
-  let combined = deferreds.reduce(Deferred<[T]>(value: [])) {
-    (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-    return element.flatMap {
+  return deferreds.reduce(Deferred<[T]>(value: [])) {
+    (accumulator, element) in
+    element.flatMap {
       value in
-      combiner.map {
-        (var values: [T]) -> [T] in
+      accumulator.map {
+        (var values) in
         values.append(value)
         return values
       }
     }
   }
-  return combined
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
