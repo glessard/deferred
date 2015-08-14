@@ -373,3 +373,32 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>
   }
   return first
 }
+
+
+extension Deferred
+{
+  public static func inParallel(count count: Int, _ task: (index: Int) -> T) -> [Deferred<T>]
+  {
+    return inParallel(count: count, queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  public static func inParallel(count count: Int, qos: qos_class_t, task: (index: Int) -> T) -> [Deferred<T>]
+  {
+    return inParallel(count: count, queue: dispatch_get_global_queue(qos, 0), task: task)
+  }
+
+  public static func inParallel(count count: Int, queue: dispatch_queue_t, task: (index: Int) -> T) -> [Deferred<T>]
+  {
+    let deferreds = (0..<count).map { _ in TBD<T>() }
+    dispatch_async(queue) {
+      dispatch_apply(count, queue) {
+        index in
+        deferreds[index].beginExecution()
+        let value = task(index: index)
+        do { try deferreds[index].determine(value) }
+        catch { /* Canceled, or otherwise beaten to the punch. */ }
+      }
+    }
+    return deferreds
+  }
+}

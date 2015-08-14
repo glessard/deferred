@@ -129,4 +129,28 @@ class TBDTests: XCTestCase
 
     XCTAssert(first.value == lucky)
   }
+
+  func testParallel()
+  {
+    let count = 10
+
+    let arrays = Deferred.inParallel(count: count) {
+      index -> [Int?] in
+      var output = [Int?](count: count, repeatedValue: nil)
+      for i in 0..<output.count
+      {
+        output[i] = index*count+i
+      }
+      return output
+    }
+
+    let combined = combine(arrays).map { a in a.flatMap({$0}) }
+    let determined = combined.map { a in a.flatMap({$0}) }
+    XCTAssert(determined.value.count == count*count)
+
+    var test = [Int?](count: combined.value.count, repeatedValue: nil)
+    determined.value.forEach { i in test[i] = i }
+    test = test.flatMap({$0})
+    XCTAssert(test.count == count*count)
+  }
 }
