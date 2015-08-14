@@ -347,13 +347,27 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
+public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {
   let first = TBD<T>()
   deferreds.shuffle().forEach {
     $0.notify {
       value in
       do { try first.determine(value) }
+      catch { /* We don't care, it just means it's not the first completed */ }
+    }
+  }
+  return first
+}
+
+public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>>
+{
+  let first = TBD<Deferred<T>>()
+  deferreds.shuffle().forEach {
+    deferred in
+    deferred.notify {
+      _ in
+      do { try first.determine(deferred) }
       catch { /* We don't care, it just means it's not the first completed */ }
     }
   }
