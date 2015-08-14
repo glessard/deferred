@@ -351,9 +351,8 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {
   let first = TBD<T>()
-  for d in deferreds.shuffle()
-  {
-    d.notify {
+  deferreds.shuffle().forEach {
+    $0.notify {
       value in
       do { try first.determine(value) }
       catch { /* We don't care, it just means it's not the first completed */ }
