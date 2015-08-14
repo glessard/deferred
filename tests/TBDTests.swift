@@ -107,7 +107,7 @@ class TBDTests: XCTestCase
     waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
   }
 
-  func testFirstDeterminedDeferred()
+  func testFirstValueDeferred()
   {
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
@@ -123,18 +123,18 @@ class TBDTests: XCTestCase
       }
     }
 
-    let first = firstDetermined(deferreds)
+    let first = firstValue(deferreds)
     XCTAssert(first.value == lucky)
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testFirstDeterminedTBD()
+  func testFirstValueTBD()
   {
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
 
     let deferreds = (0..<count).map { _ in TBD<Int>() }
-    let first = firstDetermined(deferreds)
+    let first = firstValue(deferreds)
 
     do { try deferreds[lucky].determine(lucky) }
     catch { XCTFail() }
@@ -146,5 +146,29 @@ class TBDTests: XCTestCase
     }
 
     XCTAssert(first.value == lucky)
+  }
+
+  func testParallel()
+  {
+    let count = 10
+
+    let arrays = Deferred.inParallel(count: count) {
+      index -> [Int?] in
+      var output = [Int?](count: count, repeatedValue: nil)
+      for i in 0..<output.count
+      {
+        output[i] = index*count+i
+      }
+      return output
+    }
+
+    let combined = combine(arrays).map { a in a.flatMap({$0}) }
+    let determined = combined.map { a in a.flatMap({$0}) }
+    XCTAssert(determined.value?.count == count*count)
+
+    var test = [Int?](count: determined.value?.count ?? 0, repeatedValue: nil)
+    determined.value?.forEach { i in test[i] = i }
+    test = test.flatMap({$0})
+    XCTAssert(test.count == count*count)
   }
 }

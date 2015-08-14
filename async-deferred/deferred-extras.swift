@@ -490,34 +490,75 @@ extension Deferred
 
 public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 {
-  let combined = deferreds.reduce(Deferred<[T]>(value: [])) {
-    (combiner: Deferred<[T]>, element: Deferred<T>) -> Deferred<[T]> in
-    return element.flatMap {
+  return deferreds.reduce(Deferred<[T]>(value: [])) {
+    (accumulator, element) in
+    element.flatMap {
       value in
-      combiner.map {
-        (var values: [T]) -> [T] in
+      accumulator.map {
+        (var values) in
         values.append(value)
         return values
       }
     }
   }
-  return combined
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<T>
+public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {
   let first = TBD<T>()
-  for d in deferreds.shuffle()
-  {
-    d.notify {
+  deferreds.shuffle().forEach {
+    $0.notify {
       result in
       do { try first.determine(result) }
       catch { /* We don't care, it just means it's not the first completed */ }
     }
   }
   return first
+}
+
+public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>>
+{
+  let first = TBD<Deferred<T>>()
+  deferreds.shuffle().forEach {
+    deferred in
+    deferred.notify {
+      _ in
+      do { try first.determine(deferred) }
+      catch { /* We don't care, it just means it's not the first completed */ }
+    }
+  }
+  return first
+}
+
+
+extension Deferred
+{
+  public static func inParallel(count count: Int, _ task: (index: Int) -> T) -> [Deferred<T>]
+  {
+    return inParallel(count: count, queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  public static func inParallel(count count: Int, qos: qos_class_t, task: (index: Int) -> T) -> [Deferred<T>]
+  {
+    return inParallel(count: count, queue: dispatch_get_global_queue(qos, 0), task: task)
+  }
+
+  public static func inParallel(count count: Int, queue: dispatch_queue_t, task: (index: Int) -> T) -> [Deferred<T>]
+  {
+    let deferreds = (0..<count).map { _ in TBD<T>() }
+    dispatch_async(queue) {
+      dispatch_apply(count, queue) {
+        index in
+        deferreds[index].beginExecution()
+        let value = task(index: index)
+        do { try deferreds[index].determine(value) }
+        catch { /* Canceled, or otherwise beaten to the punch. */ }
+      }
+    }
+    return deferreds
+  }
 }
