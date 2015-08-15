@@ -8,7 +8,10 @@
 
 import Foundation
 
-// A Result type, approximately like everyone else has done.
+/// A Result type, approximately like everyone else has done.
+///
+/// Unlike other implementations, the error case does not encode type beyond ErrorType.
+/// This way there is no need to ever map between error types, which is a thing that cannot make sense.
 
 public enum Result<T>: CustomStringConvertible
 {
