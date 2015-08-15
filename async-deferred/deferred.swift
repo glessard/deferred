@@ -56,6 +56,11 @@ public class Deferred<T>
     dispatch_group_enter(group)
   }
 
+  deinit
+  {
+    if v == nil { dispatch_group_leave(group) }
+  }
+
   /// Initialize to an already determined state
   ///
   /// - parameter value: the value of this `Deferred`
@@ -218,13 +223,13 @@ public class Deferred<T>
     }
 
     v = value
+    dispatch_group_leave(group)
 
     guard OSAtomicCompareAndSwap32Barrier(transientState, DeferredState.Determined.rawValue, &currentState) else
     { // Getting here seems impossible, but try to handle it gracefully.
       throw DeferredError.CannotDetermine("Failed to determine Deferred")
     }
 
-    dispatch_group_leave(group)
     // The result is now available for the world
   }
 
