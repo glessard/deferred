@@ -58,7 +58,10 @@ public class Deferred<T>
 
   deinit
   {
-    if v == nil { dispatch_group_leave(group) }
+    if v == nil
+    {
+      dispatch_group_leave(group)
+    }
   }
 
   /// Initialize to an already determined state
