@@ -143,6 +143,13 @@ class TBDTests: XCTestCase
     waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
   }
 
+  func testNeverDetermined()
+  {
+    // a Deferred that will never become determined.
+    let first = firstValue([Deferred<Int>]())
+    XCTAssert(first.isDetermined == false)
+  }
+
   func testFirstValueDeferred()
   {
     let count = 10
@@ -161,9 +168,6 @@ class TBDTests: XCTestCase
 
     let first = firstValue(deferreds)
     XCTAssert(first.value == lucky)
-
-    // a Deferred that will never become determined.
-    let _ = firstValue([Deferred<Int>]())
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }

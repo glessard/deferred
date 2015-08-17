@@ -62,7 +62,10 @@ public class Deferred<T>
 
   deinit
   {
-    if r == nil { dispatch_group_leave(group) }
+    if r == nil
+    {
+      dispatch_group_leave(group)
+    }
   }
 
   /// Initialize with a computation task to be performed in the background
