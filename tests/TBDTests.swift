@@ -107,6 +107,10 @@ class TBDTests: XCTestCase
 
     let first = firstValue(deferreds)
     XCTAssert(first.value == lucky)
+
+    // a Deferred that will never become determined.
+    let _ = firstValue([Deferred<Int>]())
+
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
@@ -130,9 +134,47 @@ class TBDTests: XCTestCase
     XCTAssert(first.value == lucky)
   }
 
+  func testFirstDeterminedDeferred()
+  {
+    let count = 10
+
+    let deferreds = (0..<count).map {
+      i -> Deferred<Int> in
+      let e = expectationWithDescription(i.description)
+      return Deferred {
+        _ in
+        usleep(numericCast(i)*10_000)
+        e.fulfill()
+        return i
+      }
+    }
+
+    func oneBy1(deferreds: [Deferred<Int>])
+    {
+      let first = firstDetermined(deferreds)
+      if let index = deferreds.indexOf({ d in d === first.value })
+      {
+        var d = deferreds
+        d.removeAtIndex(index)
+        oneBy1(d)
+      }
+    }
+
+    oneBy1(deferreds)
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
   func testParallel()
   {
     let count = 10
+
+    // Verify that the right number of Deferreds get created
+
+    let e = (0..<count).map { expectationWithDescription("\($0)") }
+    Deferred.inParallel(count: count, qos: QOS_CLASS_UTILITY) { i in e[i].fulfill() }
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+
+    // Verify that all created Deferreds do the right job
 
     let arrays = Deferred.inParallel(count: count) {
       index -> [Int?] in
