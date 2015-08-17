@@ -60,6 +60,11 @@ public class Deferred<T>
     dispatch_group_enter(group)
   }
 
+  deinit
+  {
+    if r == nil { dispatch_group_leave(group) }
+  }
+
   /// Initialize with a computation task to be performed in the background
   ///
   /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be queued
@@ -295,13 +300,13 @@ public class Deferred<T>
     }
 
     r = result
+    dispatch_group_leave(group)
 
     guard OSAtomicCompareAndSwap32Barrier(transientState, DeferredState.Determined.rawValue, &currentState) else
     { // Getting here seems impossible, but try to handle it gracefully.
       throw DeferredError.CannotDetermine("Failed to determine Deferred")
     }
 
-    dispatch_group_leave(group)
     // The result is now available for the world
   }
 
