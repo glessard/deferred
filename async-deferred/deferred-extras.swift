@@ -128,7 +128,7 @@ extension Deferred
   {
     return delay(ns: Int(s*1e9))
   }
-  
+
   /// Return a `Deferred` whose determination will occur at least `ns` nanoseconds from the time of evaluation.
   /// - parameter ns: a number of nanoseconds
   /// - returns: a `Deferred` reference

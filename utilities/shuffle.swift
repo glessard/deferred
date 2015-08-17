@@ -60,7 +60,7 @@ struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
       // return the new random Index.
       return i[step]
     }
-    
+
     return nil
   }
 }
