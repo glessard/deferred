@@ -168,6 +168,14 @@ class TBDTests: XCTestCase
   {
     let count = 10
 
+    // Verify that the right number of Deferreds get created
+
+    let e = (0..<count).map { expectationWithDescription("\($0)") }
+    Deferred.inParallel(count: count, qos: QOS_CLASS_UTILITY) { i in e[i].fulfill() }
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+
+    // Verify that all created Deferreds do the right job
+
     let arrays = Deferred.inParallel(count: count) {
       index -> [Int?] in
       var output = [Int?](count: count, repeatedValue: nil)
