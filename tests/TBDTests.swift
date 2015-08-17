@@ -134,6 +134,36 @@ class TBDTests: XCTestCase
     XCTAssert(first.value == lucky)
   }
 
+  func testFirstDeterminedDeferred()
+  {
+    let count = 10
+
+    let deferreds = (0..<count).map {
+      i -> Deferred<Int> in
+      let e = expectationWithDescription(i.description)
+      return Deferred {
+        _ in
+        usleep(numericCast(i)*10_000)
+        e.fulfill()
+        return i
+      }
+    }
+
+    func oneBy1(deferreds: [Deferred<Int>])
+    {
+      let first = firstDetermined(deferreds)
+      if let index = deferreds.indexOf({ d in d === first.value })
+      {
+        var d = deferreds
+        d.removeAtIndex(index)
+        oneBy1(d)
+      }
+    }
+
+    oneBy1(deferreds)
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
   func testParallel()
   {
     let count = 10
