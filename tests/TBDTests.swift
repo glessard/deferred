@@ -248,5 +248,10 @@ class TBDTests: XCTestCase
     determined.value?.forEach { i in test[i] = i }
     test = test.flatMap({$0})
     XCTAssert(test.count == count*count)
+
+    let d = Deferred.inParallel(count: count) { _ in usleep(20_000) }
+    d[numericCast(arc4random_uniform(numericCast(count)))].cancel()
+    let c = combine(d)
+    XCTAssert(c.value == nil)
   }
 }
