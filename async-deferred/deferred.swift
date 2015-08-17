@@ -107,10 +107,8 @@ public class Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> T)
+  public init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> T)
   {
-    self.init()
-
     source.notify(queue) {
       value in
       self.beginExecution()
@@ -125,10 +123,8 @@ public class Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
+  public init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
   {
-    self.init()
-
     source.notify(queue) {
       value in
       self.beginExecution()
@@ -143,10 +139,8 @@ public class Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) -> T>)
+  public init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) -> T>)
   {
-    self.init()
-
     source.notify(queue) {
       value in
       transform.notify(queue) {
@@ -166,10 +160,8 @@ public class Deferred<T>
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  public convenience init(queue: dispatch_queue_t, source: Deferred, until: dispatch_time_t)
+  public init(queue: dispatch_queue_t, source: Deferred, until: dispatch_time_t)
   {
-    self.init()
-
     source.notify(queue) {
       value in
       self.beginExecution()
