@@ -53,6 +53,11 @@ public class Deferred<T>
 
   private init() {}
 
+  deinit
+  {
+    WaitQueue.dealloc(waiters)
+  }
+
   /// Initialize to an already determined state
   ///
   /// - parameter value: the value of this `Deferred`
@@ -180,11 +185,6 @@ public class Deferred<T>
     }
   }
 
-  deinit
-  {
-    WaitQueue.dealloc(waiters)
-  }
-
   // MARK: private methods
 
   /// Change the state of this `Deferred` from `.Waiting` to `.Executing`
@@ -229,16 +229,13 @@ public class Deferred<T>
       let queue = waiters
       if CAS(queue, nil, &waiters)
       {
-        // syncprint(syncread(&waiting))
-        // syncprint("Queue tail is \(queue)")
         WaitQueue.notifyAll(queue)
         break
       }
     }
+
     // The result is now available for the world
   }
-
-  // private var waiting: Int32 = 0
 
   private func enqueue(waiter: UnsafeMutablePointer<Waiter>) -> Bool
   {
@@ -250,7 +247,6 @@ public class Deferred<T>
       {
         if CAS(tail, waiter, &waiters)
         { // waiter is now enqueued
-          // OSAtomicIncrement32Barrier(&waiting)
           return true
         }
       }
