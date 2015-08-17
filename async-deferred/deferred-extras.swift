@@ -128,7 +128,7 @@ extension Deferred
   {
     return delay(ns: Int(s*1e9))
   }
-  
+
   /// Return a `Deferred` whose determination will occur at least `ns` nanoseconds from the time of evaluation.
   /// - parameter ns: a number of nanoseconds
   /// - returns: a `Deferred` reference
@@ -539,12 +539,12 @@ extension Deferred
 {
   public static func inParallel(count count: Int, _ task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    return inParallel(count: count, queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    return (0..<count).mapDeferred(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
   public static func inParallel(count count: Int, qos: qos_class_t, task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    return inParallel(count: count, queue: dispatch_get_global_queue(qos, 0), task: task)
+    return (0..<count).mapDeferred(dispatch_get_global_queue(qos, 0), task: task)
   }
 
   public static func inParallel(count count: Int, queue: dispatch_queue_t, task: (index: Int) throws -> T) -> [Deferred<T>]
