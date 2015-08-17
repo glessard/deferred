@@ -107,6 +107,10 @@ class TBDTests: XCTestCase
 
     let first = firstValue(deferreds)
     XCTAssert(first.value == lucky)
+
+    // a Deferred that will never become determined.
+    let _ = firstValue([Deferred<Int>]())
+
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
