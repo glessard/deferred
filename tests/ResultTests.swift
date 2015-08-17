@@ -129,7 +129,7 @@ class ResultTests: XCTestCase
     XCTAssert(r3.value == nil)
     XCTAssert(r3.error as? TestError == TestError.Error(error))
   }
-  
+
   func testApply()
   {
     let value = Int(arc4random() & 0xffff + 10000)

@@ -387,7 +387,7 @@ extension Deferred
   {
     return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
   }
-  
+
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
   /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
   /// - parameter transform: the transform to be performed

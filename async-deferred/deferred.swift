@@ -131,7 +131,7 @@ public class Deferred<T>
   {
     self.init(result: Result(error: error))
   }
-  
+
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `map`
   ///

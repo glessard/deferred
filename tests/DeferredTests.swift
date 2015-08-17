@@ -292,7 +292,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.value == nil)
     XCTAssert(d3.error as? TestError == TestError.Error(error))
   }
-  
+
   func testFlatMap2()
   {
     let value = arc4random()
@@ -356,7 +356,7 @@ class DeferredTests: XCTestCase
     XCTAssert(r5.value == nil)
     XCTAssert(r5.error as? TestError == TestError.Error(error))
   }
-  
+
   func testCancel1()
   {
     let d1 = Deferred(qos: QOS_CLASS_UTILITY) {
