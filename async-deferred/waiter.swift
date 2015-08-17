@@ -34,7 +34,7 @@ struct Waiter
     case .Thread(let thread):
       while case let kr = thread_resume(thread) where kr != KERN_SUCCESS
       {
-        guard kr == KERN_FAILURE else { preconditionFailure("thread_resume() failed with code \(kr)") }
+        guard kr == KERN_FAILURE else { fatalError("thread_resume() failed with code \(kr)") }
         // thread wasn't suspended yet
       }
     }
