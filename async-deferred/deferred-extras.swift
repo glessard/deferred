@@ -549,12 +549,34 @@ extension Deferred
 
   public static func inParallel(count count: Int, queue: dispatch_queue_t, task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    let deferreds = (0..<count).map { _ in TBD<T>() }
+    return (0..<count).mapDeferred(queue, task: task)
+  }
+}
+
+extension CollectionType
+{
+  public func mapDeferred<T>(count count: Int, _ task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  {
+    return mapDeferred(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  public func mapDeferred<T>(count count: Int, qos: qos_class_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  {
+    return mapDeferred(dispatch_get_global_queue(qos, 0), task: task)
+  }
+
+  public func mapDeferred<T>(queue: dispatch_queue_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  {
+    // The following 2 lines exist to get around the fact that Self.Index.Distance does not convert to Int.
+    let indices = Array(self.indices)
+    let count = indices.count
+
+    let deferreds = (indices).map { _ in TBD<T>() }
     dispatch_async(queue) {
       dispatch_apply(count, queue) {
         index in
         deferreds[index].beginExecution()
-        let result = Result { _ in try task(index: index) }
+        let result = Result { _ in try task(self[indices[index]]) }
         do { try deferreds[index].determine(result) }
         catch { /* Canceled, or otherwise beaten to the punch. */ }
       }
