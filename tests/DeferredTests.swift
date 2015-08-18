@@ -58,7 +58,7 @@ class DeferredTests: XCTestCase
   func testExample2()
   {
     let d = Deferred {
-      () -> Double in
+      _ -> Double in
       usleep(50000)
       return 1.0
     }
