@@ -459,6 +459,11 @@ class DeferredTests: XCTestCase
     d3.onValue { _ in XCTFail() }
     d3.onError { _ in e3.fulfill() }
 
+    let d4 = d.delay(ms: 50).timeout(ms: 100)
+    let e4 = expectationWithDescription("Timeout test 4")
+    d4.onValue { _ in e4.fulfill() }
+    d4.onError { _ in XCTFail() }
+
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
