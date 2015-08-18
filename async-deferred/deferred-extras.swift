@@ -145,6 +145,8 @@ extension Deferred
 
 // MARK: maximum time until a `Deferred` becomes determined
 
+private let DefaultTimeoutMessage = "Operation timed out"
+
 extension Deferred
 {
   /// Return a `Deferred` whose determination will occur at most `µs` microseconds from the time of evaluation.
@@ -152,9 +154,9 @@ extension Deferred
   /// - parameter µs: a number of microseconds
   /// - returns: a `Deferred` reference
 
-  public func timeout(µs µs: Int) -> Deferred
+  public func timeout(µs µs: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
-    return timeout(ns: µs*1000)
+    return timeout(ns: µs*1000, reason: reason)
   }
 
   /// Return a `Deferred` whose determination will occur at most `ms` milliseconds from the time of evaluation.
@@ -162,9 +164,9 @@ extension Deferred
   /// - parameter ms: a number of milliseconds
   /// - returns: a `Deferred` reference
 
-  public func timeout(ms ms: Int) -> Deferred
+  public func timeout(ms ms: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
-    return timeout(ns: ms*1_000_000)
+    return timeout(ns: ms*1_000_000, reason: reason)
   }
 
   /// Return a `Deferred` whose determination will occur at most a number of seconds from the time of evaluation.
@@ -172,16 +174,16 @@ extension Deferred
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public func timeout(seconds s: Double) -> Deferred
+  public func timeout(seconds s: Double, reason: String = DefaultTimeoutMessage) -> Deferred
   {
-    return timeout(ns: Int(s*1e9))
+    return timeout(ns: Int(s*1e9), reason: reason)
   }
 
   /// Return a `Deferred` whose determination will occur at most `ns` nanoseconds from the time of evaluation.
   /// - parameter ns: a number of nanoseconds
   /// - returns: a `Deferred` reference
 
-  public func timeout(ns ns: Int) -> Deferred
+  public func timeout(ns ns: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     if self.isDetermined { return self }
 
@@ -191,11 +193,11 @@ extension Deferred
       let timeout = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
 
       let perishable = map(queue) { $0 }
-      dispatch_after(timeout, queue) { perishable.cancel("Operation timed out") }
+      dispatch_after(timeout, queue) { perishable.cancel(reason) }
       return perishable
     }
 
-    return Deferred(error: DeferredError.Canceled("Operation timed out"))
+    return Deferred(error: DeferredError.Canceled(reason))
   }
 }
 
