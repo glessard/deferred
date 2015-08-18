@@ -7,7 +7,7 @@ It is an approximation of module [Deferred](https://ocaml.janestreet.com/ocaml-c
 
 ```
 let d = Deferred {
-  () -> Double in
+  _ -> Double in
   usleep(50000) // or a long calculation
   return 1.0
 }
@@ -19,12 +19,12 @@ A `Deferred` can schedule a block for execution once its value has been determin
 Computations can be chained by using `Deferred`'s `map`, `flatMap` and `apply` methods.
 
 ```
-let transform = Deferred { Double(7*$0) }                     // Deferred<Int->Double>
-let operand = Deferred { 6 }                                  // Deferred<Int>
-let result = operand.apply(transform).map { $0.description }  // Deferred<String>
-print(result.value)                                           // 42.0
+let transform = Deferred { i throws -> Double in Double(7*i) } // Deferred<Int throws -> Double>
+let operand = Deferred(value: 6)                               // Deferred<Int>
+let result = operand.apply(transform).map { $0.description }   // Deferred<String>
+print(result.value)                                            // 42.0
 ```
-The `value` property will block the current thread until it becomes determined. The rest of `Deferred` is implemented in a thread-safe and lock-free manner, relying largely on the properties of `dispatch_group_notify()`.
+The `result` property (and its adjuncts, `value` and `error`) will block the current thread until the `Deferred` becomes determined. The rest of `Deferred` is implemented in a thread-safe and lock-free manner, relying largely on the properties of `dispatch_group_notify()`.
 
 `Deferred` can run its closure on a specified `dispatch_queue_t` or concurrently at the requested `qos_class_t`, as can the `notify`, `map`, `flatMap` and `apply` methods. Otherwise it uses the global concurrent queue at the current qos class.
 
