@@ -25,6 +25,15 @@ class TBDTests: XCTestCase
     catch { XCTFail() }
     XCTAssert(tbd.isDetermined)
     XCTAssert(tbd.value == value)
+    XCTAssert(tbd.error == nil)
+
+    let tbe = TBD<Void>()
+    tbe.beginExecution()
+    do { try tbe.determine(TestError.Error(value)) }
+    catch { XCTFail() }
+    XCTAssert(tbe.isDetermined)
+    XCTAssert(tbe.value == nil)
+    XCTAssert(tbe.error as? TestError == TestError.Error(value))
   }
 
   func testDetermine2()
@@ -40,6 +49,43 @@ class TBDTests: XCTestCase
 
     XCTAssert(tbd.isDetermined == false)
     XCTAssert(tbd.value == value)
+    XCTAssert(tbd.error == nil)
+  }
+
+  func testCancel()
+  {
+    let tbd1 = TBD<Void>()
+    let reason = "unused"
+    tbd1.cancel(reason)
+    XCTAssert(tbd1.value == nil)
+    switch tbd1.result
+    {
+    case .Value: XCTFail()
+    case .Error(let error):
+      if let e = error as? DeferredError, case .Canceled(let message) = e
+      {
+        XCTAssert(message == reason)
+      }
+      else { XCTFail() }
+    }
+
+    let e = expectationWithDescription("Cancel before setting")
+    let tbd3 = TBD<UInt32>()
+    Deferred(value: ()).delay(ms: 100).notify { _ in XCTAssert(tbd3.cancel() == true) }
+    Deferred(value: ()).delay(ms: 200).notify { _ in
+      do {
+        try tbd3.determine(arc4random())
+        XCTFail()
+      }
+      catch DeferredError.AlreadyDetermined {
+        e.fulfill()
+      }
+      catch {
+        XCTFail()
+      }
+    }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
   func testNotify1()
@@ -50,7 +96,7 @@ class TBDTests: XCTestCase
     try! tbd.determine(value)
 
     tbd.notify {
-      XCTAssert( $0 == value )
+      XCTAssert( $0.value == value )
       e1.fulfill()
     }
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -63,7 +109,7 @@ class TBDTests: XCTestCase
 
     var value = arc4random()
     tbd.notify {
-      XCTAssert( $0 == value )
+      XCTAssert( $0.value == value )
       e2.fulfill()
     }
 
@@ -80,13 +126,28 @@ class TBDTests: XCTestCase
   {
     let e3 = expectationWithDescription("TBD never determined")
     let d3 = TBD<Int>()
-    d3.notify { _ in
-      XCTFail()
+    d3.notify {
+      result in
+      guard case let .Error(e) = result,
+        let deferredErr = e as? DeferredError,
+        case .Canceled = deferredErr
+        else
+      {
+        XCTFail()
+        return
+      }
     }
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
       e3.fulfill()
     }
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
+  }
+
+  func testNeverDetermined()
+  {
+    // a Deferred that will never become determined.
+    let first = firstValue([Deferred<Int>]())
+    XCTAssert(first.isDetermined == false)
   }
 
   func testFirstValueDeferred()
@@ -107,9 +168,6 @@ class TBDTests: XCTestCase
 
     let first = firstValue(deferreds)
     XCTAssert(first.value == lucky)
-
-    // a Deferred that will never become determined.
-    let _ = firstValue([Deferred<Int>]())
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
@@ -188,11 +246,16 @@ class TBDTests: XCTestCase
 
     let combined = combine(arrays).map { a in a.flatMap({$0}) }
     let determined = combined.map { a in a.flatMap({$0}) }
-    XCTAssert(determined.value.count == count*count)
+    XCTAssert(determined.value?.count == count*count)
 
-    var test = [Int?](count: combined.value.count, repeatedValue: nil)
-    determined.value.forEach { i in test[i] = i }
+    var test = [Int?](count: determined.value?.count ?? 0, repeatedValue: nil)
+    determined.value?.forEach { i in test[i] = i }
     test = test.flatMap({$0})
     XCTAssert(test.count == count*count)
+
+    let d = Deferred.inParallel(count: count) { _ in usleep(20_000) }
+    d[numericCast(arc4random_uniform(numericCast(count)))].cancel()
+    let c = combine(d)
+    XCTAssert(c.value == nil)
   }
 }

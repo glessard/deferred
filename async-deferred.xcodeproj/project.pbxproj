@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		030726601B7D1FBB00F4B44B /* waiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E671B53AA4C00F4B44B /* waiter.swift */; };
+		030726611B7D3FAD00F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EEC3281B58CB2E00F4B44B /* result.swift */; };
+		030726621B7D3FB400F4B44B /* ResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F4E1B69FB4900F4B44B /* ResultTests.swift */; };
 		03285E191B4F223900F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E181B4F223900F4B44B /* deferred.swift */; };
 		03285E5A1B50380C00F4B44B /* DeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E591B50380C00F4B44B /* DeferredTests.swift */; };
 		03285E5C1B50380C00F4B44B /* async_deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E60E2C1AAA571100F4B44B /* async_deferred.framework */; };
@@ -15,6 +17,7 @@
 		03285E681B53AA4C00F4B44B /* waiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E671B53AA4C00F4B44B /* waiter.swift */; };
 		03325F4A1B66D92D00F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F491B66D92D00F4B44B /* shuffle.swift */; };
 		03325F4D1B684ECC00F4B44B /* TBDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F4B1B684D0400F4B44B /* TBDTests.swift */; };
+		03325F501B69FB4E00F4B44B /* ResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F4E1B69FB4900F4B44B /* ResultTests.swift */; };
 		034C0BAE1B547E5C00F4B44B /* deferred-extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */; };
 		03D387781B7C6E3600F4B44B /* async-deferred-ios.h in Headers */ = {isa = PBXBuildFile; fileRef = 03D387771B7C6E3600F4B44B /* async-deferred-ios.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03D3877F1B7C6E3600F4B44B /* async_deferred_ios.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03D387751B7C6E3500F4B44B /* async_deferred_ios.framework */; };
@@ -34,6 +37,7 @@
 		03D387AC1B7C71F400F4B44B /* async_deferred_ios.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03D387751B7C6E3500F4B44B /* async_deferred_ios.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		03E60E321AAA571200F4B44B /* async-deferred.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E60E311AAA571200F4B44B /* async-deferred.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03E60E4B1AAA571C00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E481AAA571C00F4B44B /* async.swift */; };
+		03EEC3291B58CB2E00F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EEC3281B58CB2E00F4B44B /* result.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +93,7 @@
 		03285E671B53AA4C00F4B44B /* waiter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = waiter.swift; sourceTree = "<group>"; };
 		03325F491B66D92D00F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = shuffle.swift; sourceTree = "<group>"; };
 		03325F4B1B684D0400F4B44B /* TBDTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TBDTests.swift; sourceTree = "<group>"; };
+		03325F4E1B69FB4900F4B44B /* ResultTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResultTests.swift; sourceTree = "<group>"; };
 		034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "deferred-extras.swift"; sourceTree = "<group>"; };
 		03D387751B7C6E3500F4B44B /* async_deferred_ios.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = async_deferred_ios.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		03D387771B7C6E3600F4B44B /* async-deferred-ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "async-deferred-ios.h"; sourceTree = "<group>"; };
@@ -107,6 +112,7 @@
 		03E60E311AAA571200F4B44B /* async-deferred.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "async-deferred.h"; sourceTree = "<group>"; };
 		03E60E481AAA571C00F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = async.swift; sourceTree = "<group>"; };
 		03E60E5D1AAA632D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
+		03EEC3281B58CB2E00F4B44B /* result.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = result.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +162,7 @@
 			children = (
 				03285E591B50380C00F4B44B /* DeferredTests.swift */,
 				03325F4B1B684D0400F4B44B /* TBDTests.swift */,
+				03325F4E1B69FB4900F4B44B /* ResultTests.swift */,
 				03285E5B1B50380C00F4B44B /* Info.plist */,
 			);
 			name = Tests;
@@ -224,6 +231,7 @@
 				03285E181B4F223900F4B44B /* deferred.swift */,
 				034C0BAD1B547E5C00F4B44B /* deferred-extras.swift */,
 				03285E671B53AA4C00F4B44B /* waiter.swift */,
+				03EEC3281B58CB2E00F4B44B /* result.swift */,
 				03E60E311AAA571200F4B44B /* async-deferred.h */,
 				03E60E2F1AAA571200F4B44B /* Supporting Files */,
 			);
@@ -461,6 +469,7 @@
 			files = (
 				03325F4D1B684ECC00F4B44B /* TBDTests.swift in Sources */,
 				03285E621B50486700F4B44B /* syncprint.swift in Sources */,
+				03325F501B69FB4E00F4B44B /* ResultTests.swift in Sources */,
 				03285E5A1B50380C00F4B44B /* DeferredTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -471,6 +480,7 @@
 			files = (
 				03D3878D1B7C6E4F00F4B44B /* deferred.swift in Sources */,
 				03D387911B7C6EE500F4B44B /* shuffle.swift in Sources */,
+				030726611B7D3FAD00F4B44B /* result.swift in Sources */,
 				03D3878C1B7C6E4F00F4B44B /* async.swift in Sources */,
 				030726601B7D1FBB00F4B44B /* waiter.swift in Sources */,
 				03D3878E1B7C6E4F00F4B44B /* deferred-extras.swift in Sources */,
@@ -483,6 +493,7 @@
 			files = (
 				03D387921B7C6EE800F4B44B /* syncprint.swift in Sources */,
 				03D387901B7C6E6100F4B44B /* TBDTests.swift in Sources */,
+				030726621B7D3FB400F4B44B /* ResultTests.swift in Sources */,
 				03D3878F1B7C6E6100F4B44B /* DeferredTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -501,6 +512,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03285E191B4F223900F4B44B /* deferred.swift in Sources */,
+				03EEC3291B58CB2E00F4B44B /* result.swift in Sources */,
 				03325F4A1B66D92D00F4B44B /* shuffle.swift in Sources */,
 				034C0BAE1B547E5C00F4B44B /* deferred-extras.swift in Sources */,
 				03E60E4B1AAA571C00F4B44B /* async.swift in Sources */,
