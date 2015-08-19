@@ -324,7 +324,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.error as? TestError == TestError.Error(error))
   }
 
-  func testApply()
+  func testApply1()
   {
     let value = Int(arc4random() & 0xffff + 10000)
     let error = arc4random()
@@ -365,6 +365,57 @@ class DeferredTests: XCTestCase
     XCTAssert(r5.error as? TestError == TestError.Error(error))
   }
 
+  func testApply2()
+  {
+    // a silly example curried function.
+    func curriedSum(a: Int)(_ b: Int) -> Int
+    {
+      return a+b
+    }
+
+    let value1 = Int(arc4random())
+    let value2 = Int(arc4random())
+    let deferred = Deferred(value: value1).apply(QOS_CLASS_USER_INITIATED, transform: Deferred(value: curriedSum(value2)))
+    XCTAssert(deferred.value == value1+value2)
+  }
+
+  func testApply3()
+  {
+    let transform = TBD<(Int)throws->Double>()
+    let operand = TBD<Int>()
+    let result = operand.apply(transform)
+    let expect = expectationWithDescription("Applying a deferred transform to a deferred operand")
+
+    var v1 = 0
+    var v2 = 0
+    result.notify {
+      result in
+      print("\(v1), \(v2), \(result)")
+      XCTAssert(result.value == Double(v1*v2))
+      expect.fulfill()
+    }
+
+    let g = TBD<Void>()
+
+    g.delay(ms: 100).notify { _ in
+      v1 = Int(arc4random() & 0xffff + 10000)
+      try! transform.determine { i in Double(v1*i) }
+    }
+
+    g.delay(ms: 200).notify { _ in
+      v2 = Int(arc4random() & 0xffff + 10000)
+      try! operand.determine(v2)
+    }
+
+    XCTAssert(operand.peek() == nil)
+    XCTAssert(operand.state == .Waiting)
+    XCTAssert(transform.peek() == nil)
+    XCTAssert(transform.state == .Waiting)
+
+    try! g.determine()
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+  
   func testCancel1()
   {
     let d1 = Deferred(qos: QOS_CLASS_UTILITY) {
@@ -492,57 +543,6 @@ class DeferredTests: XCTestCase
 
     dispatch_async(q) { try! g.determine() }
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
-  }
-
-  func testApply1()
-  {
-    // a silly example curried function.
-    func curriedSum(a: Int)(_ b: Int) -> Int
-    {
-      return a+b
-    }
-
-    let value1 = Int(arc4random())
-    let value2 = Int(arc4random())
-    let deferred = Deferred(value: value1).apply(QOS_CLASS_USER_INITIATED, transform: Deferred(value: curriedSum(value2)))
-    XCTAssert(deferred.value == value1+value2)
-  }
-
-  func testApply2()
-  {
-    let transform = TBD<(Int)throws->Double>()
-    let operand = TBD<Int>()
-    let result = operand.apply(transform)
-    let expect = expectationWithDescription("Applying a deferred transform to a deferred operand")
-
-    var v1 = 0
-    var v2 = 0
-    result.notify {
-      result in
-      print("\(v1), \(v2), \(result)")
-      XCTAssert(result.value == Double(v1*v2))
-      expect.fulfill()
-    }
-
-    let g = TBD<Void>()
-
-    g.delay(ms: 100).notify { _ in
-      v1 = Int(arc4random() & 0xffff + 10000)
-      try! transform.determine { i in Double(v1*i) }
-    }
-
-    g.delay(ms: 200).notify { _ in
-      v2 = Int(arc4random() & 0xffff + 10000)
-      try! operand.determine(v2)
-    }
-
-    XCTAssert(operand.peek() == nil)
-    XCTAssert(operand.state == .Waiting)
-    XCTAssert(transform.peek() == nil)
-    XCTAssert(transform.state == .Waiting)
-
-    try! g.determine()
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
