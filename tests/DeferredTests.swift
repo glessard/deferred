@@ -420,27 +420,21 @@ class DeferredTests: XCTestCase
   {
     let d1 = Deferred(qos: QOS_CLASS_UTILITY) {
       () -> UInt32 in
-      usleep(10_000)
+      usleep(100_000)
       return arc4random()
     }
 
-    if d1.cancel()
-    {
-      XCTAssert(d1.value == nil)
-    }
-    else
-    {
-      XCTFail()
-    }
+    XCTAssert(d1.cancel() == true)
+    XCTAssert(d1.value == nil)
 
     // Set before canceling -- cancellation failure
-    let d4 = Deferred(value: arc4random())
-    XCTAssert(d4.cancel("message") == false)
+    let d2 = Deferred(value: arc4random())
+    XCTAssert(d2.cancel("message") == false)
   }
 
   func testCancel2()
   {
-    // Test specific paths for cancellation behaviour
+    // Test cancellation behaviour of map and delay
     let tbd = TBD<Int>()
 
     let e1 = expectationWithDescription("map cancellation with good input")
@@ -453,48 +447,87 @@ class DeferredTests: XCTestCase
     d2.onError { e in e2.fulfill() }
     d2.cancel()
 
-    let e3 = expectationWithDescription("flatMap cancellation with good input")
-    let d3 = tbd.flatMap { Deferred(value: $0) }
+    let e3 = expectationWithDescription("delay cancellation with good input")
+    let d3 = tbd.delay(ms: 100)
     d3.onError { e in e3.fulfill() }
     d3.cancel()
 
-    let e4 = expectationWithDescription("flatMap cancellation with error input")
-    let d4 = d3.flatMap {
-      i -> Deferred<Void> in
-      XCTFail()
-      return Deferred(value: ())
-    }
+    let e4 = expectationWithDescription("delay cancellation with error input")
+    let d4 = d1.delay(ms: 100)
     d4.onError { e in e4.fulfill() }
     d4.cancel()
 
-    let e5 = expectationWithDescription("flatMap cancellation with Result")
+    do { try tbd.determine(numericCast(arc4random())) }
+    catch { XCTFail() }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testCancel3()
+  {
+    // Test cancellation behaviour of flatMap
+    let tbd = TBD<Int>()
+
+    let e1 = expectationWithDescription("flatMap cancellation with good input")
+    let d1 = tbd.flatMap { Deferred(value: $0) }
+    d1.onError { e in e1.fulfill() }
+    d1.cancel()
+
+    let e2 = expectationWithDescription("flatMap cancellation with error input")
+    let d2 = d1.flatMap { _ in Deferred { _ in XCTFail() } }
+    d2.onError { e in e2.fulfill() }
+    d2.cancel()
+
+    let e3 = expectationWithDescription("flatMap cancellation with error transform")
+    let d3 = tbd.flatMap { i in Deferred<Void>(error: DeferredError.Canceled("")) }
+    d3.onError { e in e3.fulfill() }
+    d3.cancel()
+
+    let e4 = expectationWithDescription("apply cancellation with everything wrong")
+    let d4 = d1.flatMap { i in Deferred<Void>(error: DeferredError.Canceled("")) }
+    d4.onError { e in e4.fulfill() }
+    d4.cancel()
+
+    let e5 = expectationWithDescription("flatMap cancellation with good Result")
     let d5 = tbd.flatMap { Result(value: $0) }
     d5.onError { e in e5.fulfill() }
     d5.cancel()
 
-    let transform = Deferred(value: { (i: Int) throws -> Int in abs(i) } )
+    do { try tbd.determine(numericCast(arc4random())) }
+    catch { XCTFail() }
 
-    let e6 = expectationWithDescription("apply cancellation with good inputs")
-    let d6 = tbd.apply(transform)
-    d6.onError { e in e6.fulfill() }
-    d6.cancel()
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
 
-    let e7 = expectationWithDescription("apply cancellation with error input")
-    let d7 = d6.apply(transform)
-    d7.onError { e in e7.fulfill() }
-    d7.cancel()
+  func testCancel4()
+  {
+    // test cancellation behaviour of apply
+    let tbd = TBD<Int>()
+    let transform = tbd.map { i in { (i: Int) throws -> Int in abs(i) } }
+    let transferr = tbd.map { i in { (i: Int) throws -> Int in abs(i) } }
+    transferr.cancel()
 
-    let e8 = expectationWithDescription("delay cancellation with good input")
-    let d8 = tbd.delay(ms: 100)
-    d8.onError { e in e8.fulfill() }
-    d8.cancel()
+    let e1 = expectationWithDescription("apply cancellation with good inputs")
+    let d1 = tbd.apply(transform)
+    d1.onError { e in e1.fulfill() }
+    d1.cancel()
 
-    let e9 = expectationWithDescription("delay cancellation with error input")
-    let d9 = d6.delay(ms: 100)
-    d9.onError { e in e9.fulfill() }
-    d9.cancel()
+    let e2 = expectationWithDescription("apply cancellation with error input")
+    let d2 = d1.apply(transform)
+    d2.onError { e in e2.fulfill() }
+    d2.cancel()
 
-    do { try tbd.determine(1) }
+    let e3 = expectationWithDescription("apply cancellation with canceled transform")
+    let d3 = tbd.apply(transferr)
+    d3.onError { e in e3.fulfill() }
+    d3.cancel()
+
+    let e4 = expectationWithDescription("apply cancellation with everything canceled")
+    let d4 = d1.apply(transferr)
+    d4.onError { e in e4.fulfill() }
+    d4.cancel()
+
+    do { try tbd.determine(numericCast(arc4random())) }
     catch { XCTFail() }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
