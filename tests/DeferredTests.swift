@@ -285,13 +285,17 @@ class DeferredTests: XCTestCase
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError.Error(error))
 
+    // transforms return Deferred
+    let goodTransform = { (i: UInt32) in Deferred(value: Int(i)*2) }
+    let badTransform  = { (i: UInt32) in Deferred<Double>(error: TestError.Error(i)) }
+
     // good operand, good transform
-    let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT) { Deferred(value: Int($0)*2) }
+    let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT, transform: goodTransform)
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
-    // good operand, transform throws
-    let d2 = goodOperand.flatMap { Deferred<Double>(error: TestError.Error($0)) }
+    // good operand, transform errors
+    let d2 = goodOperand.flatMap(badTransform)
     XCTAssert(d2.value == nil)
     XCTAssert(d2.error as? TestError == TestError.Error(value))
 
@@ -308,13 +312,17 @@ class DeferredTests: XCTestCase
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError.Error(error))
 
+    // transforms return Result
+    let goodTransform = { (i: UInt32) in Result(value: Int(i)*2) }
+    let badTransform  = { (i: UInt32) in Result<Double>(error: TestError.Error(i)) }
+
     // good operand, good transform
-    let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT) { Result(value: Int($0)*2) }
+    let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT, transform: goodTransform)
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
-    // good operand, transform throws
-    let d2 = goodOperand.flatMap { Result<Double>(error: TestError.Error($0)) }
+    // good operand, transform errors
+    let d2 = goodOperand.flatMap(badTransform)
     XCTAssert(d2.value == nil)
     XCTAssert(d2.error as? TestError == TestError.Error(value))
 
