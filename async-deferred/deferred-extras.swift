@@ -506,6 +506,8 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
+/// Note that if the array is empty the resulting `Deferred` can never become determined.
+///
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
@@ -521,6 +523,12 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   }
   return first
 }
+
+/// Return the first of an array of `Deferred`s to become determined.
+/// Note that if the array is empty the resulting `Deferred` can never become determined.
+///
+/// - parameter deferreds: an array of `Deferred`
+/// - returns: a new `Deferred`
 
 public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>>
 {
