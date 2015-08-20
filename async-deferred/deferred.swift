@@ -28,6 +28,7 @@ public enum DeferredError: ErrorType
   case Canceled(String)
   case AlreadyDetermined(String)
   case CannotDetermine(String)
+  case Undetermined
 }
 
 /**
@@ -45,7 +46,7 @@ public enum DeferredError: ErrorType
 
 public class Deferred<T>
 {
-  private var r: Result<T>! = nil
+  private var r: Result<T>
   private let group = dispatch_group_create()
 
   // Swift does not have a facility to read and write enum values atomically.
@@ -58,11 +59,12 @@ public class Deferred<T>
   private init()
   {
     dispatch_group_enter(group)
+    r = Result(error: DeferredError.Undetermined)
   }
 
   deinit
   {
-    if r == nil
+    if isDetermined == false
     {
       dispatch_group_leave(group)
     }
@@ -79,10 +81,7 @@ public class Deferred<T>
 
     currentState = DeferredState.Executing.rawValue
     dispatch_async(queue) {
-      let result: Result<T>
-      do {    result = .Value(try task()) }
-      catch { result = .Error(error) }
-
+      let result = Result<T> { try task() }
       do {  try self.setResult(result) }
       catch { /* an error here means this `Deferred` was canceled before `task()` was complete. */ }
     }
