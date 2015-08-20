@@ -28,6 +28,7 @@ public enum DeferredError: ErrorType
   case Canceled(String)
   case AlreadyDetermined(String)
   case CannotDetermine(String)
+  case Undetermined
 }
 
 /**
@@ -45,7 +46,7 @@ public enum DeferredError: ErrorType
 
 public class Deferred<T>
 {
-  private var r: Result<T>! = nil
+  private var r: Result<T>
 
   // Swift does not have a facility to read and write enum values atomically.
   // To get around this, we use a raw `Int32` value as a proxy for the enum value.
@@ -55,7 +56,10 @@ public class Deferred<T>
 
   // MARK: Initializers
 
-  private init() {}
+  private init()
+  {
+    r = Result(error: DeferredError.Undetermined)
+  }
 
   deinit
   {
@@ -67,14 +71,13 @@ public class Deferred<T>
   /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be queued
   /// - parameter task:  the computation to be performed
 
-  public init(queue: dispatch_queue_t, task: () throws -> T)
+  public convenience init(queue: dispatch_queue_t, task: () throws -> T)
   {
+    self.init()
+
     currentState = DeferredState.Executing.rawValue
     dispatch_async(queue) {
-      let result: Result<T>
-      do {    result = .Value(try task()) }
-      catch { result = .Error(error) }
-
+      let result = Result<T> { try task() }
       do {  try self.setResult(result) }
       catch { /* an error here means this `Deferred` was canceled before `task()` was complete. */ }
     }
@@ -134,8 +137,10 @@ public class Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) throws -> T)
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) throws -> T)
   {
+    self.init()
+
     source.notify(queue) {
       result in
       self.beginExecution()
@@ -152,8 +157,10 @@ public class Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
   {
+    self.init()
+
     source.notify(queue) {
       result in
       self.beginExecution()
@@ -200,8 +207,10 @@ public class Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
+  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
   {
+    self.init()
+
     source.notify(queue) {
       result in
       switch result
@@ -232,8 +241,10 @@ public class Deferred<T>
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  public init(queue: dispatch_queue_t, source: Deferred, until: dispatch_time_t)
+  public convenience init(queue: dispatch_queue_t, source: Deferred, until: dispatch_time_t)
   {
+    self.init()
+
     source.notify(queue) {
       result in
       self.beginExecution()

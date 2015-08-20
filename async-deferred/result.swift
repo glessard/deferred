@@ -95,18 +95,20 @@ public enum Result<T>: CustomStringConvertible
 
   public func apply<U>(transform: Result<(T) throws -> U>) -> Result<U>
   {
-    switch (self, transform)
+    switch self
     {
-    case (.Value(let value), .Value(let transform)):
-      return Result<U> { try transform(value) }
+    case .Value(let value):
+      switch transform
+      {
+      case .Value(let transform):
+        return Result<U> { try transform(value) }
 
-    case (.Value, .Error(let error)):
+      case .Error(let error):
+        return .Error(error)
+      }
+
+    case .Error(let error):
       return .Error(error)
-
-    case (.Error(let error), _):
-      return .Error(error)
-
-    default: fatalError("The compiler made me do it.")
     }
   }
 }
