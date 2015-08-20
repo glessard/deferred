@@ -38,7 +38,7 @@ class ResultTests: XCTestCase
     XCTAssert(res.error == nil)
 
     do {
-      let v = try res.asValue()
+      let v = try res.getValue()
       XCTAssert(v == val)
     }
     catch {
@@ -56,7 +56,7 @@ class ResultTests: XCTestCase
     XCTAssert(res.value == nil)
 
     do {
-      _ = try res.asValue()
+      _ = try res.getValue()
       XCTFail()
     }
     catch {

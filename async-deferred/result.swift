@@ -56,7 +56,7 @@ public enum Result<T>: CustomStringConvertible
     }
   }
 
-  public func asValue() throws -> T
+  public func getValue() throws -> T
   {
     switch self
     {
