@@ -207,7 +207,9 @@ class DeferredTests: XCTestCase
     let value = arc4random()
     let e2 = expectationWithDescription("Properly Deferred")
     let d2 = Deferred(value: value).delay(ms: 100)
-    d2.notify(QOS_CLASS_BACKGROUND) {
+    let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
+    let q2 = dispatch_queue_create("Test", a2)
+    d2.notify(q2, qos: QOS_CLASS_UTILITY) {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }

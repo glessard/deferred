@@ -229,9 +229,9 @@ extension Deferred
   /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
   /// - parameter task: the closure to be enqueued
 
-  public func onValue(queue: dispatch_queue_t, task: (T) -> Void)
+  public func onValue(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (T) -> Void)
   {
-    notify(queue) { if let value = $0.value { task(value) } }
+    notify(queue, qos: qos) { if let value = $0.value { task(value) } }
   }
 }
 
@@ -263,9 +263,9 @@ extension Deferred
   /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
   /// - parameter task: the closure to be enqueued
 
-  public func onError(queue: dispatch_queue_t, task: (ErrorType) -> Void)
+  public func onError(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (ErrorType) -> Void)
   {
-    notify(queue) { if let error = $0.error { task(error) } }
+    notify(queue, qos: qos) { if let error = $0.error { task(error) } }
   }
 }
 
@@ -323,9 +323,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<U>(queue: dispatch_queue_t, transform: (T) throws -> U) -> Deferred<U>
+  public func map<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) throws -> U) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, source: self, transform: transform)
+    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -359,9 +359,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  public func flatMap<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, source: self, transform: transform)
+    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -395,9 +395,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Result<U>) -> Deferred<U>
+  public func flatMap<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Result<U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, source: self, transform: transform)
+    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -421,8 +421,8 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-   public func apply<U>(qos: qos_class_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
- {
+  public func apply<U>(qos: qos_class_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
+  {
     return apply(dispatch_get_global_queue(qos, 0), transform: transform)
   }
 
@@ -431,9 +431,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
+  public func apply<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(T)throws->U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, source: self, transform: transform)
+    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
