@@ -582,7 +582,7 @@ extension CollectionType
     let count = indices.count
 
     let deferreds = (indices).map { _ in TBD<T>() }
-    dispatch_async(queue) {
+    dispatch_async(dispatch_get_global_queue(dispatch_queue_get_qos_class(queue, nil), 0)) {
       dispatch_apply(count, queue) {
         index in
         deferreds[index].beginExecution()
