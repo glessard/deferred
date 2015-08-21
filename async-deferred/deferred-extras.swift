@@ -227,6 +227,7 @@ extension Deferred
   /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with a value
   /// The closure will be enqueued on the global queue with the requested quality of service.
   /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter task: the closure to be enqueued
 
   public func onValue(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (T) -> Void)
@@ -261,6 +262,7 @@ extension Deferred
   /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with an error
   /// The closure will be enqueued on the global queue with the requested quality of service.
   /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter task: the closure to be enqueued
 
   public func onError(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (ErrorType) -> Void)
@@ -319,7 +321,8 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
@@ -355,7 +358,8 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
@@ -391,7 +395,8 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
@@ -427,7 +432,8 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 

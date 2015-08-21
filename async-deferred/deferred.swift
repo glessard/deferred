@@ -72,7 +72,7 @@ public class Deferred<T>
 
   /// Initialize with a computation task to be performed in the background
   ///
-  /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be enqueued
   /// - parameter task:  the computation to be performed
 
   public convenience init(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: () throws -> T)
@@ -139,7 +139,8 @@ public class Deferred<T>
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `map`
   ///
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -159,7 +160,8 @@ public class Deferred<T>
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `flatMap`
   ///
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -189,7 +191,8 @@ public class Deferred<T>
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `flatMap`
   ///
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -209,7 +212,8 @@ public class Deferred<T>
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `apply`
   ///
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -243,7 +247,8 @@ public class Deferred<T>
   /// but it will not happen earlier than the time referred to by `until`.
   /// This constructor is used by `delay`
   ///
-  /// - parameter queue:  the `dispatch_queue_t` onto which the created blocks should be queued
+  /// - parameter queue:  the `dispatch_queue_t` onto which the created blocks should be enqueued
+  /// - parameter qos:    the QOS class at which to execute the delay; defaults to the queue's QOS class.
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
@@ -258,10 +263,10 @@ public class Deferred<T>
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
       if until > now, case .Value = result
       {
-        dispatch_after(until, queue) {
+        dispatch_after(until, queue, self.createBlock(qos, block: {
           do { try self.setResult(result) }
           catch { /* an error here seems means `self` was canceled before the delay ended */ }
-        }
+        }))
       }
       else
       {
