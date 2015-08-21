@@ -425,7 +425,7 @@ class DeferredTests: XCTestCase
     try! g.determine()
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
-  
+
   func testCancel1()
   {
     let d1 = Deferred(qos: QOS_CLASS_UTILITY) {
