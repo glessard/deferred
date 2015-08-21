@@ -12,7 +12,7 @@ struct Waiter
 {
   enum Type
   {
-    case Closure(dispatch_queue_t, () -> Void)
+    case Closure(dispatch_queue_t, dispatch_block_t)
     case Thread(thread_t)
   }
 

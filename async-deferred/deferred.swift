@@ -68,19 +68,21 @@ public class Deferred<T>
 
   /// Initialize with a computation task to be performed in the background
   ///
-  /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be enqueued
   /// - parameter task:  the computation to be performed
 
-  public convenience init(queue: dispatch_queue_t, task: () throws -> T)
+  public convenience init(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: () throws -> T)
   {
     self.init()
 
-    currentState = DeferredState.Executing.rawValue
-    dispatch_async(queue) {
+    let block = createBlock(qos) {
       let result = Result<T> { try task() }
       do {  try self.setResult(result) }
       catch { /* an error here means this `Deferred` was canceled before `task()` was complete. */ }
     }
+
+    currentState = DeferredState.Executing.rawValue
+    dispatch_async(queue, block)
   }
 
   /// Initialize with a computation task to be performed in the background
@@ -133,15 +135,16 @@ public class Deferred<T>
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `map`
   ///
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) throws -> T)
+  public convenience init<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) throws -> T)
   {
     self.init()
 
-    source.notify(queue) {
+    source.notify(queue, qos: qos) {
       result in
       self.beginExecution()
       let transformed = result.map(transform)
@@ -153,21 +156,22 @@ public class Deferred<T>
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `flatMap`
   ///
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
+  public convenience init<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) -> Deferred<T>)
   {
     self.init()
 
-    source.notify(queue) {
+    source.notify(queue, qos: qos) {
       result in
       self.beginExecution()
       switch result
       {
       case .Value(let value):
-        transform(value).notify(queue) {
+        transform(value).notify(queue, qos: qos) {
           transformed in
           do { try self.setResult(transformed) }
           catch { /* an error here means `self` was canceled before `transform()` completed */ }
@@ -183,15 +187,16 @@ public class Deferred<T>
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `flatMap`
   ///
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: (U) -> Result<T>)
+  public convenience init<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) -> Result<T>)
   {
     self.init()
 
-    source.notify(queue) {
+    source.notify(queue, qos: qos) {
       result in
       self.beginExecution()
       let transformed = result.flatMap(transform)
@@ -203,20 +208,21 @@ public class Deferred<T>
   /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `apply`
   ///
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  public convenience init<U>(queue: dispatch_queue_t, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
+  public convenience init<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
   {
     self.init()
 
-    source.notify(queue) {
+    source.notify(queue, qos: qos) {
       result in
       switch result
       {
       case .Value:
-        transform.notify(queue) {
+        transform.notify(queue, qos: qos) {
           transform in
           self.beginExecution()
           let transformed = result.apply(transform)
@@ -237,25 +243,26 @@ public class Deferred<T>
   /// but it will not happen earlier than the time referred to by `until`.
   /// This constructor is used by `delay`
   ///
-  /// - parameter queue:  the `dispatch_queue_t` onto which the created blocks should be queued
+  /// - parameter queue:  the `dispatch_queue_t` onto which the created blocks should be enqueued
+  /// - parameter qos:    the QOS class at which to execute the delay; defaults to the queue's QOS class.
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  public convenience init(queue: dispatch_queue_t, source: Deferred, until: dispatch_time_t)
+  public convenience init(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred, until: dispatch_time_t)
   {
     self.init()
 
-    source.notify(queue) {
+    source.notify(queue, qos: qos) {
       result in
       self.beginExecution()
 
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
       if until > now, case .Value = result
       {
-        dispatch_after(until, queue) {
+        dispatch_after(until, queue, self.createBlock(qos, block: {
           do { try self.setResult(result) }
           catch { /* an error here seems means `self` was canceled before the delay ended */ }
-        }
+        }))
       }
       else
       {
@@ -275,7 +282,7 @@ public class Deferred<T>
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
-  /// None that a `Deferred` can only be determined once. On subsequente calls `setValue` will throw an `AlreadyDetermined` error.
+  /// Note that a `Deferred` can only be determined once. On subsequent calls, `setValue` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter result: the intended `Result` to determine this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
@@ -335,6 +342,21 @@ public class Deferred<T>
         return false
       }
     }
+  }
+
+  private func createNotificationBlock(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void) -> dispatch_block_t
+  {
+    return createBlock(qos, block: { task(self.r) })
+  }
+
+  private func createBlock(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, block: () -> Void) -> dispatch_block_t
+  {
+    if qos == QOS_CLASS_UNSPECIFIED
+    {
+      return dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block)
+    }
+
+    return dispatch_block_create_with_qos_class(DISPATCH_BLOCK_ENFORCE_QOS_CLASS, qos, 0, block)
   }
 
   // MARK: public interface
@@ -401,7 +423,7 @@ public class Deferred<T>
         guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
       }
       else
-      {
+      { // Deferred has a value now
         waiter.destroy(1)
         waiter.dealloc(1)
       }
@@ -435,10 +457,18 @@ public class Deferred<T>
   /// - parameter queue: the `dispatch_queue_t` upon which the computation should be enqueued
   /// - parameter task:  the closure to be enqueued
 
-  public func notify(queue: dispatch_queue_t, task: (Result<T>) -> Void)
+  public func notify(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void)
   {
-    let block = { task(self.r) } // This cannot be [weak self]
+    notify(queue, block: createNotificationBlock(qos, task: task))
+  }
 
+  /// Enqueue a computation to be performed upon the determination of this `Deferred`
+  ///
+  /// - parameter queue: the `dispatch_queue_t` upon which the computation should be enqueued
+  /// - parameter block: the computation to be enqueued, as a `dispatch_block_t` or a `() -> Void` closure.
+
+  public func notify(queue: dispatch_queue_t, block: dispatch_block_t)
+  {
     if currentState != DeferredState.Determined.rawValue
     {
       let waiter = UnsafeMutablePointer<Waiter>.alloc(1)

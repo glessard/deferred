@@ -227,11 +227,12 @@ extension Deferred
   /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with a value
   /// The closure will be enqueued on the global queue with the requested quality of service.
   /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter task: the closure to be enqueued
 
-  public func onValue(queue: dispatch_queue_t, task: (T) -> Void)
+  public func onValue(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (T) -> Void)
   {
-    notify(queue) { if let value = $0.value { task(value) } }
+    notify(queue, qos: qos) { if let value = $0.value { task(value) } }
   }
 }
 
@@ -261,11 +262,12 @@ extension Deferred
   /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with an error
   /// The closure will be enqueued on the global queue with the requested quality of service.
   /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter task: the closure to be enqueued
 
-  public func onError(queue: dispatch_queue_t, task: (ErrorType) -> Void)
+  public func onError(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (ErrorType) -> Void)
   {
-    notify(queue) { if let error = $0.error { task(error) } }
+    notify(queue, qos: qos) { if let error = $0.error { task(error) } }
   }
 }
 
@@ -319,13 +321,14 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<U>(queue: dispatch_queue_t, transform: (T) throws -> U) -> Deferred<U>
+  public func map<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) throws -> U) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, source: self, transform: transform)
+    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -355,13 +358,14 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  public func flatMap<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, source: self, transform: transform)
+    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -391,13 +395,14 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(queue: dispatch_queue_t, transform: (T) -> Result<U>) -> Deferred<U>
+  public func flatMap<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Result<U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, source: self, transform: transform)
+    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -421,19 +426,20 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-   public func apply<U>(qos: qos_class_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
- {
+  public func apply<U>(qos: qos_class_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
+  {
     return apply(dispatch_get_global_queue(qos, 0), transform: transform)
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
-  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(queue: dispatch_queue_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
+  public func apply<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(T)throws->U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, source: self, transform: transform)
+    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -549,40 +555,40 @@ extension Deferred
 {
   public static func inParallel(count count: Int, _ task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    return (0..<count).mapDeferred(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    return (0..<count).deferredMap(task)
   }
 
   public static func inParallel(count count: Int, qos: qos_class_t, task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    return (0..<count).mapDeferred(dispatch_get_global_queue(qos, 0), task: task)
+    return (0..<count).deferredMap(qos, task: task)
   }
 
   public static func inParallel(count count: Int, queue: dispatch_queue_t, task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    return (0..<count).mapDeferred(queue, task: task)
+    return (0..<count).deferredMap(queue, task: task)
   }
 }
 
 extension CollectionType
 {
-  public func mapDeferred<T>(count count: Int, _ task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  public func deferredMap<T>(task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
   {
-    return mapDeferred(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    return deferredMap(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
-  public func mapDeferred<T>(count count: Int, qos: qos_class_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  public func deferredMap<T>(qos: qos_class_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
   {
-    return mapDeferred(dispatch_get_global_queue(qos, 0), task: task)
+    return deferredMap(dispatch_get_global_queue(qos, 0), task: task)
   }
 
-  public func mapDeferred<T>(queue: dispatch_queue_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  public func deferredMap<T>(queue: dispatch_queue_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
   {
     // The following 2 lines exist to get around the fact that Self.Index.Distance does not convert to Int.
     let indices = Array(self.indices)
     let count = indices.count
 
     let deferreds = (indices).map { _ in TBD<T>() }
-    dispatch_async(queue) {
+    dispatch_async(dispatch_get_global_queue(dispatch_queue_get_qos_class(queue, nil), 0)) {
       dispatch_apply(count, queue) {
         index in
         deferreds[index].beginExecution()

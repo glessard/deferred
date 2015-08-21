@@ -222,7 +222,7 @@ class TBDTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testParallel()
+  func testParallel1()
   {
     let count = 10
 
@@ -231,6 +231,11 @@ class TBDTests: XCTestCase
     let e = (0..<count).map { expectationWithDescription("\($0)") }
     Deferred.inParallel(count: count, qos: QOS_CLASS_UTILITY) { i in e[i].fulfill() }
     waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testParallel2()
+  {
+    let count = 10
 
     // Verify that all created Deferreds do the right job
 
@@ -257,5 +262,18 @@ class TBDTests: XCTestCase
     d[numericCast(arc4random_uniform(numericCast(count)))].cancel()
     let c = combine(d)
     XCTAssert(c.value == nil)
+  }
+
+  func testParallel3()
+  {
+    // Verify that "accidentally" passing a serial queue to inParallel doesn't cause a deadlock
+
+    let a = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_UTILITY, 0)
+    let q = dispatch_queue_create("test1", a)
+
+    let count = 20
+    let d = Deferred.inParallel(count: count, queue: q) { $0 }
+    let c = combine(d)
+    XCTAssert(c.value?.count == count)
   }
 }
