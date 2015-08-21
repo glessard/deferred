@@ -549,33 +549,33 @@ extension Deferred
 {
   public static func inParallel(count count: Int, _ task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    return (0..<count).mapDeferred(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    return (0..<count).deferredMap(task)
   }
 
   public static func inParallel(count count: Int, qos: qos_class_t, task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    return (0..<count).mapDeferred(dispatch_get_global_queue(qos, 0), task: task)
+    return (0..<count).deferredMap(qos, task: task)
   }
 
   public static func inParallel(count count: Int, queue: dispatch_queue_t, task: (index: Int) throws -> T) -> [Deferred<T>]
   {
-    return (0..<count).mapDeferred(queue, task: task)
+    return (0..<count).deferredMap(queue, task: task)
   }
 }
 
 extension CollectionType
 {
-  public func mapDeferred<T>(count count: Int, _ task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  public func deferredMap<T>(task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
   {
-    return mapDeferred(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+    return deferredMap(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
-  public func mapDeferred<T>(count count: Int, qos: qos_class_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  public func deferredMap<T>(qos: qos_class_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
   {
-    return mapDeferred(dispatch_get_global_queue(qos, 0), task: task)
+    return deferredMap(dispatch_get_global_queue(qos, 0), task: task)
   }
 
-  public func mapDeferred<T>(queue: dispatch_queue_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
+  public func deferredMap<T>(queue: dispatch_queue_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
   {
     // The following 2 lines exist to get around the fact that Self.Index.Distance does not convert to Int.
     let indices = Array(self.indices)
