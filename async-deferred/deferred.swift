@@ -8,20 +8,16 @@
 
 import Dispatch
 
-/**
-  The possible states of a `Deferred`.
-
-  Must be a top-level type because Deferred is generic.
-*/
+/// The possible states of a `Deferred`.
+///
+/// Must be a top-level type because Deferred is generic.
 
 public enum DeferredState: Int32 { case Waiting = 0, Executing = 1, Determined = 2 }
 private let transientState = Int32.max
 
-/**
-  These errors can be thrown by a `Deferred`.
-
-  Must be a top-level type because Deferred is generic.
-*/
+/// These errors can be thrown by a `Deferred`.
+///
+/// Must be a top-level type because Deferred is generic.
 
 public enum DeferredError: ErrorType
 {
@@ -31,18 +27,16 @@ public enum DeferredError: ErrorType
   case Undetermined
 }
 
-/**
-  An asynchronous computation.
-
-  A `Deferred` starts out undetermined, in the `.Waiting` state.
-  It may then enter the `.Executing` state, and will eventually become `.Determined`.
-  Once it is `.Determined`, it is ready to supply a result.
-
-  The `result` property will return the result, blocking until it becomes determined.
-  If the result is ready when `result` is called, it will return immediately.
-
-  A closure supplied to the `notify` method will be called after the `Deferred` has become determined.
-*/
+/// An asynchronous computation.
+///
+/// A `Deferred` starts out undetermined, in the `.Waiting` state.
+/// It may then enter the `.Executing` state, and will eventually become `.Determined`.
+/// Once it is `.Determined`, it is ready to supply a result.
+///
+/// The `result` property will return the result, blocking until it becomes determined.
+/// If the result is ready when `result` is called, it will return immediately.
+///
+/// A closure supplied to the `notify` method will be called after the `Deferred` has become determined.
 
 public class Deferred<T>
 {
@@ -437,9 +431,7 @@ public class Deferred<T>
   }
 }
 
-/**
-  A `Deferred` to be determined (`TBD`) manually.
-*/
+/// A `Deferred` to be determined (`TBD`) manually.
 
 public class TBD<T>: Deferred<T>
 {
