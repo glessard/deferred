@@ -55,7 +55,10 @@ struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
       let j = step + Int(arc4random_uniform(UInt32(count-step)))
 
       // swap that Index with the Index present at the current step in the array
-      swap(&i[j], &i[step])
+      if j != step // swap 2beta6 calls `fatalError` if the two items are identical.
+      {
+        swap(&i[j], &i[step])
+      }
 
       // return the new random Index.
       return i[step]
