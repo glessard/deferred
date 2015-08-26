@@ -15,25 +15,23 @@ private let PrintGroup = dispatch_group_create()
 
 private var silenceOutput: Int32 = 0
 
-/**
-  A wrapper for println that runs all requests on a serial queue
-
-  Writes a basic thread identifier (main or back), the textual representation
-  of `object`, and a newline character onto the standard output.
-
-  The textual representation is obtained from the `object` using its protocol
-  conformances, in the following order of preference: `Streamable`,
-  `Printable`, `DebugPrintable`.
-
-  - parameter object: the item to be printed
-*/
+///  A wrapper for println that runs all requests on a serial queue
+///
+///  Writes a basic thread identifier (main or back), the textual representation
+///  of `object`, and a newline character onto the standard output.
+///
+///  The textual representation is obtained from the `object` using its protocol
+///  conformances, in the following order of preference: `Streamable`,
+///  `Printable`, `DebugPrintable`.
+///
+///  - parameter object: the item to be printed
 
 public func syncprint<T>(object: T)
 {
   let message = NSThread.currentThread().isMainThread ? "[main] " : "[back] "
 
   dispatch_group_async(PrintGroup, PrintQueue) {
-    // There is no particularly straightforward way to ensure an atomic read
+    /// There is no particularly straightforward way to ensure an atomic read
     if OSAtomicAdd32(0, &silenceOutput) == 0
     {
       print(message, object)
@@ -41,9 +39,7 @@ public func syncprint<T>(object: T)
   }
 }
 
-/**
-  Block until all tasks created by syncprint() have completed.
-*/
+///  Block until all tasks created by syncprint() have completed.
 
 public func syncprintwait()
 {
