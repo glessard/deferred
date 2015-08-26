@@ -2,7 +2,7 @@
 //  syncprint.swift
 //
 //  Created by Guillaume Lessard on 2014-08-22.
-//  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
+//  Copyright (c) 2014, 2015 Guillaume Lessard. All rights reserved.
 //
 //  https://gist.github.com/glessard/826241431dcea3655d1e
 //
@@ -15,26 +15,25 @@ private let PrintGroup = dispatch_group_create()
 
 private var silenceOutput: Int32 = 0
 
-///  A wrapper for println that runs all requests on a serial queue
+///  A wrapper for `Swift.print()` that executes all requests on a serial queue.
+///  Useful for logging from multiple threads.
 ///
 ///  Writes a basic thread identifier (main or back), the textual representation
-///  of `object`, and a newline character onto the standard output.
+///  of `item`, and a newline character onto the standard output.
 ///
-///  The textual representation is obtained from the `object` using its protocol
-///  conformances, in the following order of preference: `Streamable`,
-///  `Printable`, `DebugPrintable`.
+///  The textual representation is from the `String` initializer, `String(item)`
 ///
-///  - parameter object: the item to be printed
+///  - parameter item: the item to be printed
 
-public func syncprint<T>(object: T)
+public func syncprint(item: Any)
 {
-  let message = NSThread.currentThread().isMainThread ? "[main] " : "[back] "
+  let thread = NSThread.currentThread().isMainThread ? "[main]" : "[back]"
 
   dispatch_group_async(PrintGroup, PrintQueue) {
-    /// There is no particularly straightforward way to ensure an atomic read
+    // Read silenceOutput atomically
     if OSAtomicAdd32(0, &silenceOutput) == 0
     {
-      print(message, object)
+      print(thread, item, separator: " ")
     }
   }
 }
