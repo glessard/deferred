@@ -349,7 +349,7 @@ public class Deferred<T>
   /// ```
   ///
   /// - parameter reason: a `String` detailing the reason for the attempted cancellation.
-  /// - returns: whether the cancellation was performed succesfully.
+  /// - returns: whether the cancellation was performed successfully.
 
   public func cancel(reason: String = "") -> Bool
   {
