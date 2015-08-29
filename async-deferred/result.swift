@@ -8,15 +8,27 @@
 
 import Foundation
 
+public struct NoResult: ErrorType {}
+
 /// A Result type, approximately like everyone else has done.
 ///
 /// Unlike other implementations, the error case does not encode type beyond ErrorType.
 /// This way there is no need to ever map between error types, which is a thing that cannot make sense.
 
-public enum Result<T>: CustomStringConvertible
+public enum Result<T>: CustomStringConvertible, NilLiteralConvertible
 {
   case Value(T)
   case Error(ErrorType)
+
+  public init()
+  {
+    self = .Error(NoResult())
+  }
+
+  public init(nilLiteral: ())
+  {
+    self.init()
+  }
 
   public init(value: T)
   {
