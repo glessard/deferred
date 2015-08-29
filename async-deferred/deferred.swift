@@ -420,7 +420,7 @@ public class Deferred<T>
 
   public func notify(queue: dispatch_queue_t, block: dispatch_block_t)
   {
-    while currentState != DeferredState.Determined.rawValue
+    if currentState != DeferredState.Determined.rawValue
     {
       dispatch_group_notify(group, queue, block)
       return
