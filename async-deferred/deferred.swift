@@ -143,6 +143,7 @@ public class Deferred<T>
 
     source.notify(queue, qos: qos) {
       result in
+      if self.isDetermined { return }
       self.beginExecution()
       let transformed = result.map(transform)
       do { try self.setResult(transformed) }
@@ -164,6 +165,7 @@ public class Deferred<T>
 
     source.notify(queue, qos: qos) {
       result in
+      if self.isDetermined { return }
       self.beginExecution()
       switch result
       {
@@ -195,6 +197,7 @@ public class Deferred<T>
 
     source.notify(queue, qos: qos) {
       result in
+      if self.isDetermined { return }
       self.beginExecution()
       let transformed = result.flatMap(transform)
       do { try self.setResult(transformed) }
@@ -216,6 +219,7 @@ public class Deferred<T>
 
     source.notify(queue, qos: qos) {
       result in
+      if self.isDetermined { return }
       switch result
       {
       case .Value:
@@ -251,8 +255,9 @@ public class Deferred<T>
 
     source.notify(queue, qos: qos) {
       result in
-      self.beginExecution()
+      if self.isDetermined { return }
 
+      self.beginExecution()
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
       if until > now, case .Value = result
       {
