@@ -24,7 +24,6 @@ public enum DeferredError: ErrorType
   case Canceled(String)
   case AlreadyDetermined(String)
   case CannotDetermine(String)
-  case Undetermined
 }
 
 /// An asynchronous computation.
@@ -53,7 +52,7 @@ public class Deferred<T>
   private init()
   {
     dispatch_group_enter(group)
-    r = Result(error: DeferredError.Undetermined)
+    r = Result()
   }
 
   deinit
