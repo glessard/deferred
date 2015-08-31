@@ -40,27 +40,23 @@ public enum DeferredError: ErrorType
 public class Deferred<T>
 {
   private var r: Result<T>
-  private let group = dispatch_group_create()
 
   // Swift does not have a facility to read and write enum values atomically.
   // To get around this, we use a raw `Int32` value as a proxy for the enum value.
 
   private var currentState: Int32 = DeferredState.Waiting.rawValue
+  private var waiters = UnsafeMutablePointer<Waiter>(nil)
 
   // MARK: Initializers
 
   private init()
   {
-    dispatch_group_enter(group)
     r = Result()
   }
 
   deinit
   {
-    if isDetermined == false
-    {
-      dispatch_group_leave(group)
-    }
+    WaitQueue.dealloc(waiters)
   }
 
   /// Initialize with a computation task to be performed in the background
@@ -307,14 +303,43 @@ public class Deferred<T>
     }
 
     r = result
-    dispatch_group_leave(group)
 
     guard OSAtomicCompareAndSwap32Barrier(transientState, DeferredState.Determined.rawValue, &currentState) else
     { // Getting here seems impossible, but try to handle it gracefully.
       throw DeferredError.CannotDetermine("Failed to determine Deferred")
     }
 
+    while true
+    {
+      let queue = waiters
+      if CAS(queue, nil, &waiters)
+      {
+        WaitQueue.notifyAll(queue)
+        break
+      }
+    }
+
     // The result is now available for the world
+  }
+
+  private func enqueue(waiter: UnsafeMutablePointer<Waiter>) -> Bool
+  {
+    while true
+    {
+      let tail = waiters
+      waiter.memory.next = tail
+      if syncread(&currentState) != DeferredState.Determined.rawValue
+      {
+        if CAS(tail, waiter, &waiters)
+        { // waiter is now enqueued
+          return true
+        }
+      }
+      else
+      { // This Deferred has become determined; bail
+        return false
+      }
+    }
   }
 
   private func createNotificationBlock(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void) -> dispatch_block_t
@@ -376,7 +401,7 @@ public class Deferred<T>
     {
       return nil
     }
-    return result
+    return r
   }
 
   /// Get this `Deferred`'s value as a `Result`, blocking if necessary until it becomes determined.
@@ -384,7 +409,24 @@ public class Deferred<T>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<T> {
-    if currentState != DeferredState.Determined.rawValue { dispatch_group_wait(group, DISPATCH_TIME_FOREVER) }
+    if currentState != DeferredState.Determined.rawValue
+    {
+      let thread = mach_thread_self()
+      let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
+      waiter.initialize(Waiter(.Thread(thread)))
+
+      if enqueue(waiter)
+      { // waiter will be deallocated after the thread is woken
+        let kr = thread_suspend(thread)
+        guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
+      }
+      else
+      { // Deferred has a value now
+        waiter.destroy(1)
+        waiter.dealloc(1)
+      }
+    }
+
     return r
   }
 
@@ -427,8 +469,18 @@ public class Deferred<T>
   {
     if currentState != DeferredState.Determined.rawValue
     {
-      dispatch_group_notify(group, queue, block)
-      return
+      let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
+      waiter.initialize(Waiter(.Closure(queue, block)))
+
+      if enqueue(waiter)
+      { // waiter will be deallocated after the block is dispatched to GCD
+        return
+      }
+      else
+      { // Deferred has a value now
+        waiter.destroy(1)
+        waiter.dealloc(1)
+      }
     }
 
     dispatch_async(queue, block)

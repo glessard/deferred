@@ -571,22 +571,29 @@ class DeferredTests: XCTestCase
 
   func testRace()
   {
-    let count = 100
-    let g = TBD<Void>()
+    let count = 5000
+    let d1 = TBD<Void>()
+    let d2 = d1.delay(ns: 0)
+    let g = dispatch_group_create()
     let q = dispatch_get_global_queue(qos_class_self(), 0)
 
     let e = (0..<count).map { i in expectationWithDescription(i.description) }
 
+    dispatch_group_enter(g)
     dispatch_async(q) {
       for i in 0..<count
       {
-        dispatch_async(q) { g.notify { _ in e[i].fulfill() } }
+        dispatch_async(q) {
+          d2.notify { _ in e[i].fulfill() }
+          if i == count-1 { dispatch_group_leave(g) }
+        }
       }
     }
 
-    dispatch_async(q) { try! g.determine() }
+    dispatch_group_async(g, q) { try! d1.determine() }
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectationsWithTimeout(5.0, handler: nil)
+    syncprintwait()
   }
 
   func testCombine2()
