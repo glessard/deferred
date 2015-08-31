@@ -1,9 +1,9 @@
 # async & deferred
 An alternative to NSOperation in Swift, based on closures.
 
-`Deferred<T>` is useful in order to chain closures (blocks) together.
+`Deferred<T>` is useful in order to chain closures (blocks) together. A `Deferred` starts with an undetermined value. Until its value becomes ready, computations dependent on its value can saved for future execution using a lock-free, thread-safe algorithm. The results of these computations are also represented by other `Deferred` instances.
 
-It is an approximation of module [Deferred](https://ocaml.janestreet.com/ocaml-core/111.25.00/doc/async_kernel/#Deferred) available in OCaml.
+`Deferred` is an approximation of module [Deferred](https://ocaml.janestreet.com/ocaml-core/111.25.00/doc/async_kernel/#Deferred) available in OCaml.
 
 ```
 let d = Deferred {
@@ -14,7 +14,6 @@ let d = Deferred {
 print(d.value)  // 1.0, after 50 milliseconds
 ```
 
-A `Deferred` starts out with an undetermined value. It runs its closure in the background, and the return value of the closure will determine the `Deferred` at the time it completes.
 A `Deferred` can schedule a block for execution once its value has been determined, using the `notify` method.
 Computations can be chained by using `Deferred`'s `map`, `flatMap` and `apply` methods.
 
@@ -24,7 +23,7 @@ let operand = Deferred(value: 6)                               // Deferred<Int>
 let result = operand.apply(transform).map { $0.description }   // Deferred<String>
 print(result.value)                                            // 42.0
 ```
-The `result` property (and its adjuncts, `value` and `error`) will block the current thread until the `Deferred` becomes determined. The rest of `Deferred` is implemented in a thread-safe and lock-free manner, relying largely on the properties of `dispatch_group_notify()`.
+The `result` property (and its adjuncts, `value` and `error`) will block the current thread until the `Deferred` becomes determined. The rest of `Deferred` is lock-free.
 
 `Deferred` can run its closure on a specified `dispatch_queue_t` or concurrently at the requested `qos_class_t`, as can the `notify`, `map`, `flatMap` and `apply` methods. Otherwise it uses the global concurrent queue at the current qos class.
 
