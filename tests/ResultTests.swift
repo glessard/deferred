@@ -97,7 +97,7 @@ class ResultTests: XCTestCase
     XCTAssert(r2.value == nil)
     XCTAssert(r2.error as? TestError == TestError.Error(value))
 
-    let badres: Result<Double> = nil
+    let badres = Result<Double>()
 
     // Bad operand, transform not used
     let r3 = badres.map { (d: Double) throws -> Int in XCTFail(); return 0 }
@@ -120,7 +120,7 @@ class ResultTests: XCTestCase
     XCTAssert(r2.value == nil)
     XCTAssert(r2.error as? TestError == TestError.Error(value))
 
-    let badres: Result<Double> = nil
+    let badres = Result<Double>()
 
     // Bad operand, transform not used
     let r3 = badres.flatMap { _ in Result<String> { XCTFail(); return "" } }
