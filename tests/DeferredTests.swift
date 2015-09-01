@@ -570,23 +570,24 @@ class DeferredTests: XCTestCase
     let count = 5000
     let d1 = TBD<Void>()
     let d2 = d1.delay(ns: 0)
-    let g = dispatch_group_create()
     let q = dispatch_get_global_queue(qos_class_self(), 0)
 
+    let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/4
     let e = (0..<count).map { i in expectationWithDescription(i.description) }
 
-    dispatch_group_enter(g)
+    var first: Int32 = -1
     dispatch_async(q) {
       for i in 0..<count
       {
         dispatch_async(q) {
-          d2.notify { _ in e[i].fulfill() }
-          if i == count-1 { dispatch_group_leave(g) }
+          d2.notify(q) {
+            e[i].fulfill()
+            if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint(first) }
+          }
+          if i == lucky { try! d1.determine() }
         }
       }
     }
-
-    dispatch_group_async(g, q) { try! d1.determine() }
 
     waitForExpectationsWithTimeout(5.0, handler: nil)
     syncprintwait()
