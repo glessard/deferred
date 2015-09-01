@@ -115,18 +115,14 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.peek()?.value == value)
 
     let d2 = Deferred(value: value).delay(µs: 10_000)
-    XCTAssert(d2.isDetermined == false)
     XCTAssert(d2.peek() == nil)
+    XCTAssert(d2.isDetermined == false)
 
-    let expectation = expectationWithDescription("Waiting on Deferred")
+    _ = d2.value // Wait for delay
 
-    d2.notify { _ in
-      XCTAssert(d2.peek()?.value == value)
-      XCTAssert(d2.isDetermined)
-      expectation.fulfill()
-    }
-
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    XCTAssert(d2.peek() != nil)
+    XCTAssert(d2.peek()?.value == value)
+    XCTAssert(d2.isDetermined)
   }
 
   func testValueBlocks()
