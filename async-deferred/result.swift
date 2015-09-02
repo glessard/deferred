@@ -1,6 +1,6 @@
 //
 //  Result.swift
-//  swiftiandispatch
+//  async-deferred
 //
 //  Created by Guillaume Lessard on 2015-07-16.
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
