@@ -503,9 +503,8 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
     element.flatMap {
       value in
       accumulator.map {
-        (var values) in
-        values.append(value)
-        return values
+        values in
+        return values + [value]
       }
     }
   }
