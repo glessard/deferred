@@ -70,7 +70,7 @@ public class Deferred<T>
 
     let block = createBlock(qos) {
       let result = Result<T> { try task() }
-      do {  try self.setResult(result) }
+      do {  try self.determine(result) }
       catch { /* an error here means this `Deferred` was canceled before `task()` was complete. */ }
     }
 
@@ -142,7 +142,7 @@ public class Deferred<T>
       if self.isDetermined { return }
       self.beginExecution()
       let transformed = result.map(transform)
-      do { try self.setResult(transformed) }
+      do { try self.determine(transformed) }
       catch { /* an error here means `self` was canceled before `transform()` completed */ }
     }
   }
@@ -168,12 +168,12 @@ public class Deferred<T>
       case .Value(let value):
         transform(value).notify(queue, qos: qos) {
           transformed in
-          do { try self.setResult(transformed) }
+          do { try self.determine(transformed) }
           catch { /* an error here means `self` was canceled before `transform()` completed */ }
         }
 
       case .Error(let error):
-        do { try self.setResult(Result(error: error)) }
+        do { try self.determine(Result(error: error)) }
         catch { /* an error here seems irrelevant */ }
       }
     }
@@ -196,7 +196,7 @@ public class Deferred<T>
       if self.isDetermined { return }
       self.beginExecution()
       let transformed = result.flatMap(transform)
-      do { try self.setResult(transformed) }
+      do { try self.determine(transformed) }
       catch { /* an error here means `self` was canceled before `transform()` completed */ }
     }
   }
@@ -223,13 +223,13 @@ public class Deferred<T>
           transform in
           self.beginExecution()
           let transformed = result.apply(transform)
-          do { try self.setResult(transformed) }
+          do { try self.determine(transformed) }
           catch { /* an error here means `self` was canceled before `transform()` completed */ }
         }
 
       case .Error(let error):
         self.beginExecution()
-        do { try self.setResult(Result(error: error)) }
+        do { try self.determine(Result(error: error)) }
         catch { /* an error here seems irrelevant */ }
       }
     }
@@ -258,13 +258,13 @@ public class Deferred<T>
       if until > now, case .Value = result
       {
         dispatch_after(until, queue, self.createBlock(qos, block: {
-          do { try self.setResult(result) }
+          do { try self.determine(result) }
           catch { /* an error here seems means `self` was canceled before the delay ended */ }
         }))
       }
       else
       {
-        do { try self.setResult(result) }
+        do { try self.determine(result) }
         catch { /* an error here seems means `self` was canceled before `result` was ready */ }
       }
     }
@@ -285,7 +285,7 @@ public class Deferred<T>
   /// - parameter result: the intended `Result` to determine this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  private func setResult(result: Result<T>) throws
+  private func determine(result: Result<T>) throws
   {
     // A turnstile to ensure only one thread can succeed
     while true
@@ -383,7 +383,7 @@ public class Deferred<T>
   public func cancel(reason: String = "") -> Bool
   {
     do {
-      try setResult(Result(error: DeferredError.Canceled(reason)))
+      try determine(Result(error: DeferredError.Canceled(reason)))
       return true
     }
     catch { /* Could not cancel, probably because this `Deferred` was already determined. */ }
@@ -523,9 +523,9 @@ public class TBD<T>: Deferred<T>
   /// - parameter result: the intended `Result` for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(result: Result<T>) throws
+  public override func determine(result: Result<T>) throws
   {
-    try super.setResult(result)
+    try super.determine(result)
   }
 
   /// Change the state of this `TBD` from `.Waiting` to `.Executing`
