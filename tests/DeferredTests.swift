@@ -21,7 +21,7 @@ class DeferredTests: XCTestCase
   {
     syncprint("Starting")
 
-    let result1 = async(QOS_CLASS_BACKGROUND) {
+    let result1 = Deferred(qos: QOS_CLASS_BACKGROUND) {
       _ -> Double in
       defer { syncprint("Computing result1") }
       return 10.5
@@ -132,7 +132,7 @@ class DeferredTests: XCTestCase
     let value = arc4random()
 
     let s = dispatch_semaphore_create(0)
-    let busy = async { _ -> UInt32 in
+    let busy = Deferred { _ -> UInt32 in
       dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
       return value
     }
@@ -162,7 +162,7 @@ class DeferredTests: XCTestCase
     let value = arc4random()
 
     let s = dispatch_semaphore_create(0)
-    let busy = async { _ -> UInt32 in
+    let busy = Deferred { _ -> UInt32 in
       dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
       return value
     }
