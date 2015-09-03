@@ -8,7 +8,10 @@
 
 import Foundation
 
-public struct NoResult: ErrorType {}
+public struct NoResult: ErrorType
+{
+  private init() {}
+}
 
 /// A Result type, approximately like everyone else has done.
 ///
