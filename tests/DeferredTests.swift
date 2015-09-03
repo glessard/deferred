@@ -311,8 +311,8 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError.Error(error))
 
     // transforms return Result
-    let goodTransform = { (i: UInt32) in Result(value: Int(i)*2) }
-    let badTransform  = { (i: UInt32) in Result<Double>(error: TestError.Error(i)) }
+    let goodTransform = { (i: UInt32) in Result.Value(Int(i)*2) }
+    let badTransform  = { (i: UInt32) in Result<Double>.Error(TestError.Error(i)) }
 
     // good operand, good transform
     let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT, transform: goodTransform)
@@ -495,7 +495,7 @@ class DeferredTests: XCTestCase
     d4.cancel()
 
     let e5 = expectationWithDescription("flatMap cancellation with good Result")
-    let d5 = tbd.flatMap { Result(value: $0) }
+    let d5 = tbd.flatMap { Result.Value($0) }
     d5.onError { e in e5.fulfill() }
     d5.cancel()
 

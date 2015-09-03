@@ -69,7 +69,7 @@ public class Deferred<T>
     self.init()
 
     let block = createBlock(qos) {
-      let result = Result<T> { try task() }
+      let result = Result { try task() }
       do {  try self.determine(result) }
       catch { /* an error here means this `Deferred` was canceled before `task()` was complete. */ }
     }
@@ -101,7 +101,7 @@ public class Deferred<T>
   ///
   /// - parameter result: the result of this `Deferred`
 
-  public init(result: Result<T>)
+  public init(_ result: Result<T>)
   {
     r = result
     currentState = DeferredState.Determined.rawValue
@@ -113,7 +113,7 @@ public class Deferred<T>
 
   convenience public init(value: T)
   {
-    self.init(result: Result(value: value))
+    self.init(Result.Value(value))
   }
 
   /// Initialize to an already determined state
@@ -122,7 +122,7 @@ public class Deferred<T>
 
   convenience public init(error: ErrorType)
   {
-    self.init(result: Result(error: error))
+    self.init(Result.Error(error))
   }
 
   /// Initialize with a `Deferred` source and a transform to computed in the background
@@ -173,7 +173,7 @@ public class Deferred<T>
         }
 
       case .Error(let error):
-        do { try self.determine(Result(error: error)) }
+        do { try self.determine(Result.Error(error)) }
         catch { /* an error here seems irrelevant */ }
       }
     }
@@ -229,7 +229,7 @@ public class Deferred<T>
 
       case .Error(let error):
         self.beginExecution()
-        do { try self.determine(Result(error: error)) }
+        do { try self.determine(Result.Error(error)) }
         catch { /* an error here seems irrelevant */ }
       }
     }
@@ -382,11 +382,11 @@ public class Deferred<T>
 
   public func cancel(reason: String = "") -> Bool
   {
-    do {
-      try determine(Result(error: DeferredError.Canceled(reason)))
+    if let _ = try? determine(Result.Error(DeferredError.Canceled(reason)))
+    {
       return true
     }
-    catch { /* Could not cancel, probably because this `Deferred` was already determined. */ }
+    /* Could not cancel, probably because this `Deferred` was already determined. */
     return false
   }
 
@@ -503,7 +503,7 @@ public class TBD<T>: Deferred<T>
 
   public func determine(value: T) throws
   {
-    try determine(Result(value: value))
+    try determine(Result.Value(value))
   }
 
   /// Set this `Deferred` to an error and change its state to `DeferredState.Determined`
@@ -514,7 +514,7 @@ public class TBD<T>: Deferred<T>
 
   public func determine(error: ErrorType) throws
   {
-    try determine(Result(error: error))
+    try determine(Result.Error(error))
   }
 
   /// Set the `Result` of this `Deferred` and change its state to `DeferredState.Determined`

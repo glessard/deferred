@@ -28,21 +28,11 @@ public enum Result<T>: CustomStringConvertible
     self = .Error(NoResult())
   }
 
-  public init(value: T)
-  {
-    self = .Value(value)
-  }
-
-  public init(error: ErrorType)
-  {
-    self = .Error(error)
-  }
-
   public init(@noescape task: () throws -> T)
   {
     do {
-      let v = try task()
-      self = .Value(v)
+      let value = try task()
+      self = .Value(value)
     }
     catch {
       self = .Error(error)
