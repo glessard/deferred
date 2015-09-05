@@ -567,7 +567,7 @@ class DeferredTests: XCTestCase
 
   func testRace()
   {
-    let count = 5000
+    let count = 1000
     let d1 = TBD<Void>()
     let d2 = d1.delay(ns: 0)
     let q = dispatch_get_global_queue(qos_class_self(), 0)
@@ -581,10 +581,11 @@ class DeferredTests: XCTestCase
       {
         dispatch_async(q) {
           d2.notify(q) {
-            e[i].fulfill()
+            [expectation = e[i], i] in
+            expectation.fulfill()
             if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint(first) }
           }
-          if i == lucky { try! d1.determine() }
+          if i == lucky { dispatch_async(q) { try! d1.determine() } }
         }
       }
     }
