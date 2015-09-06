@@ -128,16 +128,15 @@ class TBDTests: XCTestCase
     let d3 = TBD<Int>()
     d3.notify {
       result in
-      guard case let .Error(e) = result,
-        let deferredErr = e as? DeferredError,
-        case .Canceled = deferredErr
-        else
-      {
+      do {
+        try result.getValue()
         XCTFail()
-        return
       }
+      catch DeferredError.Canceled {}
+      catch { XCTFail() }
     }
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
+      // This will trigger the `XCWaitCompletionHandler` in the `waitForExpectationsWithTimeout` call below.
       e3.fulfill()
     }
     waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
