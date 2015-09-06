@@ -150,6 +150,25 @@ class TBDTests: XCTestCase
     XCTAssert(first.isDetermined == false)
   }
 
+  func testNeverDetermined2()
+  {
+    let first = firstValue([Deferred<Int>]())
+
+    let other = first.map { XCTFail(String($0)) }
+    XCTAssert(other.isDetermined == false)
+
+    let third = other.map { XCTFail() }
+    XCTAssert(third.isDetermined == false)
+
+    // Memory management note: when a `Deferred` has other `Deferred` dependent on it, it *must* be determined
+    // in order for memory to be reclaimed. This is because the createNotificationBlock() method creates
+    // a block with a strong reference to `self`. The reference must be strong in order to allow `Deferred`
+    // objects to exist without an explicit reference, which in turns allows chained calls.
+    // `cancel()` is a perfectly correct way to determine a `Deferred`.
+
+    first.cancel()
+  }
+
   func testFirstValueDeferred()
   {
     let count = 10
