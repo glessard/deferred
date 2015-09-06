@@ -70,8 +70,7 @@ public class Deferred<T>
 
     let block = createBlock(qos) {
       let result = Result { try task() }
-      do {  try self.determine(result) }
-      catch { /* an error here means this `Deferred` was canceled before `task()` was complete. */ }
+      _ = try? self.determine(result) // an error here means this `Deferred` has been canceled.
     }
 
     currentState = DeferredState.Executing.rawValue
@@ -142,8 +141,7 @@ public class Deferred<T>
       if self.isDetermined { return }
       self.beginExecution()
       let transformed = result.map(transform)
-      do { try self.determine(transformed) }
-      catch { /* an error here means `self` was canceled before `transform()` completed */ }
+      _ = try? self.determine(transformed) // an error here means this `Deferred` has been canceled.
     }
   }
 
@@ -168,13 +166,11 @@ public class Deferred<T>
       case .Value(let value):
         transform(value).notify(queue, qos: qos) {
           transformed in
-          do { try self.determine(transformed) }
-          catch { /* an error here means `self` was canceled before `transform()` completed */ }
+          _ = try? self.determine(transformed) // an error here means this `Deferred` has been canceled.
         }
 
       case .Error(let error):
-        do { try self.determine(Result.Error(error)) }
-        catch { /* an error here seems irrelevant */ }
+        _ = try? self.determine(Result.Error(error)) // an error here means this `Deferred` has been canceled.
       }
     }
   }
@@ -196,8 +192,7 @@ public class Deferred<T>
       if self.isDetermined { return }
       self.beginExecution()
       let transformed = result.flatMap(transform)
-      do { try self.determine(transformed) }
-      catch { /* an error here means `self` was canceled before `transform()` completed */ }
+      _ = try? self.determine(transformed) // an error here means this `Deferred` has been canceled.
     }
   }
 
@@ -223,14 +218,12 @@ public class Deferred<T>
           transform in
           self.beginExecution()
           let transformed = result.apply(transform)
-          do { try self.determine(transformed) }
-          catch { /* an error here means `self` was canceled before `transform()` completed */ }
+          _ = try? self.determine(transformed) // an error here means this `Deferred` has been canceled.
         }
 
       case .Error(let error):
         self.beginExecution()
-        do { try self.determine(Result.Error(error)) }
-        catch { /* an error here seems irrelevant */ }
+        _ = try? self.determine(Result.Error(error)) // an error here means this `Deferred` has been canceled.
       }
     }
   }
@@ -257,15 +250,11 @@ public class Deferred<T>
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
       if until > now, case .Value = result
       {
-        dispatch_after(until, queue, self.createBlock(qos, block: {
-          do { try self.determine(result) }
-          catch { /* an error here seems means `self` was canceled before the delay ended */ }
-        }))
+        dispatch_after(until, queue, self.createBlock(qos, block: { _ = try? self.determine(result) }))
       }
       else
       {
-        do { try self.determine(result) }
-        catch { /* an error here seems means `self` was canceled before `result` was ready */ }
+        _ = try? self.determine(result) // an error here means this `Deferred` has been canceled.
       }
     }
   }

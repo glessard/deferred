@@ -436,8 +436,7 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   deferreds.shuffle().forEach {
     $0.notify {
       result in
-      do { try first.determine(result) }
-      catch { /* We don't care, it just means it's not the first completed */ }
+      _ = try? first.determine(result) // an error here just means this wasn't the first completed result
     }
   }
   return first
@@ -456,8 +455,7 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>
     deferred in
     deferred.notify {
       _ in
-      do { try first.determine(deferred) }
-      catch { /* We don't care, it just means it's not the first completed */ }
+      _ = try? first.determine(deferred) // an error here just means this wasn't the first determined deferred
     }
   }
   return first
@@ -505,9 +503,8 @@ extension CollectionType
       dispatch_apply(count, queue) {
         index in
         deferreds[index].beginExecution()
-        let result = Result { _ in try task(self[indices[index]]) }
-        do { try deferreds[index].determine(result) }
-        catch { /* Canceled, or otherwise beaten to the punch. */ }
+        let result = Result { try task(self[indices[index]]) }
+        _ = try? deferreds[index].determine(result) // an error here means `deferred[index]` has been canceled
       }
     }
     return deferreds
