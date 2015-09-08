@@ -275,7 +275,42 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.value == nil)
     XCTAssert(d3.error as? TestError == TestError.Error(error))
   }
+  
+  func testRecover()
+  {
+    let value = arc4random()
+    let error = arc4random()
+    let goodOperand = Deferred(value: value)
+    let badOperand  = Deferred<Double>(error: TestError.Error(error))
 
+    // good operand, transform short-circuited
+    let d1 = goodOperand.recover(QOS_CLASS_DEFAULT) { e in XCTFail(); return error }
+    XCTAssert(d1.value == value)
+    XCTAssert(d1.error == nil)
+
+    // bad operand, transform throws
+    let d2 = badOperand.recover { error in throw TestError.Error(value) }
+    XCTAssert(d2.value == nil)
+    XCTAssert(d2.error as? TestError == TestError.Error(value))
+
+    // bad operand, transform executes
+    let d3 = badOperand.recover { error in Double(value) }
+    XCTAssert(d3.value == Double(value))
+    XCTAssert(d3.error == nil)
+
+    // test early return from notification block
+    let reason = "reason"
+    let d4 = goodOperand.delay(ms: 50)
+    let r4 = d4.recover { e in value }
+    r4.cancel(reason)
+    do {
+      try r4.result.getValue()
+      XCTFail()
+    }
+    catch DeferredError.Canceled(let message) { XCTAssert(message == reason) }
+    catch { XCTFail() }
+  }
+  
   func testFlatMap1()
   {
     let value = arc4random()

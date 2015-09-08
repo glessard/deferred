@@ -146,6 +146,27 @@ public class Deferred<T>
   }
 
   /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// This constructor is used by `recover` -- map for the `ErrorType` path.
+  ///
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+
+  public convenience init(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<T>, transform: (ErrorType) throws -> T)
+  {
+    self.init()
+
+    source.notify(queue, qos: qos) {
+      result in
+      if self.isDetermined { return }
+      self.beginExecution()
+      let transformed = result.recover(transform)
+      _ = try? self.determine(transformed) // an error here means this `Deferred` has been canceled.
+    }
+  }
+
+  /// Initialize with a `Deferred` source and a transform to computed in the background
   /// This constructor is used by `flatMap`
   ///
   /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued

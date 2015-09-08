@@ -185,6 +185,44 @@ extension Deferred
   }
 }
 
+// MARK: execute a transform upon determination as an error -- map for the ErrorType path.
+
+extension Deferred
+{
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
+  public func recover(transform: (ErrorType) throws -> T) -> Deferred<T>
+  {
+    return recover(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
+  }
+
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
+  public func recover(qos: qos_class_t, transform: (ErrorType) throws -> T) -> Deferred<T>
+  {
+    return recover(dispatch_get_global_queue(qos, 0), transform: transform)
+  }
+
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
+  public func recover(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) throws -> T) -> Deferred<T>
+  {
+    return Deferred(queue: queue, qos: qos, source: self, transform: transform)
+  }
+}
+
 // MARK: enqueue a closure which takes the result of a `Deferred`
 
 extension Deferred
