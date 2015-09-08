@@ -75,7 +75,7 @@ public enum Result<T>: CustomStringConvertible
   }
 
 
-  public func map<U>(transform: (T) throws -> U) -> Result<U>
+  public func map<U>(@noescape transform: (T) throws -> U) -> Result<U>
   {
     switch self
     {
@@ -84,7 +84,7 @@ public enum Result<T>: CustomStringConvertible
     }
   }
 
-  public func flatMap<U>(transform: (T) -> Result<U>) -> Result<U>
+  public func flatMap<U>(@noescape transform: (T) -> Result<U>) -> Result<U>
   {
     switch self
     {
