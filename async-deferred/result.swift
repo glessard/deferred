@@ -69,7 +69,7 @@ public enum Result<T>: CustomStringConvertible
   public var description: String {
     switch self
     {
-    case .Value(let value): return "\(value)"
+    case .Value(let value): return String(value)
     case .Error(let error): return "Error: \(error)"
     }
   }
@@ -111,6 +111,15 @@ public enum Result<T>: CustomStringConvertible
       return .Error(error)
     }
   }
+
+  public func recover(@noescape transform: (ErrorType) throws -> T) -> Result<T>
+  {
+    switch self
+    {
+    case .Value:            return self
+    case .Error(let error): return Result { try transform(error) }
+    }
+  }
 }
 
 public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> T) -> T
@@ -119,5 +128,14 @@ public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> T) -> T
   {
   case .Value(let value): return value
   case .Error:            return alternate()
+  }
+}
+
+public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> Result<T>) -> Result<T>
+{
+  switch possible
+  {
+  case .Value: return possible
+  case .Error: return alternate()
   }
 }
