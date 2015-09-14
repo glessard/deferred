@@ -332,6 +332,17 @@ public class Deferred<T>
     // The result is now available for the world
   }
 
+  /// Enqueue a Waiter to this Deferred's list of Waiters.
+  /// This operation is lock-free and thread-safe.
+  /// Multiple threads can attempt to enqueue at once; they will succeed in turn and return true.
+  /// If one or more thread enters a race to enqueue with `determine()`, as soon as `determine()` succeeds
+  /// all current and subsequent attempts to enqueue will fail and return false.
+  ///
+  /// A failure to enqueue indicates that this `Deferred` is now determined and can now make its Result available.
+  ///
+  /// - parameter waiter: A `Waiter` to enqueue
+  /// - returns: whether enqueueing was successful.
+
   private func enqueue(waiter: UnsafeMutablePointer<Waiter>) -> Bool
   {
     while true
@@ -352,10 +363,23 @@ public class Deferred<T>
     }
   }
 
+  /// Take a (Result<T>) -> Void closure, and wrap it in a dispatch_block_t
+  /// where this Deferred's Result is used as the input closure's parameter.
+  ///
+  /// - parameter qos: The QOS class to use for the new block (default is QOS_CLASS_UNSPECIFIED)
+  /// - parameter task: The closure to be transformed
+  /// - returns: a dispatch_block_t at the requested QOS class.
+
   private func createNotificationBlock(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void) -> dispatch_block_t
   {
     return createBlock(qos, block: { task(self.r) })
   }
+
+  /// Take a () -> Void closure, and make it into a dispatch_block_t of an appropriate QOS class
+  ///
+  /// - parameter qos: The QOS class to use for the new block (default is QOS_CLASS_UNSPECIFIED)
+  /// - parameter block: The closure to cast into a dispatch_block_t
+  /// - returns: a dispatch_block_t at the requested QOS class.
 
   private func createBlock(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, block: () -> Void) -> dispatch_block_t
   {
