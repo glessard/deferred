@@ -52,7 +52,7 @@ struct WaitQueue
       head = head.memory.next
 
       current.memory.wake()
-      current.destroy(1)
+      current.destroy()
       current.dealloc(1)
     }
   }
@@ -65,7 +65,7 @@ struct WaitQueue
       let current = waiter
       waiter = waiter.memory.next
 
-      current.destroy(1)
+      current.destroy()
       current.dealloc(1)
     }
   }

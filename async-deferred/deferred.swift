@@ -432,7 +432,7 @@ public class Deferred<T>
       }
       else
       { // Deferred has a value now
-        waiter.destroy(1)
+        waiter.destroy()
         waiter.dealloc(1)
       }
     }
@@ -488,7 +488,7 @@ public class Deferred<T>
       }
       else
       { // Deferred has a value now
-        waiter.destroy(1)
+        waiter.destroy()
         waiter.dealloc(1)
       }
     }
