@@ -139,3 +139,20 @@ public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> Result<T>
   case .Error: return alternate()
   }
 }
+
+public func == <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
+{
+  switch (lhr, rhr)
+  {
+  case (.Value(let lv), .Value(let rv)):
+    return lv == rv
+
+  case (.Error(let le), .Error(let re)):
+    let e1 = le as NSError
+    let e2 = re as NSError
+    // This is incomplete, but it's as good as we can make it.
+    return (e1.domain == e2.domain) && (e1.code == e2.code) && e1.userInfo.isEmpty && e2.userInfo.isEmpty
+
+  default: return false
+  }
+}
