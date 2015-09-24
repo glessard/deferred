@@ -156,3 +156,8 @@ public func == <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
   default: return false
   }
 }
+
+public func != <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
+{
+  return !(lhr == rhr)
+}
