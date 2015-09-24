@@ -9,7 +9,7 @@
 struct TestError: ErrorType, Equatable
 {
   let error: UInt32
-  init(_ e: UInt32) { error = e }
+  init(_ e: UInt32 = 0) { error = e }
 }
 
 func == (l: TestError, r: TestError) -> Bool
