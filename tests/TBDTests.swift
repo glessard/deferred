@@ -20,7 +20,7 @@ class TBDTests: XCTestCase
   {
     let tbd = TBD<UInt32>()
     tbd.beginExecution()
-    let value = arc4random()
+    let value = arc4random() & 0x7fff_ffff
     do { try tbd.determine(value) }
     catch { XCTFail() }
     XCTAssert(tbd.isDetermined)
@@ -40,9 +40,9 @@ class TBDTests: XCTestCase
   {
     let tbd = TBD<UInt32>()
     tbd.beginExecution()
-    var value = arc4random()
+    var value = arc4random() & 0x7fff_ffff
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
-      value = arc4random()
+      value = arc4random() & 0x7fff_ffff
       do { try tbd.determine(value) }
       catch { XCTFail() }
     }
@@ -74,7 +74,7 @@ class TBDTests: XCTestCase
     Deferred(value: ()).delay(ms: 100).notify { _ in XCTAssert(tbd3.cancel() == true) }
     Deferred(value: ()).delay(ms: 200).notify { _ in
       do {
-        try tbd3.determine(arc4random())
+        try tbd3.determine(arc4random() & 0x7fff_ffff)
         XCTFail()
       }
       catch DeferredError.AlreadyDetermined {
@@ -90,7 +90,7 @@ class TBDTests: XCTestCase
 
   func testNotify1()
   {
-    let value = arc4random()
+    let value = arc4random() & 0x7fff_ffff
     let e1 = expectationWithDescription("TBD notification after determination")
     let tbd = TBD<UInt32>()
     try! tbd.determine(value)
@@ -107,14 +107,14 @@ class TBDTests: XCTestCase
     let e2 = expectationWithDescription("TBD notification after delay")
     let tbd = TBD<UInt32>()
 
-    var value = arc4random()
+    var value = arc4random() & 0x7fff_ffff
     tbd.notify {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000), dispatch_get_global_queue(qos_class_self(), 0)) {
-      value = arc4random()
+      value = arc4random() & 0x7fff_ffff
       do { try tbd.determine(value) }
       catch { XCTFail() }
     }
