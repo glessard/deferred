@@ -22,7 +22,7 @@ extension Deferred
 
   public func delay(µs µs: Int) -> Deferred
   {
-    return delay(ns: µs*1000)
+    return delay64(ns: Int64(µs)*1000)
   }
 
   /// Return a `Deferred` whose determination will occur at least `ms` milliseconds from the time of evaluation.
@@ -31,7 +31,7 @@ extension Deferred
 
   public func delay(ms ms: Int) -> Deferred
   {
-    return delay(ns: ms*1_000_000)
+    return delay64(ns: Int64(ms)*1_000_000)
   }
 
   /// Return a `Deferred` whose determination will occur at least a number of seconds from the time of evaluation.
@@ -40,7 +40,7 @@ extension Deferred
 
   public func delay(seconds s: Double) -> Deferred
   {
-    return delay(ns: Int(s*1e9))
+    return delay64(ns: Int64(s*1e9))
   }
 
   /// Return a `Deferred` whose determination will occur at least `ns` nanoseconds from the time of evaluation.
@@ -49,10 +49,15 @@ extension Deferred
 
   public func delay(ns ns: Int) -> Deferred
   {
+    return delay64(ns: Int64(ns))
+  }
+
+  private func delay64(ns ns: Int64) -> Deferred
+  {
     if ns < 0 { return self }
 
     let queue = dispatch_get_global_queue(qos_class_self(), 0)
-    let until = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+    let until = dispatch_time(DISPATCH_TIME_NOW, ns)
     return Deferred(queue: queue, source: self, until: until)
   }
 }
@@ -70,7 +75,7 @@ extension Deferred
 
   public func timeout(µs µs: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
-    return timeout(ns: µs*1000, reason: reason)
+    return timeout64(ns: Int64(µs)*1000, reason: reason)
   }
 
   /// Return a `Deferred` whose determination will occur at most `ms` milliseconds from the time of evaluation.
@@ -80,7 +85,7 @@ extension Deferred
 
   public func timeout(ms ms: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
-    return timeout(ns: ms*1_000_000, reason: reason)
+    return timeout64(ns: Int64(ms)*1_000_000, reason: reason)
   }
 
   /// Return a `Deferred` whose determination will occur at most a number of seconds from the time of evaluation.
@@ -90,7 +95,7 @@ extension Deferred
 
   public func timeout(seconds s: Double, reason: String = DefaultTimeoutMessage) -> Deferred
   {
-    return timeout(ns: Int(s*1e9), reason: reason)
+    return timeout64(ns: Int64(s*1e9), reason: reason)
   }
 
   /// Return a `Deferred` whose determination will occur at most `ns` nanoseconds from the time of evaluation.
@@ -99,12 +104,17 @@ extension Deferred
 
   public func timeout(ns ns: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
+    return timeout64(ns: Int64(ns), reason: reason)
+  }
+
+  private func timeout64(ns ns: Int64, reason: String = DefaultTimeoutMessage) -> Deferred
+  {
     if self.isDetermined { return self }
 
     if ns > 0
     {
       let queue = dispatch_get_global_queue(qos_class_self(), 0)
-      let timeout = dispatch_time(DISPATCH_TIME_NOW, Int64(ns))
+      let timeout = dispatch_time(DISPATCH_TIME_NOW, ns)
 
       let perishable = map(queue) { $0 }
       dispatch_after(timeout, queue) { perishable.cancel(reason) }
