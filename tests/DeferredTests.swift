@@ -129,7 +129,7 @@ class DeferredTests: XCTestCase
   {
     let waitns = 100_000_000
 
-    let value = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
 
     let s = dispatch_semaphore_create(0)
     let busy = Deferred { _ -> UInt32 in
@@ -159,7 +159,7 @@ class DeferredTests: XCTestCase
   {
     let waitns = 100_000_000
 
-    let value = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
 
     let s = dispatch_semaphore_create(0)
     let busy = Deferred { _ -> UInt32 in
@@ -188,7 +188,7 @@ class DeferredTests: XCTestCase
 
   func testNotify1()
   {
-    let value = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
     let e1 = expectationWithDescription("Pre-set Deferred")
     let d1 = Deferred(value: value)
     d1.notify {
@@ -200,7 +200,7 @@ class DeferredTests: XCTestCase
 
   func testNotify2()
   {
-    let value = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
     let e2 = expectationWithDescription("Properly Deferred")
     let d2 = Deferred(value: value).delay(ms: 100)
     let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
@@ -240,7 +240,7 @@ class DeferredTests: XCTestCase
 
   func testNotify4()
   {
-    let d4 = Deferred(value: arc4random() & 0x7fff_ffff).delay(ms: 50)
+    let d4 = Deferred(value: arc4random() & 0x3fff_ffff).delay(ms: 50)
     let e4val = expectationWithDescription("Test onValue()")
     d4.onValue { _ in e4val.fulfill() }
     d4.onError { _ in XCTFail() }
@@ -255,8 +255,8 @@ class DeferredTests: XCTestCase
 
   func testMap()
   {
-    let value = arc4random() & 0x7fff_ffff
-    let error = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
+    let error = arc4random() & 0x3fff_ffff
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
@@ -278,8 +278,8 @@ class DeferredTests: XCTestCase
   
   func testRecover()
   {
-    let value = arc4random() & 0x7fff_ffff
-    let error = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
+    let error = arc4random() & 0x3fff_ffff
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
@@ -313,8 +313,8 @@ class DeferredTests: XCTestCase
   
   func testFlatMap1()
   {
-    let value = arc4random() & 0x7fff_ffff
-    let error = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
+    let error = arc4random() & 0x3fff_ffff
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
@@ -340,8 +340,8 @@ class DeferredTests: XCTestCase
 
   func testFlatMap2()
   {
-    let value = arc4random() & 0x7fff_ffff
-    let error = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
+    let error = arc4random() & 0x3fff_ffff
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
@@ -367,8 +367,8 @@ class DeferredTests: XCTestCase
 
   func testApply1()
   {
-    let value = Int(arc4random() & 0xffff + 10000)
-    let error = arc4random() & 0x7fff_ffff
+    let value = Int(arc4random() & 0x7fff + 10000)
+    let error = arc4random() & 0x3fff_ffff
 
     let transform = Deferred { i throws -> Double in Double(value*i) }
 
@@ -414,8 +414,8 @@ class DeferredTests: XCTestCase
       return a+b
     }
 
-    let value1 = Int(arc4random() & 0x7fff_ffff)
-    let value2 = Int(arc4random() & 0x7fff_ffff)
+    let value1 = Int(arc4random() & 0x3fff_ffff)
+    let value2 = Int(arc4random() & 0x3fff_ffff)
     let deferred = Deferred(value: value1).apply(QOS_CLASS_USER_INITIATED, transform: Deferred(value: curriedSum(value2)))
     XCTAssert(deferred.value == value1+value2)
   }
@@ -439,12 +439,12 @@ class DeferredTests: XCTestCase
     let g = TBD<Void>()
 
     g.delay(ms: 100).notify { _ in
-      v1 = Int(arc4random() & 0xffff + 10000)
+      v1 = Int(arc4random() & 0x7fff + 10000)
       try! transform.determine { i in Double(v1*i) }
     }
 
     g.delay(ms: 200).notify { _ in
-      v2 = Int(arc4random() & 0xffff + 10000)
+      v2 = Int(arc4random() & 0x7fff + 10000)
       try! operand.determine(v2)
     }
 
@@ -462,14 +462,14 @@ class DeferredTests: XCTestCase
     let d1 = Deferred(qos: QOS_CLASS_UTILITY) {
       () -> UInt32 in
       usleep(100_000)
-      return arc4random() & 0x7fff_ffff
+      return arc4random() & 0x3fff_ffff
     }
 
     XCTAssert(d1.cancel() == true)
     XCTAssert(d1.value == nil)
 
     // Set before canceling -- cancellation failure
-    let d2 = Deferred(value: arc4random() & 0x7fff_ffff)
+    let d2 = Deferred(value: arc4random() & 0x3fff_ffff)
     XCTAssert(d2.cancel("message") == false)
   }
 
@@ -498,7 +498,7 @@ class DeferredTests: XCTestCase
     d4.onError { e in e4.fulfill() }
     d4.cancel()
 
-    do { try tbd.determine(numericCast(arc4random() & 0x7fff_ffff)) }
+    do { try tbd.determine(numericCast(arc4random() & 0x3fff_ffff)) }
     catch { XCTFail() }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -534,7 +534,7 @@ class DeferredTests: XCTestCase
     d5.onError { e in e5.fulfill() }
     d5.cancel()
 
-    do { try tbd.determine(numericCast(arc4random() & 0x7fff_ffff)) }
+    do { try tbd.determine(numericCast(arc4random() & 0x3fff_ffff)) }
     catch { XCTFail() }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -568,7 +568,7 @@ class DeferredTests: XCTestCase
     d4.onError { e in e4.fulfill() }
     d4.cancel()
 
-    do { try tbd.determine(numericCast(arc4random() & 0x7fff_ffff)) }
+    do { try tbd.determine(numericCast(arc4random() & 0x3fff_ffff)) }
     catch { XCTFail() }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -576,13 +576,13 @@ class DeferredTests: XCTestCase
 
   func testTimeout()
   {
-    let value = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
     let d = Deferred(value: value)
 
-    let d1 = d.timeout(ms: 50)
+    let d1 = d.timeout(µs: 5000)
     XCTAssert(d1.value == value)
 
-    let d2 = d.delay(ms: 5000).timeout(µs: 5000)
+    let d2 = d.delay(ms: 5000).timeout(ns: 2_000_000)
     let e2 = expectationWithDescription("Timeout test")
     d2.onValue { _ in XCTFail() }
     d2.onError { _ in e2.fulfill() }
@@ -631,7 +631,7 @@ class DeferredTests: XCTestCase
 
   func testCombine2()
   {
-    let v1 = Int(arc4random() & 0x7fff_ffff)
+    let v1 = Int(arc4random() & 0x3fff_ffff)
     let v2 = UInt64(arc4random())
 
     let d1 = Deferred(value: v1).delay(ms: 100)
@@ -644,7 +644,7 @@ class DeferredTests: XCTestCase
 
   func testCombine3()
   {
-    let v1 = Int(arc4random() & 0x7fff_ffff)
+    let v1 = Int(arc4random() & 0x3fff_ffff)
     let v2 = UInt64(arc4random())
     let v3 = arc4random().description
 
@@ -664,7 +664,7 @@ class DeferredTests: XCTestCase
 
   func testCombine4()
   {
-    let v1 = Int(arc4random() & 0x7fff_ffff)
+    let v1 = Int(arc4random() & 0x3fff_ffff)
     let v2 = UInt64(arc4random())
     let v3 = arc4random().description
     let v4 = sin(Double(v2))
@@ -685,7 +685,7 @@ class DeferredTests: XCTestCase
   {
     let count = 10
 
-    let inputs = (0..<count).map { i in Deferred(value: arc4random() & 0x7fff_ffff) }
+    let inputs = (0..<count).map { i in Deferred(value: arc4random() & 0x3fff_ffff) }
     let combined = combine(inputs)
     if let values = combined.value
     {

@@ -18,7 +18,7 @@ class ResultTests: XCTestCase
 {
   func testInitValue()
   {
-    let val = arc4random() & 0x7fff_ffff
+    let val = arc4random() & 0x3fff_ffff
     let res = Result.Value(val)
     XCTAssert(res.value == val)
     XCTAssert(res.error == nil)
@@ -36,7 +36,7 @@ class ResultTests: XCTestCase
 
   func testInitError()
   {
-    let err = TestError(arc4random() & 0x7fff_ffff)
+    let err = TestError(arc4random() & 0x3fff_ffff)
     let res = Result<Int>.Error(err)
     XCTAssert(res.error as? TestError == err)
     XCTAssert(res.value == nil)
@@ -54,7 +54,7 @@ class ResultTests: XCTestCase
 
   func testInitClosureSuccess()
   {
-    let val = arc4random() & 0x7fff_ffff
+    let val = arc4random() & 0x3fff_ffff
     let res = Result { _ throws -> UInt32 in val }
     XCTAssert(res.value == val)
     XCTAssert(res.error == nil)
@@ -62,7 +62,7 @@ class ResultTests: XCTestCase
 
   func testInitClosureError()
   {
-    let err = TestError(arc4random() & 0x7fff_ffff)
+    let err = TestError(arc4random() & 0x3fff_ffff)
     let res = Result { _ throws -> UInt32 in throw err }
     XCTAssert(res.error as? TestError == err)
     XCTAssert(res.value == nil)
@@ -70,7 +70,7 @@ class ResultTests: XCTestCase
 
   func testMap()
   {
-    let value = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
     let goodres = Result.Value(value)
 
     // Good operand, good transform
@@ -93,7 +93,7 @@ class ResultTests: XCTestCase
 
   func testFlatMap()
   {
-    let value = arc4random() & 0x7fff_ffff
+    let value = arc4random() & 0x3fff_ffff
     let goodres = Result.Value(value)
 
     // Good operand, good transform
@@ -116,8 +116,8 @@ class ResultTests: XCTestCase
 
   func testApply()
   {
-    let value = Int(arc4random() & 0xffff + 10000)
-    let error = arc4random() & 0x7fff_ffff
+    let value = Int(arc4random() & 0x7fff + 10000)
+    let error = arc4random() & 0x3fff_ffff
 
     let transform = Result.Value { i throws -> Double in Double(value*i) }
 
@@ -157,11 +157,11 @@ class ResultTests: XCTestCase
 
   func testQuestionMarkQuestionMarkOperator()
   {
-    let r1 = Result.Value(Int(arc4random() & 0x7fff_fff0 + 1))
+    let r1 = Result.Value(Int(arc4random() & 0x3fff_fff0 + 1))
     let v1 = r1 ?? -1
     XCTAssert(v1 > 0)
 
-    let r2 = Result<Int>.Error(TestError(arc4random() & 0x7fff_ffff))
+    let r2 = Result<Int>.Error(TestError(arc4random() & 0x3fff_ffff))
     let v2 = r2 ?? -1
     XCTAssert(v2 < 0)
   }
