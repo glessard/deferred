@@ -29,11 +29,11 @@ class TBDTests: XCTestCase
 
     let tbe = TBD<Void>()
     tbe.beginExecution()
-    do { try tbe.determine(TestError.Error(value)) }
+    do { try tbe.determine(TestError(value)) }
     catch { XCTFail() }
     XCTAssert(tbe.isDetermined)
     XCTAssert(tbe.value == nil)
-    XCTAssert(tbe.error as? TestError == TestError.Error(value))
+    XCTAssert(tbe.error as? TestError == TestError(value))
   }
 
   func testDetermine2()
