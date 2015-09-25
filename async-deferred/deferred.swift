@@ -59,6 +59,25 @@ public class Deferred<T>
     WaitQueue.dealloc(waiters)
   }
 
+  /// Initialize with a computation task to be performed in the background, at the current quality of service
+  ///
+  /// - parameter task: the computation to be performed
+
+  public convenience init(task: () throws -> T)
+  {
+    self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
+  }
+
+  /// Initialize with a computation task to be performed in the background
+  ///
+  /// - parameter qos:  the Quality-of-Service class at which the computation task should be performed
+  /// - parameter task: the computation to be performed
+
+  public convenience init(qos: qos_class_t, task: () throws -> T)
+  {
+    self.init(queue: dispatch_get_global_queue(qos, 0), task: task)
+  }
+
   /// Initialize with a computation task to be performed in the background
   ///
   /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be enqueued
@@ -75,25 +94,6 @@ public class Deferred<T>
 
     currentState = DeferredState.Executing.rawValue
     dispatch_async(queue, block)
-  }
-
-  /// Initialize with a computation task to be performed in the background
-  ///
-  /// - parameter qos:  the Quality-of-Service class at which the computation task should be performed
-  /// - parameter task: the computation to be performed
-
-  public convenience init(qos: qos_class_t, task: () throws -> T)
-  {
-    self.init(queue: dispatch_get_global_queue(qos, 0), task: task)
-  }
-
-  /// Initialize with a computation task to be performed in the background, at the current quality of service
-  ///
-  /// - parameter task: the computation to be performed
-
-  public convenience init(_ task: () throws -> T)
-  {
-    self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
 
   /// Initialize to an already determined state
