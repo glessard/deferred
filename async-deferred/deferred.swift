@@ -47,7 +47,7 @@ public class Deferred<T>
   private var currentState: Int32
   private var waiters: UnsafeMutablePointer<Waiter> = nil
 
-  // MARK: Initializers
+  // MARK: initializers
 
   private init()
   {
@@ -59,6 +59,8 @@ public class Deferred<T>
   {
     WaitQueue.dealloc(waiters)
   }
+
+  // MARK: initialize with a closure
 
   /// Initialize with a computation task to be performed in the background, at the current quality of service
   ///
@@ -96,6 +98,8 @@ public class Deferred<T>
     currentState = DeferredState.Executing.rawValue
     dispatch_async(queue, block)
   }
+
+  // MARK: initialize with a result, value or error
 
   /// Initialize to an already determined state
   ///
