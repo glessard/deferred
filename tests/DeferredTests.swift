@@ -489,6 +489,7 @@ class DeferredTests: XCTestCase
   {
     // Test cancellation behaviour of map and delay
     let tbd = TBD<Int>()
+    let tbe = TBD<Int>()
 
     let e1 = expectationWithDescription("map cancellation with good input")
     let d1 = tbd.map { $0 }
@@ -496,7 +497,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectationWithDescription("map cancellation with error input")
-    let d2 = d1.map { i -> Void in XCTFail() }
+    let d2 = tbe.map { i -> Void in XCTFail() }
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
@@ -510,8 +511,8 @@ class DeferredTests: XCTestCase
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
 
-    do { try tbd.determine(numericCast(arc4random() & 0x3fff_ffff)) }
-    catch { XCTFail() }
+    XCTAssertNotNil(try? tbd.determine(numericCast(arc4random() & 0x3fff_ffff)))
+    XCTAssertNotNil(try? tbe.determine(TestError()))
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
@@ -520,6 +521,7 @@ class DeferredTests: XCTestCase
   {
     // Test cancellation behaviour of flatMap
     let tbd = TBD<Int>()
+    let tbe = TBD<Int>()
 
     let e1 = expectationWithDescription("flatMap cancellation with good input")
     let d1 = tbd.flatMap { Deferred(value: $0) }
@@ -527,7 +529,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectationWithDescription("flatMap cancellation with error input")
-    let d2 = d1.flatMap { _ in Deferred { _ in XCTFail() } }
+    let d2 = tbe.flatMap { _ in Deferred { _ in XCTFail() } }
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
@@ -537,7 +539,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.cancel() == true)
 
     let e4 = expectationWithDescription("apply cancellation with everything wrong")
-    let d4 = d1.flatMap { i in Deferred<Void>(error: DeferredError.Canceled("")) }
+    let d4 = tbe.flatMap { i in Deferred<Void>(error: DeferredError.Canceled("")) }
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
 
@@ -546,8 +548,8 @@ class DeferredTests: XCTestCase
     d5.onError { e in e5.fulfill() }
     XCTAssert(d5.cancel() == true)
 
-    do { try tbd.determine(numericCast(arc4random() & 0x3fff_ffff)) }
-    catch { XCTFail() }
+    XCTAssertNotNil(try? tbd.determine(numericCast(arc4random() & 0x3fff_ffff)))
+    XCTAssertNotNil(try? tbe.determine(TestError()))
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
 
@@ -557,9 +559,10 @@ class DeferredTests: XCTestCase
   {
     // test cancellation behaviour of apply
     let tbd = TBD<Int>()
+    let tbe = TBD<Int>()
+
     let transform = tbd.map { i in { (i: Int) throws -> Int in abs(i) } }
-    let transferr = tbd.map { i in { (i: Int) throws -> Int in abs(i) } }
-    XCTAssert(transferr.cancel() == true)
+    let transferr = tbd.map { i in { (i: Int) throws -> Int in throw TestError() } }
 
     let e1 = expectationWithDescription("apply cancellation with good inputs")
     let d1 = tbd.apply(transform)
@@ -567,7 +570,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectationWithDescription("apply cancellation with error input")
-    let d2 = d1.apply(transform)
+    let d2 = tbe.apply(transform)
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
@@ -577,12 +580,12 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.cancel() == true)
 
     let e4 = expectationWithDescription("apply cancellation with everything canceled")
-    let d4 = d1.apply(transferr)
+    let d4 = tbe.apply(transferr)
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
 
-    do { try tbd.determine(numericCast(arc4random() & 0x3fff_ffff)) }
-    catch { XCTFail() }
+    XCTAssertNotNil(try? tbd.determine(numericCast(arc4random() & 0x3fff_ffff)))
+    XCTAssertNotNil(try? tbe.determine(TestError()))
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
