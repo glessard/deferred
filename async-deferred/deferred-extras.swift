@@ -416,45 +416,30 @@ extension Deferred
 
 // combine two or more Deferred objects into one.
 
-extension Deferred
+/// Combine two `Deferred` into one.
+/// The returned `Deferred` will become determined after both inputs are determined.
+///
+/// Equivalent to but hopefully more efficient than:
+/// ```
+/// Deferred { (d1.value, d2.value) }
+/// ```
+/// - parameter d1: a `Deferred`
+/// - parameter d2: a second `Deferred` to combine with `d1`
+/// - returns: a new `Deferred` whose value shall be a tuple of `d1.value` and `d2.value`
+
+public func combine<T1,T2>(d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(T1,T2)>
 {
-  /// Combine `self` with another `Deferred` into a new `Deferred`.
-  /// The returned `Deferred` will become determined after both `self` and `other` are determined.
-  ///
-  /// Equivalent to but hopefully more efficient than:
-  /// ```
-  /// Deferred { (self.value, other.value) }
-  /// ```
-  /// - parameter other: a second `Deferred` to combine with `self`
-  /// - returns: a new `Deferred` whose value is a tuple of `self.value` and `other.value`
+  return d1.flatMap { t1 in d2.map { t2 in (t1,t2) } }
+}
 
-  public func combine<U>(other: Deferred<U>) -> Deferred<(T,U)>
-  {
-    return flatMap { (t: T) in other.map { (u: U) in (t,u) } }
-  }
+public func combine<T1,T2,T3>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>) -> Deferred<(T1,T2,T3)>
+{
+  return combine(d1,d2).flatMap { (t1,t2) in d3.map { t3 in (t1,t2,t3) } }
+}
 
-  /// Combine `self` with two other `Deferred`s into a new `Deferred`.
-  /// The returned `Deferred` will become determined after all three input `Deferred`s are determined.
-  /// - parameter o1: another `Deferred` to combine with `self`
-  /// - parameter o2: another `Deferred` to combine with `self`
-  /// - returns: a new `Deferred` whose value is a tuple of `self.value`, `o1.value` and `o2.value`
-
-  public func combine<U1,U2>(o1: Deferred<U1>, _ o2: Deferred<U2>) -> Deferred<(T,U1,U2)>
-  {
-    return combine(o1).flatMap { (t,u1) in o2.map { u2 in (t,u1,u2) } }
-  }
-
-  /// Combine `self` with three other `Deferred`s into a new `Deferred`.
-  /// The returned `Deferred` will become determined after all three input `Deferred`s are determined.
-  /// - parameter o1: another `Deferred` to combine with `self`
-  /// - parameter o2: another `Deferred` to combine with `self`
-  /// - parameter o3: another `Deferred` to combine with `self`
-  /// - returns: a new `Deferred` whose value is a tuple of `self.value`, `o1.value`, `o2.value` and `o3.value`
-
-  public func combine<U1,U2,U3>(o1: Deferred<U1>, _ o2: Deferred<U2>, _ o3: Deferred<U3>) -> Deferred<(T,U1,U2,U3)>
-  {
-    return combine(o1,o2).flatMap { (t,u1,u2) in o3.map { u3 in (t,u1,u2,u3) } }
-  }
+public func combine<T1,T2,T3,T4>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>) -> Deferred<(T1,T2,T3,T4)>
+{
+  return combine(d1,d2,d3).flatMap { (t1,t2,t3) in d4.map { t4 in (t1,t2,t3,t4) } }
 }
 
 /// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.

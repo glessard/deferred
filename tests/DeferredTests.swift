@@ -41,7 +41,7 @@ class DeferredTests: XCTestCase
 
     result3.notify(QOS_CLASS_UTILITY) { syncprint($0) }
 
-    let result4 = result2.combine(result1.map { Int($0*4) })
+    let result4 = combine(result2, result1.map { Int($0*4) })
 
     let result5 = result2.timeout(ms: 50)
 
@@ -463,7 +463,7 @@ class DeferredTests: XCTestCase
     let v1 = Deferred(value: 3.0)
     let v2 = Deferred(value: 4.1)
 
-    let args = v1.map(Float.init).combine(v2.map(Float.init))
+    let args = combine(v1.map(Float.init), v2.map(Float.init))
     let result = args.apply(transform)
 
     XCTAssert(result.value == pow(3.0, 4.1))
@@ -649,7 +649,7 @@ class DeferredTests: XCTestCase
     let d1 = Deferred(value: v1).delay(ms: 100)
     let d2 = Deferred(value: v2).delay(ms: 200)
 
-    let c = d1.combine(d2).value
+    let c = combine(d1,d2).value
     XCTAssert(c?.0 == v1)
     XCTAssert(c?.1 == v2)
   }
@@ -668,7 +668,7 @@ class DeferredTests: XCTestCase
     // let d6 = Deferred { _ in v3 }                   // infers Deferred<String> as expected
     // let d7 = Deferred { () throws -> String in v3 } // infers Deferred<String> as expected
 
-    let c = d1.combine(d2,d3).value
+    let c = combine(d1,d2,d3).value
     XCTAssert(c?.0 == v1)
     XCTAssert(c?.1 == v2)
     XCTAssert(c?.2 == v3)
@@ -686,7 +686,7 @@ class DeferredTests: XCTestCase
     let d3 = Deferred(value: v3)
     let d4 = Deferred(value: v4).delay(µs: 999)
 
-    let c = d1.combine(d2,d3,d4).value
+    let c = combine(d1,d2,d3,d4).value
     XCTAssert(c?.0 == v1)
     XCTAssert(c?.1 == v2)
     XCTAssert(c?.2 == v3)
