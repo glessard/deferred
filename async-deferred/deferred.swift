@@ -44,14 +44,15 @@ public class Deferred<T>
   // Swift does not have a facility to read and write enum values atomically.
   // To get around this, we use a raw `Int32` value as a proxy for the enum value.
 
-  private var currentState: Int32 = DeferredState.Waiting.rawValue
-  private var waiters = UnsafeMutablePointer<Waiter>(nil)
+  private var currentState: Int32
+  private var waiters: UnsafeMutablePointer<Waiter> = nil
 
   // MARK: Initializers
 
   private init()
   {
     r = Result()
+    currentState = DeferredState.Waiting.rawValue
   }
 
   deinit
