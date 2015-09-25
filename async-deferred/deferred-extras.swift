@@ -58,7 +58,7 @@ extension Deferred
 
     let queue = dispatch_get_global_queue(qos_class_self(), 0)
     let until = dispatch_time(DISPATCH_TIME_NOW, ns)
-    return Deferred(queue: queue, source: self, until: until)
+    return Delayed(queue: queue, source: self, until: until)
   }
 }
 
@@ -229,7 +229,7 @@ extension Deferred
 
   public func recover(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) throws -> T) -> Deferred<T>
   {
-    return Deferred(queue: queue, qos: qos, source: self, transform: transform)
+    return Mapped(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -290,7 +290,7 @@ extension Deferred
 
   public func map<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) throws -> U) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
+    return Mapped<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -327,7 +327,7 @@ extension Deferred
 
   public func flatMap<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
+    return Mapped<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -364,7 +364,7 @@ extension Deferred
 
   public func flatMap<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Result<U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
+    return Mapped<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
@@ -401,7 +401,7 @@ extension Deferred
 
   public func apply<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(T)throws->U>) -> Deferred<U>
   {
-    return Deferred<U>(queue: queue, qos: qos, source: self, transform: transform)
+    return Applicator<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
