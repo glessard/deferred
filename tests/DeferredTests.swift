@@ -275,7 +275,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.value == nil)
     XCTAssert(d3.error as? TestError == TestError(error))
   }
-  
+
   func testRecover()
   {
     let value = arc4random() & 0x3fff_ffff
@@ -310,7 +310,7 @@ class DeferredTests: XCTestCase
     catch DeferredError.Canceled(let message) { XCTAssert(message == reason) }
     catch { XCTFail() }
   }
-  
+
   func testFlatMap1()
   {
     let value = arc4random() & 0x3fff_ffff
