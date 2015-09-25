@@ -422,7 +422,7 @@ class DeferredTests: XCTestCase
 
   func testApply3()
   {
-    let transform = TBD<(Int)throws->Double>()
+    let transform = TBD<(Int) -> Double>()
     let operand = TBD<Int>()
     let result = operand.apply(transform)
     let expect = expectationWithDescription("Applying a deferred transform to a deferred operand")
@@ -455,6 +455,18 @@ class DeferredTests: XCTestCase
 
     try! g.determine()
     waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testApply4()
+  {
+    let transform = Deferred(value: powf)
+    let v1 = Deferred(value: 3.0)
+    let v2 = Deferred(value: 4.1)
+
+    let args = v1.map(Float.init).combine(v2.map(Float.init))
+    let result = args.apply(transform)
+
+    XCTAssert(result.value == pow(3.0, 4.1))
   }
 
   func testCancel1()

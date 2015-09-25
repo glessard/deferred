@@ -372,12 +372,21 @@ extension Deferred
 
 extension Deferred
 {
+  /// Adaptor made desirable by insufficient covariance between throwing and non-throwing functions.
+  /// Should remove later.
+
+  public func apply<U>(transform: Deferred<(T) -> U>) -> Deferred<U>
+  {
+    let throwing = transform.map { transform in { (t:T) throws -> U in transform(t) } }
+    return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: throwing)
+  }
+
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
   /// The transforming closure will be enqueued on the global queue at the current quality of service class.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(transform: Deferred<(T)throws->U>) -> Deferred<U>
+  public func apply<U>(transform: Deferred<(T) throws -> U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
@@ -388,7 +397,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(qos: qos_class_t, transform: Deferred<(T)throws->U>) -> Deferred<U>
+  public func apply<U>(qos: qos_class_t, transform: Deferred<(T) throws -> U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos, 0), transform: transform)
   }
@@ -399,7 +408,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(T)throws->U>) -> Deferred<U>
+  public func apply<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(T) throws -> U>) -> Deferred<U>
   {
     return Applicator<U>(queue: queue, qos: qos, source: self, transform: transform)
   }
