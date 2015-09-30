@@ -590,6 +590,25 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
+  func testCancel5()
+  {
+    let tbd = TBD<Int>()
+
+    let d1 = tbd.map { $0 * 2 }
+    let e1 = expectationWithDescription("first deferred")
+    d1.onValue { _ in XCTFail() }
+    d1.onError { _ in e1.fulfill() }
+
+    let d2 = d1.map  { $0 + 100 }
+    let e2 = expectationWithDescription("second deferred")
+    d2.onValue { _ in XCTFail() }
+    d2.onError { _ in e2.fulfill() }
+
+    d1.cancel()
+
+    waitForExpectationsWithTimeout(1.0) { _ in tbd.cancel() }
+  }
+
   func testTimeout()
   {
     let value = arc4random() & 0x3fff_ffff
