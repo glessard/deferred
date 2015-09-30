@@ -507,7 +507,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.cancel() == true)
 
     let e4 = expectationWithDescription("delay cancellation with error input")
-    let d4 = d1.delay(ms: 100)
+    let d4 = tbe.delay(ms: 100)
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
 
