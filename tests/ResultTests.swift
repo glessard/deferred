@@ -184,4 +184,15 @@ class ResultTests: XCTestCase
 
     XCTAssert(r1 != r2)
   }
+
+  func testEquals2()
+  {
+    let a1 = (0..<5).map { Result.Value($0) }
+    let a2 = (1...5).map { Result.Value($0) }
+    let a3 = a2.map { $0.map { $0 - 1 } }
+
+    XCTAssert(a1 != a2)
+    XCTAssert(a1 == a3)
+    XCTAssert(a1 != [])
+  }
 }

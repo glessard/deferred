@@ -161,3 +161,20 @@ public func != <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
 {
   return !(lhr == rhr)
 }
+
+public func == <C: CollectionType, T: Equatable where C.Generator.Element == Result<T>> (lha: C, rha: C) -> Bool
+{
+  guard lha.count == rha.count else { return false }
+
+  for (le, re) in zip(lha, rha)
+  {
+    guard le == re else { return false }
+  }
+
+  return true
+}
+
+public func != <C: CollectionType, T: Equatable where C.Generator.Element == Result<T>> (lha: C, rha: C) -> Bool
+{
+  return !(lha == rha)
+}
