@@ -147,11 +147,9 @@ public func == <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
   case (.Value(let lv), .Value(let rv)):
     return lv == rv
 
-  case (.Error(let le), .Error(let re)):
-    let e1 = le as NSError
-    let e2 = re as NSError
-    // This is incomplete, but it's as good as we can make it.
-    return (e1.domain == e2.domain) && (e1.code == e2.code) && e1.userInfo.isEmpty && e2.userInfo.isEmpty
+  case (.Error(let le as NSError), .Error(let re as NSError)):
+    // Use NSObject's equality method, and assume it will be good.
+    return le.isEqual(re)
 
   default: return false
   }
