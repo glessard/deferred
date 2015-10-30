@@ -114,6 +114,29 @@ class ResultTests: XCTestCase
     XCTAssert(r3.error != nil)
   }
 
+  func testRecover()
+  {
+    let value = arc4random() & 0x3fff_ffff
+    let goodres = Result.Value(value)
+
+    // Good operand, transform short-circuited
+    let r1 = goodres.recover { e in Result.Value(value*2) }
+    XCTAssert(r1.value == value)
+    XCTAssert(r1.error == nil)
+
+    let badres = Result<Double>()
+
+    // Bad operand, transform throws
+    let r2 = badres.recover { e in throw TestError(value) }
+    XCTAssert(r2.value == nil)
+    XCTAssert(r2.error as? TestError == TestError(value))
+
+    // Bad operand, transform executes
+    let r3 = badres.recover { e in Result.Value(Double(value)) }
+    XCTAssert(r3.value == Double(value))
+    XCTAssert(r3.error == nil)
+  }
+
   func testApply()
   {
     let value = Int(arc4random() & 0x7fff + 10000)
