@@ -284,24 +284,24 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, transform short-circuited
-    let d1 = goodOperand.recover(QOS_CLASS_DEFAULT) { e in XCTFail(); return error }
+    let d1 = goodOperand.recover(QOS_CLASS_DEFAULT) { e in XCTFail(); return Deferred(error: TestError(error)) }
     XCTAssert(d1.value == value)
     XCTAssert(d1.error == nil)
 
     // bad operand, transform throws
-    let d2 = badOperand.recover { error in throw TestError(value) }
+    let d2 = badOperand.recover { error in Deferred { throw TestError(value) } }
     XCTAssert(d2.value == nil)
     XCTAssert(d2.error as? TestError == TestError(value))
 
     // bad operand, transform executes
-    let d3 = badOperand.recover { error in Double(value) }
+    let d3 = badOperand.recover { error in Deferred(value: Double(value)) }
     XCTAssert(d3.value == Double(value))
     XCTAssert(d3.error == nil)
 
     // test early return from notification block
     let reason = "reason"
     let d4 = goodOperand.delay(ms: 50)
-    let r4 = d4.recover { e in value }
+    let r4 = d4.recover { e in Deferred(value: value) }
     r4.cancel(reason)
     do {
       try r4.result.getValue()

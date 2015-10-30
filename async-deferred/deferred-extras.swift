@@ -195,7 +195,7 @@ extension Deferred
   }
 }
 
-// MARK: execute a transform upon determination as an error -- map for the ErrorType path.
+// MARK: execute a transform when determined with an error -- flatMap for the ErrorType path.
 
 extension Deferred
 {
@@ -204,7 +204,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(transform: (ErrorType) throws -> T) -> Deferred<T>
+  public func recover(transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
   {
     return recover(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
@@ -215,7 +215,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(qos: qos_class_t, transform: (ErrorType) throws -> T) -> Deferred<T>
+  public func recover(qos: qos_class_t, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
   {
     return recover(dispatch_get_global_queue(qos, 0), transform: transform)
   }
@@ -227,7 +227,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) throws -> T) -> Deferred<T>
+  public func recover(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
   {
     return Mapped(queue: queue, qos: qos, source: self, transform: transform)
   }
