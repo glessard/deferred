@@ -376,7 +376,7 @@ internal final class Mapped<T>: Deferred<T>
 {
   private override init() { super.init() }
 
-  /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `map`
   ///
   /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
@@ -397,7 +397,7 @@ internal final class Mapped<T>: Deferred<T>
     }
   }
 
-  /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by the `flatMap` that uses a transform to a `Result`.
   ///
   /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
@@ -453,7 +453,7 @@ internal final class Bind<T>: Deferred<T>
     }
   }
 
-  /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `recover` -- flatMap for the `ErrorType` path.
   ///
   /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
@@ -490,7 +490,7 @@ internal final class Applicator<T>: Deferred<T>
 {
   private override init() { super.init() }
 
-  /// Initialize with a `Deferred` source and a transform to computed in the background
+  /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `apply`
   ///
   /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
