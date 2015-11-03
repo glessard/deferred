@@ -35,7 +35,7 @@ struct Waiter
       while case let kr = thread_resume(thread) where kr != KERN_SUCCESS
       {
         guard kr == KERN_FAILURE else { fatalError("thread_resume() failed with code \(kr)") }
-        // thread wasn't suspended yet
+        // kr equals KERN_FAILURE because thread_resume() was called before the thread was suspended.
       }
     }
   }
