@@ -20,7 +20,7 @@ extension Deferred
   /// - parameter µs: a number of microseconds
   /// - returns: a `Deferred` reference
 
-  public func delay(µs µs: Int) -> Deferred
+  public final func delay(µs µs: Int) -> Deferred
   {
     return delay64(ns: Int64(µs)*1000)
   }
@@ -29,7 +29,7 @@ extension Deferred
   /// - parameter ms: a number of milliseconds
   /// - returns: a `Deferred` reference
 
-  public func delay(ms ms: Int) -> Deferred
+  public final func delay(ms ms: Int) -> Deferred
   {
     return delay64(ns: Int64(ms)*1_000_000)
   }
@@ -38,7 +38,7 @@ extension Deferred
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public func delay(seconds s: Double) -> Deferred
+  public final func delay(seconds s: Double) -> Deferred
   {
     return delay64(ns: Int64(s*1e9))
   }
@@ -47,7 +47,7 @@ extension Deferred
   /// - parameter ns: a number of nanoseconds
   /// - returns: a `Deferred` reference
 
-  public func delay(ns ns: Int) -> Deferred
+  public final func delay(ns ns: Int) -> Deferred
   {
     return delay64(ns: Int64(ns))
   }
@@ -73,7 +73,7 @@ extension Deferred
   /// - parameter µs: a number of microseconds
   /// - returns: a `Deferred` reference
 
-  public func timeout(µs µs: Int, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(µs µs: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     return timeout64(ns: Int64(µs)*1000, reason: reason)
   }
@@ -83,7 +83,7 @@ extension Deferred
   /// - parameter ms: a number of milliseconds
   /// - returns: a `Deferred` reference
 
-  public func timeout(ms ms: Int, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(ms ms: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     return timeout64(ns: Int64(ms)*1_000_000, reason: reason)
   }
@@ -93,7 +93,7 @@ extension Deferred
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public func timeout(seconds s: Double, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(seconds s: Double, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     return timeout64(ns: Int64(s*1e9), reason: reason)
   }
@@ -102,7 +102,7 @@ extension Deferred
   /// - parameter ns: a number of nanoseconds
   /// - returns: a `Deferred` reference
 
-  public func timeout(ns ns: Int, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(ns ns: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     return timeout64(ns: Int64(ns), reason: reason)
   }
@@ -133,7 +133,7 @@ extension Deferred
   /// The closure will be enqueued on the global queue at the current quality of service class.
   /// - parameter task: the closure to be enqueued
 
-  public func onValue(task: (T) -> Void)
+  public final func onValue(task: (T) -> Void)
   {
     onValue(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
@@ -143,7 +143,7 @@ extension Deferred
   /// - parameter qos: the quality-of-service to associate with the closure
   /// - parameter task: the closure to be enqueued
 
-  public func onValue(qos: qos_class_t, task: (T) -> Void)
+  public final func onValue(qos: qos_class_t, task: (T) -> Void)
   {
     onValue(dispatch_get_global_queue(qos, 0), task: task)
   }
@@ -168,7 +168,7 @@ extension Deferred
   /// The closure will be enqueued on the global queue at the current quality of service class.
   /// - parameter task: the closure to be enqueued
 
-  public func onError(task: (ErrorType) -> Void)
+  public final func onError(task: (ErrorType) -> Void)
   {
     onError(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
@@ -178,7 +178,7 @@ extension Deferred
   /// - parameter qos: the quality-of-service to associate with the closure
   /// - parameter task: the closure to be enqueued
 
-  public func onError(qos: qos_class_t, task: (ErrorType) -> Void)
+  public final func onError(qos: qos_class_t, task: (ErrorType) -> Void)
   {
     onError(dispatch_get_global_queue(qos, 0), task: task)
   }
@@ -204,7 +204,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
+  public final func recover(transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
   {
     return recover(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
@@ -215,7 +215,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(qos: qos_class_t, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
+  public final func recover(qos: qos_class_t, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
   {
     return recover(dispatch_get_global_queue(qos, 0), transform: transform)
   }
@@ -241,7 +241,7 @@ extension Deferred
   /// The closure will be enqueued on the global queue at the current quality of service class.
   /// - parameter task: the closure to be enqueued
 
-  public func notify(task: (Result<T>) -> Void)
+  public final func notify(task: (Result<T>) -> Void)
   {
     notify(dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
@@ -251,7 +251,7 @@ extension Deferred
   /// - parameter qos: the quality-of-service to associate with the closure
   /// - parameter task: the closure to be enqueued
 
-  public func notify(qos: qos_class_t, task: (Result<T>) -> Void)
+  public final func notify(qos: qos_class_t, task: (Result<T>) -> Void)
   {
     notify(dispatch_get_global_queue(qos, 0), task: task)
   }
@@ -266,7 +266,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<U>(transform: (T) throws -> U) -> Deferred<U>
+  public final func map<U>(transform: (T) throws -> U) -> Deferred<U>
   {
     return map(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
@@ -277,7 +277,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<U>(qos: qos_class_t, transform: (T) throws -> U) -> Deferred<U>
+  public final func map<U>(qos: qos_class_t, transform: (T) throws -> U) -> Deferred<U>
   {
     return map(dispatch_get_global_queue(qos, 0), transform: transform)
   }
@@ -303,7 +303,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
+  public final func flatMap<U>(transform: (T) -> Deferred<U>) -> Deferred<U>
   {
     return flatMap(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
@@ -314,7 +314,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
+  public final func flatMap<U>(qos: qos_class_t, transform: (T) -> Deferred<U>) -> Deferred<U>
   {
     return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
   }
@@ -341,7 +341,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(transform: (T) -> Result<U>) -> Deferred<U>
+  public final func flatMap<U>(transform: (T) -> Result<U>) -> Deferred<U>
   {
     return flatMap(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
@@ -353,7 +353,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(qos: qos_class_t, transform: (T) -> Result<U>) -> Deferred<U>
+  public final func flatMap<U>(qos: qos_class_t, transform: (T) -> Result<U>) -> Deferred<U>
   {
     return flatMap(dispatch_get_global_queue(qos, 0), transform: transform)
   }
@@ -378,7 +378,7 @@ extension Deferred
   /// Adaptor made desirable by insufficient covariance between throwing and non-throwing functions.
   /// Should remove later.
 
-  public func apply<U>(transform: Deferred<(T) -> U>) -> Deferred<U>
+  public final func apply<U>(transform: Deferred<(T) -> U>) -> Deferred<U>
   {
     let throwing = transform.map { transform in { (t:T) throws -> U in transform(t) } }
     return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: throwing)
@@ -389,7 +389,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(transform: Deferred<(T) throws -> U>) -> Deferred<U>
+  public final func apply<U>(transform: Deferred<(T) throws -> U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
@@ -400,7 +400,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(qos: qos_class_t, transform: Deferred<(T) throws -> U>) -> Deferred<U>
+  public final func apply<U>(qos: qos_class_t, transform: Deferred<(T) throws -> U>) -> Deferred<U>
   {
     return apply(dispatch_get_global_queue(qos, 0), transform: transform)
   }
