@@ -459,10 +459,10 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 {
   return deferreds.reduce(Deferred<[T]>(value: [])) {
     (accumulator, element) in
-    element.flatMap {
-      value in
-      accumulator.map {
-        values in
+    accumulator.flatMap {
+      values in
+      return element.map {
+        value in
         return values + [value]
       }
     }
