@@ -8,9 +8,10 @@
 
 import Foundation
 
-public struct NoResult: ErrorType, Equatable
+public struct NoResult: ErrorType, Equatable, CustomStringConvertible
 {
   private init() {}
+  public var description = "No result"
 }
 
 public func == (a: NoResult, b: NoResult) -> Bool

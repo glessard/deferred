@@ -19,11 +19,31 @@ private let transientState = Int32.max
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredError: ErrorType, Equatable
+public enum DeferredError: ErrorType, Equatable, CustomStringConvertible
 {
   case Canceled(String)
   case AlreadyDetermined(String)
   case CannotDetermine(String)
+
+  public var description: String {
+    switch self
+    {
+    case Canceled(let message):
+      guard message != ""
+        else { return "Deferred canceled before result became available" }
+      return "Deferred canceled: \(message)"
+
+    case AlreadyDetermined(let message):
+      guard message != ""
+        else { return "Attempted to determine a Deferred more than once" }
+      return "Deferred already determined: \(message)"
+
+    case CannotDetermine(let message):
+      guard message != ""
+        else { return "Cannot determined Deferred" }
+      return "Cannot determine Deferred: \(message)"
+    }
+  }
 }
 
 public func == (a: DeferredError, b: DeferredError) -> Bool
@@ -168,7 +188,7 @@ public class Deferred<T>
       else
       {
         assert(currentState >= DeferredState.Determined.rawValue)
-        throw DeferredError.AlreadyDetermined("Attempted to determine Deferred twice with \(__FUNCTION__)")
+        throw DeferredError.AlreadyDetermined(__FUNCTION__)
       }
     }
 
@@ -176,7 +196,7 @@ public class Deferred<T>
 
     guard OSAtomicCompareAndSwap32Barrier(transientState, DeferredState.Determined.rawValue, &currentState) else
     { // Getting here seems impossible, but try to handle it gracefully.
-      throw DeferredError.CannotDetermine("Failed to determine Deferred")
+      throw DeferredError.CannotDetermine(__FUNCTION__)
     }
 
     while true
