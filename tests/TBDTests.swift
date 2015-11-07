@@ -258,28 +258,14 @@ class TBDTests: XCTestCase
     // Verify that all created Deferreds do the right job
 
     let arrays = Deferred.inParallel(count: count) {
-      index -> [Int?] in
-      var output = [Int?](count: count, repeatedValue: nil)
-      for i in 0..<output.count
-      {
-        output[i] = index*count+i
-      }
-      return output
+      index in
+      (0..<count).map { i in index*count+i }
     }
 
-    let combined = combine(arrays).map { a in a.flatMap({$0}) }
-    let determined = combined.map { a in a.flatMap({$0}) }
+    let determined = combine(arrays).map { $0.flatMap({$0}) }
     XCTAssert(determined.value?.count == count*count)
 
-    var test = [Int?](count: determined.value?.count ?? 0, repeatedValue: nil)
-    determined.value?.forEach { i in test[i] = i }
-    test = test.flatMap({$0})
-    XCTAssert(test.count == count*count)
-
-    let d = Deferred.inParallel(count: count) { _ in usleep(20_000) }
-    d[numericCast(arc4random_uniform(numericCast(count)))].cancel()
-    let c = combine(d)
-    XCTAssert(c.value == nil)
+    determined.value?.enumerate().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
   }
 
   func testParallel3()
