@@ -8,9 +8,14 @@
 
 import Foundation
 
-public struct NoResult: ErrorType
+public struct NoResult: ErrorType, Equatable
 {
   private init() {}
+}
+
+public func == (a: NoResult, b: NoResult) -> Bool
+{
+  return true
 }
 
 /// A Result type, approximately like everyone else has done.
