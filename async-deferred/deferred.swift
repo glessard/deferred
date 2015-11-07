@@ -19,11 +19,22 @@ private let transientState = Int32.max
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredError: ErrorType
+public enum DeferredError: ErrorType, Equatable
 {
   case Canceled(String)
   case AlreadyDetermined(String)
   case CannotDetermine(String)
+}
+
+public func == (a: DeferredError, b: DeferredError) -> Bool
+{
+  switch (a,b)
+  {
+  case let (.Canceled(ma), .Canceled(mb)):                   return ma == mb
+  case let (.AlreadyDetermined(ma), .AlreadyDetermined(mb)): return ma == mb
+  case let (.CannotDetermine(ma), .CannotDetermine(mb)):     return ma == mb
+  default: return false
+  }
 }
 
 /// An asynchronous computation.
