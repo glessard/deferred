@@ -716,7 +716,7 @@ class DeferredTests: XCTestCase
     XCTAssert(c?.3 == v4)
   }
 
-  func testCombineArray()
+  func testCombineArray1()
   {
     let count = 10
 
@@ -730,24 +730,34 @@ class DeferredTests: XCTestCase
         XCTAssert(a.value == b)
       }
     }
-    else { XCTFail() }
+    XCTAssert(combined.error == nil)
 
     let combined1 = combine([Deferred<Int>]())
     XCTAssert(combined1.value?.count == 0)
+  }
+
+  func testCombineArray2()
+  {
+    let count = 10
+
+    let d = Deferred.inParallel(count: count) {
+      i -> Int in
+      usleep(numericCast((i+1)*10_000))
+      return i
+    }
 
     // If any one is in error, the combined whole will be in error.
-    // The error at the highest index will be passed on. (good? bad? indifferent?)
+    // The first error encountered will be passed on.
 
-    let error1 = Int(arc4random_uniform(numericCast(inputs.count)))
-    let error2 = Int(arc4random_uniform(numericCast(inputs.count)))
-    let inputs2 = { _ -> [Deferred<UInt32>] in
-      var inputs = inputs
-      inputs.insert(Deferred(error: DeferredError.Canceled(String(error1))), atIndex: error1)
-      inputs.insert(Deferred(error: DeferredError.Canceled(String(error2))), atIndex: error2)
-      return inputs
-    }()
-    let combined2 = combine(inputs2)
-    XCTAssert(combined2.value == nil)
-    XCTAssert(combined2.error as? DeferredError == DeferredError.Canceled(String(max(error1,error2))))
+    let cancel1 = Int(arc4random_uniform(numericCast(count)))
+    let cancel2 = Int(arc4random_uniform(numericCast(count)))
+
+    d[cancel1].cancel(String(cancel1))
+    d[cancel2].cancel(String(cancel2))
+
+    let c = combine(d)
+
+    XCTAssert(c.value == nil)
+    XCTAssert(c.error as? DeferredError == DeferredError.Canceled(String(min(cancel1,cancel2))))
   }
 }
