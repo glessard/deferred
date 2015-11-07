@@ -539,17 +539,13 @@ extension CollectionType
 
   public func deferredMap<T>(queue: dispatch_queue_t, task: (Self.Generator.Element) throws -> T) -> [Deferred<T>]
   {
-    // The following 2 lines exist to get around the fact that Self.Index.Distance does not convert to Int.
-    let indices = Array(self.indices)
-    let count = indices.count
-
-    let deferreds = (indices).map { _ in TBD<T>() }
-    dispatch_async(dispatch_get_global_queue(dispatch_queue_get_qos_class(queue, nil), 0)) {
-      dispatch_apply(count, queue) {
-        index in
-        deferreds[index].beginExecution()
-        let result = Result { try task(self[indices[index]]) }
-        _ = try? deferreds[index].determine(result) // an error here means `deferred[index]` has been canceled
+    let deferreds = self.indices.map { _ in TBD<T>() }
+    for (index, tbd) in zip(self.indices, deferreds)
+    {
+      dispatch_async(queue) {
+        tbd.beginExecution()
+        let result = Result { try task(self[index]) }
+        _ = try? tbd.determine(result) // an error here means this `TBD` has been canceled
       }
     }
     return deferreds
