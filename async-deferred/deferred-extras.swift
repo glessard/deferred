@@ -450,7 +450,7 @@ public func combine<T1,T2,T3,T4>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Def
 ///
 /// Equivalent to but hopefully more efficient than:
 /// ```
-/// Deferred { deferreds.map { $0.value } }
+/// Deferred { try deferreds.map { do { try $0.result.getValue() } catch { throw error } }
 /// ```
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
