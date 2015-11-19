@@ -15,48 +15,6 @@ import Dispatch
 public enum DeferredState: Int32 { case Waiting = 0, Executing = 1, Determined = 2 }
 private let transientState = Int32.max
 
-/// These errors can be thrown by a `Deferred`.
-///
-/// Must be a top-level type because Deferred is generic.
-
-public enum DeferredError: ErrorType, Equatable, CustomStringConvertible
-{
-  case Canceled(String)
-  case AlreadyDetermined(String)
-  case CannotDetermine(String)
-
-  public var description: String {
-    switch self
-    {
-    case Canceled(let message):
-      guard message != ""
-        else { return "Deferred canceled before result became available" }
-      return "Deferred canceled: \(message)"
-
-    case AlreadyDetermined(let message):
-      guard message != ""
-        else { return "Attempted to determine a Deferred more than once" }
-      return "Deferred already determined: \(message)"
-
-    case CannotDetermine(let message):
-      guard message != ""
-        else { return "Cannot determined Deferred" }
-      return "Cannot determine Deferred: \(message)"
-    }
-  }
-}
-
-public func == (a: DeferredError, b: DeferredError) -> Bool
-{
-  switch (a,b)
-  {
-  case let (.Canceled(ma), .Canceled(mb)):                   return ma == mb
-  case let (.AlreadyDetermined(ma), .AlreadyDetermined(mb)): return ma == mb
-  case let (.CannotDetermine(ma), .CannotDetermine(mb)):     return ma == mb
-  default: return false
-  }
-}
-
 /// An asynchronous computation.
 ///
 /// A `Deferred` starts out undetermined, in the `.Waiting` state.
