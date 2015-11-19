@@ -10,34 +10,12 @@ import Dispatch
 
 struct Waiter
 {
-  enum Type
-  {
-    case Closure(dispatch_block_t)
-    case Thread(thread_t)
-  }
-
-  let waiter: Type
+  let block: dispatch_block_t
   var next: UnsafeMutablePointer<Waiter> = nil
 
-  init(_ t: Type)
+  init(_ block: dispatch_block_t)
   {
-    waiter = t
-  }
-
-  func wake(queue: dispatch_queue_t)
-  {
-    switch waiter
-    {
-    case .Closure(let task):
-      dispatch_async(queue, task)
-
-    case .Thread(let thread):
-      while case let kr = thread_resume(thread) where kr != KERN_SUCCESS
-      {
-        guard kr == KERN_FAILURE else { fatalError("thread_resume() failed with code \(kr)") }
-        // kr equals KERN_FAILURE because thread_resume() was called before the thread was suspended.
-      }
-    }
+    self.block = block
   }
 }
 
@@ -51,7 +29,8 @@ struct WaitQueue
       let current = head
       head = head.memory.next
 
-      current.memory.wake(queue)
+      dispatch_async(queue, current.memory.block)
+
       current.destroy()
       current.dealloc(1)
     }

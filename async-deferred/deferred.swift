@@ -300,19 +300,18 @@ public class Deferred<T>
     if currentState != DeferredState.Determined.rawValue
     {
       let thread = mach_thread_self()
-      let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
-      waiter.initialize(Waiter(.Thread(thread)))
 
-      if enqueue(waiter)
-      { // waiter will be deallocated after the thread is woken
-        let kr = thread_suspend(thread)
-        guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
+      self.notify {
+        (_: Result<T>) in
+        while case let kr = thread_resume(thread) where kr != KERN_SUCCESS
+        {
+          guard kr == KERN_FAILURE else { fatalError("thread_resume() failed with code \(kr)") }
+          // kr equals KERN_FAILURE because thread_resume() was called before the thread was suspended.
+        }
       }
-      else
-      { // Deferred has a value now
-        waiter.destroy()
-        waiter.dealloc(1)
-      }
+
+      let kr = thread_suspend(thread)
+      guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
     }
 
     return r
@@ -386,7 +385,7 @@ public class Deferred<T>
     if currentState != DeferredState.Determined.rawValue
     {
       let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
-      waiter.initialize(Waiter(.Closure(block)))
+      waiter.initialize(Waiter(block))
 
       if enqueue(waiter)
       { // waiter will be deallocated after the block is dispatched to GCD
