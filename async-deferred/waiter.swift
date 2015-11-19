@@ -12,7 +12,7 @@ struct Waiter
 {
   enum Type
   {
-    case Closure(dispatch_queue_t, dispatch_block_t)
+    case Closure(dispatch_block_t)
     case Thread(thread_t)
   }
 
@@ -24,11 +24,11 @@ struct Waiter
     waiter = t
   }
 
-  func wake()
+  func wake(queue: dispatch_queue_t)
   {
     switch waiter
     {
-    case .Closure(let queue, let task):
+    case .Closure(let task):
       dispatch_async(queue, task)
 
     case .Thread(let thread):
@@ -43,7 +43,7 @@ struct Waiter
 
 struct WaitQueue
 {
-  static func notifyAll(tail: UnsafeMutablePointer<Waiter>)
+  static func notifyAll(queue: dispatch_queue_t, _ tail: UnsafeMutablePointer<Waiter>)
   {
     var head = reverseList(tail)
     while head != nil
@@ -51,7 +51,7 @@ struct WaitQueue
       let current = head
       head = head.memory.next
 
-      current.memory.wake()
+      current.memory.wake(queue)
       current.destroy()
       current.dealloc(1)
     }
