@@ -39,7 +39,7 @@ class DeferredTests: XCTestCase
       return (3*d).description
     }
 
-    result3.notify(QOS_CLASS_UTILITY) { syncprint($0) }
+    result3.notify { syncprint($0) }
 
     let result4 = combine(result2, result1.map { Int($0*4) })
 
@@ -205,7 +205,7 @@ class DeferredTests: XCTestCase
     let d2 = Deferred(value: value).delay(ms: 100)
     let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
     let q2 = dispatch_queue_create("Test", a2)
-    d2.notify(q2, qos: QOS_CLASS_UTILITY) {
+    d2.on(q2).notify(qos: QOS_CLASS_UTILITY) {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }
@@ -245,10 +245,10 @@ class DeferredTests: XCTestCase
     d4.onValue { _ in e4val.fulfill() }
     d4.onError { _ in XCTFail() }
 
-    let d5 = Deferred<Void>(error: NSError(domain: "", code: 0, userInfo: nil)).delay(ms: 50)
+    let d5 = Deferred<Int>(error: NSError(domain: "", code: 0, userInfo: nil)).delay(ms: 50)
     let e5err = expectationWithDescription("Test onError()")
-    d5.onValue(QOS_CLASS_USER_INITIATED) { _ in XCTFail() }
-    d5.onError(QOS_CLASS_UTILITY) { _ in e5err.fulfill() }
+    d5.onValue { _ in XCTFail() }
+    d5.onError { _ in e5err.fulfill() }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
@@ -261,21 +261,44 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, good transform
-    let d1 = goodOperand.map(QOS_CLASS_DEFAULT) { Int($0)*2 }
+    let d1 = goodOperand.map { Int($0)*2 }
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
     // good operand, transform throws
-    let d2 = goodOperand.map { (i:UInt32) throws -> AnyObject in throw TestError(i) }
+    let d2 = goodOperand.map { throw TestError($0) }
     XCTAssert(d2.value == nil)
     XCTAssert(d2.error as? TestError == TestError(value))
 
     // bad operand, transform short-circuited
-    let d3 = badOperand.map { (d: Double) throws -> Int in XCTFail(); return 0 }
+    let d3 = badOperand.map { _ in XCTFail() }
     XCTAssert(d3.value == nil)
     XCTAssert(d3.error as? TestError == TestError(error))
   }
 
+  func testMap2()
+  {
+    let value = arc4random() & 0x3fff_ffff
+    let error = arc4random() & 0x3fff_ffff
+    let goodOperand = Deferred(value: value)
+    let badOperand  = Deferred<Double>(error: TestError(error))
+
+    // good operand, good transform
+    let d1 = goodOperand.map { Result.Value(Int($0)*2) }
+    XCTAssert(d1.value == Int(value)*2)
+    XCTAssert(d1.error == nil)
+
+    // good operand, transform errors
+    let d2 = goodOperand.map { Result<Void>.Error(TestError($0)) }
+    XCTAssert(d2.value == nil)
+    XCTAssert(d2.error as? TestError == TestError(value))
+
+    // bad operand, transform short-circuited
+    let d3 = badOperand.map { _ in Result<Void> { XCTFail() } }
+    XCTAssert(d3.value == nil)
+    XCTAssert(d3.error as? TestError == TestError(error))
+  }
+  
   func testRecover()
   {
     let value = arc4random() & 0x3fff_ffff
@@ -284,7 +307,7 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, transform short-circuited
-    let d1 = goodOperand.recover(QOS_CLASS_DEFAULT) { e in XCTFail(); return Deferred(error: TestError(error)) }
+    let d1 = goodOperand.recover(qos: QOS_CLASS_DEFAULT) { e in XCTFail(); return Deferred(error: TestError(error)) }
     XCTAssert(d1.value == value)
     XCTAssert(d1.error == nil)
 
@@ -302,7 +325,7 @@ class DeferredTests: XCTestCase
     let reason = "reason"
     let d4 = goodOperand.delay(ms: 50)
     let r4 = d4.recover { e in Deferred(value: value) }
-    r4.cancel(reason)
+    XCTAssert(r4.cancel(reason))
     do {
       try r4.result.getValue()
       XCTFail()
@@ -311,56 +334,25 @@ class DeferredTests: XCTestCase
     catch { XCTFail() }
   }
 
-  func testFlatMap1()
+  func testFlatMap()
   {
     let value = arc4random() & 0x3fff_ffff
     let error = arc4random() & 0x3fff_ffff
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
-    // transforms return Deferred
-    let goodTransform = { (i: UInt32) in Deferred(value: Int(i)*2) }
-    let badTransform  = { (i: UInt32) in Deferred<Double>(error: TestError(i)) }
-
     // good operand, good transform
-    let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT, transform: goodTransform)
+    let d1 = goodOperand.flatMap { Deferred(value: Int($0)*2) }
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
     // good operand, transform errors
-    let d2 = goodOperand.flatMap(badTransform)
+    let d2 = goodOperand.flatMap { Deferred<Double>(error: TestError($0)) }
     XCTAssert(d2.value == nil)
     XCTAssert(d2.error as? TestError == TestError(value))
 
     // bad operand, transform short-circuited
     let d3 = badOperand.flatMap { _ in Deferred<Void> { XCTFail() } }
-    XCTAssert(d3.value == nil)
-    XCTAssert(d3.error as? TestError == TestError(error))
-  }
-
-  func testMap2()
-  {
-    let value = arc4random() & 0x3fff_ffff
-    let error = arc4random() & 0x3fff_ffff
-    let goodOperand = Deferred(value: value)
-    let badOperand  = Deferred<Double>(error: TestError(error))
-
-    // transforms return Result
-    let goodTransform = { (i: UInt32) in Result.Value(Int(i)*2) }
-    let badTransform  = { (i: UInt32) in Result<Double>.Error(TestError(i)) }
-
-    // good operand, good transform
-    let d1 = goodOperand.map(QOS_CLASS_DEFAULT, transform: goodTransform)
-    XCTAssert(d1.value == Int(value)*2)
-    XCTAssert(d1.error == nil)
-
-    // good operand, transform errors
-    let d2 = goodOperand.map(badTransform)
-    XCTAssert(d2.value == nil)
-    XCTAssert(d2.error as? TestError == TestError(value))
-
-    // bad operand, transform short-circuited
-    let d3 = badOperand.map { _ in Result<Void> { XCTFail() } }
     XCTAssert(d3.value == nil)
     XCTAssert(d3.error as? TestError == TestError(error))
   }
@@ -416,7 +408,7 @@ class DeferredTests: XCTestCase
 
     let value1 = Int(arc4random() & 0x3fff_ffff)
     let value2 = Int(arc4random() & 0x3fff_ffff)
-    let deferred = Deferred(value: value1).apply(QOS_CLASS_USER_INITIATED, transform: Deferred(value: curriedSum(value2)))
+    let deferred = Deferred(value: value1).apply(qos: QOS_CLASS_USER_INITIATED, Deferred(value: curriedSum(value2)))
     XCTAssert(deferred.value == value1+value2)
   }
 
@@ -514,12 +506,12 @@ class DeferredTests: XCTestCase
     XCTAssertNil(d4.value)
 
     let e5 = expectationWithDescription("map cancellation with good input")
-    let d5 = tbd.map { Result.Value($0) }
+    let d5 = tbd.map { (_: Int) -> Result<Void> in Result<Void> { XCTFail() } }
     d5.onError { e in e5.fulfill() }
     XCTAssert(d5.cancel() == true)
 
     let e6 = expectationWithDescription("map cancellation with error input")
-    let d6 = tbe.map { i -> Result<Void> in XCTFail(); return Result.Value() }
+    let d6 = tbe.map { (_: Int) -> Result<Void> in Result<Void> { XCTFail() } }
     d6.onError { e in e6.fulfill() }
     XCTAssert(d6.cancel() == true)
 
@@ -646,24 +638,25 @@ class DeferredTests: XCTestCase
   func testRace()
   {
     let count = 1000
+    let queue = dispatch_get_global_queue(qos_class_self(), 0)
+
     let d1 = TBD<Void>()
-    let d2 = d1.delay(ns: 0)
-    let q = dispatch_get_global_queue(qos_class_self(), 0)
+    let d2 = d1.on(queue).delay(ns: 0)
 
     let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/4
     let e = (0..<count).map { i in expectationWithDescription(i.description) }
 
     var first: Int32 = -1
-    dispatch_async(q) {
+    dispatch_async(queue) {
       for i in 0..<count
       {
-        dispatch_async(q) {
-          d2.notify(q) {
-            [expectation = e[i], i] in
+        dispatch_async(queue) {
+          d2.notify {
+            [expectation = e[i]] _ in
             expectation.fulfill()
             if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint(first) }
           }
-          if i == lucky { dispatch_async(q) { try! d1.determine() } }
+          if i == lucky { dispatch_async(queue) { try! d1.determine() } }
         }
       }
     }
