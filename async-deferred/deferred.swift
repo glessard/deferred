@@ -429,7 +429,7 @@ internal final class Mapped<T>: Deferred<T>
   }
 
   /// Initialize with a `Deferred` source and a transform to be computed in the background
-  /// This constructor is used by the `flatMap` that uses a transform to a `Result`.
+  /// This constructor is used by the version of `map` that uses a transform to a `Result`.
   ///
   /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
   /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.

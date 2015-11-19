@@ -338,7 +338,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.error as? TestError == TestError(error))
   }
 
-  func testFlatMap2()
+  func testMap2()
   {
     let value = arc4random() & 0x3fff_ffff
     let error = arc4random() & 0x3fff_ffff
@@ -350,17 +350,17 @@ class DeferredTests: XCTestCase
     let badTransform  = { (i: UInt32) in Result<Double>.Error(TestError(i)) }
 
     // good operand, good transform
-    let d1 = goodOperand.flatMap(QOS_CLASS_DEFAULT, transform: goodTransform)
+    let d1 = goodOperand.map(QOS_CLASS_DEFAULT, transform: goodTransform)
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
     // good operand, transform errors
-    let d2 = goodOperand.flatMap(badTransform)
+    let d2 = goodOperand.map(badTransform)
     XCTAssert(d2.value == nil)
     XCTAssert(d2.error as? TestError == TestError(value))
 
     // bad operand, transform short-circuited
-    let d3 = badOperand.flatMap { _ in Result<Void> { XCTFail() } }
+    let d3 = badOperand.map { _ in Result<Void> { XCTFail() } }
     XCTAssert(d3.value == nil)
     XCTAssert(d3.error as? TestError == TestError(error))
   }
@@ -505,11 +505,23 @@ class DeferredTests: XCTestCase
     let d3 = tbd.delay(ms: 100)
     d3.onError { e in e3.fulfill() }
     XCTAssert(d3.cancel() == true)
+    XCTAssertNil(d3.value)
 
     let e4 = expectationWithDescription("delay cancellation with error input")
     let d4 = tbe.delay(ms: 100)
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
+    XCTAssertNil(d4.value)
+
+    let e5 = expectationWithDescription("map cancellation with good input")
+    let d5 = tbd.map { Result.Value($0) }
+    d5.onError { e in e5.fulfill() }
+    XCTAssert(d5.cancel() == true)
+
+    let e6 = expectationWithDescription("map cancellation with error input")
+    let d6 = tbe.map { i -> Result<Void> in XCTFail(); return Result.Value() }
+    d6.onError { e in e6.fulfill() }
+    XCTAssert(d6.cancel() == true)
 
     XCTAssertNotNil(try? tbd.determine(numericCast(arc4random() & 0x3fff_ffff)))
     XCTAssertNotNil(try? tbe.determine(TestError()))
@@ -538,15 +550,11 @@ class DeferredTests: XCTestCase
     d3.onError { e in e3.fulfill() }
     XCTAssert(d3.cancel() == true)
 
-    let e4 = expectationWithDescription("apply cancellation with everything wrong")
+    let e4 = expectationWithDescription("flatMap cancellation with everything wrong")
     let d4 = tbe.flatMap { i in Deferred<Void>(error: DeferredError.Canceled("")) }
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
 
-    let e5 = expectationWithDescription("flatMap cancellation with good Result")
-    let d5 = tbd.flatMap { Result.Value($0) }
-    d5.onError { e in e5.fulfill() }
-    XCTAssert(d5.cancel() == true)
 
     XCTAssertNotNil(try? tbd.determine(numericCast(arc4random() & 0x3fff_ffff)))
     XCTAssertNotNil(try? tbe.determine(TestError()))
