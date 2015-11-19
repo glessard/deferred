@@ -16,6 +16,17 @@ import XCTest
 
 class ResultTests: XCTestCase
 {
+  func testInit()
+  {
+    let r1: Result<Void> = Result()
+    XCTAssert(r1.value == nil)
+
+    let r2: Result<Int> = Result()
+    XCTAssert(r2.value == nil)
+
+    XCTAssert((r1.error as? NoResult) == (r2.error as? NoResult))
+  }
+
   func testInitValue()
   {
     let val = arc4random() & 0x3fff_ffff
