@@ -195,45 +195,7 @@ extension Deferred
   }
 }
 
-// MARK: execute a transform when determined with an error -- flatMap for the ErrorType path.
-
-extension Deferred
-{
-  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
-  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
-  /// - parameter transform: the transform to be performed
-  /// - returns: a `Deferred` reference representing the return value of the transform
-
-  public final func recover(transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
-  {
-    return recover(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
-  }
-
-  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
-  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
-  /// - parameter qos: the quality-of-service to associate with the closure
-  /// - parameter transform: the transform to be performed
-  /// - returns: a `Deferred` reference representing the return value of the transform
-
-  public final func recover(qos: qos_class_t, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
-  {
-    return recover(dispatch_get_global_queue(qos, 0), transform: transform)
-  }
-
-  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
-  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
-  /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
-  /// - parameter qos: the quality-of-service to associate with the closure
-  /// - parameter transform: the transform to be performed
-  /// - returns: a `Deferred` reference representing the return value of the transform
-
-  public func recover(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
-  {
-    return Bind(queue: queue, qos: qos, source: self, transform: transform)
-  }
-}
-
-// MARK: enqueue a closure which takes the result of a `Deferred`
+// MARK: enqueue a closure which operates on the result of a `Deferred`
 
 extension Deferred
 {
@@ -294,6 +256,43 @@ extension Deferred
   }
 }
 
+// MARK: map: asynchronously transform a `Deferred` into another
+
+extension Deferred
+{
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
+  public final func map<U>(transform: (T) -> Result<U>) -> Deferred<U>
+  {
+    return map(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
+  }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// The transforming closure will be enqueued on the global queue with the requested quality of service.
+  /// - parameter qos: the quality-of-service to associate with the closure
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
+  public final func map<U>(qos: qos_class_t, transform: (T) -> Result<U>) -> Deferred<U>
+  {
+    return map(dispatch_get_global_queue(qos, 0), transform: transform)
+  }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+
+  public func map<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Result<U>) -> Deferred<U>
+  {
+    return Mapped<U>(queue: queue, qos: qos, source: self, transform: transform)
+  }
+}
+
 // MARK: flatMap: asynchronously transform a `Deferred` into another
 
 extension Deferred
@@ -331,40 +330,41 @@ extension Deferred
   }
 }
 
-// MARK: map: asynchronously transform a `Deferred` into another
+// MARK: execute a transform when determined with an error -- flatMap for the ErrorType path.
 
 extension Deferred
 {
-  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
   /// The transforming closure will be enqueued on the global queue at the current quality of service class.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public final func map<U>(transform: (T) -> Result<U>) -> Deferred<U>
+  public final func recover(transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
   {
-    return map(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
+    return recover(dispatch_get_global_queue(qos_class_self(), 0), transform: transform)
   }
 
-  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// The transforming closure will be enqueued on the global queue with the requested quality of service.
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
   /// - parameter qos: the quality-of-service to associate with the closure
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public final func map<U>(qos: qos_class_t, transform: (T) -> Result<U>) -> Deferred<U>
+  public final func recover(qos: qos_class_t, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
   {
-    return map(dispatch_get_global_queue(qos, 0), transform: transform)
+    return recover(dispatch_get_global_queue(qos, 0), transform: transform)
   }
 
-  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// - parameter queue: the `dispatch_queue_t` onto which the computation should be queued
-  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
+  /// The transforming closure will be enqueued on the global queue at the current quality of service class.
+  /// - parameter queue: the `dispatch_queue_t` onto which the closure should be queued
+  /// - parameter qos: the quality-of-service to associate with the closure
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<U>(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Result<U>) -> Deferred<U>
+  public func recover(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
   {
-    return Mapped<U>(queue: queue, qos: qos, source: self, transform: transform)
+    return Bind(queue: queue, qos: qos, source: self, transform: transform)
   }
 }
 
