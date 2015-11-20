@@ -245,7 +245,41 @@ public class Deferred<T>
     return dispatch_block_create_with_qos_class(DISPATCH_BLOCK_ENFORCE_QOS_CLASS, qos, 0, block)
   }
 
+  /// Enqueue a computation to be performed upon the determination of this `Deferred`
+  ///
+  /// - parameter block: the computation to be enqueued, as a `dispatch_block_t` or a `() -> Void` closure.
+
+  private func notify(block: dispatch_block_t)
+  {
+    if currentState != DeferredState.Determined.rawValue
+    {
+      let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
+      waiter.initialize(Waiter(block))
+
+      if enqueue(waiter)
+      { // waiter will be deallocated after the block is dispatched to GCD
+        return
+      }
+      else
+      { // Deferred has a value now
+        waiter.destroy()
+        waiter.dealloc(1)
+      }
+    }
+
+    dispatch_async(queue, block)
+  }
+
   // MARK: public interface
+
+  /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined
+  ///
+  /// - parameter task:  the closure to be enqueued
+
+  public func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void)
+  {
+    notify(createNotificationBlock(qos, task: task))
+  }
 
   /// Query the current state of this `Deferred`
   ///
@@ -301,17 +335,18 @@ public class Deferred<T>
     {
       let thread = mach_thread_self()
 
-      self.notify {
-        (_: Result<T>) in
+      let block = createBlock {
         while case let kr = thread_resume(thread) where kr != KERN_SUCCESS
         {
           guard kr == KERN_FAILURE else { fatalError("thread_resume() failed with code \(kr)") }
-          // kr equals KERN_FAILURE because thread_resume() was called before the thread was suspended.
+          // kr can equal KERN_FAILURE when thread_resume() is called before the thread was suspended.
         }
       }
 
+      self.notify(block)
+
       let kr = thread_suspend(thread)
-      guard kr == KERN_SUCCESS else { fatalError("Thread suspension failed with code \(kr)") }
+      guard kr == KERN_SUCCESS else { fatalError("thread_suspend() failed with code \(kr)") }
     }
 
     return r
@@ -366,41 +401,8 @@ public class Deferred<T>
   {
     return on(dispatch_get_global_queue(qos, 0))
   }
-
-  /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined
-  ///
-  /// - parameter task:  the closure to be enqueued
-
-  public func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void)
-  {
-    notify(createNotificationBlock(qos, task: task))
-  }
-
-  /// Enqueue a computation to be performed upon the determination of this `Deferred`
-  ///
-  /// - parameter block: the computation to be enqueued, as a `dispatch_block_t` or a `() -> Void` closure.
-
-  private func notify(block: dispatch_block_t)
-  {
-    if currentState != DeferredState.Determined.rawValue
-    {
-      let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
-      waiter.initialize(Waiter(block))
-
-      if enqueue(waiter)
-      { // waiter will be deallocated after the block is dispatched to GCD
-        return
-      }
-      else
-      { // Deferred has a value now
-        waiter.destroy()
-        waiter.dealloc(1)
-      }
-    }
-
-    dispatch_async(queue, block)
-  }
 }
+
 
 /// A mapped `Deferred`
 
