@@ -474,7 +474,7 @@ class DeferredTests: XCTestCase
       e1.fulfill()
     }
 
-    let q2 = qb.map(qos: QOS_CLASS_USER_INITIATED) {
+    let q2 = qb.at(QOS_CLASS_BACKGROUND, serially: true).map(qos: QOS_CLASS_USER_INITIATED) {
       qosv -> qos_class_t in
       XCTAssert(qosv == QOS_CLASS_UTILITY)
       // Verify that the QOS has changed
@@ -490,9 +490,9 @@ class DeferredTests: XCTestCase
       // Last block was in fact executing at QOS_CLASS_USER_INITIATED
       XCTAssert(qosv == QOS_CLASS_USER_INITIATED)
       // Last block wasn't executing at the queue's QOS
-      XCTAssert(qosv != QOS_CLASS_UTILITY)
+      XCTAssert(qosv != QOS_CLASS_BACKGROUND)
       // This block is executing at the queue's QOS.
-      XCTAssert(qos_class_self() == QOS_CLASS_UTILITY)
+      XCTAssert(qos_class_self() == QOS_CLASS_BACKGROUND)
       e2.fulfill()
     }
 

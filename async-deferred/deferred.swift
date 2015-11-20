@@ -397,8 +397,14 @@ public class Deferred<T>
   /// - returns: a new `Deferred` whose notifications will run at quality-of-service `qos`
 
   @warn_unused_result
-  public func at(qos: qos_class_t) -> Deferred
+  public func at(qos: qos_class_t, serially: Bool = false) -> Deferred
   {
+    if serially
+    {
+      let attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, qos, 0)
+      return on(dispatch_queue_create("deferred-serial", attr))
+    }
+
     return on(dispatch_get_global_queue(qos, 0))
   }
 }
