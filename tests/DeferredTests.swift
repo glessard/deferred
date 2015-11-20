@@ -39,7 +39,7 @@ class DeferredTests: XCTestCase
       return (3*d).description
     }
 
-    result3.notify(QOS_CLASS_UTILITY) { syncprint($0) }
+    result3.notify { syncprint($0) }
 
     let result4 = combine(result2, result1.map { Int($0*4) })
 
@@ -205,7 +205,7 @@ class DeferredTests: XCTestCase
     let d2 = Deferred(value: value).delay(ms: 100)
     let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
     let q2 = dispatch_queue_create("Test", a2)
-    d2.notify(q2, qos: QOS_CLASS_UTILITY) {
+    d2.on(q2).notify(qos: QOS_CLASS_UTILITY) {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }
@@ -247,8 +247,8 @@ class DeferredTests: XCTestCase
 
     let d5 = Deferred<Int>(error: NSError(domain: "", code: 0, userInfo: nil)).delay(ms: 50)
     let e5err = expectationWithDescription("Test onError()")
-    d5.onValue(QOS_CLASS_DEFAULT) { _ in XCTFail() }
-    d5.onError(QOS_CLASS_UTILITY) { _ in e5err.fulfill() }
+    d5.onValue { _ in XCTFail() }
+    d5.onError { _ in e5err.fulfill() }
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
@@ -261,7 +261,7 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, good transform
-    let d1 = goodOperand.map(QOS_CLASS_DEFAULT) { Int($0)*2 }
+    let d1 = goodOperand.map { Int($0)*2 }
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
@@ -284,7 +284,7 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, good transform
-    let d1 = goodOperand.map(QOS_CLASS_DEFAULT) { Result.Value(Int($0)*2) }
+    let d1 = goodOperand.map { Result.Value(Int($0)*2) }
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
@@ -307,7 +307,7 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, transform short-circuited
-    let d1 = goodOperand.recover(QOS_CLASS_DEFAULT) { e in XCTFail(); return Deferred(error: TestError(error)) }
+    let d1 = goodOperand.recover(qos: QOS_CLASS_DEFAULT) { e in XCTFail(); return Deferred(error: TestError(error)) }
     XCTAssert(d1.value == value)
     XCTAssert(d1.error == nil)
 
@@ -342,7 +342,7 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, good transform
-    let d1 = goodOperand.flatMap(QOS_CLASS_UTILITY) { Deferred(value: Int($0)*2) }
+    let d1 = goodOperand.flatMap { Deferred(value: Int($0)*2) }
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
@@ -408,7 +408,7 @@ class DeferredTests: XCTestCase
 
     let value1 = Int(arc4random() & 0x3fff_ffff)
     let value2 = Int(arc4random() & 0x3fff_ffff)
-    let deferred = Deferred(value: value1).apply(QOS_CLASS_USER_INITIATED, transform: Deferred(value: curriedSum(value2)))
+    let deferred = Deferred(value: value1).apply(qos: QOS_CLASS_USER_INITIATED, Deferred(value: curriedSum(value2)))
     XCTAssert(deferred.value == value1+value2)
   }
 
@@ -459,6 +459,72 @@ class DeferredTests: XCTestCase
     let result = args.apply(transform)
 
     XCTAssert(result.value == pow(3.0, 4.1))
+  }
+
+  func testQOS()
+  {
+    let qb = Deferred(qos: QOS_CLASS_UTILITY) { qos_class_self() }
+
+    let e1 = expectationWithDescription("Waiting")
+    Deferred(value: qos_class_self()).at(QOS_CLASS_BACKGROUND).onValue {
+      qosv in
+      // Verify that the QOS has been adjusted
+      XCTAssert(qosv != qos_class_self())
+      XCTAssert(qos_class_self() == QOS_CLASS_BACKGROUND)
+      e1.fulfill()
+    }
+
+    let q2 = qb.map(qos: QOS_CLASS_USER_INITIATED) {
+      qosv -> qos_class_t in
+      XCTAssert(qosv == QOS_CLASS_UTILITY)
+      // Verify that the QOS has changed
+      XCTAssert(qosv != qos_class_self())
+      // This block is running at the requested QOS
+      XCTAssert(qos_class_self() == QOS_CLASS_USER_INITIATED)
+      return qos_class_self()
+    }
+
+    let e2 = expectationWithDescription("Waiting")
+    q2.onValue {
+      qosv in
+      // Last block was in fact executing at QOS_CLASS_USER_INITIATED
+      XCTAssert(qosv == QOS_CLASS_USER_INITIATED)
+      // Last block wasn't executing at the queue's QOS
+      XCTAssert(qosv != QOS_CLASS_UTILITY)
+      // This block is executing at the queue's QOS.
+      XCTAssert(qos_class_self() == QOS_CLASS_UTILITY)
+      e2.fulfill()
+    }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testDealloc()
+  {
+    let blocks = (1...3).map {
+      (i: Int) -> dispatch_block_t in
+      return dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS) {
+        print("Block \(i)")
+      }
+    }
+
+    if !blocks.isEmpty
+    {
+      // This one will get deallocated
+      let tbd = TBD<Void>()
+      blocks.forEach { block in tbd.notifyWithBlock(block) }
+    }
+
+    if !blocks.isEmpty
+    {
+      // This one will leak.
+      let tbd = TBD<Void>()
+      (1...3).forEach { i in tbd.notify { _ in print("Notification \(i)") } }
+      // Every block enqueued by the notify method has an implied reference back to self.
+      // The reference needs to be strong, otherwise chaining will fail.
+    }
+
+    usleep(1000)
   }
 
   func testCancel1()
@@ -641,7 +707,7 @@ class DeferredTests: XCTestCase
     let queue = dispatch_get_global_queue(qos_class_self(), 0)
 
     let d1 = TBD<Void>()
-    let d2 = d1.delay(ns: 0)
+    let d2 = d1.on(queue)
 
     let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/4
     let e = (0..<count).map { i in expectationWithDescription(i.description) }

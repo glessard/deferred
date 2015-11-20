@@ -10,40 +10,18 @@ import Dispatch
 
 struct Waiter
 {
-  enum Type
-  {
-    case Closure(dispatch_queue_t, dispatch_block_t)
-    case Thread(thread_t)
-  }
-
-  let waiter: Type
+  let block: dispatch_block_t
   var next: UnsafeMutablePointer<Waiter> = nil
 
-  init(_ t: Type)
+  init(_ block: dispatch_block_t)
   {
-    waiter = t
-  }
-
-  func wake()
-  {
-    switch waiter
-    {
-    case .Closure(let queue, let task):
-      dispatch_async(queue, task)
-
-    case .Thread(let thread):
-      while case let kr = thread_resume(thread) where kr != KERN_SUCCESS
-      {
-        guard kr == KERN_FAILURE else { fatalError("thread_resume() failed with code \(kr)") }
-        // kr equals KERN_FAILURE because thread_resume() was called before the thread was suspended.
-      }
-    }
+    self.block = block
   }
 }
 
 struct WaitQueue
 {
-  static func notifyAll(tail: UnsafeMutablePointer<Waiter>)
+  static func notifyAll(queue: dispatch_queue_t, _ tail: UnsafeMutablePointer<Waiter>)
   {
     var head = reverseList(tail)
     while head != nil
@@ -51,7 +29,8 @@ struct WaitQueue
       let current = head
       head = head.memory.next
 
-      current.memory.wake()
+      dispatch_async(queue, current.memory.block)
+
       current.destroy()
       current.dealloc(1)
     }
@@ -94,13 +73,4 @@ struct WaitQueue
 @inline(__always) func syncread(p: UnsafeMutablePointer<Int32>) -> Int32
 {
   return OSAtomicAdd32Barrier(0, p)
-}
-
-@inline(__always) func syncread<T>(p: UnsafeMutablePointer<UnsafeMutablePointer<T>>) -> UnsafeMutablePointer<T>
-{
-  #if arch(x86_64) || arch(arm64)
-    return UnsafeMutablePointer(bitPattern: Int(OSAtomicAdd64Barrier(0, UnsafeMutablePointer<Int64>(p))))
-  #else
-    return UnsafeMutablePointer(bitPattern: Int(OSAtomicAdd32Barrier(0, UnsafeMutablePointer<Int32>(p))))
-  #endif
 }
