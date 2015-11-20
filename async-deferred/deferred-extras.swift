@@ -120,7 +120,7 @@ extension Deferred
       return perishable
     }
 
-    return Deferred(qos: self.qos, Result.Error(DeferredError.Canceled(reason)))
+    return Deferred(qos: self.qos, result: Result.Error(DeferredError.Canceled(reason)))
   }
 }
 

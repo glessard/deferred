@@ -111,12 +111,21 @@ public class Deferred<T>
   ///                     `qos` defaults to the currently-executing quality-of-service class.
   /// - parameter result: the result of this `Deferred`
 
-  public convenience init(qos: qos_class_t = qos_class_self(), _ result: Result<T>)
+  public convenience init(qos: qos_class_t, result: Result<T>)
   {
     self.init(queue: dispatch_get_global_queue(qos, 0), result: result)
   }
 
-  /// Initialize to an already determined state
+  /// Initialize to an already determined state, with a queue at the current quality-of-service class.
+  ///
+  /// - parameter result: the result of this `Deferred`
+
+  public convenience init(_ result: Result<T>)
+  {
+    self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), result: result)
+  }
+
+  /// Initialize to an already determined state, with a queue at the current quality-of-service class.
   ///
   /// - parameter value: the value of this `Deferred`'s `Result`
 
@@ -125,7 +134,7 @@ public class Deferred<T>
     self.init(Result.Value(value))
   }
 
-  /// Initialize to an already determined state
+  /// Initialize to an already determined state, with a queue at the current quality-of-service class.
   ///
   /// - parameter error: the error state of this `Deferred`'s `Result`
 
