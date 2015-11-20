@@ -98,7 +98,7 @@ public class Deferred<T>
   /// - parameter queue:  the dispatch queue upon which to execute future notifications for this `Deferred`
   /// - parameter result: the result of this `Deferred`
 
-  public init(queue: dispatch_queue_t, _ result: Result<T>)
+  public init(queue: dispatch_queue_t, result: Result<T>)
   {
     r = result
     self.queue = queue
@@ -113,7 +113,7 @@ public class Deferred<T>
 
   public convenience init(qos: qos_class_t = qos_class_self(), _ result: Result<T>)
   {
-    self.init(queue: dispatch_get_global_queue(qos, 0), result)
+    self.init(queue: dispatch_get_global_queue(qos, 0), result: result)
   }
 
   /// Initialize to an already determined state
@@ -388,7 +388,7 @@ public class Deferred<T>
   {
     if currentState == DeferredState.Determined.rawValue
     {
-      return Deferred(queue: queue, self.r)
+      return Deferred(queue: queue, result: self.r)
     }
     return Mapped(queue: queue, source: self)
   }
