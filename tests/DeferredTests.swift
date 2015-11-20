@@ -96,7 +96,7 @@ class DeferredTests: XCTestCase
       return NSDate()
     }
     let d6 = d5.delay(seconds: interval/10).map { NSDate().timeIntervalSinceDate($0) }
-    let actualDelay = d6.value
+    let actualDelay = d6.delay(ns: 100).value
     XCTAssert(actualDelay < interval/10)
   }
 
