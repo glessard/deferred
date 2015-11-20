@@ -344,20 +344,9 @@ public class Deferred<T>
   public var result: Result<T> {
     if currentState != DeferredState.Determined.rawValue
     {
-      let thread = mach_thread_self()
-
-      let block = createBlock {
-        while case let kr = thread_resume(thread) where kr != KERN_SUCCESS
-        {
-          guard kr == KERN_FAILURE else { fatalError("thread_resume() failed with code \(kr)") }
-          // kr can equal KERN_FAILURE when thread_resume() is called before the thread was suspended.
-        }
-      }
-
-      self.notifyWithBlock(block)
-
-      let kr = thread_suspend(thread)
-      guard kr == KERN_SUCCESS else { fatalError("thread_suspend() failed with code \(kr)") }
+      let block = createBlock {}
+      notifyWithBlock(block)
+      dispatch_block_wait(block, DISPATCH_TIME_FOREVER)
     }
 
     return r
