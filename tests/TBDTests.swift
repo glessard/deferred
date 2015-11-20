@@ -201,13 +201,13 @@ class TBDTests: XCTestCase
     do { try deferreds[lucky].determine(lucky) }
     catch { XCTFail() }
 
+    XCTAssert(first.value == lucky)
+
     for (i,d) in deferreds.enumerate()
     {
       do { try d.determine(i) }
       catch { XCTAssert(i == lucky) }
     }
-
-    XCTAssert(first.value == lucky)
   }
 
   func testFirstDeterminedDeferred()
