@@ -35,10 +35,15 @@ public class Deferred<T>
 
   private var currentState: Int32
 
-  private var waiters: UnsafeMutablePointer<Waiter> = nil
   private let queue: dispatch_queue_t
+  private var waiters: UnsafeMutablePointer<Waiter> = nil
 
-  // MARK: initializers
+  deinit
+  {
+    WaitQueue.dealloc(waiters)
+  }
+
+  // MARK: designated initializers
 
   private init(_ queue: dispatch_queue_t)
   {
@@ -47,9 +52,16 @@ public class Deferred<T>
     currentState = DeferredState.Waiting.rawValue
   }
 
-  deinit
+  /// Initialize to an already determined state
+  ///
+  /// - parameter queue:  the dispatch queue upon which to execute future notifications for this `Deferred`
+  /// - parameter result: the result of this `Deferred`
+
+  public init(queue: dispatch_queue_t, result: Result<T>)
   {
-    WaitQueue.dealloc(waiters)
+    r = result
+    self.queue = queue
+    currentState = DeferredState.Determined.rawValue
   }
 
   // MARK: initialize with a closure
@@ -65,7 +77,7 @@ public class Deferred<T>
 
   /// Initialize with a computation task to be performed in the background
   ///
-  /// - parameter qos:  the Quality-of-Service class at which the computation task should be performed
+  /// - parameter qos:  the Quality-of-Service class at which the computation (and notifications) should be performed
   /// - parameter task: the computation to be performed
 
   public convenience init(qos: qos_class_t, task: () throws -> T)
@@ -73,9 +85,9 @@ public class Deferred<T>
     self.init(queue: dispatch_get_global_queue(qos, 0), task: task)
   }
 
-  /// Initialize with a computation task to be performed in the background
+  /// Initialize with a computation task to be performed on the specified queue
   ///
-  /// - parameter queue: the `dispatch_queue_t` onto which the computation task should be enqueued
+  /// - parameter queue: the `dispatch_queue_t` onto which the computation (and notifications) will be enqueued
   /// - parameter task:  the computation to be performed
 
   public convenience init(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: () throws -> T)
@@ -92,18 +104,6 @@ public class Deferred<T>
   }
 
   // MARK: initialize with a result, value or error
-
-  /// Initialize to an already determined state
-  ///
-  /// - parameter queue:  the dispatch queue upon which to execute future notifications for this `Deferred`
-  /// - parameter result: the result of this `Deferred`
-
-  public init(queue: dispatch_queue_t, result: Result<T>)
-  {
-    r = result
-    self.queue = queue
-    currentState = DeferredState.Determined.rawValue
-  }
 
   /// Initialize to an already determined state
   ///
@@ -129,7 +129,7 @@ public class Deferred<T>
   ///
   /// - parameter value: the value of this `Deferred`'s `Result`
 
-  convenience public init(value: T)
+  public convenience init(value: T)
   {
     self.init(Result.Value(value))
   }
@@ -138,7 +138,7 @@ public class Deferred<T>
   ///
   /// - parameter error: the error state of this `Deferred`'s `Result`
 
-  convenience public init(error: ErrorType)
+  public convenience init(error: ErrorType)
   {
     self.init(Result.Error(error))
   }
