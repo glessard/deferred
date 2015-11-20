@@ -461,6 +461,44 @@ class DeferredTests: XCTestCase
     XCTAssert(result.value == pow(3.0, 4.1))
   }
 
+  func testQOS()
+  {
+    let qb = Deferred(qos: QOS_CLASS_UTILITY) { qos_class_self() }
+
+    let e1 = expectationWithDescription("Waiting")
+    Deferred(value: qos_class_self()).at(QOS_CLASS_BACKGROUND).onValue {
+      qosv in
+      // Verify that the QOS has been adjusted
+      XCTAssert(qosv != qos_class_self())
+      XCTAssert(qos_class_self() == QOS_CLASS_BACKGROUND)
+      e1.fulfill()
+    }
+
+    let q2 = qb.map(qos: QOS_CLASS_USER_INITIATED) {
+      qosv -> qos_class_t in
+      XCTAssert(qosv == QOS_CLASS_UTILITY)
+      // Verify that the QOS has changed
+      XCTAssert(qosv != qos_class_self())
+      // This block is running at the requested QOS
+      XCTAssert(qos_class_self() == QOS_CLASS_USER_INITIATED)
+      return qos_class_self()
+    }
+
+    let e2 = expectationWithDescription("Waiting")
+    q2.onValue {
+      qosv in
+      // Last block was in fact executing at QOS_CLASS_USER_INITIATED
+      XCTAssert(qosv == QOS_CLASS_USER_INITIATED)
+      // Last block wasn't executing at the queue's QOS
+      XCTAssert(qosv != QOS_CLASS_UTILITY)
+      // This block is executing at the queue's QOS.
+      XCTAssert(qos_class_self() == QOS_CLASS_UTILITY)
+      e2.fulfill()
+    }
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
   func testCancel1()
   {
     let d1 = Deferred(qos: QOS_CLASS_UTILITY) {
