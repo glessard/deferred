@@ -206,12 +206,14 @@ public class Deferred<T>
       if syncread(&currentState) != DeferredState.Determined.rawValue
       {
         if CAS(tail, waiter, &waiters)
-        { // waiter is now enqueued
+        { // waiter is now enqueued; it will be deallocated at a later time.
           return true
         }
       }
       else
       { // This Deferred has become determined; bail
+        waiter.destroy()
+        waiter.dealloc(1)
         return false
       }
     }
@@ -266,11 +268,6 @@ public class Deferred<T>
       if enqueue(waiter)
       {
         return
-      }
-      else
-      { // Deferred has a value now
-        waiter.destroy()
-        waiter.dealloc(1)
       }
     }
 
