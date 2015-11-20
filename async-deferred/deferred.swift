@@ -237,12 +237,16 @@ public class Deferred<T>
 
   private func createBlock(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, block: () -> Void) -> dispatch_block_t
   {
+    let newBlock: dispatch_block_t
     if qos == QOS_CLASS_UNSPECIFIED
     {
-      return dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block)
+      newBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block)
     }
-
-    return dispatch_block_create_with_qos_class(DISPATCH_BLOCK_ENFORCE_QOS_CLASS, qos, 0, block)
+    else
+    {
+      newBlock = dispatch_block_create_with_qos_class(DISPATCH_BLOCK_ENFORCE_QOS_CLASS, qos, 0, block)
+    }
+    return newBlock
   }
 
   // MARK: public interface
