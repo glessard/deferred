@@ -67,10 +67,10 @@ class DeferredTests: XCTestCase
 
   func testExample3()
   {
-    let transform = Deferred { i throws -> Double in Double(7*i) } // Deferred<Int throws -> Double>
-    let operand = Deferred(value: 6)                               // Deferred<Int>
-    let result = operand.apply(transform).map { $0.description }   // Deferred<String>
-    print(result.value)                                            // 42.0
+    let transform = Deferred { i throws in Double(7*i) }         // Deferred<Int throws -> Double>
+    let operand = Deferred(value: 6)                             // Deferred<Int>
+    let result = operand.apply(transform).map { $0.description } // Deferred<String>
+    print(result.value)                                          // 42.0
   }
 
   func testDelay()
@@ -357,36 +357,9 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.error as? TestError == TestError(error))
   }
 
-  func testApply1()
+  func testApply()
   {
-    let value = Int(arc4random() & 0x7fff + 10000)
-    let error = arc4random() & 0x3fff_ffff
-
-    // good operand, good transform
-    let o1 = Deferred(value: value)
-    let t1 = Deferred { i throws -> Double in Double(value*i) }
-    let r1 = o1.apply(t1)
-    XCTAssert(r1.value == Double(value*value))
-    XCTAssert(r1.error == nil)
-
-    // bad operand, transform not applied
-    let o2 = Deferred<Int> { throw TestError(error) }
-    let t2 = Deferred { (i:Int) throws -> Float in XCTFail(); return Float(i) }
-    let r2 = o2.apply(t2)
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(error))
-
-    // good operand, transform throws
-    let o3 = Deferred(value: error)
-    let t3 = Deferred { (i:UInt32) throws -> AnyObject in throw TestError(i) }
-    let r3 = o3.apply(t3)
-    XCTAssert(r3.value == nil)
-    XCTAssert(r3.error as? TestError == TestError(error))
-  }
-
-  func testApply2()
-  {
-    // a silly example curried function.
+    // a simple curried function.
     func curriedSum(a: Int)(_ b: Int) -> Int
     {
       return a+b
@@ -396,9 +369,19 @@ class DeferredTests: XCTestCase
     let value2 = Int(arc4random() & 0x3fff_ffff)
     let deferred = Deferred(value: value1).apply(qos: QOS_CLASS_USER_INITIATED, Deferred(value: curriedSum(value2)))
     XCTAssert(deferred.value == value1+value2)
+
+    // a 2-tuple is the same as two parameters
+    let transform = Deferred(value: powf)
+    let v1 = Deferred(value: 3.0)
+    let v2 = Deferred(value: 4.1)
+
+    let args = combine(v1.map(Float.init), v2.map(Float.init))
+    let result = args.apply(transform)
+
+    XCTAssert(result.value == pow(3.0, 4.1))
   }
 
-  func testApply3()
+  func testApply1()
   {
     let transform = TBD<(Int) -> Double>()
     let operand = TBD<Int>()
@@ -435,16 +418,44 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testApply4()
+  func testApply2()
   {
-    let transform = Deferred(value: powf)
-    let v1 = Deferred(value: 3.0)
-    let v2 = Deferred(value: 4.1)
+    let value = Int(arc4random() & 0x7fff + 10000)
+    let error = arc4random() & 0x3fff_ffff
 
-    let args = combine(v1.map(Float.init), v2.map(Float.init))
-    let result = args.apply(transform)
+    // good operand, good transform
+    let o1 = Deferred(value: value)
+    let t1 = Deferred { i throws in Double(value*i) }
+    let r1 = o1.apply(t1)
+    XCTAssert(r1.value == Double(value*value))
+    XCTAssert(r1.error == nil)
 
-    XCTAssert(result.value == pow(3.0, 4.1))
+    // bad operand, transform not applied
+    let o2 = Deferred<Int> { throw TestError(error) }
+    let t2 = Deferred { (i:Int) throws -> Float in XCTFail(); return Float(i) }
+    let r2 = o2.apply(t2)
+    XCTAssert(r2.value == nil)
+    XCTAssert(r2.error as? TestError == TestError(error))
+  }
+
+  func testApply3()
+  {
+    let value = Int(arc4random() & 0x7fff + 10000)
+    let error = arc4random() & 0x3fff_ffff
+
+    // good operand, good transform
+    let o1 = Deferred(value: value)
+    let t1 = Deferred { i in Result.Value(Double(value*i)) }
+    let r1 = o1.apply(t1)
+    XCTAssert(r1.value == Double(value*value))
+    XCTAssert(r1.error == nil)
+
+    // bad operand, transform not applied
+    let o2 = Deferred<Int> { throw TestError(error) }
+    let t2 = Deferred { (i:Int) in Result<Float> { XCTFail(); return Float(i) } }
+    let r2 = o2.apply(t2)
+    XCTAssert(r2.value == nil)
+    XCTAssert(r2.error as? TestError == TestError(error))
   }
 
   func testQOS()
@@ -620,6 +631,19 @@ class DeferredTests: XCTestCase
     usleep(1000)
     XCTAssert(d2.cancel() == true)
 
+    let e3 = expectationWithDescription("cancellation of Deferred.apply, part 3")
+    let t3 = Deferred { (i: Int) in Result.Value(Double(i)) }
+    let d3 = tbd.apply(t3)
+    d3.onError { e in e3.fulfill() }
+    XCTAssert(d3.cancel() == true)
+
+    let e4 = expectationWithDescription("cancellation of Deferred.apply, part 2")
+    let t4 = t3.delay(ms: 100)
+    let d4 = Deferred(value: 1).apply(t4)
+    d4.onError { e in e4.fulfill() }
+    usleep(1000)
+    XCTAssert(d4.cancel() == true)
+    
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
     waitForExpectationsWithTimeout(1.0, handler: nil)
