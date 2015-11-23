@@ -548,8 +548,9 @@ internal final class Applicator<T>: Deferred<T>
       switch result
       {
       case .Value:
-        transform.notify(qos: qos) {
+        transform.on(self.queue).notify(qos: qos) {
           transform in
+          if self.isDetermined { return }
           self.beginExecution()
           let transformed = result.apply(transform)
           _ = try? self.determine(transformed) // an error here means this `Deferred` has been canceled.
