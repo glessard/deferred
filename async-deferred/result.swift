@@ -126,11 +126,6 @@ public enum Result<T>: CustomStringConvertible
     case .Error(let error): return transform(error)
     }
   }
-
-  public func recover(@noescape transform: (ErrorType) throws -> T) -> Result<T>
-  {
-    return recover { e in Result { try transform(e) } }
-  }
 }
 
 public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> T) -> T
