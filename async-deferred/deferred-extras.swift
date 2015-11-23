@@ -215,13 +215,20 @@ extension Deferred
     return Applicator<U>(qos: qos, source: self, transform: transform)
   }
 
-  /// Adaptor made desirable by insufficient covariance between throwing and non-throwing functions.
+  /// Adaptor made desirable by insufficient covariance from throwing to non-throwing closure types. (radar 22013315)
+  /// (i.e. if the difference between the type signature of two closures is whether they throw,
+  /// the non-throwing one should be usable anywhere the throwing one can.)
   /// Can hopefully be removed later.
+  ///
+  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
+  /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
+  /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
+  /// - returns: a `Deferred` reference representing the return value of the transform
 
   public final func apply<U>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, _ transform: Deferred<(T) -> U>) -> Deferred<U>
   {
-    let throwing = transform.map { transform in { (t:T) throws -> U in transform(t) } }
-    return Applicator<U>(qos: qos, source: self, transform: throwing)
+    let retransform = transform.map(qos: qos) { transform in { t throws in transform(t) } }
+    return Applicator<U>(qos: qos, source: self, transform: retransform)
   }
 }
 
