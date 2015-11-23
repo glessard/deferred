@@ -138,7 +138,7 @@ class ResultTests: XCTestCase
     let badres = Result<Double>()
 
     // Bad operand, transform throws
-    let r2 = badres.recover { e in throw TestError(value) }
+    let r2 = badres.recover { e in Result.Error(TestError(value)) }
     XCTAssert(r2.value == nil)
     XCTAssert(r2.error as? TestError == TestError(value))
 
@@ -148,45 +148,58 @@ class ResultTests: XCTestCase
     XCTAssert(r3.error == nil)
   }
 
-  func testApply()
+  func testApplyA()
   {
     let value = Int(arc4random() & 0x7fff + 10000)
     let error = arc4random() & 0x3fff_ffff
 
-    let transform = Result.Value { i throws -> Double in Double(value*i) }
-
     // Good operand, good transform
     let o1 = Result.Value(value)
-    let r1 = o1.apply(transform)
+    let t1 = Result.Value { i throws in Double(value*i) }
+    let r1 = o1.apply(t1)
     XCTAssert(r1.value == Double(value*value))
     XCTAssert(r1.error == nil)
 
-    // Bad operand, good transform
+    // Bad operand: transform not applied
     let o2 = Result<Int>.Error(TestError(error))
-    let r2 = o2.apply(transform)
+    let t2 = Result.Value({ (i:Int) throws -> CGPoint in XCTFail(); return CGPointZero })
+    let r2 = o2.apply(t2)
     XCTAssert(r2.value == nil)
     XCTAssert(r2.error as? TestError == TestError(error))
 
-    // Good operand, transform throws
-    let o3 = Result.Value(error)
-    let t3 = Result.Value({ (i:UInt32) throws -> AnyObject in throw TestError(i) })
-    let r3 = o3.apply(t3)
-    XCTAssert(r3.value == nil)
-    XCTAssert(r3.error as? TestError == TestError(error))
-
-    // Good operand, bad transform
+    // Good operand, transform Result carries error
     let o4 = Result.Value(value)
     let t4 = Result.Error(TestError(error)) as Result<(Int) throws -> UnsafeMutablePointer<AnyObject>>
     let r4 = o4.apply(t4)
     XCTAssert(r4.value == nil)
     XCTAssert(r4.error as? TestError == TestError(error))
+  }
 
-    // Operand error: transform not applied
-    let o5 = Result<Int>.Error(TestError(error))
-    let t5 = Result.Value({ (i:Int) throws -> CGPoint in XCTFail(); return CGPointZero })
-    let r5 = o5.apply(t5)
-    XCTAssert(r5.value == nil)
-    XCTAssert(r5.error as? TestError == TestError(error))
+  func testApplyB()
+  {
+    let value = Int(arc4random() & 0x7fff + 10000)
+    let error = arc4random() & 0x3fff_ffff
+
+    // Good operand, good transform
+    let o1 = Result.Value(value)
+    let t1 = Result.Value { i in Result.Value(Double(value*i)) }
+    let r1 = o1.apply(t1)
+    XCTAssert(r1.value == Double(value*value))
+    XCTAssert(r1.error == nil)
+
+    // Bad operand: transform not applied
+    let o2 = Result<Int>.Error(TestError(error))
+    let t2 = Result.Value { (i:Int) in Result<CGPoint> { XCTFail(); return CGPointZero } }
+    let r2 = o2.apply(t2)
+    XCTAssert(r2.value == nil)
+    XCTAssert(r2.error as? TestError == TestError(error))
+
+    // Good operand, transform Result carries error
+    let o4 = Result.Value(value)
+    let t4 = Result.Error(TestError(error)) as Result<(Int) -> Result<Any>>
+    let r4 = o4.apply(t4)
+    XCTAssert(r4.value == nil)
+    XCTAssert(r4.error as? TestError == TestError(error))
   }
 
   func testQuestionMarkQuestionMarkOperator()

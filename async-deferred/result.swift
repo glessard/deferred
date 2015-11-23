@@ -106,18 +106,29 @@ public enum Result<T>: CustomStringConvertible
     case .Value(let value):
       switch transform
       {
-      case .Value(let transform):
-        return Result<U> { try transform(value) }
-
-      case .Error(let error):
-        return .Error(error)
+      case .Value(let transform): return Result<U> { try transform(value) }
+      case .Error(let error):     return .Error(error)
       }
 
-    case .Error(let error):
-      return .Error(error)
+    case .Error(let error):       return .Error(error)
     }
   }
 
+  public func apply<U>(transform: Result<(T) -> Result<U>>) -> Result<U>
+  {
+    switch self
+    {
+    case .Value(let value):
+      switch transform
+      {
+      case .Value(let transform): return transform(value)
+      case .Error(let error):     return .Error(error)
+      }
+
+    case .Error(let error):       return .Error(error)
+    }
+  }
+  
   public func recover(@noescape transform: (ErrorType) -> Result<T>) -> Result<T>
   {
     switch self
