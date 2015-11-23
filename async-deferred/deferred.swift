@@ -538,6 +538,39 @@ internal final class Applicator<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
+  init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: Deferred<(U) -> Result<T>>)
+  {
+    super.init(source.queue)
+
+    source.notify(qos: qos) {
+      result in
+      if self.isDetermined { return }
+      switch result
+      {
+      case .Value:
+        transform.on(self.queue).notify(qos: qos) {
+          transform in
+          if self.isDetermined { return }
+          self.beginExecution()
+          let transformed = result.apply(transform)
+          _ = try? self.determine(transformed) // an error here means this `Deferred` has been canceled.
+        }
+
+      case .Error(let error):
+        self.beginExecution()
+        _ = try? self.determine(Result.Error(error)) // an error here means this `Deferred` has been canceled.
+      }
+    }
+  }
+
+  /// Initialize with a `Deferred` source and a transform to be computed in the background
+  /// This constructor is used by `apply`
+  ///
+  /// - parameter queue:     the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+  
   init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
   {
     super.init(source.queue)
