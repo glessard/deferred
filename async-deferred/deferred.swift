@@ -484,7 +484,7 @@ internal final class Bind<T>: Deferred<T>
       switch result
       {
       case .Value(let value):
-        transform(value).on(self.queue).notify(qos: qos) {
+        transform(value).notify(qos: qos) {
           transformed in
           _ = try? self.determine(transformed) // an error here means this `Deferred` has been canceled.
         }
@@ -517,7 +517,7 @@ internal final class Bind<T>: Deferred<T>
         _ = try? self.determine(result)
 
       case .Error(let error):
-        transform(error).on(self.queue).notify(qos: qos) {
+        transform(error).notify(qos: qos) {
           transformed in
           _ = try? self.determine(transformed)
         }
