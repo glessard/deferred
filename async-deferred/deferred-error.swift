@@ -28,13 +28,9 @@ extension DeferredError: CustomStringConvertible
       return "Deferred canceled: \(message)"
 
     case AlreadyDetermined(let message):
-      guard message != ""
-        else { return "Attempted to determine a Deferred more than once" }
       return "Deferred already determined: \(message)"
 
     case CannotDetermine(let message):
-      guard message != ""
-        else { return "Cannot determined Deferred" }
       return "Cannot determine Deferred: \(message)"
     }
   }
