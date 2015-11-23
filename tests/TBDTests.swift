@@ -48,8 +48,24 @@ class TBDTests: XCTestCase
     }
 
     XCTAssert(tbd.isDetermined == false)
+
+    // Block until tbd becomes determined
     XCTAssert(tbd.value == value)
     XCTAssert(tbd.error == nil)
+
+    // Try and fail to determine tbd a second time.
+    do {
+      try tbd.determine(value)
+      XCTFail()
+    }
+    catch let error as DeferredError {
+      _ = String(error)
+      if case let .AlreadyDetermined(message) = error
+      {
+        XCTAssert(error == .AlreadyDetermined(message))
+      }
+    }
+    catch { XCTFail() }
   }
 
   func testCancel()
