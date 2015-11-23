@@ -513,7 +513,7 @@ class DeferredTests: XCTestCase
     usleep(1000)
   }
 
-  func testCancel1()
+  func testCancel()
   {
     let d1 = Deferred(qos: QOS_CLASS_UTILITY) {
       () -> UInt32 in
@@ -529,120 +529,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d2.cancel("message") == false)
   }
 
-  func testCancel2()
-  {
-    // Test cancellation behaviour of map and delay
-    let tbd = TBD<Int>()
-    let tbe = TBD<Int>()
-
-    let e1 = expectationWithDescription("map cancellation with good input")
-    let d1 = tbd.map { $0 }
-    d1.onError { e in e1.fulfill() }
-    XCTAssert(d1.cancel() == true)
-
-    let e2 = expectationWithDescription("map cancellation with error input")
-    let d2 = tbe.map { i -> Void in XCTFail() }
-    d2.onError { e in e2.fulfill() }
-    XCTAssert(d2.cancel() == true)
-
-    let e3 = expectationWithDescription("delay cancellation with good input")
-    let d3 = tbd.delay(ms: 100)
-    d3.onError { e in e3.fulfill() }
-    XCTAssert(d3.cancel() == true)
-    XCTAssertNil(d3.value)
-
-    let e4 = expectationWithDescription("delay cancellation with error input")
-    let d4 = tbe.delay(ms: 100)
-    d4.onError { e in e4.fulfill() }
-    XCTAssert(d4.cancel() == true)
-    XCTAssertNil(d4.value)
-
-    let e5 = expectationWithDescription("map cancellation with good input")
-    let d5 = tbd.map { (_: Int) -> Result<Void> in Result<Void> { XCTFail() } }
-    d5.onError { e in e5.fulfill() }
-    XCTAssert(d5.cancel() == true)
-
-    let e6 = expectationWithDescription("map cancellation with error input")
-    let d6 = tbe.map { (_: Int) -> Result<Void> in Result<Void> { XCTFail() } }
-    d6.onError { e in e6.fulfill() }
-    XCTAssert(d6.cancel() == true)
-
-    XCTAssertNotNil(try? tbd.determine(numericCast(arc4random() & 0x3fff_ffff)))
-    XCTAssertNotNil(try? tbe.determine(TestError()))
-
-    waitForExpectationsWithTimeout(1.0, handler: nil)
-  }
-
-  func testCancel3()
-  {
-    // Test cancellation behaviour of flatMap
-    let tbd = TBD<Int>()
-    let tbe = TBD<Int>()
-
-    let e1 = expectationWithDescription("flatMap cancellation with good input")
-    let d1 = tbd.flatMap { Deferred(value: $0) }
-    d1.onError { e in e1.fulfill() }
-    XCTAssert(d1.cancel() == true)
-
-    let e2 = expectationWithDescription("flatMap cancellation with error input")
-    let d2 = tbe.flatMap { _ in Deferred { _ in XCTFail() } }
-    d2.onError { e in e2.fulfill() }
-    XCTAssert(d2.cancel() == true)
-
-    let e3 = expectationWithDescription("flatMap cancellation with error transform")
-    let d3 = tbd.flatMap { i in Deferred<Void>(error: DeferredError.Canceled("")) }
-    d3.onError { e in e3.fulfill() }
-    XCTAssert(d3.cancel() == true)
-
-    let e4 = expectationWithDescription("flatMap cancellation with everything wrong")
-    let d4 = tbe.flatMap { i in Deferred<Void>(error: DeferredError.Canceled("")) }
-    d4.onError { e in e4.fulfill() }
-    XCTAssert(d4.cancel() == true)
-
-
-    XCTAssertNotNil(try? tbd.determine(numericCast(arc4random() & 0x3fff_ffff)))
-    XCTAssertNotNil(try? tbe.determine(TestError()))
-
-    waitForExpectationsWithTimeout(1.0, handler: nil)
-
-  }
-
-  func testCancel4()
-  {
-    // test cancellation behaviour of apply
-    let tbd = TBD<Int>()
-    let tbe = TBD<Int>()
-
-    let transform = tbd.map { i in { (i: Int) throws -> Int in abs(i) } }
-    let transferr = tbd.map { i in { (i: Int) throws -> Int in throw TestError() } }
-
-    let e1 = expectationWithDescription("apply cancellation with good inputs")
-    let d1 = tbd.apply(transform)
-    d1.onError { e in e1.fulfill() }
-    XCTAssert(d1.cancel() == true)
-
-    let e2 = expectationWithDescription("apply cancellation with error input")
-    let d2 = tbe.apply(transform)
-    d2.onError { e in e2.fulfill() }
-    XCTAssert(d2.cancel() == true)
-
-    let e3 = expectationWithDescription("apply cancellation with canceled transform")
-    let d3 = tbd.apply(transferr)
-    d3.onError { e in e3.fulfill() }
-    XCTAssert(d3.cancel() == true)
-
-    let e4 = expectationWithDescription("apply cancellation with everything canceled")
-    let d4 = tbe.apply(transferr)
-    d4.onError { e in e4.fulfill() }
-    XCTAssert(d4.cancel() == true)
-
-    XCTAssertNotNil(try? tbd.determine(numericCast(arc4random() & 0x3fff_ffff)))
-    XCTAssertNotNil(try? tbe.determine(TestError()))
-
-    waitForExpectationsWithTimeout(1.0, handler: nil)
-  }
-
-  func testCancel5()
+  func testCancelAndNotify()
   {
     let tbd = TBD<Int>()
 
@@ -650,15 +537,92 @@ class DeferredTests: XCTestCase
     let e1 = expectationWithDescription("first deferred")
     d1.onValue { _ in XCTFail() }
     d1.onError { _ in e1.fulfill() }
+    d1.onError { e in guard let e = e as? DeferredError else { fatalError() }; _ = e.description }
+    d1.notify  { r in XCTAssert(r.error as? DeferredError == DeferredError.Canceled("")) }
 
     let d2 = d1.map  { $0 + 100 }
     let e2 = expectationWithDescription("second deferred")
     d2.onValue { _ in XCTFail() }
     d2.onError { _ in e2.fulfill() }
+    d1.notify  { r in XCTAssert(r.error as? DeferredError != DeferredError.CannotDetermine("")) }
 
     d1.cancel()
 
     waitForExpectationsWithTimeout(1.0) { _ in tbd.cancel() }
+  }
+
+  func testCancelMap()
+  {
+    let tbd = TBD<Int>()
+
+    let e1 = expectationWithDescription("cancellation of Deferred.map(_: U throws -> T)")
+    let d1 = tbd.map { u throws in XCTFail(String(u)) }
+    d1.onError { e in e1.fulfill() }
+    XCTAssert(d1.cancel() == true)
+
+    let e2 = expectationWithDescription("cancellation of Deferred.map(_: U -> Result<T>)")
+    let d2 = tbd.map { u in Result.Value(XCTFail(String(u))) }
+    d2.onError { e in e2.fulfill() }
+    XCTAssert(d2.cancel() == true)
+
+    try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testCancelDelay()
+  {
+    let tbd = TBD<Int>()
+
+    let e1 = expectationWithDescription("cancellation of Deferred.delay")
+    let d1 = tbd.delay(ms: 100)
+    d1.onError { e in e1.fulfill() }
+    XCTAssert(d1.cancel() == true)
+
+    try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testCancelBind()
+  {
+    let tbd = TBD<Int>()
+
+    let e1 = expectationWithDescription("cancellation of Deferred.flatMap")
+    let d1 = tbd.flatMap { Deferred(value: $0) }
+    d1.onError { e in e1.fulfill() }
+    XCTAssert(d1.cancel() == true)
+
+    let e2 = expectationWithDescription("cancellation of Deferred.recover")
+    let d2 = tbd.recover { i in Deferred(value: Int(Int64.max)) }
+    d2.onError { e in e2.fulfill() }
+    XCTAssert(d2.cancel() == true)
+
+    try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
+  }
+
+  func testCancelApply()
+  {
+    let tbd = TBD<Int>()
+
+    let e1 = expectationWithDescription("cancellation of Deferred.apply, part 1")
+    let t1 = Deferred { (i: Int) throws in Double(i) }
+    let d1 = tbd.apply(t1)
+    d1.onError { e in e1.fulfill() }
+    XCTAssert(d1.cancel() == true)
+
+    let e2 = expectationWithDescription("cancellation of Deferred.apply, part 2")
+    let t2 = t1.delay(ms: 100)
+    let d2 = Deferred(value: 1).apply(t2)
+    d2.onError { e in e2.fulfill() }
+    usleep(1000)
+    XCTAssert(d2.cancel() == true)
+
+    try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
+
+    waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
   func testTimeout()
