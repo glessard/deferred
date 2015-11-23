@@ -362,17 +362,17 @@ class DeferredTests: XCTestCase
     let value = Int(arc4random() & 0x7fff + 10000)
     let error = arc4random() & 0x3fff_ffff
 
-    let transform = Deferred { i throws -> Double in Double(value*i) }
-
     // good operand, good transform
     let o1 = Deferred(value: value)
-    let r1 = o1.apply(transform)
+    let t1 = Deferred { i throws -> Double in Double(value*i) }
+    let r1 = o1.apply(t1)
     XCTAssert(r1.value == Double(value*value))
     XCTAssert(r1.error == nil)
 
-    // bad operand, good transform
+    // bad operand, transform not applied
     let o2 = Deferred<Int> { throw TestError(error) }
-    let r2 = o2.apply(transform)
+    let t2 = Deferred { (i:Int) throws -> Float in XCTFail(); return Float(i) }
+    let r2 = o2.apply(t2)
     XCTAssert(r2.value == nil)
     XCTAssert(r2.error as? TestError == TestError(error))
 
@@ -382,20 +382,6 @@ class DeferredTests: XCTestCase
     let r3 = o3.apply(t3)
     XCTAssert(r3.value == nil)
     XCTAssert(r3.error as? TestError == TestError(error))
-
-    // good operand, bad transform
-    let o4 = Deferred(value: value)
-    let t4 = Deferred(error: TestError(error)) as Deferred<(Int) throws -> dispatch_group_t>
-    let r4 = o4.apply(t4)
-    XCTAssert(r4.value == nil)
-    XCTAssert(r4.error as? TestError == TestError(error))
-
-    // bad operand: transform not applied
-    let o5 = Deferred<Int> { throw TestError(error) }
-    let t5 = Deferred { (i:Int) throws -> Float in XCTFail(); return Float(i) }
-    let r5 = o5.apply(t5)
-    XCTAssert(r5.value == nil)
-    XCTAssert(r5.error as? TestError == TestError(error))
   }
 
   func testApply2()
