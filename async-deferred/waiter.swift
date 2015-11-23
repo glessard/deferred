@@ -63,14 +63,3 @@ struct WaitQueue
     return head
   }
 }
-
-@inline(__always) func CAS<T>(o: UnsafeMutablePointer<T>, _ n: UnsafeMutablePointer<T>,
-                              _ p: UnsafeMutablePointer<UnsafeMutablePointer<T>>) -> Bool
-{
-  return OSAtomicCompareAndSwapPtrBarrier(o, n, UnsafeMutablePointer(p))
-}
-
-@inline(__always) func syncread(p: UnsafeMutablePointer<Int32>) -> Int32
-{
-  return OSAtomicAdd32Barrier(0, p)
-}

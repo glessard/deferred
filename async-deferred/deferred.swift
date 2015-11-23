@@ -149,7 +149,7 @@ public class Deferred<T>
 
   private func beginExecution()
   {
-    OSAtomicCompareAndSwap32Barrier(DeferredState.Waiting.rawValue, DeferredState.Executing.rawValue, &currentState)
+    CAS(current: DeferredState.Waiting.rawValue, new: DeferredState.Executing.rawValue, target: &currentState)
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
@@ -166,7 +166,7 @@ public class Deferred<T>
       let initialState = currentState
       if initialState < DeferredState.Determined.rawValue
       {
-        if OSAtomicCompareAndSwap32Barrier(initialState, transientState, &currentState) { break }
+        if CAS(current: initialState, new: transientState, target: &currentState) { break }
       }
       else
       {
@@ -177,7 +177,7 @@ public class Deferred<T>
 
     r = result
 
-    guard OSAtomicCompareAndSwap32Barrier(transientState, DeferredState.Determined.rawValue, &currentState) else
+    guard CAS(current: transientState, new: DeferredState.Determined.rawValue, target: &currentState) else
     { // Getting here seems impossible, but try to handle it gracefully.
       throw DeferredError.CannotDetermine(__FUNCTION__)
     }
@@ -185,7 +185,7 @@ public class Deferred<T>
     while true
     {
       let waitQueue = waiters
-      if CAS(waitQueue, nil, &waiters)
+      if CAS(current: waitQueue, new: nil, target: &waiters)
       {
         WaitQueue.notifyAll(queue, waitQueue)
         break
