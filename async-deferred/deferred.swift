@@ -210,12 +210,12 @@ public class Deferred<T>
   {
     while true
     {
-      let tail = waiters
-      waiter.memory.next = tail
+      let waitQueue = waiters
+      waiter.memory.next = waitQueue
       if syncread(&currentState) != DeferredState.Determined.rawValue
       {
-        if CAS(tail, waiter, &waiters)
-        { // waiter is now enqueued; it will be deallocated at a later time.
+        if CAS(current: waitQueue, new: waiter, target: &waiters)
+        { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
           return true
         }
       }
