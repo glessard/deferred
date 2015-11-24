@@ -148,15 +148,6 @@ public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> T) -> T
   }
 }
 
-public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> Result<T>) -> Result<T>
-{
-  switch possible
-  {
-  case .Value: return possible
-  case .Error: return alternate()
-  }
-}
-
 public func == <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
 {
   switch (lhr, rhr)

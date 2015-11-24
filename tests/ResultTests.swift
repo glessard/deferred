@@ -211,14 +211,6 @@ class ResultTests: XCTestCase
     let r2 = Result<Int>.Error(TestError(arc4random() & 0x3fff_ffff))
     let v2 = r2 ?? -1
     XCTAssert(v2 < 0)
-
-    let r3 = Result.Value(Int(arc4random() & 0x3fff_fff0 + 1))
-    let v3 = r3 ?? Result.Value(-1)
-    XCTAssert(v3.value > 0)
-
-    let r4 = Result<Int>.Error(TestError(arc4random() & 0x3fff_ffff))
-    let v4 = r4 ?? Result.Value(-1)
-    XCTAssert(v4.value < 0)
   }
 
   func testEquals()
