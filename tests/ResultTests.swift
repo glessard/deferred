@@ -24,7 +24,7 @@ class ResultTests: XCTestCase
     let r2: Result<Int> = Result()
     XCTAssert(r2.value == nil)
 
-    XCTAssert((r1.error as? NoResult) == (r2.error as? NoResult))
+    XCTAssert((r1.error is NoResult) == (r2.error is NoResult))
   }
 
   func testInitValue()

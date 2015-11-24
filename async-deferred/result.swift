@@ -8,21 +8,16 @@
 
 import Foundation.NSError
 
-public struct NoResult: ErrorType, Equatable, CustomStringConvertible
+public struct NoResult: ErrorType, CustomStringConvertible
 {
   private init() {}
   public var description = "No result"
 }
 
-public func == (a: NoResult, b: NoResult) -> Bool
-{
-  return true
-}
-
 /// A Result type, approximately like everyone else has done.
 ///
-/// Unlike other implementations, the error case does not encode type beyond ErrorType.
-/// This way there is no need to ever map between error types, which is a thing that cannot make sense.
+/// The error case does not encode type beyond ErrorType.
+/// This way there is no need to ever map between error types, which mostly cannot make sense.
 
 public enum Result<T>: CustomStringConvertible
 {
