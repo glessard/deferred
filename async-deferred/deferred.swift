@@ -681,7 +681,7 @@ public class TBD<T>: Deferred<T>
 
   public func determine(value: T) throws
   {
-    try determine(Result.Value(value)) as Void
+    try determine(Result.Value(value), place: __FUNCTION__)
   }
 
   /// Set this `Deferred` to an error and change its state to `DeferredState.Determined`
@@ -692,7 +692,7 @@ public class TBD<T>: Deferred<T>
 
   public func determine(error: ErrorType) throws
   {
-    try determine(Result.Error(error)) as Void
+    try determine(Result.Error(error), place: __FUNCTION__)
   }
 
   /// Set the `Result` of this `Deferred` and change its state to `DeferredState.Determined`
@@ -703,10 +703,12 @@ public class TBD<T>: Deferred<T>
 
   public func determine(result: Result<T>) throws
   {
-    if super.determine(result) == false
-    {
-      throw DeferredError.AlreadyDetermined(__FUNCTION__)
-    }
+    try determine(result, place: __FUNCTION__)
+  }
+
+  private func determine(result: Result<T>, place: String) throws
+  {
+    guard super.determine(result) else { throw DeferredError.AlreadyDetermined(place) }
   }
 
   /// Change the state of this `TBD` from `.Waiting` to `.Executing`
