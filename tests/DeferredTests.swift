@@ -360,22 +360,19 @@ class DeferredTests: XCTestCase
   func testApply()
   {
     // a simple curried function.
-    func curriedSum(a: Int)(_ b: Int) -> Int
-    {
-      return a+b
-    }
+    let curriedSum: (Int) -> (Int) -> Int = { a in { b in (a+b) } }
 
     let value1 = Int(arc4random() & 0x3fff_ffff)
     let value2 = Int(arc4random() & 0x3fff_ffff)
-    let deferred = Deferred(value: value1).apply(qos: QOS_CLASS_USER_INITIATED, Deferred(value: curriedSum(value2)))
+    let deferred = Deferred(value: value1).apply(Deferred(value: curriedSum(value2)))
     XCTAssert(deferred.value == value1+value2)
 
     // a 2-tuple is the same as two parameters
     let transform = Deferred(value: powf)
-    let v1 = Deferred(value: 3.0)
-    let v2 = Deferred(value: 4.1)
+    let v1 = Deferred(value: 3.0 as Float)
+    let v2 = Deferred(value: 4.1 as Float)
 
-    let args = combine(v1.map(Float.init), v2.map(Float.init))
+    let args = combine(v1, v2)
     let result = args.apply(transform)
 
     XCTAssert(result.value == pow(3.0, 4.1))
