@@ -152,11 +152,11 @@ public class Deferred<T>
     CAS(current: DeferredState.Waiting.rawValue, new: DeferredState.Executing.rawValue, target: &currentState)
   }
 
-  /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
-  /// Note that a `Deferred` can only be determined once. On subsequent calls, `setValue` will throw an `AlreadyDetermined` error.
+  /// Set the `Result` of this `Deferred` and change its state to `DeferredState.Determined`
+  /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter result: the intended `Result` to determine this `Deferred`
-  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
+  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined when this method was called.
 
   private func determine(result: Result<T>) throws
   {
