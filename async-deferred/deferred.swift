@@ -611,16 +611,14 @@ internal final class Delayed<T>: Deferred<T>
   /// but it will not happen earlier than the time referred to by `until`.
   /// This constructor is used by `delay`
   ///
-  /// - parameter queue:  the `dispatch_queue_t` onto which the created blocks should be enqueued
-  /// - parameter qos:    the QOS class at which to execute the delay; defaults to the queue's QOS class.
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  init(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<T>, until: dispatch_time_t)
+  init(source: Deferred<T>, until: dispatch_time_t)
   {
     super.init(source.queue)
 
-    source.notify(qos: qos) {
+    source.notify {
       result in
       if self.isDetermined { return }
 
@@ -628,7 +626,7 @@ internal final class Delayed<T>: Deferred<T>
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
       if until > now, case .Value = result
       {
-        dispatch_after(until, self.queue, self.createBlock(qos, block: { _ = try? self.determine(result) }))
+        dispatch_after(until, self.queue, self.createBlock { _ = try? self.determine(result) })
       }
       else
       {

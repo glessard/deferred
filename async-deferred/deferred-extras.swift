@@ -55,9 +55,7 @@ extension Deferred
   private func delay64(ns ns: Int64) -> Deferred
   {
     if ns < 0 { return self }
-
-    let until = dispatch_time(DISPATCH_TIME_NOW, ns)
-    return Delayed(source: self, until: until)
+    return Delayed(source: self, until: dispatch_time(DISPATCH_TIME_NOW, ns))
   }
 }
 
