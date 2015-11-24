@@ -461,9 +461,10 @@ class DeferredTests: XCTestCase
   func testQOS()
   {
     let qb = Deferred(qos: QOS_CLASS_UTILITY) { qos_class_self() }
+    XCTAssert(qb.qos == qb.value)
 
     let e1 = expectationWithDescription("Waiting")
-    Deferred(value: qos_class_self()).at(QOS_CLASS_BACKGROUND).onValue {
+    Deferred(qos: QOS_CLASS_BACKGROUND, result: Result.Value(qos_class_self())).onValue {
       qosv in
       // Verify that the QOS has been adjusted
       XCTAssert(qosv != qos_class_self())
@@ -482,14 +483,14 @@ class DeferredTests: XCTestCase
     }
 
     let e2 = expectationWithDescription("Waiting")
-    q2.onValue {
+    q2.at(QOS_CLASS_USER_INTERACTIVE).onValue {
       qosv in
       // Last block was in fact executing at QOS_CLASS_USER_INITIATED
       XCTAssert(qosv == QOS_CLASS_USER_INITIATED)
       // Last block wasn't executing at the queue's QOS
       XCTAssert(qosv != QOS_CLASS_BACKGROUND)
       // This block is executing at the queue's QOS.
-      XCTAssert(qos_class_self() == QOS_CLASS_BACKGROUND)
+      XCTAssert(qos_class_self() == QOS_CLASS_USER_INTERACTIVE)
       e2.fulfill()
     }
 
