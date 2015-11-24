@@ -66,8 +66,9 @@ private let DefaultTimeoutMessage = "Operation timed out"
 extension Deferred
 {
   /// Return a `Deferred` whose determination will occur at most `µs` microseconds from the time of evaluation.
-  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be determined in an error state, `DeferredError.Canceled`.
+  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
   /// - parameter µs: a number of microseconds
+  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
   public final func timeout(µs µs: Int, reason: String = DefaultTimeoutMessage) -> Deferred
@@ -76,8 +77,9 @@ extension Deferred
   }
 
   /// Return a `Deferred` whose determination will occur at most `ms` milliseconds from the time of evaluation.
-  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be determined in an error state, `DeferredError.Canceled`.
+  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
   /// - parameter ms: a number of milliseconds
+  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
   public final func timeout(ms ms: Int, reason: String = DefaultTimeoutMessage) -> Deferred
@@ -86,8 +88,9 @@ extension Deferred
   }
 
   /// Return a `Deferred` whose determination will occur at most a number of seconds from the time of evaluation.
-  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be determined in an error state, `DeferredError.Canceled`.
+  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
+  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
   public final func timeout(seconds s: Double, reason: String = DefaultTimeoutMessage) -> Deferred
@@ -96,7 +99,9 @@ extension Deferred
   }
 
   /// Return a `Deferred` whose determination will occur at most `ns` nanoseconds from the time of evaluation.
+  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
   /// - parameter ns: a number of nanoseconds
+  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
   public final func timeout(ns ns: Int, reason: String = DefaultTimeoutMessage) -> Deferred
@@ -104,21 +109,10 @@ extension Deferred
     return timeout64(ns: Int64(ns), reason: reason)
   }
 
-  private func timeout64(ns ns: Int64, reason: String = DefaultTimeoutMessage) -> Deferred
+  @inline(__always) private func timeout64(ns ns: Int64, reason: String) -> Deferred
   {
     if self.isDetermined { return self }
-
-    if ns > 0
-    {
-      let queue = dispatch_get_global_queue(self.qos, 0)
-      let timeout = dispatch_time(DISPATCH_TIME_NOW, ns)
-
-      let perishable = self.on(queue)
-      dispatch_after(timeout, queue) { perishable.cancel(reason) }
-      return perishable
-    }
-
-    return Deferred(qos: self.qos, result: Result.Error(DeferredError.Canceled(reason)))
+    return Timeout(source: self, timeout: ns, reason: reason)
   }
 }
 

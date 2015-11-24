@@ -636,6 +636,34 @@ internal final class Delayed<T>: Deferred<T>
   }
 }
 
+/// A `Deferred` which can time out
+
+internal final class Timeout<T>: Deferred<T>
+{
+  /// Initialized with a `Deferred` source and the maximum number of nanoseconds we should wait for its result.
+  /// If `source` does not become determined before the timeout expires, the new `Deferred` will be canceled.
+  /// The new `Deferred` will use the same queue as the source.
+  /// This constructor is used by `timeout`
+  ///
+  /// - parameter source: the `Deferred` whose value should be subjected to a timeout.
+  /// - parameter timeout: maximum number of nanoseconds before timeout.
+  /// - parameter reason: the reason for the cancelation if the operation times out.
+
+  init(source: Deferred<T>, timeout ns: Int64, reason: String)
+  {
+    if ns > 0
+    {
+      super.init(source.queue)
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, ns), self.queue) { self.cancel(reason) }
+      source.notify { _ = try? self.determine($0) } // an error here means this `Deferred` was canceled or has timed out.
+    }
+    else
+    {
+      super.init(queue: source.queue, result: Result.Error(DeferredError.Canceled(reason)))
+    }
+  }
+}
+
 /// A `Deferred` to be determined (`TBD`) manually.
 
 public class TBD<T>: Deferred<T>
