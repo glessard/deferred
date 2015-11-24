@@ -573,7 +573,7 @@ internal final class Applicator<T>: Deferred<T>
   /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
-  
+
   init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
   {
     super.init(source.queue)

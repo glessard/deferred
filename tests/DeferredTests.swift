@@ -644,7 +644,7 @@ class DeferredTests: XCTestCase
     d4.onError { e in e4.fulfill() }
     usleep(1000)
     XCTAssert(d4.cancel() == true)
-    
+
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
     waitForExpectationsWithTimeout(1.0, handler: nil)

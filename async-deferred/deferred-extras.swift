@@ -211,7 +211,7 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
-  
+
   public func apply<U>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, _ transform: Deferred<(T) throws -> U>) -> Deferred<U>
   {
     return Applicator<U>(qos: qos, source: self, transform: transform)
