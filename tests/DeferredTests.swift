@@ -556,7 +556,7 @@ class DeferredTests: XCTestCase
     let e2 = expectationWithDescription("second deferred")
     d2.onValue { _ in XCTFail() }
     d2.onError { _ in e2.fulfill() }
-    d1.notify  { r in XCTAssert(r.error as? DeferredError != DeferredError.CannotDetermine("")) }
+    d1.notify  { r in XCTAssert(r.error as? DeferredError != DeferredError.AlreadyDetermined("")) }
 
     d1.cancel()
 
