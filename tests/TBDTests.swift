@@ -161,18 +161,15 @@ class TBDTests: XCTestCase
   func testNeverDetermined()
   {
     // a Deferred that will never become determined.
-    let first = firstValue([Deferred<Int>]())
-    XCTAssert(first.isDetermined == false)
-  }
-
-  func testNeverDetermined2()
-  {
-    let first = firstValue([Deferred<Int>]())
+    let first = TBD<Int>()
 
     let other = first.map { XCTFail(String($0)) }
-    XCTAssert(other.isDetermined == false)
-
     let third = other.map { XCTFail() }
+
+    usleep(1000)
+
+    XCTAssert(first.isDetermined == false)
+    XCTAssert(other.isDetermined == false)
     XCTAssert(third.isDetermined == false)
 
     // Memory management note: when a `Deferred` has other `Deferred` dependent on it, it *must* be determined
@@ -182,6 +179,10 @@ class TBDTests: XCTestCase
     // `cancel()` is a perfectly correct way to determine a `Deferred`.
 
     first.cancel()
+
+    XCTAssertNil(first.value)
+    XCTAssertNil(other.value)
+    XCTAssertNil(third.value)
   }
 
   func testFirstValueDeferred()
