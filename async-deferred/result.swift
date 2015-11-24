@@ -6,7 +6,7 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-import Foundation
+import Foundation.NSError
 
 public struct NoResult: ErrorType, Equatable, CustomStringConvertible
 {
@@ -165,7 +165,7 @@ public func == <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
     return lv == rv
 
   case (.Error(let le as NSError), .Error(let re as NSError)):
-    // Use NSObject's equality method, and assume it will be good.
+    // Use NSObject's equality method, and assume the result to be correct.
     return le.isEqual(re)
 
   default: return false
