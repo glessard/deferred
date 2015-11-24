@@ -414,10 +414,15 @@ public class Deferred<T>
 
 internal final class Mapped<T>: Deferred<T>
 {
-  init(queue: dispatch_queue_t, source: Deferred<T>)
+  /// Switch queues for a Deferred
+  /// This constructor is used by `on`
+  /// - parameter queue:  the `dispatch_queue_t` onto which the computation should be enqueued
+  /// - parameter source: the `Deferred` whose value should be used as the input for the transform
+
+  private init(queue: dispatch_queue_t, source: Deferred<T>)
   {
     super.init(queue)
-    source.notify { _ = try? self.determine($0) }
+    source.notify(qos: dispatch_queue_get_qos_class(queue, nil)) { _ = try? self.determine($0) }
   }
 
   /// Initialize with a `Deferred` source and a transform to be computed in the background
