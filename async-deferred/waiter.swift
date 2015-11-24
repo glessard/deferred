@@ -19,7 +19,7 @@ struct Waiter
   }
 }
 
-struct WaitQueue
+enum WaitQueue
 {
   static func notifyAll(queue: dispatch_queue_t, _ tail: UnsafeMutablePointer<Waiter>)
   {
