@@ -84,7 +84,7 @@ public func combine<T1,T2,T3,T4>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Def
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
-/// Note that if the array is empty the resulting `Deferred` will resolve to a `DeferredError.Canceled` error.
+/// Note that if the array is empty the resulting `Deferred` will resolve to a `NoResult` error.
 ///
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
@@ -93,7 +93,7 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 {
   if deferreds.count == 0
   {
-    return Deferred(error: DeferredError.Canceled("No input in \(__FUNCTION__)"))
+    return Deferred(Result())
   }
 
   let first = TBD<T>()
@@ -107,7 +107,7 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
-/// Note that if the array is empty the resulting `Deferred` will resolve to a `DeferredError.Canceled` error.
+/// Note that if the array is empty the resulting `Deferred` will resolve to a `NoResult` error.
 ///
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
@@ -116,7 +116,7 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>
 {
   if deferreds.count == 0
   {
-    return Deferred(error: DeferredError.Canceled("No input in \(__FUNCTION__)"))
+    return Deferred(Result())
   }
 
   let first = TBD<Deferred<T>>()

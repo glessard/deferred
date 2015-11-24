@@ -185,29 +185,7 @@ class TBDTests: XCTestCase
     XCTAssertNil(third.value)
   }
 
-  func testFirstValueDeferred()
-  {
-    let count = 10
-    let lucky = Int(arc4random_uniform(numericCast(count)))
-
-    let deferreds = (0..<count).map {
-      i -> Deferred<Int> in
-      let e = expectationWithDescription(i.description)
-      return Deferred {
-        () -> Int in
-        usleep(i == lucky ? 10_000 : 200_000)
-        e.fulfill()
-        return i
-      }
-    }
-
-    let first = firstValue(deferreds)
-    XCTAssert(first.value == lucky)
-
-    waitForExpectationsWithTimeout(1.0, handler: nil)
-  }
-
-  func testFirstValueTBD()
+  func testFirstValue()
   {
     let count = 10
     let lucky = Int(arc4random_uniform(numericCast(count)))
@@ -225,9 +203,13 @@ class TBDTests: XCTestCase
       do { try d.determine(i) }
       catch { XCTAssert(i == lucky) }
     }
+
+    let never = firstValue([Deferred<Any>]())
+    XCTAssert(never.value == nil)
+    XCTAssert(never.error is NoResult)
   }
 
-  func testFirstDeterminedDeferred()
+  func testFirstDetermined()
   {
     let count = 10
 
@@ -250,6 +232,12 @@ class TBDTests: XCTestCase
         var d = deferreds
         d.removeAtIndex(index)
         oneBy1(d)
+      }
+
+      if deferreds.count == 0
+      {
+        XCTAssert(first.value == nil)
+        XCTAssert(first.error is NoResult)
       }
     }
 
