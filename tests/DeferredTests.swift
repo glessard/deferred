@@ -8,11 +8,7 @@
 
 import XCTest
 
-#if os(OSX)
-  import async_deferred
-#elseif os(iOS)
-  import async_deferred_ios
-#endif
+import async_deferred
 
 
 class DeferredTests: XCTestCase
@@ -798,5 +794,30 @@ class DeferredTests: XCTestCase
 
     XCTAssert(c.value == nil)
     XCTAssert(c.error as? DeferredError == DeferredError.Canceled(String(min(cancel1,cancel2))))
+  }
+
+  func testPropagationDelay()
+  {
+    let iterations = 10_000
+
+    var dt = Deferred(value: (0, UInt64(0), UInt64(0)))
+    for _ in 0...iterations
+    {
+      dt = dt.map {
+        (i, dt, ts) -> (Int, UInt64, UInt64) in
+        let nt = dispatch_time(DISPATCH_TIME_NOW, 0)
+        if ts == 0
+        {
+          return (i, dt, dispatch_time(DISPATCH_TIME_NOW, 0))
+        }
+
+        return (i+1, dt+nt-ts, dispatch_time(DISPATCH_TIME_NOW, 0))
+      }
+    }
+
+    if let (iterations, total, _) = dt.value
+    {
+      print("\(round(Double(total)/Double(iterations))/1000) µs per message")
+    }
   }
 }

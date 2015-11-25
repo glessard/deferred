@@ -8,11 +8,8 @@
 
 import XCTest
 
-#if os(OSX)
-  import async_deferred
-#elseif os(iOS)
-  import async_deferred_ios
-#endif
+import async_deferred
+
 
 class TBDTests: XCTestCase
 {
