@@ -796,28 +796,23 @@ class DeferredTests: XCTestCase
     XCTAssert(c.error as? DeferredError == DeferredError.Canceled(String(min(cancel1,cancel2))))
   }
 
-  func testPropagationDelay()
+  func testPropagationTime()
   {
     let iterations = 10_000
 
-    var dt = Deferred(value: (0, UInt64(0), UInt64(0)))
+    let ref = NSDate.distantPast()
+    var dt = Deferred(value: (0, ref, ref))
     for _ in 0...iterations
     {
       dt = dt.map {
-        (i, dt, ts) -> (Int, UInt64, UInt64) in
-        let nt = dispatch_time(DISPATCH_TIME_NOW, 0)
-        if ts == 0
-        {
-          return (i, dt, dispatch_time(DISPATCH_TIME_NOW, 0))
-        }
-
-        return (i+1, dt+nt-ts, dispatch_time(DISPATCH_TIME_NOW, 0))
+        (i, tic, toc) in
+        tic == ref ? (0, NSDate(), ref) : (i+1, tic, NSDate())
       }
     }
 
-    if let (iterations, total, _) = dt.value
+    if let (iterations, tic, toc) = dt.value
     {
-      print("\(round(Double(total)/Double(iterations))/1000) µs per message")
+      print("\(round(Double(toc.timeIntervalSinceDate(tic)*1e9)/Double(iterations))/1000) µs per message")
     }
   }
 }
