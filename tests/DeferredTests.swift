@@ -599,7 +599,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectationWithDescription("cancellation of Deferred.recover")
-    let d2 = tbd.recover { i in Deferred(value: Int(Int64.max)) }
+    let d2 = tbd.recover { i in Deferred(value: Int.max) }
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
