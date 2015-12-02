@@ -166,16 +166,13 @@ public class Deferred<T>
     while true
     { // Allow multiple tries in case another thread concurrently switches state from .Waiting to .Executing
       let initialState = currentState
-      if initialState < DeferredState.Determined.rawValue
-      {
-        if CAS(current: initialState, new: transientState, target: &currentState)
-        { // this thread has succeeded
-          break
-        }
-      }
-      else
+      if initialState >= DeferredState.Determined.rawValue
       { // this thread will not succeed
         return false
+      }
+      if CAS(current: initialState, new: transientState, target: &currentState)
+      { // this thread has succeeded; change `r` and enqueue notification blocks.
+        break
       }
     }
 
