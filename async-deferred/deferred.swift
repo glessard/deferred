@@ -226,9 +226,10 @@ public class Deferred<T>
       { // This Deferred has become determined; bail
         waiter.destroy()
         waiter.dealloc(1)
-        return false
+        break
       }
     }
+    return false
   }
 
   /// Take a (Result<T>) -> Void closure, and wrap it in a dispatch_block_t
