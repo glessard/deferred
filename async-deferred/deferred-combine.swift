@@ -11,7 +11,7 @@
 /// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.
 /// The combined `Deferred` will become determined after every input `Deferred` is determined.
 /// If any of the elements resolves to an error, the combined `Deferred` will be an error.
-/// The combined `Deferred` will use the queue of the first element in the array, if it exists.
+/// The combined `Deferred` will use the queue from the first element of the input array, if it exists.
 ///
 /// Equivalent to but hopefully more efficient than:
 /// ```
@@ -40,8 +40,8 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 
 /// Combine two `Deferred` into one.
 /// The returned `Deferred` will become determined after both inputs are determined.
-/// If any of the elements resolves to an error, the combined `Deferred` will be an error.
-/// The combined `Deferred` will use the queue of the first input, `d1`.
+/// If either of the elements resolves to an error, the combined `Deferred` will be an error.
+/// The combined `Deferred` will use the queue from the first input, `d1`.
 ///
 /// - parameter d1: a `Deferred`
 /// - parameter d2: a second `Deferred` to combine with `d1`
@@ -53,9 +53,9 @@ public func combine<T1,T2>(d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(T1
 }
 
 /// Combine three `Deferred` into one.
-/// The returned `Deferred` will become determined after both inputs are determined.
+/// The returned `Deferred` will become determined after all inputs are determined.
 /// If any of the elements resolves to an error, the combined `Deferred` will be an error.
-/// The combined `Deferred` will use the queue of the first input, `d1`.
+/// The combined `Deferred` will use the queue from the first input, `d1`.
 ///
 /// - parameter d1: a `Deferred`
 /// - parameter d2: a second `Deferred` to combine
@@ -67,10 +67,10 @@ public func combine<T1,T2,T3>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferr
   return combine(d1,d2).flatMap { (t1,t2) in d3.map { t3 in (t1,t2,t3) } }
 }
 
-/// Combine three `Deferred` into one.
-/// The returned `Deferred` will become determined after both inputs are determined.
+/// Combine four `Deferred` into one.
+/// The returned `Deferred` will become determined after all inputs are determined.
 /// If any of the elements resolves to an error, the combined `Deferred` will be an error.
-/// The combined `Deferred` will use the queue of the first input, `d1`.
+/// The combined `Deferred` will use the queue from the first input, `d1`.
 ///
 /// - parameter d1: a `Deferred`
 /// - parameter d2: a second `Deferred` to combine
