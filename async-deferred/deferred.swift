@@ -610,7 +610,7 @@ internal final class Delayed<T>: Deferred<T>
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  init(source: Deferred<T>, until: dispatch_time_t)
+  init(source: Deferred<T>, until deadline: dispatch_time_t)
   {
     super.init(source.queue)
 
@@ -618,11 +618,10 @@ internal final class Delayed<T>: Deferred<T>
       result in
       if self.isDetermined { return }
 
-      self.beginExecution()
-      let now = dispatch_time(DISPATCH_TIME_NOW, 0)
-      if until > now, case .Value = result
+      if case .Value = result where deadline > dispatch_time(DISPATCH_TIME_NOW, 0)
       {
-        dispatch_after(until, self.queue, self.createBlock { self.determine(result) })
+        self.beginExecution()
+        dispatch_after(deadline, self.queue, self.createBlock { self.determine(result) })
       }
       else
       {
