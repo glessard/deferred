@@ -421,6 +421,16 @@ internal final class Mapped<T>: Deferred<T>
     source.notify(qos: dispatch_queue_get_qos_class(queue, nil)) { self.determine($0) }
   }
 
+  /// Initialize to an already determined state, and copy the queue reference from another `Deferred`
+  ///
+  /// - parameter source: a `Deferred` whose dispatch queue shoud be used to enqueue future notifications for this `Deferred`
+  /// - parameter result: the result of this `Deferred`
+
+  init<U>(source: Deferred<U>, result: Result<T>)
+  {
+    super.init(queue: source.queue, result: result)
+  }
+
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `map`
   ///
@@ -644,18 +654,11 @@ internal final class Timeout<T>: Deferred<T>
   /// - parameter timeout: maximum number of nanoseconds before timeout.
   /// - parameter reason: the reason for the cancelation if the operation times out.
 
-  init(source: Deferred<T>, timeout ns: Int64, reason: String)
+  init(source: Deferred<T>, deadline: dispatch_time_t, reason: String)
   {
-    if ns > 0
-    {
-      super.init(source.queue)
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, ns), self.queue) { self.cancel(reason) }
-      source.notify { self.determine($0) } // an error here means this `Deferred` was canceled or has timed out.
-    }
-    else
-    {
-      super.init(queue: source.queue, result: Result.Error(DeferredError.Canceled(reason)))
-    }
+    super.init(source.queue)
+    dispatch_after(deadline, self.queue) { self.cancel(reason) }
+    source.notify { self.determine($0) } // an error here means this `Deferred` was canceled or has timed out.
   }
 }
 

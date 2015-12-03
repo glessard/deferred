@@ -109,10 +109,14 @@ extension Deferred
     return timeout64(ns: Int64(ns), reason: reason)
   }
 
-  @inline(__always) private func timeout64(ns ns: Int64, reason: String) -> Deferred
+  private func timeout64(ns ns: Int64, reason: String) -> Deferred
   {
     if self.isDetermined { return self }
-    return Timeout(source: self, timeout: ns, reason: reason)
+    if ns > 0
+    {
+      return Timeout(source: self, deadline: dispatch_time(DISPATCH_TIME_NOW, ns), reason: reason)
+    }
+    return Mapped(source: self, result: Result.Error(DeferredError.Canceled(reason)))
   }
 }
 
