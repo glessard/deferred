@@ -6,6 +6,8 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
+import shuffle
+
 // combine two or more Deferred objects into one.
 
 /// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.

@@ -13,7 +13,6 @@
 		03285E621B50486700F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
 		0328995A1BB47BAF00F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032899591BB47BAF00F4B44B /* TestError.swift */; };
 		0328995B1BB47BAF00F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032899591BB47BAF00F4B44B /* TestError.swift */; };
-		03325F4A1B66D92D00F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F491B66D92D00F4B44B /* shuffle.swift */; };
 		03325F4D1B684ECC00F4B44B /* TBDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F4B1B684D0400F4B44B /* TBDTests.swift */; };
 		03325F501B69FB4E00F4B44B /* ResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F4E1B69FB4900F4B44B /* ResultTests.swift */; };
 		03626DFC1C1150F400F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03626DF31C1150F400F4B44B /* async.swift */; };
@@ -38,7 +37,6 @@
 		03D3877F1B7C6E3600F4B44B /* async_deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03D387751B7C6E3500F4B44B /* async_deferred.framework */; };
 		03D3878F1B7C6E6100F4B44B /* DeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03285E591B50380C00F4B44B /* DeferredTests.swift */; };
 		03D387901B7C6E6100F4B44B /* TBDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F4B1B684D0400F4B44B /* TBDTests.swift */; };
-		03D387911B7C6EE500F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03325F491B66D92D00F4B44B /* shuffle.swift */; };
 		03D387921B7C6EE800F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E5D1AAA632D00F4B44B /* syncprint.swift */; };
 		03D3879A1B7C713500F4B44B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D387991B7C713500F4B44B /* AppDelegate.swift */; };
 		03D3879C1B7C713500F4B44B /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D3879B1B7C713500F4B44B /* ViewController.swift */; };
@@ -510,7 +508,6 @@
 				03626DFF1C1150F400F4B44B /* atomics.swift in Sources */,
 				03626E011C1150F400F4B44B /* deferred-combine.swift in Sources */,
 				03626E0B1C1150F400F4B44B /* result.swift in Sources */,
-				03D387911B7C6EE500F4B44B /* shuffle.swift in Sources */,
 				03626E071C1150F400F4B44B /* deferred-parallelize.swift in Sources */,
 				03626DFD1C1150F400F4B44B /* async.swift in Sources */,
 				03626E091C1150F400F4B44B /* deferred.swift in Sources */,
@@ -548,7 +545,6 @@
 				03626DFE1C1150F400F4B44B /* atomics.swift in Sources */,
 				03626E001C1150F400F4B44B /* deferred-combine.swift in Sources */,
 				03626E0A1C1150F400F4B44B /* result.swift in Sources */,
-				03325F4A1B66D92D00F4B44B /* shuffle.swift in Sources */,
 				03626E061C1150F400F4B44B /* deferred-parallelize.swift in Sources */,
 				03626DFC1C1150F400F4B44B /* async.swift in Sources */,
 				03626E081C1150F400F4B44B /* deferred.swift in Sources */,
