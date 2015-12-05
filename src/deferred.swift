@@ -378,7 +378,7 @@ public class Deferred<T>
   /// - returns: a new `Deferred` whose notifications will run on `queue`
 
   @warn_unused_result
-  public func on(queue: dispatch_queue_t) -> Deferred
+  public func notifyOn(queue: dispatch_queue_t) -> Deferred
   {
     if currentState == DeferredState.Determined.rawValue
     {
@@ -393,15 +393,15 @@ public class Deferred<T>
   /// - returns: a new `Deferred` whose notifications will run at quality-of-service `qos`
 
   @warn_unused_result
-  public func at(qos: qos_class_t, serially: Bool = false) -> Deferred
+  public func notifyAt(qos: qos_class_t, serially: Bool = false) -> Deferred
   {
     if serially
     {
       let attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, qos, 0)
-      return on(dispatch_queue_create("deferred-serial", attr))
+      return notifyOn(dispatch_queue_create("deferred-serial", attr))
     }
 
-    return on(dispatch_get_global_queue(qos, 0))
+    return notifyOn(dispatch_get_global_queue(qos, 0))
   }
 }
 
@@ -559,7 +559,7 @@ internal final class Applicator<T>: Deferred<T>
       switch result
       {
       case .Value:
-        transform.on(self.queue).notify(qos: qos) {
+        transform.notifyOn(self.queue).notify(qos: qos) {
           transform in
           if self.isDetermined { return }
           self.beginExecution()
@@ -592,7 +592,7 @@ internal final class Applicator<T>: Deferred<T>
       switch result
       {
       case .Value:
-        transform.on(self.queue).notify(qos: qos) {
+        transform.notifyOn(self.queue).notify(qos: qos) {
           transform in
           if self.isDetermined { return }
           self.beginExecution()
