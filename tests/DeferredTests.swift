@@ -201,7 +201,7 @@ class DeferredTests: XCTestCase
     let d2 = Deferred(value: value).delay(ms: 100)
     let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
     let q2 = dispatch_queue_create("Test", a2)
-    d2.on(q2).notify(qos: QOS_CLASS_UTILITY) {
+    d2.notifyOn(q2).notify(qos: QOS_CLASS_UTILITY) {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }
@@ -465,7 +465,7 @@ class DeferredTests: XCTestCase
       e1.fulfill()
     }
 
-    let q2 = qb.at(QOS_CLASS_BACKGROUND, serially: true).map(qos: QOS_CLASS_USER_INITIATED) {
+    let q2 = qb.notifyAt(QOS_CLASS_BACKGROUND, serially: true).map(qos: QOS_CLASS_USER_INITIATED) {
       qosv -> qos_class_t in
       XCTAssert(qosv == QOS_CLASS_UTILITY)
       // Verify that the QOS has changed
@@ -476,7 +476,7 @@ class DeferredTests: XCTestCase
     }
 
     let e2 = expectationWithDescription("Waiting")
-    q2.at(QOS_CLASS_USER_INTERACTIVE).onValue {
+    q2.notifyAt(QOS_CLASS_USER_INTERACTIVE).onValue {
       qosv in
       // Last block was in fact executing at QOS_CLASS_USER_INITIATED
       XCTAssert(qosv == QOS_CLASS_USER_INITIATED)
@@ -675,7 +675,7 @@ class DeferredTests: XCTestCase
     let queue = dispatch_get_global_queue(qos_class_self(), 0)
 
     let d1 = TBD<Void>()
-    let d2 = d1.on(queue)
+    let d2 = d1.notifyOn(queue)
 
     let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/4
     let e = (0..<count).map { i in expectationWithDescription(i.description) }
