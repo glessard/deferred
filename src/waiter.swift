@@ -53,6 +53,7 @@ enum WaitQueue
   {
     var tail = tail
     var head: UnsafeMutablePointer<Waiter> = nil
+    var tail = tail
     while tail != nil
     {
       let element = tail
