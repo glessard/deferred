@@ -8,7 +8,7 @@
 
 import XCTest
 
-import async_deferred
+import deferred
 
 
 class ResultTests: XCTestCase
