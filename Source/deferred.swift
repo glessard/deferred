@@ -667,10 +667,22 @@ internal final class Timeout<T>: Deferred<T>
 public class TBD<T>: Deferred<T>
 {
   /// Initialize an undetermined `Deferred`, `TBD`.
+  ///
+  /// - parameter queue: the queue to be used when sending result notifications
 
-  public override init(queue: dispatch_queue_t = dispatch_get_global_queue(qos_class_self(), 0))
+
+  public override init(queue: dispatch_queue_t)
   {
     super.init(queue: queue)
+  }
+
+  /// Initialize an undetermined `Deferred`, `TBD`.
+  ///
+  /// - parameter qos: the quality of service to be used when sending result notifications; defaults to the current quality-of-service class.
+
+  public convenience init(qos: qos_class_t = qos_class_self())
+  {
+    self.init(queue: dispatch_get_global_queue(qos, 0))
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
