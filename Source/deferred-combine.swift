@@ -6,7 +6,10 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-import shuffle
+// Until Xcode supports the Swift package manager, compile with the flag "-D XCODE"
+#if !XCODE
+  import shuffle
+#endif
 
 // combine two or more Deferred objects into one.
 
