@@ -674,8 +674,7 @@ class DeferredTests: XCTestCase
     let count = 1000
     let queue = dispatch_get_global_queue(qos_class_self(), 0)
 
-    let d1 = TBD<Void>()
-    let d2 = d1.notifyOn(queue)
+    let tbd = TBD<Void>(queue)
 
     let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/4
     let e = (0..<count).map { i in expectationWithDescription(i.description) }
@@ -685,12 +684,12 @@ class DeferredTests: XCTestCase
       for i in 0..<count
       {
         dispatch_async(queue) {
-          d2.notify {
+          tbd.notify {
             [expectation = e[i]] _ in
             expectation.fulfill()
             if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint(first) }
           }
-          if i == lucky { dispatch_async(queue) { try! d1.determine() } }
+          if i == lucky { dispatch_async(queue) { try! tbd.determine() } }
         }
       }
     }
