@@ -1,6 +1,6 @@
 # deferred
 A library to help you transfer data, including errors, between asynchronous blocks in Swift; 
-a monadic alternative to NSOperation.
+fast and lock-free. This could be used as a pure-Swift alternative to NSOperation.
 
 `Deferred<T>` is useful in order to chain closures (blocks) together. A `Deferred` starts with an undetermined value. Until its value becomes ready, dependent computations will be saved for future execution using a lock-free, thread-safe algorithm. The results of these computations are also represented by `Deferred` instances.  Thrown errors are propagated effortlessly across threads.
 
