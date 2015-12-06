@@ -16,7 +16,7 @@ extension Deferred
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public static func inParallel(count count: Int, _ task: (index: Int) throws -> T) -> [Deferred<T>]
+  public static func inParallel(count count: Int, task: (index: Int) throws -> T) -> [Deferred<T>]
   {
     return (0..<count).deferredMap(task)
   }
