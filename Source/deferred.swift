@@ -45,7 +45,7 @@ public class Deferred<T>
 
   // MARK: designated initializers
 
-  private init(_ queue: dispatch_queue_t)
+  private init(queue: dispatch_queue_t)
   {
     r = Result()
     self.queue = queue
@@ -92,7 +92,7 @@ public class Deferred<T>
 
   public convenience init(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: () throws -> T)
   {
-    self.init(queue)
+    self.init(queue: queue)
 
     let block = createBlock(qos) {
       let result = Result { _ in try task() }
@@ -378,7 +378,7 @@ public class Deferred<T>
   /// - returns: a new `Deferred` whose notifications will run on `queue`
 
   @warn_unused_result
-  public func notifyOn(queue: dispatch_queue_t) -> Deferred
+  public func notifyingOn(queue: dispatch_queue_t) -> Deferred
   {
     if currentState == DeferredState.Determined.rawValue
     {
@@ -393,15 +393,15 @@ public class Deferred<T>
   /// - returns: a new `Deferred` whose notifications will run at quality-of-service `qos`
 
   @warn_unused_result
-  public func notifyAt(qos: qos_class_t, serially: Bool = false) -> Deferred
+  public func notifyingAt(qos: qos_class_t, serially: Bool = false) -> Deferred
   {
     if serially
     {
       let attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, qos, 0)
-      return notifyOn(dispatch_queue_create("deferred-serial", attr))
+      return notifyingOn(dispatch_queue_create("deferred-serial", attr))
     }
 
-    return notifyOn(dispatch_get_global_queue(qos, 0))
+    return notifyingOn(dispatch_get_global_queue(qos, 0))
   }
 }
 
@@ -417,7 +417,7 @@ internal final class Mapped<T>: Deferred<T>
 
   private init(queue: dispatch_queue_t, source: Deferred<T>)
   {
-    super.init(queue)
+    super.init(queue: queue)
     source.notify(qos: dispatch_queue_get_qos_class(queue, nil)) { self.determine($0) }
   }
 
@@ -441,7 +441,7 @@ internal final class Mapped<T>: Deferred<T>
 
   init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) throws -> T)
   {
-    super.init(source.queue)
+    super.init(queue: source.queue)
 
     source.notify(qos: qos) {
       result in
@@ -462,7 +462,7 @@ internal final class Mapped<T>: Deferred<T>
 
   init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) -> Result<T>)
   {
-    super.init(source.queue)
+    super.init(queue: source.queue)
 
     source.notify(qos: qos) {
       result in
@@ -486,7 +486,7 @@ internal final class Bind<T>: Deferred<T>
 
   init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) -> Deferred<T>)
   {
-    super.init(source.queue)
+    super.init(queue: source.queue)
 
     source.notify(qos: qos) {
       result in
@@ -516,7 +516,7 @@ internal final class Bind<T>: Deferred<T>
 
   init(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<T>, transform: (ErrorType) -> Deferred<T>)
   {
-    super.init(source.queue)
+    super.init(queue: source.queue)
 
     source.notify(qos: qos) {
       result in
@@ -551,7 +551,7 @@ internal final class Applicator<T>: Deferred<T>
 
   init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: Deferred<(U) -> Result<T>>)
   {
-    super.init(source.queue)
+    super.init(queue: source.queue)
 
     source.notify(qos: qos) {
       result in
@@ -559,7 +559,7 @@ internal final class Applicator<T>: Deferred<T>
       switch result
       {
       case .Value:
-        transform.notifyOn(self.queue).notify(qos: qos) {
+        transform.notifyingOn(self.queue).notify(qos: qos) {
           transform in
           if self.isDetermined { return }
           self.beginExecution()
@@ -584,7 +584,7 @@ internal final class Applicator<T>: Deferred<T>
 
   init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
   {
-    super.init(source.queue)
+    super.init(queue: source.queue)
 
     source.notify(qos: qos) {
       result in
@@ -592,7 +592,7 @@ internal final class Applicator<T>: Deferred<T>
       switch result
       {
       case .Value:
-        transform.notifyOn(self.queue).notify(qos: qos) {
+        transform.notifyingOn(self.queue).notify(qos: qos) {
           transform in
           if self.isDetermined { return }
           self.beginExecution()
@@ -622,7 +622,7 @@ internal final class Delayed<T>: Deferred<T>
 
   init(source: Deferred<T>, until deadline: dispatch_time_t)
   {
-    super.init(source.queue)
+    super.init(queue: source.queue)
 
     source.notify {
       result in
@@ -656,7 +656,7 @@ internal final class Timeout<T>: Deferred<T>
 
   init(source: Deferred<T>, deadline: dispatch_time_t, reason: String)
   {
-    super.init(source.queue)
+    super.init(queue: source.queue)
     dispatch_after(deadline, self.queue) { self.cancel(reason) }
     source.notify { self.determine($0) } // an error here means this `Deferred` was canceled or has timed out.
   }
@@ -667,10 +667,22 @@ internal final class Timeout<T>: Deferred<T>
 public class TBD<T>: Deferred<T>
 {
   /// Initialize an undetermined `Deferred`, `TBD`.
+  ///
+  /// - parameter queue: the queue to be used when sending result notifications
 
-  public override init(_ queue: dispatch_queue_t = dispatch_get_global_queue(qos_class_self(), 0))
+
+  public override init(queue: dispatch_queue_t)
   {
-    super.init(queue)
+    super.init(queue: queue)
+  }
+
+  /// Initialize an undetermined `Deferred`, `TBD`.
+  ///
+  /// - parameter qos: the quality of service to be used when sending result notifications; defaults to the current quality-of-service class.
+
+  public convenience init(qos: qos_class_t = qos_class_self())
+  {
+    self.init(queue: dispatch_get_global_queue(qos, 0))
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
