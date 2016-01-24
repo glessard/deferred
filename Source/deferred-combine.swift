@@ -98,7 +98,7 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   }
 
   let first = TBD<T>()
-  deferreds.shuffle().forEach {
+  deferreds.shuffled().forEach {
     $0.notify {
       result in
       _ = try? first.determine(result) // an error here just means this wasn't the first completed result
@@ -121,7 +121,7 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>
   }
 
   let first = TBD<Deferred<T>>()
-  deferreds.shuffle().forEach {
+  deferreds.shuffled().forEach {
     deferred in
     deferred.notify {
       _ in
