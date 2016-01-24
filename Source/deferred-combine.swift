@@ -97,6 +97,12 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
     return Deferred(Result())
   }
 
+  return firstDetermined(ShuffledSequence(deferreds)).flatMap { $0 }
+}
+
+public func firstValue<T, S: SequenceType where
+                       S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<T>
+{
   return firstDetermined(deferreds).flatMap { $0 }
 }
 
@@ -113,12 +119,25 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>
     return Deferred(Result())
   }
 
+  return firstDetermined(ShuffledSequence(deferreds))
+}
+
+import Dispatch
+
+public func firstDetermined<T, S: SequenceType where
+                            S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<Deferred<T>>
+{
   let first = TBD<Deferred<T>>()
-  deferreds.shuffled().forEach {
-    deferred in
-    deferred.notify {
-      _ in
-      _ = try? first.determine(deferred) // an error here just means this wasn't the first determined deferred
+
+  // We iterate on a background thread because S could block on next()
+  dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    deferreds.forEach {
+      deferred in
+      deferred.notify {
+        _ in
+        // an error here just means `deferred` wasn't the first to become determined
+        _ = try? first.determine(deferred)
+      }
     }
   }
   return first
