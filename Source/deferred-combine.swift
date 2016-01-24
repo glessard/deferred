@@ -97,14 +97,7 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
     return Deferred(Result())
   }
 
-  let first = TBD<T>()
-  deferreds.shuffled().forEach {
-    $0.notify {
-      result in
-      _ = try? first.determine(result) // an error here just means this wasn't the first completed result
-    }
-  }
-  return first
+  return firstDetermined(deferreds).flatMap { $0 }
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
