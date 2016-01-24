@@ -39,6 +39,35 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
   }
 }
 
+/// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
+/// The combined `Deferred` will become determined after every input `Deferred` is determined.
+/// If any of the elements resolves to an error, the combined `Deferred` will be an error.
+/// The combined `Deferred` will use the queue from the first element of the input array (unless the input array is empty.)
+///
+/// - parameter deferreds: an array of `Deferred`
+/// - returns: a new `Deferred`
+
+public func combine<T, S: SequenceType where
+                    S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<[T]>
+{
+  // We should combine on a background thread because S could block on next()
+
+  let combiner = Deferred<Deferred<[T]>> {
+    deferreds.reduce(Deferred<[T]>(value: [])) {
+      (accumulator, element) in
+      accumulator.flatMap {
+        values in
+        element.map {
+          value in
+          values + [value]
+        }
+      }
+    }
+  }
+
+  return combiner.flatMap { $0 }
+}
+
 /// Combine two `Deferred` into one.
 /// The returned `Deferred` will become determined after both inputs are determined.
 /// If either of the elements resolves to an error, the combined `Deferred` will be an error.
