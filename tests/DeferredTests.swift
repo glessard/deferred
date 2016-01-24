@@ -755,7 +755,7 @@ class DeferredTests: XCTestCase
     let count = 10
 
     let inputs = (0..<count).map { i in Deferred(value: arc4random() & 0x3fff_ffff) }
-    let combined = combine(inputs)
+    let combined = combine(AnySequence(inputs))
     if let values = combined.value
     {
       XCTAssert(values.count == count)

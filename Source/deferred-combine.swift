@@ -39,6 +39,35 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
   }
 }
 
+/// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
+/// The combined `Deferred` will become determined after every input `Deferred` is determined.
+/// If any of the elements resolves to an error, the combined `Deferred` will be an error.
+/// The combined `Deferred` will use the queue from the first element of the input array (unless the input array is empty.)
+///
+/// - parameter deferreds: an array of `Deferred`
+/// - returns: a new `Deferred`
+
+public func combine<T, S: SequenceType where
+                    S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<[T]>
+{
+  // We should combine on a background thread because S could block on next()
+
+  let combiner = Deferred<Deferred<[T]>> {
+    deferreds.reduce(Deferred<[T]>(value: [])) {
+      (accumulator, element) in
+      accumulator.flatMap {
+        values in
+        element.map {
+          value in
+          values + [value]
+        }
+      }
+    }
+  }
+
+  return combiner.flatMap { $0 }
+}
+
 /// Combine two `Deferred` into one.
 /// The returned `Deferred` will become determined after both inputs are determined.
 /// If either of the elements resolves to an error, the combined `Deferred` will be an error.
@@ -97,14 +126,13 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
     return Deferred(Result())
   }
 
-  let first = TBD<T>()
-  deferreds.shuffle().forEach {
-    $0.notify {
-      result in
-      _ = try? first.determine(result) // an error here just means this wasn't the first completed result
-    }
-  }
-  return first
+  return firstDetermined(ShuffledSequence(deferreds)).flatMap { $0 }
+}
+
+public func firstValue<T, S: SequenceType where
+                       S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<T>
+{
+  return firstDetermined(deferreds).flatMap { $0 }
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
@@ -120,12 +148,25 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>
     return Deferred(Result())
   }
 
+  return firstDetermined(ShuffledSequence(deferreds))
+}
+
+import Dispatch
+
+public func firstDetermined<T, S: SequenceType where
+                            S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<Deferred<T>>
+{
   let first = TBD<Deferred<T>>()
-  deferreds.shuffle().forEach {
-    deferred in
-    deferred.notify {
-      _ in
-      _ = try? first.determine(deferred) // an error here just means this wasn't the first determined deferred
+
+  // We iterate on a background thread because S could block on next()
+  dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    deferreds.forEach {
+      deferred in
+      deferred.notify {
+        _ in
+        // an error here just means `deferred` wasn't the first to become determined
+        _ = try? first.determine(deferred)
+      }
     }
   }
   return first
