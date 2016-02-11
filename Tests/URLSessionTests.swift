@@ -10,107 +10,101 @@ import XCTest
 
 import deferred
 
-enum HTTPError: ErrorType
-{
-  case ServerStatus(Int)
-  case InvalidState
-}
+let imagePath = "https://www.gravatar.com/avatar/3797130f79b69ac59b8540bffa4c96fa?s=200"
+let notFoundPath = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=404"
 
 class URLSessionTests: XCTestCase
 {
-  func testURL1()
+  func testData_OK()
   {
-    let url = NSURL(string: "https://www.gravatar.com/avatar/3797130f79b69ac59b8540bffa4c96fa?s=200")!
+    let url = NSURL(string: imagePath)!
     let request = NSURLRequest(URL: url)
     let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
 
-    func deferredRequest(request: NSURLRequest) -> Deferred<(NSData, NSHTTPURLResponse)>
-    {
-      let tbd = TBD<(NSData, NSHTTPURLResponse)>()
+    let result = session.deferredDataTask(request)
 
-      let task = session.dataTaskWithRequest(request) {
-        (data: NSData?, response: NSURLResponse?, error: NSError?) in
-        if let error = error
-        { _ = try? tbd.determine(error) }
-        else if let d = data, r = response as? NSHTTPURLResponse
-        { _ = try? tbd.determine( (d,r) ) }
-        else
-        { _ = try? tbd.determine(HTTPError.InvalidState) }
-      }
-      task.resume()
-      tbd.onError { _ in task.cancel() }
-      return tbd
-    }
+    let path = NSTemporaryDirectory() + "image.jpg"
+    let e = expectationWithDescription("Image saved to " + path)
 
-    let result = deferredRequest(request)
-    // result.cancel()
-
-    let e = expectationWithDescription("Image saved to /tmp/image")
-
-    result.onValue {
-      (imageData, response) in
+    result.map {
+      (data, response) throws -> NSData in
       guard (200..<300).contains(response.statusCode) else
       {
         XCTFail()
-        return
+        throw URLSessionError.ServerStatus(response.statusCode)
       }
 
-      let path = "/tmp/image"
+      return data
+    }.map {
+      (data) throws -> (NSData, NSFileHandle) in
       if !NSFileManager.defaultManager().fileExistsAtPath(path)
       {
         NSFileManager.defaultManager().createFileAtPath(path, contents: nil, attributes: nil)
       }
-      if let f = NSFileHandle(forWritingAtPath: path)
-      {
-        f.writeData(imageData)
-        f.closeFile()
-      }
 
-      e.fulfill()
+      let url = NSURL(string: "file://" + path)!
+      let handle = try NSFileHandle(forWritingToURL: url)
+
+      return (data, handle)
+    }.notify {
+      result in
+      switch result
+      {
+      case .Value(let (data, handle)):
+        handle.writeData(data)
+        handle.closeFile()
+        e.fulfill()
+      case .Error(let error):
+        print(error)
+        XCTFail()
+      }
     }
 
     waitForExpectationsWithTimeout(1.0) { _ in session.invalidateAndCancel() }
   }
 
-  func testURL2()
+  func testData_Cancellation()
   {
-    let url = NSURL(string: "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=404")!
+    let url = NSURL(string: imagePath)!
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+
+    let deferred = session.deferredDataTask(url)
+    let canceled = deferred.cancel()
+    XCTAssert(canceled)
+
+    if let error = deferred.error
+    {
+      let e = error as NSError
+      XCTAssert(e.domain == NSURLErrorDomain)
+      XCTAssert(e.code == NSURLErrorCancelled)
+    }
+    else
+    {
+      XCTFail()
+    }
+
+    session.invalidateAndCancel()
+  }
+
+  func testData_NotFound()
+  {
+    let url = NSURL(string: notFoundPath)!
     let request = NSURLRequest(URL: url)
     let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
 
-    func deferredRequest(request: NSURLRequest) -> Deferred<(NSData, NSHTTPURLResponse)>
+    let deferred = session.deferredDataTask(request)
+
+    if let (data, response) = deferred.value
     {
-      let tbd = TBD<(NSData, NSHTTPURLResponse)>()
-
-      let task = session.dataTaskWithRequest(request) {
-        (data: NSData?, response: NSURLResponse?, error: NSError?) in
-        if let error = error
-        { _ = try? tbd.determine(error) }
-        else if let d = data, r = response as? NSHTTPURLResponse
-        { _ = try? tbd.determine( (d,r) ) }
-        else
-        { _ = try? tbd.determine(HTTPError.InvalidState) }
-      }
-      task.resume()
-      tbd.onError { _ in task.cancel() }
-      return tbd
+      let control = "404 Not Found".withCString { NSData(bytes: UnsafePointer<Void>($0), length: 13) }
+      XCTAssert(data.isEqualToData(control))
+      XCTAssert(response.statusCode == 404)
+    }
+    else
+    {
+      XCTFail()
     }
 
-    let result = deferredRequest(request)
-
-    let e = expectationWithDescription("Image not found")
-
-    result.onValue {
-      (imageData, response) in
-      guard !(200..<300).contains(response.statusCode) else
-      {
-        XCTFail()
-        return
-      }
-
-      if response.statusCode == 404 { e.fulfill() }
-    }
-
-    waitForExpectationsWithTimeout(1.0) { _ in session.invalidateAndCancel() }
+    session.invalidateAndCancel()
   }
 }
