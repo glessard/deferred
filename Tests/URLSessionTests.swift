@@ -39,24 +39,23 @@ class URLSessionTests: XCTestCase
 
       return data
     }.map {
-      (data) throws -> (NSData, NSFileHandle) in
-      if !NSFileManager.defaultManager().fileExistsAtPath(path)
+      data -> Bool in
+#if os(OSX) || os(Linux)
+      let im = NSImage(data: data)
+#else
+      let im = UIImage(data: data)
+#endif
+      if let im = im
       {
-        NSFileManager.defaultManager().createFileAtPath(path, contents: nil, attributes: nil)
+        return (im.size.width == 200.0) && (im.size.height == 200.0)
       }
-
-      let url = NSURL(string: "file://" + path)!
-      let handle = try NSFileHandle(forWritingToURL: url)
-
-      return (data, handle)
+      return false
     }.notify {
       result in
       switch result
       {
-      case .Value(let (data, handle)):
-        handle.writeData(data)
-        handle.closeFile()
-        e.fulfill()
+      case .Value(let success):
+        if success { e.fulfill() }
       case .Error(let error):
         print(error)
         XCTFail()
@@ -159,25 +158,23 @@ class URLSessionTests: XCTestCase
 
       return file.readDataToEndOfFile()
     }.map {
-      (data) throws -> (NSData, NSFileHandle) in
-      if !NSFileManager.defaultManager().fileExistsAtPath(path)
+      data -> Bool in
+#if os(OSX) || os(Linux)
+      let im = NSImage(data: data)
+#else
+      let im = UIImage(data: data)
+#endif
+      if let im = im
       {
-        NSFileManager.defaultManager().createFileAtPath(path, contents: nil, attributes: nil)
+        return (im.size.width == 200.0) && (im.size.height == 200.0)
       }
-
-      let url = NSURL(string: "file://" + path)!
-      let handle = try NSFileHandle(forWritingToURL: url)
-
-      return (data, handle)
+      return false
     }.notify {
       result in
       switch result
       {
-      case .Value(let (data, handle)):
-        handle.writeData(data)
-        handle.truncateFileAtOffset(handle.offsetInFile)
-        handle.closeFile()
-        e.fulfill()
+      case .Value(let success):
+        if success { e.fulfill() }
       case .Error(let error):
         print(error)
         XCTFail()
