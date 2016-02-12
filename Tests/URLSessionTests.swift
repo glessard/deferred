@@ -15,6 +15,8 @@ let notFoundPath = "https://www.gravatar.com/avatar/0000000000000000000000000000
 
 class URLSessionTests: XCTestCase
 {
+#if _runtime(_ObjC)
+
   func testData_OK()
   {
     let url = NSURL(string: imagePath)!
@@ -267,4 +269,6 @@ class URLSessionTests: XCTestCase
 
     session.invalidateAndCancel()
   }
+
+#endif
 }
