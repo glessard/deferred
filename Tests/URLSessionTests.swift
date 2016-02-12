@@ -11,6 +11,7 @@ import XCTest
 import deferred
 
 let imagePath = "https://www.gravatar.com/avatar/3797130f79b69ac59b8540bffa4c96fa?s=200"
+let largerPath = "https://www.gravatar.com/avatar/3797130f79b69ac59b8540bffa4c96fa?s=2048"
 let notFoundPath = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=404"
 
 class URLSessionTests: XCTestCase
@@ -76,6 +77,31 @@ class URLSessionTests: XCTestCase
 
     if let error = deferred.error
     {
+      let e = error as NSError
+      XCTAssert(e.domain == NSURLErrorDomain)
+      XCTAssert(e.code == NSURLErrorCancelled)
+    }
+    else
+    {
+      XCTFail()
+    }
+
+    session.invalidateAndCancel()
+  }
+
+  func testData_SuspendCancel()
+  {
+    let url = NSURL(string: largerPath)!
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+
+    let deferred = session.deferredDataTask(url)
+    deferred.task?.suspend()
+    let canceled = deferred.cancel()
+    XCTAssert(canceled)
+
+    if let error = deferred.error
+    {
+      XCTAssertFalse(error is DeferredError)
       let e = error as NSError
       XCTAssert(e.domain == NSURLErrorDomain)
       XCTAssert(e.code == NSURLErrorCancelled)
@@ -172,6 +198,31 @@ class URLSessionTests: XCTestCase
 
     if let error = deferred.error
     {
+      let e = error as NSError
+      XCTAssert(e.domain == NSURLErrorDomain)
+      XCTAssert(e.code == NSURLErrorCancelled)
+    }
+    else
+    {
+      XCTFail()
+    }
+
+    session.invalidateAndCancel()
+  }
+
+  func testDownload_SuspendCancel()
+  {
+    let url = NSURL(string: largerPath)!
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+
+    let deferred = session.deferredDownloadTask(url)
+    deferred.task?.suspend()
+    let canceled = deferred.cancel()
+    XCTAssert(canceled)
+
+    if let error = deferred.error
+    {
+      XCTAssertFalse(error is DeferredError)
       let e = error as NSError
       XCTAssert(e.domain == NSURLErrorDomain)
       XCTAssert(e.code == NSURLErrorCancelled)
