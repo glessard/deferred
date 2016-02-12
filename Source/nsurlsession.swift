@@ -58,3 +58,76 @@ public extension NSURLSession
     return deferredDataTask(NSURLRequest(URL: url))
   }
 }
+
+extension NSURLSession
+{
+  private class DeferredDownloadTask: TBD<(NSURL, NSFileHandle, NSHTTPURLResponse)>
+  {
+    weak var task: NSURLSessionDownloadTask? = nil
+
+    init() { super.init(queue: dispatch_get_global_queue(qos_class_self(), 0)) }
+
+    override func cancel(reason: String) -> Bool
+    {
+      guard !self.isDetermined, let task = task else { return super.cancel(reason) }
+
+      task.cancelByProducingResumeData {
+        data in
+        if let data = data
+        { _ = try? self.determine(URLSessionError.InterruptedDownload(data)) }
+      }
+      return true
+    }
+  }
+
+  public func deferredDownloadTask(request: NSURLRequest) -> Deferred<(NSURL, NSFileHandle, NSHTTPURLResponse)>
+  {
+    let tbd = DeferredDownloadTask()
+
+    let task = self.downloadTaskWithRequest(request) {
+      (url: NSURL?, response: NSURLResponse?, error: NSError?) in
+      if let error = error
+      { _ = try? tbd.determine(error) }
+      else if let u = url, r = response as? NSHTTPURLResponse
+      {
+        let f = (try? NSFileHandle(forReadingFromURL: u)) ?? NSFileHandle.fileHandleWithNullDevice()
+        _ = try? tbd.determine( (u,f,r) )
+      }
+      else
+      { _ = try? tbd.determine(URLSessionError.InvalidState) }
+    }
+
+    tbd.task = task
+    task.resume()
+    tbd.beginExecution()
+    return tbd
+  }
+
+  public func deferredDownloadTask(url: NSURL) -> Deferred<(NSURL, NSFileHandle, NSHTTPURLResponse)>
+  {
+    return deferredDownloadTask(NSURLRequest(URL: url))
+  }
+
+  public func deferredDownloadTask(data: NSData) -> Deferred<(NSURL, NSFileHandle, NSHTTPURLResponse)>
+  {
+    let tbd = DeferredDownloadTask()
+
+    let task = self.downloadTaskWithResumeData(data) {
+      (url: NSURL?, response: NSURLResponse?, error: NSError?) in
+      if let error = error
+      { _ = try? tbd.determine(error) }
+      else if let u = url, r = response as? NSHTTPURLResponse
+      {
+        let f = (try? NSFileHandle(forReadingFromURL: u)) ?? NSFileHandle.fileHandleWithNullDevice()
+        _ = try? tbd.determine( (u,f,r) )
+      }
+      else
+      { _ = try? tbd.determine(URLSessionError.InvalidState) }
+    }
+
+    tbd.task = task
+    task.resume()
+    tbd.beginExecution()
+    return tbd
+  }
+}
