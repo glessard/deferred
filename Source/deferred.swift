@@ -232,22 +232,22 @@ public class Deferred<T>
   /// Take a (Result<T>) -> Void closure, and wrap it in a dispatch_block_t
   /// where this Deferred's Result is used as the input closure's parameter.
   ///
-  /// - parameter qos: The QOS class to use for the new block (default is QOS_CLASS_UNSPECIFIED)
+  /// - parameter qos: The QOS class to use for the new block
   /// - parameter task: The closure to be transformed
   /// - returns: a dispatch_block_t at the requested QOS class.
 
-  private func createNotificationBlock(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void) -> dispatch_block_t
+  private func createNotificationBlock(qos: qos_class_t, task: (Result<T>) -> Void) -> dispatch_block_t
   {
     return createBlock(qos, block: { task(self.r) })
   }
 
   /// Take a () -> Void closure, and make it into a dispatch_block_t of an appropriate QOS class
   ///
-  /// - parameter qos: The QOS class to use for the new block (default is QOS_CLASS_UNSPECIFIED)
+  /// - parameter qos: The QOS class to use for the new block
   /// - parameter block: The closure to cast into a dispatch_block_t
   /// - returns: a dispatch_block_t at the requested QOS class.
 
-  private func createBlock(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, block: () -> Void) -> dispatch_block_t
+  private func createBlock(qos: qos_class_t, block: () -> Void) -> dispatch_block_t
   {
     let newBlock: dispatch_block_t
     if qos == QOS_CLASS_UNSPECIFIED
@@ -439,7 +439,7 @@ internal final class Mapped<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) throws -> T)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) throws -> T)
   {
     super.init(queue: source.queue)
 
@@ -460,7 +460,7 @@ internal final class Mapped<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) -> Result<T>)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) -> Result<T>)
   {
     super.init(queue: source.queue)
 
@@ -484,7 +484,7 @@ internal final class Bind<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: (U) -> Deferred<T>)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
   {
     super.init(queue: source.queue)
 
@@ -514,7 +514,7 @@ internal final class Bind<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<T>, transform: (ErrorType) -> Deferred<T>)
+  init(qos: qos_class_t, source: Deferred<T>, transform: (ErrorType) -> Deferred<T>)
   {
     super.init(queue: source.queue)
 
@@ -549,7 +549,7 @@ internal final class Applicator<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: Deferred<(U) -> Result<T>>)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: Deferred<(U) -> Result<T>>)
   {
     super.init(queue: source.queue)
 
@@ -582,7 +582,7 @@ internal final class Applicator<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
   {
     super.init(queue: source.queue)
 
@@ -631,7 +631,8 @@ internal final class Delayed<T>: Deferred<T>
       if case .Value = result where deadline > dispatch_time(DISPATCH_TIME_NOW, 0)
       {
         self.beginExecution()
-        dispatch_after(deadline, self.queue, self.createBlock { self.determine(result) })
+        let block = self.createBlock(QOS_CLASS_UNSPECIFIED) { self.determine(result) }
+        dispatch_after(deadline, self.queue, block)
       }
       else
       {
