@@ -32,11 +32,8 @@ public class DeferredURLSessionTask<T>: TBD<T>
 
   public private(set) var task: NSURLSessionTask? {
     get {
-      // Does this do more than `return sessionTask`?
-      if let task = sessionTask
-      { return task }
-      else
-      { return nil }
+      // is this thread-safe, or is a capture-and-return necessary?
+      return sessionTask
     }
     set {
       sessionTask = newValue
