@@ -127,11 +127,11 @@ internal struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
       {
         swap(&i[j], &i[step])
       }
-      
+
       // return the new random Index.
       return i[step]
     }
-    
+
     return nil
   }
 }
