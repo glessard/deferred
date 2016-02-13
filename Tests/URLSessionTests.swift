@@ -234,16 +234,19 @@ class URLSessionTests: XCTestCase
 
   func testDownload_CancelAndResume()
   {
-    let url = NSURL(string: "https://mirrors.axint.net/repos/gnu.org/gcc/gcc-2.8.0.tar.gz")!
+    let url = NSURL(string: "http://mirrors.axint.net/repos/gnu.org/gcc/gcc-2.8.0.tar.gz")!
+    // let url = NSURL(string: "https://mirrors.axint.net/repos/gnu.org/gcc/gcc-2.8.0.tar.gz")!
     let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
 
     let deferred = session.deferredDownloadTask(url)
-    usleep(250_000)
-    let canceled = deferred.cancel()
-    XCTAssert(canceled)
-    XCTAssert(deferred.error != nil)
 
     let converted = deferred.map { _ -> Result<NSData> in Result() }
+    usleep(250_000)
+
+    let canceled = deferred.cancel()
+    XCTAssert(canceled)
+
+    XCTAssert(deferred.error != nil)
     XCTAssert(converted.value == nil)
 
     let recovered = converted.recover {

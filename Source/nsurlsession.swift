@@ -41,6 +41,19 @@ public class DeferredURLSessionTask<T>: TBD<T>
       sessionTask = newValue
     }
   }
+
+  public override var result: Result<T> {
+    self.task?.resume()
+    self.beginExecution()
+    return super.result
+  }
+
+  public override func notify(qos qos: qos_class_t, task: (Result<T>) -> Void)
+  {
+    self.task?.resume()
+    self.beginExecution()
+    super.notify(qos: qos, task: task)
+  }
 }
 
 public extension NSURLSession
@@ -72,8 +85,6 @@ public extension NSURLSession
     let task = self.dataTaskWithRequest(request, completionHandler: dataCompletion(tbd))
 
     tbd.task = task
-    task.resume()
-    tbd.beginExecution()
     return tbd
   }
 
@@ -138,8 +149,6 @@ extension NSURLSession
     let task = self.downloadTaskWithRequest(request, completionHandler: downloadCompletion(tbd))
 
     tbd.task = task
-    task.resume()
-    tbd.beginExecution()
     return tbd
   }
 
@@ -155,8 +164,6 @@ extension NSURLSession
     let task = self.downloadTaskWithResumeData(data, completionHandler: downloadCompletion(tbd))
 
     tbd.task = task
-    task.resume()
-    tbd.beginExecution()
     return tbd
   }
 }
