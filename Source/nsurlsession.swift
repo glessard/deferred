@@ -23,7 +23,9 @@ public class DeferredURLSessionTask<T>: TBD<T>
 
   override public func cancel(reason: String = "") -> Bool
   {
-    guard !self.isDetermined, let task = sessionTask else { return super.cancel(reason) }
+    guard !self.isDetermined,
+          let task = sessionTask
+    else { return super.cancel(reason) }
 
     // try to propagate the cancellation upstream
     task.cancel()
@@ -43,19 +45,31 @@ public class DeferredURLSessionTask<T>: TBD<T>
 
 public extension NSURLSession
 {
+  private func dataCompletion(tbd: TBD<(NSData, NSHTTPURLResponse)>) -> (NSData?, NSURLResponse?, NSError?) -> Void
+  {
+    return {
+      (data: NSData?, response: NSURLResponse?, error: NSError?) in
+      if let error = error
+      {
+        _ = try? tbd.determine(error)
+        return
+      }
+
+      if let d = data, r = response as? NSHTTPURLResponse
+      {
+        _ = try? tbd.determine( (d,r) )
+        return
+      }
+      // Probably an impossible situation
+      _ = try? tbd.determine(URLSessionError.InvalidState)
+    }
+  }
+
   public func deferredDataTask(request: NSURLRequest) -> DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>
   {
     let tbd = DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>()
 
-    let task = self.dataTaskWithRequest(request) {
-      (data: NSData?, response: NSURLResponse?, error: NSError?) in
-      if let error = error
-      { _ = try? tbd.determine(error) }
-      else if let d = data, r = response as? NSHTTPURLResponse
-      { _ = try? tbd.determine( (d,r) ) }
-      else
-      { _ = try? tbd.determine(URLSessionError.InvalidState) }
-    }
+    let task = self.dataTaskWithRequest(request, completionHandler: dataCompletion(tbd))
 
     tbd.task = task
     task.resume()
@@ -90,22 +104,38 @@ private class DeferredDownloadTask<T>: DeferredURLSessionTask<T>
 
 extension NSURLSession
 {
+  private func downloadCompletion(tbd: TBD<(NSURL, NSFileHandle, NSHTTPURLResponse)>) -> (NSURL?, NSURLResponse?, NSError?) -> Void
+  {
+    return {
+      (url: NSURL?, response: NSURLResponse?, error: NSError?) in
+      if let error = error
+      {
+        _ = try? tbd.determine(error)
+        return
+      }
+
+      if let u = url, r = response as? NSHTTPURLResponse
+      {
+        do {
+          let f = try NSFileHandle(forReadingFromURL: u)
+          _ = try? tbd.determine( (u,f,r) )
+        }
+        catch {
+          // Likely an impossible situation
+          _ = try? tbd.determine(error)
+        }
+        return
+      }
+      // Probably an impossible situation
+      _ = try? tbd.determine(URLSessionError.InvalidState)
+    }
+  }
+
   public func deferredDownloadTask(request: NSURLRequest) -> DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>
   {
     let tbd = DeferredDownloadTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>()
 
-    let task = self.downloadTaskWithRequest(request) {
-      (url: NSURL?, response: NSURLResponse?, error: NSError?) in
-      if let error = error
-      { _ = try? tbd.determine(error) }
-      else if let u = url, r = response as? NSHTTPURLResponse
-      {
-        let f = (try? NSFileHandle(forReadingFromURL: u)) ?? NSFileHandle.fileHandleWithNullDevice()
-        _ = try? tbd.determine( (u,f,r) )
-      }
-      else
-      { _ = try? tbd.determine(URLSessionError.InvalidState) }
-    }
+    let task = self.downloadTaskWithRequest(request, completionHandler: downloadCompletion(tbd))
 
     tbd.task = task
     task.resume()
@@ -122,18 +152,7 @@ extension NSURLSession
   {
     let tbd = DeferredDownloadTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>()
 
-    let task = self.downloadTaskWithResumeData(data) {
-      (url: NSURL?, response: NSURLResponse?, error: NSError?) in
-      if let error = error
-      { _ = try? tbd.determine(error) }
-      else if let u = url, r = response as? NSHTTPURLResponse
-      {
-        let f = (try? NSFileHandle(forReadingFromURL: u)) ?? NSFileHandle.fileHandleWithNullDevice()
-        _ = try? tbd.determine( (u,f,r) )
-      }
-      else
-      { _ = try? tbd.determine(URLSessionError.InvalidState) }
-    }
+    let task = self.downloadTaskWithResumeData(data, completionHandler: downloadCompletion(tbd))
 
     tbd.task = task
     task.resume()
