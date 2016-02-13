@@ -340,7 +340,7 @@ public class Deferred<T>
   public var result: Result<T> {
     if currentState != DeferredState.Determined.rawValue
     {
-      let block = createBlock {}
+      let block = createBlock(qos_class_self()) {}
       notifyWithBlock(block)
       dispatch_block_wait(block, DISPATCH_TIME_FOREVER)
     }
