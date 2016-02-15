@@ -250,18 +250,17 @@ class URLSessionTests: XCTestCase
 
     let recovered = converted.recover {
       error in
-      do { throw error }
-      catch URLSessionError.InterruptedDownload(let data) {
+      switch error
+      {
+      case URLSessionError.InterruptedDownload(let data):
         return Deferred(value: data)
-      }
-      catch {
+      default:
         return Deferred(error: error)
       }
     }
     if let error = recovered.error
     { // give up
-      print(error)
-      XCTFail("Data download failed")
+      XCTFail("Download operation failed and/or could not be resumed: \(error as NSError)")
       session.invalidateAndCancel()
       return
     }
