@@ -123,8 +123,7 @@ class URLSessionTests: XCTestCase
 
     if let (data, response) = deferred.value
     {
-      let control = "404 Not Found".withCString { NSData(bytes: UnsafePointer<Void>($0), length: 13) }
-      XCTAssert(data.isEqualToData(control))
+      XCTAssert(data.length > 0)
       XCTAssert(response.statusCode == 404)
     }
     else
@@ -309,8 +308,7 @@ class URLSessionTests: XCTestCase
     {
       let data = handle.readDataToEndOfFile()
       handle.closeFile()
-      let control = "404 Not Found".withCString { NSData(bytes: UnsafePointer<Void>($0), length: 13) }
-      XCTAssert(data.isEqualToData(control))
+      XCTAssert(data.length > 0)
       XCTAssert(response.statusCode == 404)
     }
     else
