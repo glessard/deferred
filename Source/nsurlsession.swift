@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Foundation.NSURLError
 
 public enum URLSessionError: ErrorType
 {
@@ -103,11 +104,7 @@ private class DeferredDownloadTask<T>: DeferredURLSessionTask<T>
     else { return super.cancel(reason) }
 
     // try to propagate the cancellation upstream
-    task.cancelByProducingResumeData {
-      data in
-      if let data = data
-      { _ = try? self.determine(URLSessionError.InterruptedDownload(data)) }
-    }
+    task.cancelByProducingResumeData { _ in } // Let the completion handler collect the data for resuming.
     // task.state == .Canceling (checking would be nice, but that would require sleeping the thread)
     return true
   }
@@ -121,7 +118,12 @@ extension NSURLSession
       (url: NSURL?, response: NSURLResponse?, error: NSError?) in
       if let error = error
       {
-        _ = try? tbd.determine(error)
+        if error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled,
+           let info = error.userInfo[NSURLSessionDownloadTaskResumeData],
+           let data = info as? NSData
+        { _ = try? tbd.determine(URLSessionError.InterruptedDownload(data)) }
+        else
+        { _ = try? tbd.determine(error) }
         return
       }
 
