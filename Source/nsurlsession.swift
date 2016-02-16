@@ -59,7 +59,7 @@ public class DeferredURLSessionTask<T>: TBD<T>
 
 public extension NSURLSession
 {
-  private func dataCompletion(tbd: TBD<(NSData, NSHTTPURLResponse)>) -> (NSData?, NSURLResponse?, NSError?) -> Void
+  private func dataCompletion(tbd: DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>) -> (NSData?, NSURLResponse?, NSError?) -> Void
   {
     return {
       (data: NSData?, response: NSURLResponse?, error: NSError?) in
@@ -112,7 +112,7 @@ private class DeferredDownloadTask<T>: DeferredURLSessionTask<T>
 
 extension NSURLSession
 {
-  private func downloadCompletion(tbd: TBD<(NSURL, NSFileHandle, NSHTTPURLResponse)>) -> (NSURL?, NSURLResponse?, NSError?) -> Void
+  private func downloadCompletion(tbd: DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>) -> (NSURL?, NSURLResponse?, NSError?) -> Void
   {
     return {
       (url: NSURL?, response: NSURLResponse?, error: NSError?) in
