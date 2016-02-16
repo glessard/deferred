@@ -159,7 +159,7 @@ extension NSURLSession
     return deferredDownloadTask(NSURLRequest(URL: url))
   }
 
-  public func deferredDownloadTask(data: NSData) -> DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>
+  public func deferredDownloadTask(resumeData data: NSData) -> DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>
   {
     let tbd = DeferredDownloadTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>()
 

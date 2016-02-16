@@ -267,7 +267,7 @@ class URLSessionTests: XCTestCase
 
     let firstLength = recovered.map { data in data.length }
 
-    let resumed = recovered.flatMap { data in session.deferredDownloadTask(data) }
+    let resumed = recovered.flatMap { data in session.deferredDownloadTask(resumeData: data) }
     let finalLength = resumed.map {
       (url, handle, response) throws -> Int in
       defer { handle.closeFile() }
