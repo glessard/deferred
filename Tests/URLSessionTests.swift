@@ -26,14 +26,12 @@ class URLSessionTests: XCTestCase
 
     let result = session.deferredDataTask(request)
 
-    let path = NSTemporaryDirectory() + "image.jpg"
-    let e = expectationWithDescription("Image saved to " + path)
+    let e = expectationWithDescription("Image download")
 
     result.map {
       (data, response) throws -> NSData in
       guard (200..<300).contains(response.statusCode) else
       {
-        XCTFail()
         throw URLSessionError.ServerStatus(response.statusCode)
       }
 
@@ -142,18 +140,15 @@ class URLSessionTests: XCTestCase
 
     let result = session.deferredDownloadTask(request)
 
-    let path = NSTemporaryDirectory() + "image.jpg"
-    let e = expectationWithDescription("Image saved to " + path)
+    let e = expectationWithDescription("Image download")
 
     result.map {
       (url, file, response) throws -> NSData in
       guard (200..<300).contains(response.statusCode) else
       {
-        XCTFail()
         throw URLSessionError.ServerStatus(response.statusCode)
       }
       defer { file.closeFile() }
-      // print(url)
 
       return file.readDataToEndOfFile()
     }.map {
