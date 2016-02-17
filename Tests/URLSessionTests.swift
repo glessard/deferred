@@ -131,7 +131,7 @@ class URLSessionTests: XCTestCase
   {
     let url = NSURL(string: notFoundPath)!
     let request = NSURLRequest(URL: url)
-    let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
 
     let deferred = session.deferredDataTask(request)
 
@@ -327,7 +327,7 @@ class URLSessionTests: XCTestCase
   {
     let url = NSURL(string: notFoundPath)!
     let request = NSURLRequest(URL: url)
-    let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
 
     let deferred = session.deferredDownloadTask(request)
 
