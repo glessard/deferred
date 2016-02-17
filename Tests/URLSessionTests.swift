@@ -86,6 +86,23 @@ class URLSessionTests: XCTestCase
     session.invalidateAndCancel()
   }
 
+  func testData_DoubleCancellation()
+  {
+    let deferred: DeferredURLSessionTask<(NSData, NSHTTPURLResponse)> = {
+      let url = NSURL(string: imagePath)!
+      let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+      defer { session.invalidateAndCancel() }
+
+      return session.deferredDataTask(url)
+    }()
+
+    _ = deferred.error
+    // Nope: XCTAssertNil(deferred.task)
+
+    let canceled = deferred.cancel()
+    XCTAssert(canceled == false)
+  }
+  
   func testData_SuspendCancel()
   {
     let url = NSURL(string: largerPath)!
@@ -201,6 +218,23 @@ class URLSessionTests: XCTestCase
     session.invalidateAndCancel()
   }
 
+  func testDownload_DoubleCancellation()
+  {
+    let deferred: DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)> = {
+      let url = NSURL(string: imagePath)!
+      let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+      defer { session.invalidateAndCancel() }
+
+      return session.deferredDownloadTask(url)
+    }()
+
+    _ = deferred.error
+    // Nope: XCTAssertNil(deferred.task)
+
+    let canceled = deferred.cancel()
+    XCTAssert(canceled == false)
+  }
+  
   func testDownload_SuspendCancel()
   {
     let url = NSURL(string: largerPath)!
