@@ -49,7 +49,7 @@ public class DeferredURLSessionTask<T>: TBD<T>
     return super.result
   }
 
-  public override func notify(qos qos: qos_class_t, task: (Result<T>) -> Void)
+  public override func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void)
   {
     self.task?.resume()
     self.beginExecution()
