@@ -20,3 +20,4 @@ DerivedData
 *.xcscmblueprint
 contents.xcworkspacedata
 .build
+Packages
