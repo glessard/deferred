@@ -300,6 +300,8 @@ class URLSessionTests: XCTestCase
       (url, handle, response) throws -> Int in
       defer { handle.closeFile() }
 
+      XCTAssert(response.statusCode == 206)
+
       var ptr = Optional<AnyObject>()
       try url.getResourceValue(&ptr, forKey: NSURLFileSizeKey)
 
