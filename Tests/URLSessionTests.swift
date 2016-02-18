@@ -10,8 +10,9 @@ import XCTest
 
 import deferred
 
-let imagePath = "http://localhost:9973/image.jpg"
-let notFoundPath = "http://localhost:9973/404"
+let basePath = "http://localhost:9973/"
+let imagePath = basePath + "image.jpg"
+let notFoundPath = basePath + "404"
 
 class URLSessionTests: XCTestCase
 {
@@ -60,6 +61,34 @@ class URLSessionTests: XCTestCase
     }
 
     waitForExpectationsWithTimeout(1.0) { _ in session.invalidateAndCancel() }
+  }
+
+  func testData_Upload()
+  {
+    let url = NSURL(string: basePath)!
+    let request = NSMutableURLRequest(URL: url)
+    request.HTTPMethod = "POST"
+    request.HTTPBody = NSData(fromString: "name=John Tester&age=97&data=****")
+
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+    let dataTask = session.deferredDataTask(request)
+
+    switch dataTask.result
+    {
+    case .Value(let data, let response):
+      XCTAssert(response.statusCode == 200)
+      XCTAssert(data.length > 0)
+      if let i = String(fromData: data).componentsSeparatedByString(" ").last
+      {
+        XCTAssert(Int(i) == 4)
+      }
+      else { XCTFail() }
+
+    case .Error(let error):
+      XCTFail(String(error))
+    }
+
+    session.invalidateAndCancel()
   }
 
   func testData_Cancellation()
@@ -346,6 +375,149 @@ class URLSessionTests: XCTestCase
     }
 
     session.invalidateAndCancel()
+  }
+
+  func testUploadData_Cancellation()
+  {
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+
+    let url = NSURL(string: basePath)!
+    let request = NSMutableURLRequest(URL: url)
+    request.HTTPMethod = "POST"
+
+    let data = NSData(fromString: "name=John Tester&age=97")
+
+    let deferred = session.deferredUploadTask(request, fromData: data)
+    let canceled = deferred.cancel()
+    XCTAssert(canceled)
+
+    if let error = deferred.error
+    {
+      let e = error as NSError
+      XCTAssert(e.domain == NSURLErrorDomain)
+      XCTAssert(e.code == NSURLErrorCancelled)
+    }
+    else
+    {
+      XCTFail()
+    }
+
+    session.invalidateAndCancel()
+  }
+
+  func uploadData_OK(method: String)
+  {
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+
+    let url = NSURL(string: basePath)!
+    let request = NSMutableURLRequest(URL: url)
+    request.HTTPMethod = method
+
+    let payload = "data=" + String(Repeat<Character>(count: 1995, repeatedValue: "A"))
+    let length = payload.characters.count
+    let message = NSData(fromString: payload)
+    XCTAssert(message.length == length)
+
+    let task = session.deferredUploadTask(request, fromData: message)
+
+    switch task.result
+    {
+    case let .Value(data, response):
+      XCTAssert(response.statusCode == 200)
+      XCTAssert(task.task?.countOfBytesSent == Int64(length))
+
+      if case let reply = String(fromData: data),
+         let text = reply.componentsSeparatedByString(" ").last,
+         let tlen = Int(text)
+      {
+        XCTAssert(tlen == length-5)
+      }
+      else
+      {
+        XCTFail("Unexpected data in response")
+      }
+
+    case .Error(let error):
+      XCTFail(String(error))
+    }
+
+    session.invalidateAndCancel()
+  }
+
+  func testUploadData_POST_OK()
+  {
+    uploadData_OK("POST")
+  }
+
+  func testUploadData_PUT_OK()
+  {
+    uploadData_OK("PUT")
+  }
+
+  func uploadFile_OK(method: String)
+  {
+    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+
+    let url = NSURL(string: basePath)!
+    let request = NSMutableURLRequest(URL: url)
+    request.HTTPMethod = method
+
+    let payload = "data=" + String(Repeat<Character>(count: 1995, repeatedValue: "A"))
+    let length = payload.characters.count
+    let message = NSData(fromString: payload)
+    XCTAssert(message.length == length)
+
+    let path = NSTemporaryDirectory() + "temporary.tmp"
+    if !NSFileManager.defaultManager().fileExistsAtPath(path)
+    {
+      NSFileManager.defaultManager().createFileAtPath(path, contents: nil, attributes: nil)
+    }
+
+    let fileurl = NSURL(string: "file://" + path)!
+    guard let handle = try? NSFileHandle(forWritingToURL: fileurl) else
+    {
+      XCTFail("could not open temporary file")
+      return
+    }
+
+    handle.writeData(message)
+    handle.truncateFileAtOffset(handle.offsetInFile)
+    handle.closeFile()
+
+    let task = session.deferredUploadTask(request, fromFile: fileurl)
+
+    switch task.result
+    {
+    case let .Value(data, response):
+      XCTAssert(response.statusCode == 200)
+      XCTAssert(task.task?.countOfBytesSent == Int64(length))
+
+      if case let reply = String(fromData: data),
+         let text = reply.componentsSeparatedByString(" ").last,
+         let tlen = Int(text)
+      {
+        XCTAssert(tlen == length-5)
+      }
+      else
+      {
+        XCTFail("Unexpected data in response")
+      }
+
+    case .Error(let error):
+      XCTFail(String(error))
+    }
+
+    session.invalidateAndCancel()
+  }
+
+  func testUploadFile_POST_OK()
+  {
+    uploadFile_OK("POST")
+  }
+
+  func testUploadFile_PUT_OK()
+  {
+    uploadFile_OK("PUT")
   }
 
 #endif

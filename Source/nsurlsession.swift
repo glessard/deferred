@@ -169,3 +169,46 @@ extension NSURLSession
     return tbd
   }
 }
+
+extension NSURLSession
+{
+  private func uploadCompletion(tbd: DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>) -> (NSData?, NSURLResponse?, NSError?) -> Void
+  {
+    return {
+      (data: NSData?, response: NSURLResponse?, error: NSError?) in
+      if let error = error
+      {
+        _ = try? tbd.determine(error)
+        return
+      }
+
+      if let d = data, r = response as? NSHTTPURLResponse
+      {
+        _ = try? tbd.determine( (d,r) )
+        return
+      }
+      // Probably an impossible situation
+      _ = try? tbd.determine(URLSessionError.InvalidState)
+    }
+  }
+
+  public func deferredUploadTask(request: NSURLRequest, fromData bodyData: NSData) -> DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>
+  {
+    let tbd = DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>()
+
+    let task = self.uploadTaskWithRequest(request, fromData: bodyData, completionHandler: uploadCompletion(tbd))
+
+    tbd.task = task
+    return tbd
+  }
+
+  public func deferredUploadTask(request: NSURLRequest, fromFile fileURL: NSURL) -> DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>
+  {
+    let tbd = DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>()
+
+    let task = self.uploadTaskWithRequest(request, fromFile: fileURL, completionHandler: uploadCompletion(tbd))
+
+    tbd.task = task
+    return tbd
+  }
+}
