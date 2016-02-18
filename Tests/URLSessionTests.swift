@@ -26,9 +26,7 @@ class URLSessionTests: XCTestCase
 
     let result = session.deferredDataTask(request)
 
-    let e = expectationWithDescription("Image download")
-
-    result.map {
+    let success = result.map {
       (data, response) throws -> NSData in
       guard (200..<300).contains(response.statusCode) else
       {
@@ -48,19 +46,17 @@ class URLSessionTests: XCTestCase
         return (im.size.width == 200.0) && (im.size.height == 200.0)
       }
       return false
-    }.notify {
-      result in
-      switch result
-      {
-      case .Value(let success):
-        if success { e.fulfill() }
-      case .Error(let error):
-        print(error)
-        XCTFail()
-      }
     }
 
-    waitForExpectationsWithTimeout(1.0) { _ in session.invalidateAndCancel() }
+    if let success = success.value where success == true
+    { /* savor success */ }
+    else
+    {
+      print(success.error)
+      XCTFail()
+    }
+
+    session.invalidateAndCancel()
   }
 
   func testData_Upload()
@@ -185,9 +181,7 @@ class URLSessionTests: XCTestCase
 
     let result = session.deferredDownloadTask(request)
 
-    let e = expectationWithDescription("Image download")
-
-    result.map {
+    let success = result.map {
       (url, file, response) throws -> NSData in
       guard (200..<300).contains(response.statusCode) else
       {
@@ -208,19 +202,17 @@ class URLSessionTests: XCTestCase
         return (im.size.width == 200.0) && (im.size.height == 200.0)
       }
       return false
-    }.notify {
-      result in
-      switch result
-      {
-      case .Value(let success):
-        if success { e.fulfill() }
-      case .Error(let error):
-        print(error)
-        XCTFail()
-      }
     }
 
-    waitForExpectationsWithTimeout(1.0) { _ in session.invalidateAndCancel() }
+    if let success = success.value where success == true
+    { /* savor success */ }
+    else
+    {
+      print(success.error)
+      XCTFail()
+    }
+
+    session.invalidateAndCancel()
   }
 
   func testDownload_Cancellation()
