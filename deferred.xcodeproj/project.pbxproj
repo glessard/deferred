@@ -131,7 +131,7 @@
 		03D387A01B7C713500F4B44B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		03D387A31B7C713500F4B44B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		03D387A51B7C713500F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		03DDB1F31C74C92400F4B44B /* string-data-util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "string-data-util.swift"; path = "Tests/string-data-util.swift"; sourceTree = SOURCE_ROOT; };
+		03DDB1F31C74C92400F4B44B /* string-data-util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "string-data-util.swift"; path = "utilities/string-data-util.swift"; sourceTree = SOURCE_ROOT; };
 		03E60E5D1AAA632D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
 		03FE63E41C6BFEB000F4B44B /* nsurlsession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = nsurlsession.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -186,7 +186,6 @@
 				03325F4B1B684D0400F4B44B /* TBDTests.swift */,
 				03325F4E1B69FB4900F4B44B /* ResultTests.swift */,
 				038E3B4C1C6B04E700F4B44B /* URLSessionTests.swift */,
-				03DDB1F31C74C92400F4B44B /* string-data-util.swift */,
 			);
 			name = Tests;
 			path = tests;
@@ -290,6 +289,7 @@
 			children = (
 				03325F491B66D92D00F4B44B /* shuffle.swift */,
 				03E60E5D1AAA632D00F4B44B /* syncprint.swift */,
+				03DDB1F31C74C92400F4B44B /* string-data-util.swift */,
 			);
 			path = utilities;
 			sourceTree = "<group>";
