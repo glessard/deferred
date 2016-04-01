@@ -12,14 +12,14 @@ import Dispatch
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredState: Int32 { case Waiting = 0, Executing = 1, Determined = 2 }
+public enum DeferredState: Int32 { case waiting = 0, executing = 1, determined = 2 }
 private let transientState = Int32.max
 
 /// An asynchronous computation.
 ///
-/// A `Deferred` starts out undetermined, in the `.Waiting` state.
-/// It may then enter the `.Executing` state, and will eventually become `.Determined`.
-/// Once it is `.Determined`, it is ready to supply a result.
+/// A `Deferred` starts out undetermined, in the `.waiting` state.
+/// It may then enter the `.executing` state, and will eventually become `.determined`.
+/// Once it is `.determined`, it is ready to supply a result.
 ///
 /// The `result` property will return the result, blocking until it becomes determined.
 /// If the result is ready when `result` is called, it will return immediately.
@@ -49,7 +49,7 @@ public class Deferred<T>
   {
     r = Result()
     self.queue = queue
-    currentState = DeferredState.Waiting.rawValue
+    currentState = DeferredState.waiting.rawValue
   }
 
   /// Initialize to an already determined state
@@ -61,7 +61,7 @@ public class Deferred<T>
   {
     r = result
     self.queue = queue
-    currentState = DeferredState.Determined.rawValue
+    currentState = DeferredState.determined.rawValue
   }
 
   // MARK: initialize with a closure
@@ -99,7 +99,7 @@ public class Deferred<T>
       self.determine(result) // an error here means this `Deferred` has been canceled.
     }
 
-    currentState = DeferredState.Executing.rawValue
+    currentState = DeferredState.executing.rawValue
     dispatch_async(queue, block)
   }
 
@@ -145,14 +145,14 @@ public class Deferred<T>
 
   // MARK: private methods
 
-  /// Change the state of this `Deferred` from `.Waiting` to `.Executing`
+  /// Change the state of this `Deferred` from `.waiting` to `.executing`
 
   private func beginExecution()
   {
-    CAS(current: DeferredState.Waiting.rawValue, new: DeferredState.Executing.rawValue, target: &currentState)
+    CAS(current: DeferredState.waiting.rawValue, new: DeferredState.executing.rawValue, target: &currentState)
   }
 
-  /// Set the `Result` of this `Deferred`, change its state to `DeferredState.Determined`,
+  /// Set the `Result` of this `Deferred`, change its state to `DeferredState.determined`,
   /// enqueue all notifications on the dispatch_queue, then return `true`.
   /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
@@ -164,9 +164,9 @@ public class Deferred<T>
   {
     // A turnstile to ensure only one thread can succeed
     while true
-    { // Allow multiple tries in case another thread concurrently switches state from .Waiting to .Executing
+    { // Allow multiple tries in case another thread concurrently switches state from .waiting to .executing
       let initialState = currentState
-      if initialState >= DeferredState.Determined.rawValue
+      if initialState >= DeferredState.determined.rawValue
       { // this thread will not succeed
         return false
       }
@@ -177,7 +177,7 @@ public class Deferred<T>
     }
 
     r = result
-    currentState = DeferredState.Determined.rawValue
+    currentState = DeferredState.determined.rawValue
     OSMemoryBarrier()
 
     while true
@@ -212,7 +212,7 @@ public class Deferred<T>
     {
       let waitQueue = waiters
       waiter.memory.next = waitQueue
-      if syncread(&currentState) != DeferredState.Determined.rawValue
+      if syncread(&currentState) != DeferredState.determined.rawValue
       {
         if CAS(current: waitQueue, new: waiter, target: &waiters)
         { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
@@ -269,7 +269,7 @@ public class Deferred<T>
 
   public final func notifyWithBlock(block: dispatch_block_t)
   {
-    if currentState != DeferredState.Determined.rawValue
+    if currentState != DeferredState.determined.rawValue
     {
       let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
       waiter.initialize(Waiter(block))
@@ -295,15 +295,15 @@ public class Deferred<T>
 
   /// Query the current state of this `Deferred`
   ///
-  /// - returns: a `DeferredState` (`.Waiting`, `.Executing` or `.Determined`)
+  /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
-  public var state: DeferredState { return DeferredState(rawValue: currentState) ?? .Executing }
+  public var state: DeferredState { return DeferredState(rawValue: currentState) ?? .executing }
 
   /// Query whether this `Deferred` has been determined.
   ///
   /// - returns: wheither this `Deferred` has been determined.
 
-  public var isDetermined: Bool { return currentState == DeferredState.Determined.rawValue }
+  public var isDetermined: Bool { return currentState == DeferredState.determined.rawValue }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
   /// A successful cancellation will determine result in a `Deferred` equivalent as if it had been initialized as follows:
@@ -326,7 +326,7 @@ public class Deferred<T>
 
   public func peek() -> Result<T>?
   {
-    if currentState != DeferredState.Determined.rawValue
+    if currentState != DeferredState.determined.rawValue
     {
       return nil
     }
@@ -338,7 +338,7 @@ public class Deferred<T>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<T> {
-    if currentState != DeferredState.Determined.rawValue
+    if currentState != DeferredState.determined.rawValue
     {
       let block = createBlock(qos_class_self()) {}
       notifyWithBlock(block)
@@ -380,7 +380,7 @@ public class Deferred<T>
   @warn_unused_result
   public func notifyingOn(queue: dispatch_queue_t) -> Deferred
   {
-    if currentState == DeferredState.Determined.rawValue
+    if currentState == DeferredState.determined.rawValue
     {
       return Deferred(queue: queue, result: self.r)
     }
@@ -686,7 +686,7 @@ public class TBD<T>: Deferred<T>
     self.init(queue: dispatch_get_global_queue(qos, 0))
   }
 
-  /// Set the value of this `Deferred` and change its state to `DeferredState.Determined`
+  /// Set the value of this `Deferred` and change its state to `DeferredState.determined`
   /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter value: the intended value for this `Deferred`
@@ -697,7 +697,7 @@ public class TBD<T>: Deferred<T>
     try determine(Result.Value(value), place: #function)
   }
 
-  /// Set this `Deferred` to an error and change its state to `DeferredState.Determined`
+  /// Set this `Deferred` to an error and change its state to `DeferredState.determined`
   /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter error: the intended error for this `Deferred`
@@ -708,7 +708,7 @@ public class TBD<T>: Deferred<T>
     try determine(Result.Error(error), place: #function)
   }
 
-  /// Set the `Result` of this `Deferred` and change its state to `DeferredState.Determined`
+  /// Set the `Result` of this `Deferred` and change its state to `DeferredState.determined`
   /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter result: the intended `Result` for this `Deferred`
@@ -724,7 +724,7 @@ public class TBD<T>: Deferred<T>
     guard super.determine(result) else { throw DeferredError.AlreadyDetermined(place) }
   }
 
-  /// Change the state of this `TBD` from `.Waiting` to `.Executing`
+  /// Change the state of this `TBD` from `.waiting` to `.executing`
 
   public override func beginExecution()
   {

@@ -403,9 +403,9 @@ class DeferredTests: XCTestCase
     }
 
     XCTAssert(operand.peek() == nil)
-    XCTAssert(operand.state == .Waiting)
+    XCTAssert(operand.state == .waiting)
     XCTAssert(transform.peek() == nil)
-    XCTAssert(transform.state == .Waiting)
+    XCTAssert(transform.state == .waiting)
 
     try! g.determine()
     waitForExpectationsWithTimeout(1.0, handler: nil)
