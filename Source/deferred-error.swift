@@ -12,8 +12,8 @@
 
 public enum DeferredError: ErrorType
 {
-  case Canceled(String)
-  case AlreadyDetermined(String)
+  case canceled(String)
+  case alreadyDetermined(String)
 }
 
 extension DeferredError: CustomStringConvertible
@@ -21,12 +21,12 @@ extension DeferredError: CustomStringConvertible
   public var description: String {
     switch self
     {
-    case Canceled(let message):
+    case .canceled(let message):
       guard message != ""
         else { return "Deferred was canceled before result became available" }
       return "Deferred canceled: \(message)"
 
-    case AlreadyDetermined(let message):
+    case .alreadyDetermined(let message):
       return "Deferred already determined: \(message)"
     }
   }
@@ -38,8 +38,8 @@ public func == (a: DeferredError, b: DeferredError) -> Bool
 {
   switch (a,b)
   {
-  case let (.Canceled(ma), .Canceled(mb)):                   return ma == mb
-  case let (.AlreadyDetermined(ma), .AlreadyDetermined(mb)): return ma == mb
+  case let (.canceled(ma), .canceled(mb)):                   return ma == mb
+  case let (.alreadyDetermined(ma), .alreadyDetermined(mb)): return ma == mb
   default: return false
   }
 }

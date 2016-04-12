@@ -316,7 +316,7 @@ public class Deferred<T>
 
   public func cancel(reason: String = "") -> Bool
   {
-    return determine(Result.Error(DeferredError.Canceled(reason)))
+    return determine(Result.Error(DeferredError.canceled(reason)))
   }
 
   /// Get this `Deferred` value if it has been determined, `nil` otherwise.
@@ -721,7 +721,7 @@ public class TBD<T>: Deferred<T>
 
   private func determine(result: Result<T>, place: String) throws
   {
-    guard super.determine(result) else { throw DeferredError.AlreadyDetermined(place) }
+    guard super.determine(result) else { throw DeferredError.alreadyDetermined(place) }
   }
 
   /// Change the state of this `TBD` from `.waiting` to `.executing`

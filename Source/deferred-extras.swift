@@ -116,7 +116,7 @@ extension Deferred
     {
       return Timeout(source: self, deadline: dispatch_time(DISPATCH_TIME_NOW, ns), reason: reason)
     }
-    return Mapped(source: self, result: Result.Error(DeferredError.Canceled(reason)))
+    return Mapped(source: self, result: Result.Error(DeferredError.canceled(reason)))
   }
 }
 

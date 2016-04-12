@@ -220,7 +220,7 @@ class DeferredTests: XCTestCase
       result in
       guard case let .Error(e) = result,
             let deferredErr = e as? DeferredError,
-            case .Canceled = deferredErr
+            case .canceled = deferredErr
       else
       {
         XCTFail()
@@ -326,7 +326,7 @@ class DeferredTests: XCTestCase
       try r4.result.getValue()
       XCTFail()
     }
-    catch DeferredError.Canceled(let message) { XCTAssert(message == reason) }
+    catch DeferredError.canceled(let message) { XCTAssert(message == reason) }
     catch { XCTFail() }
   }
 
@@ -543,13 +543,13 @@ class DeferredTests: XCTestCase
     d1.onValue { _ in XCTFail() }
     d1.onError { _ in e1.fulfill() }
     d1.onError { e in guard let e = e as? DeferredError else { fatalError() }; _ = e.description }
-    d1.notify  { r in XCTAssert(r.error as? DeferredError == DeferredError.Canceled("")) }
+    d1.notify  { r in XCTAssert(r.error as? DeferredError == DeferredError.canceled("")) }
 
     let d2 = d1.map  { $0 + 100 }
     let e2 = expectationWithDescription("second deferred")
     d2.onValue { _ in XCTFail() }
     d2.onError { _ in e2.fulfill() }
-    d1.notify  { r in XCTAssert(r.error as? DeferredError != DeferredError.AlreadyDetermined("")) }
+    d1.notify  { r in XCTAssert(r.error as? DeferredError != DeferredError.alreadyDetermined("")) }
 
     d1.cancel()
 
@@ -792,7 +792,7 @@ class DeferredTests: XCTestCase
     let c = combine(d)
 
     XCTAssert(c.value == nil)
-    XCTAssert(c.error as? DeferredError == DeferredError.Canceled(String(min(cancel1,cancel2))))
+    XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1,cancel2))))
   }
 
   func testPropagationTime()

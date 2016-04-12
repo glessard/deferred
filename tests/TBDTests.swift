@@ -57,9 +57,9 @@ class TBDTests: XCTestCase
     }
     catch let error as DeferredError {
       _ = String(error)
-      if case let .AlreadyDetermined(message) = error
+      if case let .alreadyDetermined(message) = error
       {
-        XCTAssert(error == .AlreadyDetermined(message))
+        XCTAssert(error == .alreadyDetermined(message))
       }
     }
     catch { XCTFail() }
@@ -75,7 +75,7 @@ class TBDTests: XCTestCase
     {
     case .Value: XCTFail()
     case .Error(let error):
-      if let e = error as? DeferredError, case .Canceled(let message) = e
+      if let e = error as? DeferredError, case .canceled(let message) = e
       {
         XCTAssert(message == reason)
       }
@@ -90,7 +90,7 @@ class TBDTests: XCTestCase
         try tbd3.determine(arc4random() & 0x3fff_ffff)
         XCTFail()
       }
-      catch DeferredError.AlreadyDetermined {
+      catch DeferredError.alreadyDetermined {
         e.fulfill()
       }
       catch {
@@ -145,7 +145,7 @@ class TBDTests: XCTestCase
         try result.getValue()
         XCTFail()
       }
-      catch DeferredError.Canceled {}
+      catch DeferredError.canceled {}
       catch { XCTFail() }
     }
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
