@@ -378,13 +378,16 @@ public class Deferred<T>
   /// - returns: a new `Deferred` whose notifications will run on `queue`
 
   @warn_unused_result
-  public func notifyingOn(queue: dispatch_queue_t) -> Deferred
+  public func notifying(on queue: dispatch_queue_t) -> Deferred
   {
     if currentState == DeferredState.determined.rawValue
     {
       return Deferred(queue: queue, result: self.r)
     }
-    return Mapped(queue: queue, source: self)
+
+    let deferred = Deferred(queue: queue)
+    self.notify(qos: dispatch_queue_get_qos_class(queue, nil), task: { deferred.determine($0) })
+    return deferred
   }
 
   /// Set the quality-of-service to use for future notifications.
@@ -393,15 +396,15 @@ public class Deferred<T>
   /// - returns: a new `Deferred` whose notifications will run at quality-of-service `qos`
 
   @warn_unused_result
-  public func notifyingAt(qos: qos_class_t, serially: Bool = false) -> Deferred
+  public func notifying(at qos: qos_class_t, serially: Bool = false) -> Deferred
   {
     if serially
     {
       let attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, qos, 0)
-      return notifyingOn(dispatch_queue_create("deferred-serial", attr))
+      return notifying(on: dispatch_queue_create("deferred-serial", attr))
     }
 
-    return notifyingOn(dispatch_get_global_queue(qos, 0))
+    return notifying(on: dispatch_get_global_queue(qos, 0))
   }
 }
 
@@ -410,17 +413,6 @@ public class Deferred<T>
 
 internal final class Mapped<T>: Deferred<T>
 {
-  /// Switch queues for a Deferred
-  /// This constructor is used by `on`
-  /// - parameter queue:  the `dispatch_queue_t` onto which the computation should be enqueued
-  /// - parameter source: the `Deferred` whose value should be used as the input for the transform
-
-  private init(queue: dispatch_queue_t, source: Deferred<T>)
-  {
-    super.init(queue: queue)
-    source.notify(qos: dispatch_queue_get_qos_class(queue, nil)) { self.determine($0) }
-  }
-
   /// Initialize to an already determined state, and copy the queue reference from another `Deferred`
   ///
   /// - parameter source: a `Deferred` whose dispatch queue shoud be used to enqueue future notifications for this `Deferred`
@@ -559,7 +551,7 @@ internal final class Applicator<T>: Deferred<T>
       switch result
       {
       case .Value:
-        transform.notifyingOn(self.queue).notify(qos: qos) {
+        transform.notifying(on: self.queue).notify(qos: qos) {
           transform in
           if self.isDetermined { return }
           self.beginExecution()
@@ -592,7 +584,7 @@ internal final class Applicator<T>: Deferred<T>
       switch result
       {
       case .Value:
-        transform.notifyingOn(self.queue).notify(qos: qos) {
+        transform.notifying(on: self.queue).notify(qos: qos) {
           transform in
           if self.isDetermined { return }
           self.beginExecution()
