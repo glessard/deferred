@@ -490,34 +490,6 @@ class DeferredTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
-  func testDealloc()
-  {
-    let blocks = (1...3).map {
-      (i: Int) -> dispatch_block_t in
-      return dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS) {
-        print("Block \(i)")
-      }
-    }
-
-    if !blocks.isEmpty
-    {
-      // This one will get deallocated
-      let tbd = TBD<Void>()
-      blocks.forEach { block in tbd.notifyWithBlock(block) }
-    }
-
-    if !blocks.isEmpty
-    {
-      // This one will leak.
-      let tbd = TBD<Void>()
-      (1...3).forEach { i in tbd.notify { _ in print("Notification \(i)") } }
-      // Every block enqueued by the notify method has an implied reference back to self.
-      // The reference needs to be strong, otherwise chaining will fail.
-    }
-
-    usleep(1000)
-  }
-
   func testCancel()
   {
     let d1 = Deferred(qos: QOS_CLASS_UTILITY) {

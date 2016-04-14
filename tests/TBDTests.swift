@@ -101,6 +101,55 @@ class TBDTests: XCTestCase
     waitForExpectationsWithTimeout(1.0, handler: nil)
   }
 
+  func testDealloc()
+  {
+    class NoDeallocTBD: TBD<Void>
+    {
+      init()
+      {
+        super.init(queue: dispatch_get_global_queue(qos_class_self(), 0))
+      }
+      deinit
+      {
+        XCTFail("This is expected to leak, therefore deinit shouldn't run")
+      }
+    }
+
+    do {
+      // This one will leak.
+      let tbd = NoDeallocTBD()
+      for i in 1...3 { tbd.notify { _ in XCTFail("Notification \(i)") } }
+      // Every block enqueued by the notify method has an implied reference back to self.
+      // The reference needs to be strong, otherwise chaining will fail.
+    }
+
+    class DeallocTBD: TBD<Void>
+    {
+      let e: XCTestExpectation
+      init(expectation: XCTestExpectation)
+      {
+        e = expectation
+        super.init(queue: dispatch_get_global_queue(qos_class_self(), 0))
+      }
+      deinit
+      {
+        e.fulfill()
+      }
+    }
+
+    do {
+      // This one will get deallocated
+      let tbd = DeallocTBD(expectation: expectationWithDescription("will dealloc"))
+      for i in 1...3
+      {
+        tbd.notifyWithBlock(dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS,
+                                                  { XCTFail("Block \(i)") }))
+      }
+    }
+
+    waitForExpectationsWithTimeout(0.1, handler: nil)
+  }
+
   func testNotify1()
   {
     let value = arc4random() & 0x3fff_ffff
