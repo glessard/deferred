@@ -50,9 +50,9 @@ class URLSessionTests: XCTestCase
 
     switch success.result
     {
-    case .Value(let success) where success == true: break // savor success
-    case .Value:            XCTFail("Failed without error")
-    case .Error(let error): XCTFail(String(error))
+    case .value(let success) where success == true: break // savor success
+    case .value:            XCTFail("Failed without error")
+    case .error(let error): XCTFail(String(error))
     }
 
     session.invalidateAndCancel()
@@ -70,7 +70,7 @@ class URLSessionTests: XCTestCase
 
     switch dataTask.result
     {
-    case .Value(let data, let response):
+    case .value(let data, let response):
       XCTAssert(response.statusCode == 200)
       XCTAssert(data.length > 0)
       if let i = String(fromData: data).componentsSeparatedByString(" ").last
@@ -79,7 +79,7 @@ class URLSessionTests: XCTestCase
       }
       else { XCTFail("unexpected data in response") }
 
-    case .Error(let error):
+    case .error(let error):
       XCTFail(String(error))
     }
 
@@ -97,7 +97,7 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case .Error(let e as NSError):
+    case .error(let e as NSError):
       XCTAssert(e.domain == NSURLErrorDomain)
       XCTAssert(e.code == NSURLErrorCancelled)
     default:
@@ -121,7 +121,7 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case .Error(let e as NSError):
+    case .error(let e as NSError):
       // Nope: XCTAssertNil(deferred.task)
       XCTAssert(e.domain == NSURLErrorDomain)
 
@@ -145,7 +145,7 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case .Error(let error):
+    case .error(let error):
       XCTAssertFalse(error is DeferredError)
       let e = error as NSError
       XCTAssert(e.domain == NSURLErrorDomain)
@@ -167,10 +167,10 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case .Value(let data, let response):
+    case .value(let data, let response):
       XCTAssert(data.length > 0)
       XCTAssert(response.statusCode == 404)
-    case .Error(let error):
+    case .error(let error):
       XCTFail(String(error))
     }
 
@@ -210,9 +210,9 @@ class URLSessionTests: XCTestCase
 
     switch success.result
     {
-    case .Value(let success) where success == true: break // savor success
-    case .Value:            XCTFail("Failed without error")
-    case .Error(let error): XCTFail(String(error))
+    case .value(let success) where success == true: break // savor success
+    case .value:            XCTFail("Failed without error")
+    case .error(let error): XCTFail(String(error))
     }
 
     session.invalidateAndCancel()
@@ -229,7 +229,7 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case let .Error(e as NSError):
+    case let .error(e as NSError):
       XCTAssert(e.domain == NSURLErrorDomain)
       XCTAssert(e.code == NSURLErrorCancelled)
     default:
@@ -253,7 +253,7 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case .Error(let e as NSError):
+    case .error(let e as NSError):
       // Nope: XCTAssertNil(deferred.task)
       XCTAssert(e.domain == NSURLErrorDomain)
       print(String(e))
@@ -278,7 +278,7 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case .Error(let error):
+    case .error(let error):
       XCTAssertFalse(error is DeferredError)
       let e = error as NSError
       XCTAssert(e.domain == NSURLErrorDomain)
@@ -290,71 +290,70 @@ class URLSessionTests: XCTestCase
     session.invalidateAndCancel()
   }
 
-  func testDownload_CancelAndResume()
-  {
-    let url = NSURL(string: "http://mirrors.axint.net/repos/gnu.org/gcc/gcc-2.8.0.tar.gz")!
-    // let url = NSURL(string: "https://mirrors.axint.net/repos/gnu.org/gcc/gcc-2.8.0.tar.gz")!
-    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
-
-    let deferred = session.deferredDownloadTask(url)
-
-    let converted = deferred.map { _ -> Result<NSData> in Result() }
-    usleep(250_000)
-
-    let canceled = deferred.cancel()
-    XCTAssert(canceled)
-
-    XCTAssert(deferred.error != nil)
-    XCTAssert(converted.value == nil)
-
-    let recovered = converted.recover {
-      error in
-      switch error
-      {
-      case URLSessionError.InterruptedDownload(let data):
-        return Deferred(value: data)
-      default:
-        return Deferred(error: error)
-      }
-    }
-    if let error = recovered.error
-    { // give up
-      XCTFail("Download operation failed and/or could not be resumed: \(error as NSError)")
-      session.invalidateAndCancel()
-      return
-    }
-
-    let firstLength = recovered.map { data in data.length }
-
-    let resumed = recovered.flatMap { data in session.deferredDownloadTask(resumeData: data) }
-    let finalLength = resumed.map {
-      (url, handle, response) throws -> Int in
-      defer { handle.closeFile() }
-
-      XCTAssert(response.statusCode == 206)
-
-      var ptr = Optional<AnyObject>()
-      try url.getResourceValue(&ptr, forKey: NSURLFileSizeKey)
-
-      if let number = ptr as? NSNumber
-      {
-        return number.integerValue
-      }
-      if let error = Result<Void>().error { throw error }
-      return -1
-    }
-
-    let e = expectationWithDescription("Large file download, paused and resumed")
-
-    combine(firstLength, finalLength).onValue {
-      (l1, l2) in
-      // print(l2)
-      XCTAssert(l2 > l1)
-      e.fulfill()
-    }
-
-    waitForExpectationsWithTimeout(9.9) { _ in session.invalidateAndCancel() }
-  }
+//  func testDownload_CancelAndResume()
+//  {
+//    let url = NSURL(string: "")!
+//    let session = NSURLSession(configuration: NSURLSessionConfiguration.ephemeralSessionConfiguration())
+//
+//    let deferred = session.deferredDownloadTask(url)
+//
+//    let converted = deferred.map { _ -> Result<NSData> in Result() }
+//    usleep(250_000)
+//
+//    let canceled = deferred.cancel()
+//    XCTAssert(canceled)
+//
+//    XCTAssert(deferred.error != nil)
+//    XCTAssert(converted.value == nil)
+//
+//    let recovered = converted.recover {
+//      error in
+//      switch error
+//      {
+//      case URLSessionError.InterruptedDownload(let data):
+//        return Deferred(value: data)
+//      default:
+//        return Deferred(error: error)
+//      }
+//    }
+//    if let error = recovered.error
+//    { // give up
+//      XCTFail("Download operation failed and/or could not be resumed: \(error as NSError)")
+//      session.invalidateAndCancel()
+//      return
+//    }
+//
+//    let firstLength = recovered.map { data in data.length }
+//
+//    let resumed = recovered.flatMap { data in session.deferredDownloadTask(resumeData: data) }
+//    let finalLength = resumed.map {
+//      (url, handle, response) throws -> Int in
+//      defer { handle.closeFile() }
+//
+//      XCTAssert(response.statusCode == 206)
+//
+//      var ptr = Optional<AnyObject>()
+//      try url.getResourceValue(&ptr, forKey: NSURLFileSizeKey)
+//
+//      if let number = ptr as? NSNumber
+//      {
+//        return number.integerValue
+//      }
+//      if case let .error(error) = Result<Void>() { throw error }
+//      return -1
+//    }
+//
+//    let e = expectationWithDescription("Large file download, paused and resumed")
+//
+//    combine(firstLength, finalLength).onValue {
+//      (l1, l2) in
+//      // print(l2)
+//      XCTAssert(l2 > l1)
+//      e.fulfill()
+//    }
+//
+//    waitForExpectationsWithTimeout(9.9) { _ in session.invalidateAndCancel() }
+//  }
 
   func testDownload_NotFound()
   {
@@ -366,12 +365,12 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case .Value(_, let handle, let response):
+    case .value(_, let handle, let response):
       let data = handle.readDataToEndOfFile()
       handle.closeFile()
       XCTAssert(data.length > 0)
       XCTAssert(response.statusCode == 404)
-    case .Error(let error):
+    case .error(let error):
       XCTFail(String(error))
     }
 
@@ -394,7 +393,7 @@ class URLSessionTests: XCTestCase
 
     switch deferred.result
     {
-    case .Error(let e as NSError):
+    case .error(let e as NSError):
       XCTAssert(e.domain == NSURLErrorDomain)
       XCTAssert(e.code == NSURLErrorCancelled)
     default:
@@ -421,7 +420,7 @@ class URLSessionTests: XCTestCase
 
     switch task.result
     {
-    case let .Value(data, response):
+    case let .value(data, response):
       XCTAssert(response.statusCode == 200)
       XCTAssert(task.task?.countOfBytesSent == Int64(length))
 
@@ -436,7 +435,7 @@ class URLSessionTests: XCTestCase
         XCTFail("Unexpected data in response")
       }
 
-    case .Error(let error):
+    case .error(let error):
       XCTFail(String(error))
     }
 
@@ -487,7 +486,7 @@ class URLSessionTests: XCTestCase
 
     switch task.result
     {
-    case let .Value(data, response):
+    case let .value(data, response):
       XCTAssert(response.statusCode == 200)
       XCTAssert(task.task?.countOfBytesSent == Int64(length))
 
@@ -502,7 +501,7 @@ class URLSessionTests: XCTestCase
         XCTFail("Unexpected data in response")
       }
 
-    case .Error(let error):
+    case .error(let error):
       XCTFail(String(error))
     }
 
