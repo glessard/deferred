@@ -26,9 +26,9 @@ private let transientState = Int32.max
 ///
 /// A closure supplied to the `notify` method will be called after the `Deferred` has become determined.
 
-public class Deferred<T>
+public class Deferred<Value>
 {
-  private var r: Result<T>
+  private var r: Result<Value>
 
   // Swift does not have a facility to read and write enum values atomically.
   // To get around this, we use a raw `Int32` value as a proxy for the enum value.
@@ -57,7 +57,7 @@ public class Deferred<T>
   /// - parameter queue:  the dispatch queue upon which to execute future notifications for this `Deferred`
   /// - parameter result: the result of this `Deferred`
 
-  public init(queue: dispatch_queue_t, result: Result<T>)
+  public init(queue: dispatch_queue_t, result: Result<Value>)
   {
     r = result
     self.queue = queue
@@ -70,7 +70,7 @@ public class Deferred<T>
   ///
   /// - parameter task: the computation to be performed
 
-  public convenience init(task: () throws -> T)
+  public convenience init(task: () throws -> Value)
   {
     self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
   }
@@ -80,7 +80,7 @@ public class Deferred<T>
   /// - parameter qos:  the Quality-of-Service class at which the computation (and notifications) should be performed
   /// - parameter task: the computation to be performed
 
-  public convenience init(qos: qos_class_t, task: () throws -> T)
+  public convenience init(qos: qos_class_t, task: () throws -> Value)
   {
     self.init(queue: dispatch_get_global_queue(qos, 0), task: task)
   }
@@ -90,7 +90,7 @@ public class Deferred<T>
   /// - parameter queue: the `dispatch_queue_t` onto which the computation (and notifications) will be enqueued
   /// - parameter task:  the computation to be performed
 
-  public convenience init(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: () throws -> T)
+  public convenience init(queue: dispatch_queue_t, qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: () throws -> Value)
   {
     self.init(queue: queue)
 
@@ -111,7 +111,7 @@ public class Deferred<T>
   ///                     `qos` defaults to the currently-executing quality-of-service class.
   /// - parameter result: the result of this `Deferred`
 
-  public convenience init(qos: qos_class_t, result: Result<T>)
+  public convenience init(qos: qos_class_t, result: Result<Value>)
   {
     self.init(queue: dispatch_get_global_queue(qos, 0), result: result)
   }
@@ -120,7 +120,7 @@ public class Deferred<T>
   ///
   /// - parameter result: the result of this `Deferred`
 
-  public convenience init(_ result: Result<T>)
+  public convenience init(_ result: Result<Value>)
   {
     self.init(queue: dispatch_get_global_queue(qos_class_self(), 0), result: result)
   }
@@ -129,7 +129,7 @@ public class Deferred<T>
   ///
   /// - parameter value: the value of this `Deferred`'s `Result`
 
-  public convenience init(value: T)
+  public convenience init(value: Value)
   {
     self.init(Result.value(value))
   }
@@ -160,7 +160,7 @@ public class Deferred<T>
   /// - parameter result: the intended `Result` to determine this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  private func determine(result: Result<T>) -> Bool
+  private func determine(result: Result<Value>) -> Bool
   {
     // A turnstile to ensure only one thread can succeed
     while true
@@ -229,14 +229,14 @@ public class Deferred<T>
     return false
   }
 
-  /// Take a (Result<T>) -> Void closure, and wrap it in a dispatch_block_t
+  /// Take a (Result<Value>) -> Void closure, and wrap it in a dispatch_block_t
   /// where this Deferred's Result is used as the input closure's parameter.
   ///
   /// - parameter qos: The QOS class to use for the new block
   /// - parameter task: The closure to be transformed
   /// - returns: a dispatch_block_t at the requested QOS class.
 
-  private func createNotificationBlock(qos: qos_class_t, task: (Result<T>) -> Void) -> dispatch_block_t
+  private func createNotificationBlock(qos: qos_class_t, task: (Result<Value>) -> Void) -> dispatch_block_t
   {
     return createBlock(qos, block: { task(self.r) })
   }
@@ -288,7 +288,7 @@ public class Deferred<T>
   ///
   /// - parameter task:  the closure to be enqueued
 
-  public func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<T>) -> Void)
+  public func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<Value>) -> Void)
   {
     notifyWithBlock(createNotificationBlock(qos, task: task))
   }
@@ -308,7 +308,7 @@ public class Deferred<T>
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
   /// A successful cancellation will determine result in a `Deferred` equivalent as if it had been initialized as follows:
   /// ```
-  /// Deferred<T>(error: DeferredError.Canceled(reason))
+  /// Deferred<Value>(error: DeferredError.Canceled(reason))
   /// ```
   ///
   /// - parameter reason: a `String` detailing the reason for the attempted cancellation.
@@ -324,7 +324,7 @@ public class Deferred<T>
   ///
   /// - returns: this `Deferred`'s value, or `nil`
 
-  public func peek() -> Result<T>?
+  public func peek() -> Result<Value>?
   {
     if currentState != DeferredState.determined.rawValue
     {
@@ -337,7 +337,7 @@ public class Deferred<T>
   ///
   /// - returns: this `Deferred`'s determined result
 
-  public var result: Result<T> {
+  public var result: Result<Value> {
     if currentState != DeferredState.determined.rawValue
     {
       let block = createBlock(qos_class_self()) {}
@@ -354,7 +354,7 @@ public class Deferred<T>
   ///
   /// - returns: this `Deferred`'s determined value, or `nil`
 
-  public var value: T? {
+  public var value: Value? {
     if case let .value(v) = result { return v }
     return nil
   }
@@ -413,14 +413,14 @@ public class Deferred<T>
 
 /// A mapped `Deferred`
 
-internal final class Mapped<T>: Deferred<T>
+internal final class Mapped<Value>: Deferred<Value>
 {
   /// Initialize to an already determined state, and copy the queue reference from another `Deferred`
   ///
   /// - parameter source: a `Deferred` whose dispatch queue shoud be used to enqueue future notifications for this `Deferred`
   /// - parameter result: the result of this `Deferred`
 
-  init<U>(source: Deferred<U>, result: Result<T>)
+  init<U>(source: Deferred<U>, result: Result<Value>)
   {
     super.init(queue: source.queue, result: result)
   }
@@ -433,7 +433,7 @@ internal final class Mapped<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) throws -> T)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) throws -> Value)
   {
     super.init(queue: source.queue)
 
@@ -454,7 +454,7 @@ internal final class Mapped<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) -> Result<T>)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) -> Result<Value>)
   {
     super.init(queue: source.queue)
 
@@ -468,7 +468,7 @@ internal final class Mapped<T>: Deferred<T>
   }
 }
 
-internal final class Bind<T>: Deferred<T>
+internal final class Bind<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `flatMap`
@@ -478,7 +478,7 @@ internal final class Bind<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) -> Deferred<T>)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: (U) -> Deferred<Value>)
   {
     super.init(queue: source.queue)
 
@@ -508,7 +508,7 @@ internal final class Bind<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init(qos: qos_class_t, source: Deferred<T>, transform: (ErrorType) -> Deferred<T>)
+  init(qos: qos_class_t, source: Deferred<Value>, transform: (ErrorType) -> Deferred<Value>)
   {
     super.init(queue: source.queue)
 
@@ -533,7 +533,7 @@ internal final class Bind<T>: Deferred<T>
 
 /// A `Deferred` that applies a `Deferred` transform onto its input
 
-internal final class Applicator<T>: Deferred<T>
+internal final class Applicator<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `apply`
@@ -543,7 +543,7 @@ internal final class Applicator<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t, source: Deferred<U>, transform: Deferred<(U) -> Result<T>>)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: Deferred<(U) -> Result<Value>>)
   {
     super.init(queue: source.queue)
 
@@ -576,7 +576,7 @@ internal final class Applicator<T>: Deferred<T>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: qos_class_t, source: Deferred<U>, transform: Deferred<(U) throws -> T>)
+  init<U>(qos: qos_class_t, source: Deferred<U>, transform: Deferred<(U) throws -> Value>)
   {
     super.init(queue: source.queue)
 
@@ -604,7 +604,7 @@ internal final class Applicator<T>: Deferred<T>
 
 /// A `Deferred` with a time-delay
 
-internal final class Delayed<T>: Deferred<T>
+internal final class Delayed<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a time after which this `Deferred` may become determined.
   /// The determination could be delayed further if `source` has not become determined yet,
@@ -614,7 +614,7 @@ internal final class Delayed<T>: Deferred<T>
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  init(source: Deferred<T>, until deadline: dispatch_time_t)
+  init(source: Deferred<Value>, until deadline: dispatch_time_t)
   {
     super.init(queue: source.queue)
 
@@ -638,7 +638,7 @@ internal final class Delayed<T>: Deferred<T>
 
 /// A `Deferred` which can time out
 
-internal final class Timeout<T>: Deferred<T>
+internal final class Timeout<Value>: Deferred<Value>
 {
   /// Initialized with a `Deferred` source and the maximum number of nanoseconds we should wait for its result.
   /// If `source` does not become determined before the timeout expires, the new `Deferred` will be canceled.
@@ -649,7 +649,7 @@ internal final class Timeout<T>: Deferred<T>
   /// - parameter timeout: maximum number of nanoseconds before timeout.
   /// - parameter reason: the reason for the cancelation if the operation times out.
 
-  init(source: Deferred<T>, deadline: dispatch_time_t, reason: String)
+  init(source: Deferred<Value>, deadline: dispatch_time_t, reason: String)
   {
     super.init(queue: source.queue)
     dispatch_after(deadline, self.queue) { self.cancel(reason) }
@@ -659,7 +659,7 @@ internal final class Timeout<T>: Deferred<T>
 
 /// A `Deferred` to be determined (`TBD`) manually.
 
-public class TBD<T>: Deferred<T>
+public class TBD<Value>: Deferred<Value>
 {
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
@@ -686,7 +686,7 @@ public class TBD<T>: Deferred<T>
   /// - parameter value: the intended value for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(value: T) throws
+  public func determine(value: Value) throws
   {
     try determine(Result.value(value), place: #function)
   }
@@ -708,12 +708,12 @@ public class TBD<T>: Deferred<T>
   /// - parameter result: the intended `Result` for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(result: Result<T>) throws
+  public func determine(result: Result<Value>) throws
   {
     try determine(result, place: #function)
   }
 
-  private func determine(result: Result<T>, place: String) throws
+  private func determine(result: Result<Value>, place: String) throws
   {
     guard super.determine(result) else { throw DeferredError.alreadyDetermined(place) }
   }

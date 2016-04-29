@@ -21,9 +21,9 @@
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
+public func combine<Value>(deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 {
-  guard let first = deferreds.first else { return Deferred<[T]>(value: []) }
+  guard let first = deferreds.first else { return Deferred<[Value]>(value: []) }
 
   let accumulator = first.map { value in [value] }
 
@@ -47,13 +47,13 @@ public func combine<T>(deferreds: [Deferred<T>]) -> Deferred<[T]>
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<T, S: SequenceType where
-                    S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<[T]>
+public func combine<Value, S: SequenceType where
+                    S.Generator.Element == Deferred<Value>>(deferreds: S) -> Deferred<[Value]>
 {
   // We should combine on a background thread because S could block on next()
 
-  let combiner = Deferred<Deferred<[T]>> {
-    deferreds.reduce(Deferred<[T]>(value: [])) {
+  let combiner = Deferred<Deferred<[Value]>> {
+    deferreds.reduce(Deferred<[Value]>(value: [])) {
       (accumulator, element) in
       accumulator.flatMap {
         values in
@@ -119,7 +119,7 @@ public func combine<T1,T2,T3,T4>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Def
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
+public func firstValue<Value>(deferreds: [Deferred<Value>]) -> Deferred<Value>
 {
   if deferreds.count == 0
   {
@@ -129,8 +129,8 @@ public func firstValue<T>(deferreds: [Deferred<T>]) -> Deferred<T>
   return firstDetermined(ShuffledSequence(deferreds)).flatMap { $0 }
 }
 
-public func firstValue<T, S: SequenceType where
-                       S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<T>
+public func firstValue<Value, S: SequenceType where
+                       S.Generator.Element == Deferred<Value>>(deferreds: S) -> Deferred<Value>
 {
   return firstDetermined(deferreds).flatMap { $0 }
 }
@@ -141,7 +141,7 @@ public func firstValue<T, S: SequenceType where
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>>
+public func firstDetermined<Value>(deferreds: [Deferred<Value>]) -> Deferred<Deferred<Value>>
 {
   if deferreds.count == 0
   {
@@ -153,10 +153,10 @@ public func firstDetermined<T>(deferreds: [Deferred<T>]) -> Deferred<Deferred<T>
 
 import Dispatch
 
-public func firstDetermined<T, S: SequenceType where
-                            S.Generator.Element == Deferred<T>>(deferreds: S) -> Deferred<Deferred<T>>
+public func firstDetermined<Value, S: SequenceType where
+                            S.Generator.Element == Deferred<Value>>(deferreds: S) -> Deferred<Deferred<Value>>
 {
-  let first = TBD<Deferred<T>>()
+  let first = TBD<Deferred<Value>>()
 
   // We iterate on a background thread because S could block on next()
   dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {

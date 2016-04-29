@@ -129,7 +129,7 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter task: the closure to be enqueued
 
-  public func onValue(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (T) -> Void)
+  public func onValue(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Value) -> Void)
   {
     notify(qos: qos) { if case let .value(v) = $0 { task(v) } }
   }
@@ -156,9 +156,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<U>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) throws -> U) -> Deferred<U>
+  public func map<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) throws -> Other) -> Deferred<Other>
   {
-    return Mapped<U>(qos: qos, source: self, transform: transform)
+    return Mapped<Other>(qos: qos, source: self, transform: transform)
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
@@ -166,9 +166,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<U>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Result<U>) -> Deferred<U>
+  public func map<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) -> Result<Other>) -> Deferred<Other>
   {
-    return Mapped<U>(qos: qos, source: self, transform: transform)
+    return Mapped<Other>(qos: qos, source: self, transform: transform)
   }
 }
 
@@ -181,9 +181,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<U>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (T) -> Deferred<U>) -> Deferred<U>
+  public func flatMap<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) -> Deferred<Other>) -> Deferred<Other>
   {
-    return Bind<U>(qos: qos, source: self, transform: transform)
+    return Bind<Other>(qos: qos, source: self, transform: transform)
   }
 
   /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
@@ -191,7 +191,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) -> Deferred<T>) -> Deferred<T>
+  public func recover(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) -> Deferred<Value>) -> Deferred<Value>
   {
     return Bind(qos: qos, source: self, transform: transform)
   }
@@ -206,9 +206,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(T) -> Result<U>>) -> Deferred<U>
+  public func apply<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) -> Result<Other>>) -> Deferred<Other>
   {
-    return Applicator<U>(qos: qos, source: self, transform: transform)
+    return Applicator<Other>(qos: qos, source: self, transform: transform)
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
@@ -216,9 +216,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<U>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(T) throws -> U>) -> Deferred<U>
+  public func apply<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) throws -> Other>) -> Deferred<Other>
   {
-    return Applicator<U>(qos: qos, source: self, transform: transform)
+    return Applicator<Other>(qos: qos, source: self, transform: transform)
   }
 
   /// Adaptor made desirable by insufficient covariance from throwing to non-throwing closure types. (radar 22013315)
@@ -231,9 +231,9 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public final func apply<U>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(T) -> U>) -> Deferred<U>
+  public final func apply<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) -> Other>) -> Deferred<Other>
   {
-    let retransform = transform.map(qos: qos) { transform in { t throws in transform(t) } }
-    return Applicator<U>(qos: qos, source: self, transform: retransform)
+    let retransform = transform.map(qos: qos) { transform in { v throws in transform(v) } }
+    return Applicator<Other>(qos: qos, source: self, transform: retransform)
   }
 }
