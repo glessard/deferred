@@ -19,33 +19,33 @@ public struct NoResult: ErrorType, CustomStringConvertible
 /// The error case does not encode type beyond ErrorType.
 /// This way there is no need to ever map between error types, which mostly cannot make sense.
 
-public enum Result<T>: CustomStringConvertible
+public enum Result<Value>: CustomStringConvertible
 {
-  case Value(T)
-  case Error(ErrorType)
+  case value(Value)
+  case error(ErrorType)
 
   public init()
   {
-    self = .Error(NoResult())
+    self = .error(NoResult())
   }
 
-  public init(@noescape task: () throws -> T)
+  public init(@noescape task: () throws -> Value)
   {
     do {
       let value = try task()
-      self = .Value(value)
+      self = .value(value)
     }
     catch {
-      self = .Error(error)
+      self = .error(error)
     }
   }
 
-  public func getValue() throws -> T
+  public func getValue() throws -> Value
   {
     switch self
     {
-    case .Value(let value): return value
-    case .Error(let error): throw error
+    case .value(let value): return value
+    case .error(let error): throw error
     }
   }
 
@@ -53,87 +53,87 @@ public enum Result<T>: CustomStringConvertible
   public var description: String {
     switch self
     {
-    case .Value(let value): return String(value)
-    case .Error(let error): return "Error: \(error)"
+    case .value(let value): return String(value)
+    case .error(let error): return "Error: \(error)"
     }
   }
 
 
-  public func map<U>(@noescape transform: (T) throws -> U) -> Result<U>
+  public func map<Other>(@noescape transform: (Value) throws -> Other) -> Result<Other>
   {
     switch self
     {
-    case .Value(let value): return Result<U> { try transform(value) }
-    case .Error(let error): return .Error(error)
+    case .value(let value): return Result<Other> { try transform(value) }
+    case .error(let error): return .error(error)
     }
   }
 
-  public func flatMap<U>(@noescape transform: (T) -> Result<U>) -> Result<U>
+  public func flatMap<Other>(@noescape transform: (Value) -> Result<Other>) -> Result<Other>
   {
     switch self
     {
-    case .Value(let value): return transform(value)
-    case .Error(let error): return .Error(error)
+    case .value(let value): return transform(value)
+    case .error(let error): return .error(error)
     }
   }
 
-  public func apply<U>(transform: Result<(T) throws -> U>) -> Result<U>
+  public func apply<Other>(transform: Result<(Value) throws -> Other>) -> Result<Other>
   {
     switch self
     {
-    case .Value(let value):
+    case .value(let value):
       switch transform
       {
-      case .Value(let transform): return Result<U> { try transform(value) }
-      case .Error(let error):     return .Error(error)
+      case .value(let transform): return Result<Other> { try transform(value) }
+      case .error(let error):     return .error(error)
       }
 
-    case .Error(let error):       return .Error(error)
+    case .error(let error):       return .error(error)
     }
   }
 
-  public func apply<U>(transform: Result<(T) -> Result<U>>) -> Result<U>
+  public func apply<Other>(transform: Result<(Value) -> Result<Other>>) -> Result<Other>
   {
     switch self
     {
-    case .Value(let value):
+    case .value(let value):
       switch transform
       {
-      case .Value(let transform): return transform(value)
-      case .Error(let error):     return .Error(error)
+      case .value(let transform): return transform(value)
+      case .error(let error):     return .error(error)
       }
 
-    case .Error(let error):       return .Error(error)
+    case .error(let error):       return .error(error)
     }
   }
 
-  public func recover(@noescape transform: (ErrorType) -> Result<T>) -> Result<T>
+  public func recover(@noescape transform: (ErrorType) -> Result<Value>) -> Result<Value>
   {
     switch self
     {
-    case .Value:            return self
-    case .Error(let error): return transform(error)
+    case .value:            return self
+    case .error(let error): return transform(error)
     }
   }
 }
 
-public func ?? <T> (possible: Result<T>, @autoclosure alternate: () -> T) -> T
+public func ?? <Value> (possible: Result<Value>, @autoclosure alternate: () -> Value) -> Value
 {
   switch possible
   {
-  case .Value(let value): return value
-  case .Error:            return alternate()
+  case .value(let value): return value
+  case .error:            return alternate()
   }
 }
 
-public func == <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
+public func == <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bool
 {
   switch (lhr, rhr)
   {
-  case (.Value(let lv), .Value(let rv)):
+  case (.value(let lv), .value(let rv)):
     return lv == rv
 
-  case (.Error(let le as NSError), .Error(let re as NSError)):
+  case (.error(let le as NSError), .error(let re as NSError)):
     // Use NSObject's equality method, and assume the result to be correct.
     return le.isEqual(re)
 
@@ -141,12 +141,12 @@ public func == <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
   }
 }
 
-public func != <T: Equatable> (lhr: Result<T>, rhr: Result<T>) -> Bool
+public func != <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bool
 {
   return !(lhr == rhr)
 }
 
-public func == <C: CollectionType, T: Equatable where C.Generator.Element == Result<T>> (lha: C, rha: C) -> Bool
+public func == <C: CollectionType, Value: Equatable where C.Generator.Element == Result<Value>> (lha: C, rha: C) -> Bool
 {
   guard lha.count == rha.count else { return false }
 
@@ -158,7 +158,7 @@ public func == <C: CollectionType, T: Equatable where C.Generator.Element == Res
   return true
 }
 
-public func != <C: CollectionType, T: Equatable where C.Generator.Element == Result<T>> (lha: C, rha: C) -> Bool
+public func != <C: CollectionType, Value: Equatable where C.Generator.Element == Result<Value>> (lha: C, rha: C) -> Bool
 {
   return !(lha == rha)
 }

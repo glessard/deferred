@@ -73,8 +73,8 @@ class TBDTests: XCTestCase
     XCTAssert(tbd1.value == nil)
     switch tbd1.result
     {
-    case .Value: XCTFail()
-    case .Error(let error):
+    case .value: XCTFail()
+    case .error(let error):
       if let e = error as? DeferredError, case .canceled(let message) = e
       {
         XCTAssert(message == reason)
@@ -158,7 +158,7 @@ class TBDTests: XCTestCase
     try! tbd.determine(value)
 
     tbd.notify {
-      XCTAssert( $0 == Result.Value(value) )
+      XCTAssert( $0 == Result.value(value) )
       e1.fulfill()
     }
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -171,7 +171,7 @@ class TBDTests: XCTestCase
 
     var value = arc4random() & 0x3fff_ffff
     tbd.notify {
-      XCTAssert( $0 == Result.Value(value) )
+      XCTAssert( $0 == Result.value(value) )
       e2.fulfill()
     }
 

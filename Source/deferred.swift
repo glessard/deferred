@@ -131,7 +131,7 @@ public class Deferred<T>
 
   public convenience init(value: T)
   {
-    self.init(Result.Value(value))
+    self.init(Result.value(value))
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -140,7 +140,7 @@ public class Deferred<T>
 
   public convenience init(error: ErrorType)
   {
-    self.init(Result.Error(error))
+    self.init(Result.error(error))
   }
 
   // MARK: private methods
@@ -316,7 +316,7 @@ public class Deferred<T>
 
   public func cancel(reason: String = "") -> Bool
   {
-    return determine(Result.Error(DeferredError.canceled(reason)))
+    return determine(Result.error(DeferredError.canceled(reason)))
   }
 
   /// Get this `Deferred` value if it has been determined, `nil` otherwise.
@@ -349,24 +349,24 @@ public class Deferred<T>
   }
 
   /// Get this `Deferred` value, blocking if necessary until it becomes determined.
-  /// If the `Deferred` is determined by a `Result` in the `.Error` state, return nil.
+  /// If the `Deferred` is determined by a `Result` in the `.error` state, return nil.
   /// In either case, this property will block until `Deferred` is determined.
   ///
   /// - returns: this `Deferred`'s determined value, or `nil`
 
   public var value: T? {
-    if case let .Value(v) = result { return v }
+    if case let .value(v) = result { return v }
     return nil
   }
 
   /// Get this `Deferred` value, blocking if necessary until it becomes determined.
-  /// If the `Deferred` is determined by a `Result` in the `.Error` state, return nil.
+  /// If the `Deferred` is determined by a `Result` in the `.error` state, return nil.
   /// In either case, this property will block until `Deferred` is determined.
   ///
   /// - returns: this `Deferred`'s determined value, or `nil`
 
   public var error: ErrorType? {
-    if case let .Error(e) = result { return e }
+    if case let .error(e) = result { return e }
     return nil
   }
 
@@ -488,14 +488,14 @@ internal final class Bind<T>: Deferred<T>
       self.beginExecution()
       switch result
       {
-      case .Value(let value):
+      case .value(let value):
         transform(value).notify(qos: qos) {
           transformed in
           self.determine(transformed) // an error here means this `Deferred` has been canceled.
         }
 
-      case .Error(let error):
-        self.determine(Result.Error(error)) // an error here means this `Deferred` has been canceled.
+      case .error(let error):
+        self.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
       }
     }
   }
@@ -518,10 +518,10 @@ internal final class Bind<T>: Deferred<T>
       self.beginExecution()
       switch result
       {
-      case .Value:
+      case .value:
         self.determine(result)
 
-      case .Error(let error):
+      case .error(let error):
         transform(error).notify(qos: qos) {
           transformed in
           self.determine(transformed)
@@ -552,7 +552,7 @@ internal final class Applicator<T>: Deferred<T>
       if self.isDetermined { return }
       switch result
       {
-      case .Value:
+      case .value:
         transform.notifying(on: self.queue).notify(qos: qos) {
           transform in
           if self.isDetermined { return }
@@ -561,9 +561,9 @@ internal final class Applicator<T>: Deferred<T>
           self.determine(transformed) // an error here means this `Deferred` has been canceled.
         }
 
-      case .Error(let error):
+      case .error(let error):
         self.beginExecution()
-        self.determine(Result.Error(error)) // an error here means this `Deferred` has been canceled.
+        self.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
       }
     }
   }
@@ -585,7 +585,7 @@ internal final class Applicator<T>: Deferred<T>
       if self.isDetermined { return }
       switch result
       {
-      case .Value:
+      case .value:
         transform.notifying(on: self.queue).notify(qos: qos) {
           transform in
           if self.isDetermined { return }
@@ -594,9 +594,9 @@ internal final class Applicator<T>: Deferred<T>
           self.determine(transformed) // an error here means this `Deferred` has been canceled.
         }
 
-      case .Error(let error):
+      case .error(let error):
         self.beginExecution()
-        self.determine(Result.Error(error)) // an error here means this `Deferred` has been canceled.
+        self.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
       }
     }
   }
@@ -622,7 +622,7 @@ internal final class Delayed<T>: Deferred<T>
       result in
       if self.isDetermined { return }
 
-      if case .Value = result where deadline > dispatch_time(DISPATCH_TIME_NOW, 0)
+      if case .value = result where deadline > dispatch_time(DISPATCH_TIME_NOW, 0)
       {
         self.beginExecution()
         let block = self.createBlock(QOS_CLASS_UNSPECIFIED) { self.determine(result) }
@@ -688,7 +688,7 @@ public class TBD<T>: Deferred<T>
 
   public func determine(value: T) throws
   {
-    try determine(Result.Value(value), place: #function)
+    try determine(Result.value(value), place: #function)
   }
 
   /// Set this `Deferred` to an error and change its state to `DeferredState.determined`
@@ -699,7 +699,7 @@ public class TBD<T>: Deferred<T>
 
   public func determine(error: ErrorType) throws
   {
-    try determine(Result.Error(error), place: #function)
+    try determine(Result.error(error), place: #function)
   }
 
   /// Set the `Result` of this `Deferred` and change its state to `DeferredState.determined`

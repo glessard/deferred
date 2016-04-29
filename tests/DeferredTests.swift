@@ -108,7 +108,7 @@ class DeferredTests: XCTestCase
   {
     let value = 1
     let d1 = Deferred(value: value)
-    XCTAssert(d1.peek()! == Result.Value(value))
+    XCTAssert(d1.peek()! == Result.value(value))
 
     let d2 = Deferred(value: value).delay(µs: 10_000)
     XCTAssert(d2.peek() == nil)
@@ -117,7 +117,7 @@ class DeferredTests: XCTestCase
     _ = d2.value // Wait for delay
 
     XCTAssert(d2.peek() != nil)
-    XCTAssert(d2.peek()! == Result.Value(value))
+    XCTAssert(d2.peek()! == Result.value(value))
     XCTAssert(d2.isDetermined)
   }
 
@@ -188,7 +188,7 @@ class DeferredTests: XCTestCase
     let e1 = expectationWithDescription("Pre-set Deferred")
     let d1 = Deferred(value: value)
     d1.notify {
-      XCTAssert( $0 == Result.Value(value) )
+      XCTAssert( $0 == Result.value(value) )
       e1.fulfill()
     }
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -202,7 +202,7 @@ class DeferredTests: XCTestCase
     let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
     let q2 = dispatch_queue_create("Test", a2)
     d2.notifying(on: q2).notify(qos: QOS_CLASS_UTILITY) {
-      XCTAssert( $0 == Result.Value(value) )
+      XCTAssert( $0 == Result.value(value) )
       e2.fulfill()
     }
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -218,7 +218,7 @@ class DeferredTests: XCTestCase
     }
     d3.notify {
       result in
-      guard case let .Error(e) = result,
+      guard case let .error(e) = result,
             let deferredErr = e as? DeferredError,
             case .canceled = deferredErr
       else
@@ -280,12 +280,12 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, good transform
-    let d1 = goodOperand.map { Result.Value(Int($0)*2) }
+    let d1 = goodOperand.map { Result.value(Int($0)*2) }
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 
     // good operand, transform errors
-    let d2 = goodOperand.map { Result<Void>.Error(TestError($0)) }
+    let d2 = goodOperand.map { Result<Void>.error(TestError($0)) }
     XCTAssert(d2.value == nil)
     XCTAssert(d2.error as? TestError == TestError(value))
 
@@ -386,7 +386,7 @@ class DeferredTests: XCTestCase
     result.notify {
       result in
       print("\(v1), \(v2), \(result)")
-      XCTAssert(result == Result.Value(Double(v1*v2)))
+      XCTAssert(result == Result.value(Double(v1*v2)))
       expect.fulfill()
     }
 
@@ -438,7 +438,7 @@ class DeferredTests: XCTestCase
 
     // good operand, good transform
     let o1 = Deferred(value: value)
-    let t1 = Deferred { i in Result.Value(Double(value*i)) }
+    let t1 = Deferred { i in Result.value(Double(value*i)) }
     let r1 = o1.apply(transform: t1)
     XCTAssert(r1.value == Double(value*value))
     XCTAssert(r1.error == nil)
@@ -457,7 +457,7 @@ class DeferredTests: XCTestCase
     XCTAssert(qb.qos == qb.value)
 
     let e1 = expectationWithDescription("Waiting")
-    Deferred(qos: QOS_CLASS_BACKGROUND, result: Result.Value(qos_class_self())).onValue {
+    Deferred(qos: QOS_CLASS_BACKGROUND, result: Result.value(qos_class_self())).onValue {
       qosv in
       // Verify that the QOS has been adjusted
       XCTAssert(qosv != qos_class_self())
@@ -513,7 +513,7 @@ class DeferredTests: XCTestCase
     let d1 = tbd.map { $0 * 2 }
     let e1 = expectationWithDescription("first deferred")
     d1.onValue { _ in XCTFail() }
-    d1.notify  { r in XCTAssert(r == Result.Error(DeferredError.canceled(""))) }
+    d1.notify  { r in XCTAssert(r == Result.error(DeferredError.canceled(""))) }
     d1.onError {
       e in
       guard let _ = e as? DeferredError else { fatalError() }
@@ -523,7 +523,7 @@ class DeferredTests: XCTestCase
     let d2 = d1.map  { $0 + 100 }
     let e2 = expectationWithDescription("second deferred")
     d2.onValue { _ in XCTFail() }
-    d2.notify  { r in XCTAssert(r == Result.Error(DeferredError.canceled(""))) }
+    d2.notify  { r in XCTAssert(r == Result.error(DeferredError.canceled(""))) }
     d2.onError { _ in e2.fulfill() }
 
     d1.cancel()
@@ -541,7 +541,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectationWithDescription("cancellation of Deferred.map(_: U -> Result<T>)")
-    let d2 = tbd.map { u in Result.Value(XCTFail(String(u))) }
+    let d2 = tbd.map { u in Result.value(XCTFail(String(u))) }
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
@@ -601,7 +601,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d2.cancel() == true)
 
     let e3 = expectationWithDescription("cancellation of Deferred.apply, part 3")
-    let t3 = Deferred { (i: Int) in Result.Value(Double(i)) }
+    let t3 = Deferred { (i: Int) in Result.value(Double(i)) }
     let d3 = tbd.apply(transform: t3)
     d3.onError { e in e3.fulfill() }
     XCTAssert(d3.cancel() == true)
@@ -804,7 +804,7 @@ class DeferredTests: XCTestCase
 
     switch dt.map(transform: { _ in NSDate() }).result
     {
-    case .Value(let end):
+    case .value(let end):
       print("\(round(Double(end.timeIntervalSinceDate(start)*1e9)/Double(iterations))/1000) µs per notification")
 
     default: XCTFail()
