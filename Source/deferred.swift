@@ -355,7 +355,8 @@ public class Deferred<T>
   /// - returns: this `Deferred`'s determined value, or `nil`
 
   public var value: T? {
-    return result.value
+    if case let .Value(v) = result { return v }
+    return nil
   }
 
   /// Get this `Deferred` value, blocking if necessary until it becomes determined.
@@ -365,7 +366,8 @@ public class Deferred<T>
   /// - returns: this `Deferred`'s determined value, or `nil`
 
   public var error: ErrorType? {
-    return result.error
+    if case let .Error(e) = result { return e }
+    return nil
   }
 
   /// Get the quality-of-service class of this `Deferred`'s queue

@@ -158,7 +158,7 @@ class TBDTests: XCTestCase
     try! tbd.determine(value)
 
     tbd.notify {
-      XCTAssert( $0.value == value )
+      XCTAssert( $0 == Result.Value(value) )
       e1.fulfill()
     }
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -171,7 +171,7 @@ class TBDTests: XCTestCase
 
     var value = arc4random() & 0x3fff_ffff
     tbd.notify {
-      XCTAssert( $0.value == value )
+      XCTAssert( $0 == Result.Value(value) )
       e2.fulfill()
     }
 

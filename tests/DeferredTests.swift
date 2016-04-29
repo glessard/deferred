@@ -108,7 +108,7 @@ class DeferredTests: XCTestCase
   {
     let value = 1
     let d1 = Deferred(value: value)
-    XCTAssert(d1.peek()?.value == value)
+    XCTAssert(d1.peek()! == Result.Value(value))
 
     let d2 = Deferred(value: value).delay(µs: 10_000)
     XCTAssert(d2.peek() == nil)
@@ -117,7 +117,7 @@ class DeferredTests: XCTestCase
     _ = d2.value // Wait for delay
 
     XCTAssert(d2.peek() != nil)
-    XCTAssert(d2.peek()?.value == value)
+    XCTAssert(d2.peek()! == Result.Value(value))
     XCTAssert(d2.isDetermined)
   }
 
@@ -188,7 +188,7 @@ class DeferredTests: XCTestCase
     let e1 = expectationWithDescription("Pre-set Deferred")
     let d1 = Deferred(value: value)
     d1.notify {
-      XCTAssert( $0.value == value )
+      XCTAssert( $0 == Result.Value(value) )
       e1.fulfill()
     }
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -202,7 +202,7 @@ class DeferredTests: XCTestCase
     let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
     let q2 = dispatch_queue_create("Test", a2)
     d2.notifying(on: q2).notify(qos: QOS_CLASS_UTILITY) {
-      XCTAssert( $0.value == value )
+      XCTAssert( $0 == Result.Value(value) )
       e2.fulfill()
     }
     waitForExpectationsWithTimeout(1.0, handler: nil)
@@ -386,7 +386,7 @@ class DeferredTests: XCTestCase
     result.notify {
       result in
       print("\(v1), \(v2), \(result)")
-      XCTAssert(result.value == Double(v1*v2))
+      XCTAssert(result == Result.Value(Double(v1*v2)))
       expect.fulfill()
     }
 
@@ -513,15 +513,18 @@ class DeferredTests: XCTestCase
     let d1 = tbd.map { $0 * 2 }
     let e1 = expectationWithDescription("first deferred")
     d1.onValue { _ in XCTFail() }
-    d1.onError { _ in e1.fulfill() }
-    d1.onError { e in guard let e = e as? DeferredError else { fatalError() }; _ = e.description }
-    d1.notify  { r in XCTAssert(r.error as? DeferredError == DeferredError.canceled("")) }
+    d1.notify  { r in XCTAssert(r == Result.Error(DeferredError.canceled(""))) }
+    d1.onError {
+      e in
+      guard let _ = e as? DeferredError else { fatalError() }
+      e1.fulfill()
+    }
 
     let d2 = d1.map  { $0 + 100 }
     let e2 = expectationWithDescription("second deferred")
     d2.onValue { _ in XCTFail() }
+    d2.notify  { r in XCTAssert(r == Result.Error(DeferredError.canceled(""))) }
     d2.onError { _ in e2.fulfill() }
-    d1.notify  { r in XCTAssert(r.error as? DeferredError != DeferredError.alreadyDetermined("")) }
 
     d1.cancel()
 

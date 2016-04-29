@@ -131,7 +131,7 @@ extension Deferred
 
   public func onValue(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (T) -> Void)
   {
-    notify(qos: qos) { if let value = $0.value { task(value) } }
+    notify(qos: qos) { if case let .Value(v) = $0 { task(v) } }
   }
 
   // MARK: onError: execute a task when (and only when) a computation fails
@@ -143,7 +143,7 @@ extension Deferred
 
   public func onError(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (ErrorType) -> Void)
   {
-    notify(qos: qos) { if let error = $0.error { task(error) } }
+    notify(qos: qos) { if case let .Error(e) = $0 { task(e) } }
   }
 }
 

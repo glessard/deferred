@@ -16,20 +16,28 @@ class ResultTests: XCTestCase
   func testInit()
   {
     let r1: Result<Void> = Result()
-    XCTAssert(r1.value == nil)
+    do {
+      try r1.getValue()
+      XCTFail()
+    }
+    catch {
+      XCTAssert(error is NoResult)
+    }
 
     let r2: Result<Int> = Result()
-    XCTAssert(r2.value == nil)
-
-    XCTAssert((r1.error is NoResult) == (r2.error is NoResult))
+    do {
+      try r2.getValue()
+      XCTFail()
+    }
+    catch {
+      XCTAssert(error is NoResult)
+    }
   }
 
   func testInitValue()
   {
     let val = arc4random() & 0x3fff_ffff
     let res = Result.Value(val)
-    XCTAssert(res.value == val)
-    XCTAssert(res.error == nil)
 
     do {
       let v = try res.getValue()
@@ -46,8 +54,6 @@ class ResultTests: XCTestCase
   {
     let err = TestError(arc4random() & 0x3fff_ffff)
     let res = Result<Int>.Error(err)
-    XCTAssert(res.error as? TestError == err)
-    XCTAssert(res.value == nil)
 
     do {
       _ = try res.getValue()
@@ -64,16 +70,32 @@ class ResultTests: XCTestCase
   {
     let val = arc4random() & 0x3fff_ffff
     let res = Result { _ throws -> UInt32 in val }
-    XCTAssert(res.value == val)
-    XCTAssert(res.error == nil)
-  }
+
+    do {
+      let v = try res.getValue()
+      XCTAssert(v == val)
+    }
+    catch {
+      XCTFail()
+    }
+
+    XCTAssert(res.description == val.description)
+}
 
   func testInitClosureError()
   {
     let err = TestError(arc4random() & 0x3fff_ffff)
     let res = Result { _ throws -> UInt32 in throw err }
-    XCTAssert(res.error as? TestError == err)
-    XCTAssert(res.value == nil)
+
+    do {
+      _ = try res.getValue()
+      XCTFail()
+    }
+    catch {
+      XCTAssert(error as? TestError == err)
+    }
+
+    XCTAssert(res.description.hasSuffix("\(err)"))
   }
 
   func testMap()
@@ -83,20 +105,17 @@ class ResultTests: XCTestCase
 
     // Good operand, good transform
     let r1 = goodres.map { Int($0)*2 }
-    XCTAssert(r1.value == Int(value)*2)
-    XCTAssert(r1.error == nil)
+    XCTAssert(r1 == Result.Value(Int(value)*2))
 
     // Good operand, transform throws
     let r2 = goodres.map { (i:UInt32) throws -> NSObject in throw TestError(i) }
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(value))
+    XCTAssert(r2 == Result.Error(TestError(value)))
 
     let badres = Result<Double>()
 
     // Bad operand, transform not used
     let r3 = badres.map { (d: Double) throws -> Int in XCTFail(); return 0 }
-    XCTAssert(r3.value == nil)
-    XCTAssert(r3.error != nil)
+    XCTAssert(r3 == Result())
   }
 
   func testFlatMap()
@@ -106,20 +125,17 @@ class ResultTests: XCTestCase
 
     // Good operand, good transform
     let r1 = goodres.flatMap { Result.Value(Int($0)*2) }
-    XCTAssert(r1.value == Int(value)*2)
-    XCTAssert(r1.error == nil)
+    XCTAssert(r1 == Result.Value(Int(value)*2))
 
     // Good operand, transform errors
     let r2 = goodres.flatMap { Result<Double>.Error(TestError($0)) }
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(value))
+    XCTAssert(r2 == Result.Error(TestError(value)))
 
     let badres = Result<Double>()
 
     // Bad operand, transform not used
     let r3 = badres.flatMap { _ in Result<String> { XCTFail(); return "" } }
-    XCTAssert(r3.value == nil)
-    XCTAssert(r3.error != nil)
+    XCTAssert(r3 == Result())
   }
 
   func testRecover()
@@ -129,20 +145,17 @@ class ResultTests: XCTestCase
 
     // Good operand, transform short-circuited
     let r1 = goodres.recover { e in Result.Value(value*2) }
-    XCTAssert(r1.value == value)
-    XCTAssert(r1.error == nil)
+    XCTAssert(r1 == Result.Value(value))
 
     let badres = Result<Double>()
 
     // Bad operand, transform throws
     let r2 = badres.recover { e in Result.Error(TestError(value)) }
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(value))
+    XCTAssert(r2 == Result.Error(TestError(value)))
 
     // Bad operand, transform executes
     let r3 = badres.recover { e in Result.Value(Double(value)) }
-    XCTAssert(r3.value == Double(value))
-    XCTAssert(r3.error == nil)
+    XCTAssert(r3 == Result.Value(Double(value)))
   }
 
   func testApplyA()
@@ -154,22 +167,19 @@ class ResultTests: XCTestCase
     let o1 = Result.Value(value)
     let t1 = Result.Value { i throws in Double(value*i) }
     let r1 = o1.apply(t1)
-    XCTAssert(r1.value == Double(value*value))
-    XCTAssert(r1.error == nil)
+    XCTAssert(r1 == Result.Value(Double(value*value)))
 
     // Bad operand: transform not applied
     let o2 = Result<Int>.Error(TestError(error))
     let t2 = Result.Value({ (i:Int) throws -> CGPoint in XCTFail(); return CGPointZero })
     let r2 = o2.apply(t2)
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(error))
+    XCTAssert(r2 == Result.Error(TestError(error)))
 
     // Good operand, transform Result carries error
     let o4 = Result.Value(value)
     let t4 = Result.Error(TestError(error)) as Result<(Int) throws -> UnsafeMutablePointer<AnyObject>>
     let r4 = o4.apply(t4)
-    XCTAssert(r4.value == nil)
-    XCTAssert(r4.error as? TestError == TestError(error))
+    XCTAssert(r4 == Result.Error(TestError(error)))
   }
 
   func testApplyB()
@@ -181,22 +191,19 @@ class ResultTests: XCTestCase
     let o1 = Result.Value(value)
     let t1 = Result.Value { i in Result.Value(Double(value*i)) }
     let r1 = o1.apply(t1)
-    XCTAssert(r1.value == Double(value*value))
-    XCTAssert(r1.error == nil)
+    XCTAssert(r1 == Result.Value(Double(value*value)))
 
     // Bad operand: transform not applied
     let o2 = Result<Int>.Error(TestError(error))
     let t2 = Result.Value { (i:Int) in Result<CGPoint> { XCTFail(); return CGPointZero } }
     let r2 = o2.apply(t2)
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(error))
+    XCTAssert(r2 == Result.Error(TestError(error)))
 
     // Good operand, transform Result carries error
     let o4 = Result.Value(value)
-    let t4 = Result.Error(TestError(error)) as Result<(Int) -> Result<Any>>
+    let t4 = Result.Error(TestError(error)) as Result<(Int) -> Result<UnsafeMutablePointer<AnyObject>>>
     let r4 = o4.apply(t4)
-    XCTAssert(r4.value == nil)
-    XCTAssert(r4.error as? TestError == TestError(error))
+    XCTAssert(r4 == Result.Error(TestError(error)))
   }
 
   func testQuestionMarkQuestionMarkOperator()
