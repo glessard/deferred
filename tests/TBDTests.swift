@@ -237,18 +237,22 @@ class TBDTests: XCTestCase
     let lucky = Int(arc4random_uniform(numericCast(count)))
 
     let deferreds = (0..<count).map { _ in TBD<Int>() }
-    let first = firstValue(deferreds)
+    let first1 = firstValue(deferreds)
+    let first2 = firstValue(AnySequence(deferreds.map({$0 as Deferred})))
 
     do { try deferreds[lucky].determine(lucky) }
     catch { XCTFail() }
 
-    XCTAssert(first.value == lucky)
+    XCTAssert(first1.value == lucky)
+    XCTAssert(first2.value == lucky)
 
     for (i,d) in deferreds.enumerate()
     {
       do { try d.determine(i) }
       catch { XCTAssert(i == lucky) }
     }
+
+    _ = deferreds.map { d in d.cancel() }
 
     let never = firstValue([Deferred<Any>]())
     XCTAssert(never.value == nil)
