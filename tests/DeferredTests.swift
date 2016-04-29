@@ -786,4 +786,25 @@ class DeferredTests: XCTestCase
       print("\(round(Double(toc.timeIntervalSinceDate(tic)*1e9)/Double(iterations))/1000) µs per message")
     }
   }
+
+  func testNotificationTime()
+  {
+    let iterations = 100_000
+
+    let attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INITIATED, 0)
+    let dt = Deferred(value: 1).notifying(on: dispatch_queue_create("", attr))
+    let start = NSDate()
+    for _ in 0..<iterations
+    {
+      dt.notify { _ in }
+    }
+
+    switch dt.map(transform: { _ in NSDate() }).result
+    {
+    case .Value(let end):
+      print("\(round(Double(end.timeIntervalSinceDate(start)*1e9)/Double(iterations))/1000) µs per notification")
+
+    default: XCTFail()
+    }
+  }
 }
