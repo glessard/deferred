@@ -10,7 +10,7 @@ import Dispatch
 
 struct Waiter
 {
-  let block: dispatch_block_t
+  private let block: dispatch_block_t
   var next: UnsafeMutablePointer<Waiter> = nil
 
   init(_ block: dispatch_block_t)
