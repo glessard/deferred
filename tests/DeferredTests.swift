@@ -646,13 +646,12 @@ class DeferredTests: XCTestCase
 
   func testRace()
   {
-    let count = 1000
+    let count = 10_000
     let queue = dispatch_get_global_queue(qos_class_self(), 0)
 
     let tbd = TBD<Void>(queue: queue)
 
-    let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/4
-    let e = (0..<count).map { i in expectationWithDescription(i.description) }
+    let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/2
 
     var first: Int32 = -1
     dispatch_async(queue) {
@@ -660,17 +659,17 @@ class DeferredTests: XCTestCase
       {
         dispatch_async(queue) {
           tbd.notify {
-            [expectation = e[i]] _ in
-            expectation.fulfill()
-            if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint(first) }
+            _ in
+            if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint("First: \(first)") }
           }
           if i == lucky { dispatch_async(queue) { try! tbd.determine() } }
         }
       }
     }
 
-    waitForExpectationsWithTimeout(5.0, handler: nil)
+    syncprint("Lucky: \(lucky)")
     syncprintwait()
+    dispatch_barrier_sync(queue) {}
   }
 
   func testCombine2()
