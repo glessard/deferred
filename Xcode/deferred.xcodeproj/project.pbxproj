@@ -39,6 +39,8 @@
 		03850AF51C76ABF500F4B44B /* TBDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AED1C76ABF500F4B44B /* TBDTests.swift */; };
 		03850AF61C76ABF500F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AEE1C76ABF500F4B44B /* TestError.swift */; };
 		03850AF71C76ABF500F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AEE1C76ABF500F4B44B /* TestError.swift */; };
+		039BEF0B1CD3E22600F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */; };
+		039BEF0C1CD3E22700F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */; };
 		03B4E0771C14003C00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
 		03B4E09C1C1403C300F4B44B /* deferred-ios.h in Headers */ = {isa = PBXBuildFile; fileRef = 03B4E09B1C1403C300F4B44B /* deferred-ios.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03B4E0A31C1403C300F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E0991C1403C300F4B44B /* deferred.framework */; };
@@ -115,6 +117,7 @@
 		03850AED1C76ABF500F4B44B /* TBDTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TBDTests.swift; sourceTree = "<group>"; };
 		03850AEE1C76ABF500F4B44B /* TestError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestError.swift; sourceTree = "<group>"; };
 		03850AEF1C76ABF500F4B44B /* URLSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLSessionTests.swift; sourceTree = "<group>"; };
+		039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TBDTimingTests.swift; sourceTree = "<group>"; };
 		03B4E0641C13FF6900F4B44B /* deferred.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deferred.h; sourceTree = "<group>"; };
 		03B4E0651C13FF6900F4B44B /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03B4E06D1C14003B00F4B44B /* deferred.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = deferred.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -210,6 +213,7 @@
 				03850AEB1C76ABF500F4B44B /* DeferredTests.swift */,
 				03850AEC1C76ABF500F4B44B /* ResultTests.swift */,
 				03850AED1C76ABF500F4B44B /* TBDTests.swift */,
+				039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */,
 				03850AEE1C76ABF500F4B44B /* TestError.swift */,
 				03850AEF1C76ABF500F4B44B /* URLSessionTests.swift */,
 			);
@@ -523,6 +527,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				039BEF0B1CD3E22600F4B44B /* TBDTimingTests.swift in Sources */,
 				03850AE71C76AB9900F4B44B /* string-data-util.swift in Sources */,
 				03850AF01C76ABF500F4B44B /* DeferredTests.swift in Sources */,
 				03850AF21C76ABF500F4B44B /* ResultTests.swift in Sources */,
@@ -553,6 +558,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				039BEF0C1CD3E22700F4B44B /* TBDTimingTests.swift in Sources */,
 				03850AE91C76AB9900F4B44B /* string-data-util.swift in Sources */,
 				03850AF11C76ABF500F4B44B /* DeferredTests.swift in Sources */,
 				03850AF31C76ABF500F4B44B /* ResultTests.swift in Sources */,
