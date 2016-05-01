@@ -103,26 +103,6 @@ class TBDTests: XCTestCase
 
   func testDealloc()
   {
-    class NoDeallocTBD: TBD<Void>
-    {
-      init()
-      {
-        super.init(queue: dispatch_get_global_queue(qos_class_self(), 0))
-      }
-      deinit
-      {
-        XCTFail("This is expected to leak, therefore deinit shouldn't run")
-      }
-    }
-
-    do {
-      // This one will leak.
-      let tbd = NoDeallocTBD()
-      for i in 1...3 { tbd.notify { _ in XCTFail("Notification \(i)") } }
-      // Every block enqueued by the notify method has an implied reference back to self.
-      // The reference needs to be strong, otherwise chaining will fail.
-    }
-
     class DeallocTBD: TBD<Void>
     {
       let e: XCTestExpectation
@@ -138,13 +118,9 @@ class TBDTests: XCTestCase
     }
 
     do {
-      // This one will get deallocated
+      // This will get deallocated because notify doesn't create reference cycles
       let tbd = DeallocTBD(expectation: expectationWithDescription("will dealloc"))
-      for i in 1...3
-      {
-        tbd.notifyWithBlock(dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS,
-                                                  { XCTFail("Block \(i)") }))
-      }
+      for i in 1...3 { tbd.notify { _ in XCTFail("Notification \(i)") } }
     }
 
     waitForExpectationsWithTimeout(0.1, handler: nil)
@@ -217,12 +193,6 @@ class TBDTests: XCTestCase
     XCTAssert(first.isDetermined == false)
     XCTAssert(other.isDetermined == false)
     XCTAssert(third.isDetermined == false)
-
-    // Memory management note: when a `Deferred` has other `Deferred` dependent on it, it *must* be determined
-    // in order for memory to be reclaimed. This is because the createNotificationBlock() method creates
-    // a block with a strong reference to `self`. The reference must be strong in order to allow `Deferred`
-    // objects to exist without an explicit reference, which in turns allows chained calls.
-    // `cancel()` is a perfectly correct way to determine a `Deferred`.
 
     first.cancel()
 

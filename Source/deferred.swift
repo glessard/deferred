@@ -36,7 +36,7 @@ public class Deferred<Value>
   private var currentState: Int32
 
   private let queue: dispatch_queue_t
-  private var waiters: UnsafeMutablePointer<Waiter> = nil
+  private var waiters: UnsafeMutablePointer<Waiter<Value>> = nil
 
   deinit
   {
@@ -94,13 +94,20 @@ public class Deferred<Value>
   {
     self.init(queue: queue)
 
-    let block = createBlock(qos) {
+    let closure = {
       let result = Result { _ in try task() }
       self.determine(result) // an error here means this `Deferred` has been canceled.
     }
 
     currentState = DeferredState.executing.rawValue
-    dispatch_async(queue, block)
+    if qos == QOS_CLASS_UNSPECIFIED
+    {
+      dispatch_async(queue, closure)
+    }
+    else
+    {
+      dispatch_async(queue, dispatch_block_create_with_qos_class(DISPATCH_BLOCK_ENFORCE_QOS_CLASS, qos, 0, closure))
+    }
   }
 
   // MARK: initialize with a result, value or error
@@ -186,7 +193,7 @@ public class Deferred<Value>
       if CAS(current: waitQueue, new: nil, target: &waiters)
       {
         // only this thread has the pointer `waitQueue`.
-        WaitQueue.notifyAll(queue, waitQueue)
+        WaitQueue.notifyAll(queue, waitQueue, result)
         break
       }
     }
@@ -206,7 +213,7 @@ public class Deferred<Value>
   /// - parameter waiter: A `Waiter` to enqueue
   /// - returns: whether enqueueing was successful.
 
-  private func enqueue(waiter: UnsafeMutablePointer<Waiter>) -> Bool
+  private func enqueue(waiter: UnsafeMutablePointer<Waiter<Value>>) -> Bool
   {
     while true
     {
@@ -229,50 +236,18 @@ public class Deferred<Value>
     return false
   }
 
-  /// Take a (Result<Value>) -> Void closure, and wrap it in a dispatch_block_t
-  /// where this Deferred's Result is used as the input closure's parameter.
-  ///
-  /// - parameter qos: The QOS class to use for the new block
-  /// - parameter task: The closure to be transformed
-  /// - returns: a dispatch_block_t at the requested QOS class.
-
-  private func createNotificationBlock(qos: qos_class_t, task: (Result<Value>) -> Void) -> dispatch_block_t
-  {
-    return createBlock(qos, block: { task(self.r) })
-  }
-
-  /// Take a () -> Void closure, and make it into a dispatch_block_t of an appropriate QOS class
-  ///
-  /// - parameter qos: The QOS class to use for the new block
-  /// - parameter block: The closure to cast into a dispatch_block_t
-  /// - returns: a dispatch_block_t at the requested QOS class.
-
-  private func createBlock(qos: qos_class_t, block: () -> Void) -> dispatch_block_t
-  {
-    let newBlock: dispatch_block_t
-    if qos == QOS_CLASS_UNSPECIFIED
-    {
-      newBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block)
-    }
-    else
-    {
-      newBlock = dispatch_block_create_with_qos_class(DISPATCH_BLOCK_ENFORCE_QOS_CLASS, qos, 0, block)
-    }
-    return newBlock
-  }
-
   // MARK: public interface
 
-  /// Enqueue a computation to be performed upon the determination of this `Deferred`
+  /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined
   ///
-  /// - parameter block: the computation to be enqueued, as a `dispatch_block_t`.
+  /// - parameter task:  the closure to be enqueued
 
-  public final func notifyWithBlock(block: dispatch_block_t)
+  public func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<Value>) -> Void)
   {
     if currentState != DeferredState.determined.rawValue
     {
-      let waiter = UnsafeMutablePointer<Waiter>.alloc(1)
-      waiter.initialize(Waiter(block))
+      let waiter = UnsafeMutablePointer<Waiter<Value>>.alloc(1)
+      waiter.initialize(Waiter(qos, task))
 
       // waiter will be deallocated later
       if enqueue(waiter)
@@ -281,16 +256,16 @@ public class Deferred<Value>
       }
     }
 
-    dispatch_async(queue, block)
-  }
+    let closure = { [ result = self.r ] in task(result) }
 
-  /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined
-  ///
-  /// - parameter task:  the closure to be enqueued
-
-  public func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<Value>) -> Void)
-  {
-    notifyWithBlock(createNotificationBlock(qos, task: task))
+    if qos == QOS_CLASS_UNSPECIFIED
+    {
+      dispatch_async(queue, closure)
+    }
+    else
+    {
+      dispatch_async(queue, dispatch_block_create_with_qos_class(DISPATCH_BLOCK_ENFORCE_QOS_CLASS, qos, 0, closure))
+    }
   }
 
   /// Query the current state of this `Deferred`
@@ -340,8 +315,8 @@ public class Deferred<Value>
   public var result: Result<Value> {
     if currentState != DeferredState.determined.rawValue
     {
-      let block = createBlock(qos_class_self()) {}
-      notifyWithBlock(block)
+      let block = dispatch_block_create(DISPATCH_BLOCK_ASSIGN_CURRENT, {})
+      self.notify(qos: qos_class_self()) { _ in dispatch_block_perform(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block) }
       dispatch_block_wait(block, DISPATCH_TIME_FOREVER)
     }
 
@@ -625,8 +600,7 @@ internal final class Delayed<Value>: Deferred<Value>
       if case .value = result where deadline > dispatch_time(DISPATCH_TIME_NOW, 0)
       {
         self.beginExecution()
-        let block = self.createBlock(QOS_CLASS_UNSPECIFIED) { self.determine(result) }
-        dispatch_after(deadline, self.queue, block)
+        dispatch_after(deadline, self.queue) { self.determine(result) }
       }
       else
       {
