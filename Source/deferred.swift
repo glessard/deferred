@@ -670,16 +670,6 @@ public class TBD<Value>: Deferred<Value>
     super.init(queue: queue)
   }
 
-  /// Initialize to an already determined state
-  ///
-  /// - parameter queue:  the dispatch queue upon which to execute future notifications for this `Deferred`
-  /// - parameter result: the result of this `Deferred`
-
-  public override init(queue: dispatch_queue_t, result: Result<Value>)
-  {
-    super.init(queue: queue, result: result)
-  }
-
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
   /// - parameter qos: the quality of service to be used when sending result notifications; defaults to the current quality-of-service class.
