@@ -41,7 +41,6 @@
 		03850AF71C76ABF500F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AEE1C76ABF500F4B44B /* TestError.swift */; };
 		039BEF0B1CD3E22600F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */; };
 		039BEF0C1CD3E22700F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */; };
-		039BEF0F1CD41EEE00F4B44B /* URLSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AEF1C76ABF500F4B44B /* URLSessionTests.swift */; };
 		03B4E0771C14003C00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
 		03B4E09C1C1403C300F4B44B /* deferred-ios.h in Headers */ = {isa = PBXBuildFile; fileRef = 03B4E09B1C1403C300F4B44B /* deferred-ios.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03B4E0A31C1403C300F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E0991C1403C300F4B44B /* deferred.framework */; };
@@ -530,7 +529,6 @@
 			files = (
 				039BEF0B1CD3E22600F4B44B /* TBDTimingTests.swift in Sources */,
 				03850AE71C76AB9900F4B44B /* string-data-util.swift in Sources */,
-				039BEF0F1CD41EEE00F4B44B /* URLSessionTests.swift in Sources */,
 				03850AF01C76ABF500F4B44B /* DeferredTests.swift in Sources */,
 				03850AF21C76ABF500F4B44B /* ResultTests.swift in Sources */,
 				03850AF61C76ABF500F4B44B /* TestError.swift in Sources */,
