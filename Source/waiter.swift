@@ -51,16 +51,20 @@ enum WaitQueue
 
   private static func reverseList(tail: UnsafeMutablePointer<Waiter>) -> UnsafeMutablePointer<Waiter>
   {
-    var head: UnsafeMutablePointer<Waiter> = nil
-    var current = tail
-    while current != nil
+    if tail != nil && tail.memory.next != nil
     {
-      let element = current
-      current = element.memory.next
+      var head: UnsafeMutablePointer<Waiter> = nil
+      var current = tail
+      while current != nil
+      {
+        let element = current
+        current = element.memory.next
 
-      element.memory.next = head
-      head = element
+        element.memory.next = head
+        head = element
+      }
+      return head
     }
-    return head
+    return tail
   }
 }
