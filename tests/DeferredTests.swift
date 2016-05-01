@@ -453,8 +453,10 @@ class DeferredTests: XCTestCase
 
   func testQOS()
   {
-    let qb = Deferred(qos: QOS_CLASS_UTILITY) { qos_class_self() }
-    XCTAssert(qb.qos == qb.value)
+    let q = dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0)
+    let qb = Deferred(queue: q, qos: QOS_CLASS_UTILITY) { qos_class_self() }
+    // Verify that the block's QOS was adjusted and is different from the queue's
+    XCTAssert(qb.qos != qb.value)
 
     let e1 = expectationWithDescription("Waiting")
     Deferred(qos: QOS_CLASS_BACKGROUND, result: Result.value(qos_class_self())).onValue {
@@ -504,6 +506,13 @@ class DeferredTests: XCTestCase
     // Set before canceling -- cancellation failure
     let d2 = Deferred(value: arc4random() & 0x3fff_ffff)
     XCTAssert(d2.cancel("message") == false)
+
+    if let e = d1.error as? DeferredError
+    {
+      XCTAssert(e.description != "")
+      XCTAssert(e == DeferredError.canceled(""))
+      XCTAssert(e != DeferredError.alreadyDetermined(""))
+    }
   }
 
   func testCancelAndNotify()
