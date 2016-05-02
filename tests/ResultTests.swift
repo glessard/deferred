@@ -171,7 +171,7 @@ class ResultTests: XCTestCase
 
     // Bad operand: transform not applied
     let o2 = Result<Int>.error(TestError(error))
-    let t2 = Result.value({ (i:Int) throws -> CGPoint in XCTFail(); return CGPointZero })
+    let t2 = Result.value({ (i:Int) throws -> CGPoint in XCTFail(); return CGPoint.zero })
     let r2 = o2.apply(t2)
     XCTAssert(r2 == Result.error(TestError(error)))
 
@@ -195,7 +195,7 @@ class ResultTests: XCTestCase
 
     // Bad operand: transform not applied
     let o2 = Result<Int>.error(TestError(error))
-    let t2 = Result.value { (i:Int) in Result<CGPoint> { XCTFail(); return CGPointZero } }
+    let t2 = Result.value { (i:Int) in Result<CGPoint> { XCTFail(); return CGPoint.zero } }
     let r2 = o2.apply(t2)
     XCTAssert(r2 == Result.error(TestError(error)))
 

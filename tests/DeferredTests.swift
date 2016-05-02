@@ -73,7 +73,7 @@ class DeferredTests: XCTestCase
   {
     let interval = 0.1
     let d1 = Deferred(value: NSDate())
-    let d2 = d1.delay(seconds: interval).map { NSDate().timeIntervalSinceDate($0) }
+    let d2 = d1.delay(seconds: interval).map { NSDate().timeIntervalSince($0) }
 
     XCTAssert(d2.value >= interval)
     XCTAssert(d2.value < 2.0*interval)
@@ -88,10 +88,10 @@ class DeferredTests: XCTestCase
     // a longer calculation is not delayed (significantly)
     let d5 = Deferred {
       _ -> NSDate in
-      NSThread.sleepForTimeInterval(interval)
+      NSThread.sleep(forTimeInterval:interval)
       return NSDate()
     }
-    let d6 = d5.delay(seconds: interval/10).map { NSDate().timeIntervalSinceDate($0) }
+    let d6 = d5.delay(seconds: interval/10).map { NSDate().timeIntervalSince($0) }
     let actualDelay = d6.delay(ns: 100).value
     XCTAssert(actualDelay < interval/10)
   }
@@ -133,7 +133,7 @@ class DeferredTests: XCTestCase
       return value
     }
 
-    let expectation = expectationWithDescription("Timing out on Deferred")
+    let e = expectation(withDescription: "Timing out on Deferred")
     let fulfillTime = dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns))
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
@@ -145,10 +145,10 @@ class DeferredTests: XCTestCase
     }
 
     dispatch_after(fulfillTime, dispatch_get_global_queue(qos_class_self(), 0)) {
-      expectation.fulfill()
+      e.fulfill()
     }
 
-    waitForExpectationsWithTimeout(1.0) { _ in dispatch_semaphore_signal(s) }
+    waitForExpectations(withTimeout: 1.0) { _ in dispatch_semaphore_signal(s) }
   }
 
   func testValueUnblocks()
@@ -163,7 +163,7 @@ class DeferredTests: XCTestCase
       return value
     }
 
-    let expectation = expectationWithDescription("Unblocking a Deferred")
+    let e = expectation(withDescription: "Unblocking a Deferred")
     let fulfillTime = dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns))
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
@@ -172,32 +172,32 @@ class DeferredTests: XCTestCase
 
       let now = dispatch_time(DISPATCH_TIME_NOW, 0)
       if now < fulfillTime { XCTFail("delayed.value unblocked too soon") }
-      else                 { expectation.fulfill() }
+      else                 { e.fulfill() }
     }
 
     dispatch_after(fulfillTime, dispatch_get_global_queue(qos_class_self(), 0)) {
       dispatch_semaphore_signal(s)
     }
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testNotify1()
   {
     let value = arc4random() & 0x3fff_ffff
-    let e1 = expectationWithDescription("Pre-set Deferred")
+    let e1 = expectation(withDescription: "Pre-set Deferred")
     let d1 = Deferred(value: value)
     d1.notify {
       XCTAssert( $0 == Result.value(value) )
       e1.fulfill()
     }
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testNotify2()
   {
     let value = arc4random() & 0x3fff_ffff
-    let e2 = expectationWithDescription("Properly Deferred")
+    let e2 = expectation(withDescription: "Properly Deferred")
     let d2 = Deferred(value: value).delay(ms: 100)
     let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
     let q2 = dispatch_queue_create("Test", a2)
@@ -205,12 +205,12 @@ class DeferredTests: XCTestCase
       XCTAssert( $0 == Result.value(value) )
       e2.fulfill()
     }
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testNotify3()
   {
-    let e3 = expectationWithDescription("Deferred forever")
+    let e3 = expectation(withDescription: "Deferred forever")
     let d3 = Deferred { _ -> Int in
       let s3 = dispatch_semaphore_create(0)
       dispatch_semaphore_wait(s3, DISPATCH_TIME_FOREVER)
@@ -231,22 +231,22 @@ class DeferredTests: XCTestCase
       e3.fulfill()
     }
 
-    waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
+    waitForExpectations(withTimeout: 1.0) { _ in d3.cancel() }
   }
 
   func testNotify4()
   {
     let d4 = Deferred(value: arc4random() & 0x3fff_ffff).delay(ms: 50)
-    let e4val = expectationWithDescription("Test onValue()")
+    let e4val = expectation(withDescription: "Test onValue()")
     d4.onValue { _ in e4val.fulfill() }
     d4.onError { _ in XCTFail() }
 
     let d5 = Deferred<Int>(error: NSError(domain: "", code: 0, userInfo: nil)).delay(ms: 50)
-    let e5err = expectationWithDescription("Test onError()")
+    let e5err = expectation(withDescription: "Test onError()")
     d5.onValue { _ in XCTFail() }
     d5.onError { _ in e5err.fulfill() }
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testMap()
@@ -379,7 +379,7 @@ class DeferredTests: XCTestCase
     let transform = TBD<(Int) -> Double>()
     let operand = TBD<Int>()
     let result = operand.apply(transform: transform)
-    let expect = expectationWithDescription("Applying a deferred transform to a deferred operand")
+    let expect = expectation(withDescription: "Applying a deferred transform to a deferred operand")
 
     var v1 = 0
     var v2 = 0
@@ -408,7 +408,7 @@ class DeferredTests: XCTestCase
     XCTAssert(transform.state == .waiting)
 
     try! g.determine()
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testApply2()
@@ -458,7 +458,7 @@ class DeferredTests: XCTestCase
     // Verify that the block's QOS was adjusted and is different from the queue's
     XCTAssert(qb.qos != qb.value)
 
-    let e1 = expectationWithDescription("Waiting")
+    let e1 = expectation(withDescription: "Waiting")
     Deferred(qos: QOS_CLASS_BACKGROUND, result: Result.value(qos_class_self())).onValue {
       qosv in
       // Verify that the QOS has been adjusted
@@ -477,7 +477,7 @@ class DeferredTests: XCTestCase
       return qos_class_self()
     }
 
-    let e2 = expectationWithDescription("Waiting")
+    let e2 = expectation(withDescription: "Waiting")
     q2.notifying(at: QOS_CLASS_USER_INTERACTIVE).onValue {
       qosv in
       // Last block was in fact executing at QOS_CLASS_USER_INITIATED
@@ -489,7 +489,7 @@ class DeferredTests: XCTestCase
       e2.fulfill()
     }
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testCancel()
@@ -520,7 +520,7 @@ class DeferredTests: XCTestCase
     let tbd = TBD<Int>()
 
     let d1 = tbd.map { $0 * 2 }
-    let e1 = expectationWithDescription("first deferred")
+    let e1 = expectation(withDescription: "first deferred")
     d1.onValue { _ in XCTFail() }
     d1.notify  { r in XCTAssert(r == Result.error(DeferredError.canceled(""))) }
     d1.onError {
@@ -530,92 +530,92 @@ class DeferredTests: XCTestCase
     }
 
     let d2 = d1.map  { $0 + 100 }
-    let e2 = expectationWithDescription("second deferred")
+    let e2 = expectation(withDescription: "second deferred")
     d2.onValue { _ in XCTFail() }
     d2.notify  { r in XCTAssert(r == Result.error(DeferredError.canceled(""))) }
     d2.onError { _ in e2.fulfill() }
 
     d1.cancel()
 
-    waitForExpectationsWithTimeout(1.0) { _ in tbd.cancel() }
+    waitForExpectations(withTimeout: 1.0) { _ in tbd.cancel() }
   }
 
   func testCancelMap()
   {
     let tbd = TBD<Int>()
 
-    let e1 = expectationWithDescription("cancellation of Deferred.map(_: U throws -> T)")
+    let e1 = expectation(withDescription: "cancellation of Deferred.map(_: U throws -> T)")
     let d1 = tbd.map { u throws in XCTFail(String(u)) }
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
-    let e2 = expectationWithDescription("cancellation of Deferred.map(_: U -> Result<T>)")
+    let e2 = expectation(withDescription: "cancellation of Deferred.map(_: U -> Result<T>)")
     let d2 = tbd.map { u in Result.value(XCTFail(String(u))) }
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testCancelDelay()
   {
     let tbd = TBD<Int>()
 
-    let e1 = expectationWithDescription("cancellation of Deferred.delay")
+    let e1 = expectation(withDescription: "cancellation of Deferred.delay")
     let d1 = tbd.delay(ms: 100)
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testCancelBind()
   {
     let tbd = TBD<Int>()
 
-    let e1 = expectationWithDescription("cancellation of Deferred.flatMap")
+    let e1 = expectation(withDescription: "cancellation of Deferred.flatMap")
     let d1 = tbd.flatMap { Deferred(value: $0) }
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
-    let e2 = expectationWithDescription("cancellation of Deferred.recover")
+    let e2 = expectation(withDescription: "cancellation of Deferred.recover")
     let d2 = tbd.recover { i in Deferred(value: Int.max) }
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testCancelApply()
   {
     let tbd = TBD<Int>()
 
-    let e1 = expectationWithDescription("cancellation of Deferred.apply, part 1")
+    let e1 = expectation(withDescription: "cancellation of Deferred.apply, part 1")
     let t1 = Deferred { (i: Int) throws in Double(i) }
     let d1 = tbd.apply(transform: t1)
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
-    let e2 = expectationWithDescription("cancellation of Deferred.apply, part 2")
+    let e2 = expectation(withDescription: "cancellation of Deferred.apply, part 2")
     let t2 = t1.delay(ms: 100)
     let d2 = Deferred(value: 1).apply(transform: t2)
     d2.onError { e in e2.fulfill() }
     usleep(1000)
     XCTAssert(d2.cancel() == true)
 
-    let e3 = expectationWithDescription("cancellation of Deferred.apply, part 3")
+    let e3 = expectation(withDescription: "cancellation of Deferred.apply, part 3")
     let t3 = Deferred { (i: Int) in Result.value(Double(i)) }
     let d3 = tbd.apply(transform: t3)
     d3.onError { e in e3.fulfill() }
     XCTAssert(d3.cancel() == true)
 
-    let e4 = expectationWithDescription("cancellation of Deferred.apply, part 2")
+    let e4 = expectation(withDescription: "cancellation of Deferred.apply, part 2")
     let t4 = t3.delay(ms: 100)
     let d4 = Deferred(value: 1).apply(transform: t4)
     d4.onError { e in e4.fulfill() }
@@ -624,7 +624,7 @@ class DeferredTests: XCTestCase
 
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testTimeout()
@@ -636,21 +636,21 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.value == value)
 
     let d2 = d.delay(ms: 5000).timeout(ns: 2_000_000)
-    let e2 = expectationWithDescription("Timeout test")
+    let e2 = expectation(withDescription: "Timeout test")
     d2.onValue { _ in XCTFail() }
     d2.onError { _ in e2.fulfill() }
 
     let d3 = d.delay(ms: 100).timeout(seconds: -1)
-    let e3 = expectationWithDescription("Unreasonable timeout test")
+    let e3 = expectation(withDescription: "Unreasonable timeout test")
     d3.onValue { _ in XCTFail() }
     d3.onError { _ in e3.fulfill() }
 
     let d4 = d.delay(ms: 50).timeout(ms: 100)
-    let e4 = expectationWithDescription("Timeout test 4")
+    let e4 = expectation(withDescription: "Timeout test 4")
     d4.onValue { _ in e4.fulfill() }
     d4.onError { _ in XCTFail() }
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testRace()

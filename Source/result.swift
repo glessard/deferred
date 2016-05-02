@@ -8,7 +8,7 @@
 
 import Foundation.NSError
 
-public struct NoResult: ErrorType, CustomStringConvertible
+public struct NoResult: ErrorProtocol, CustomStringConvertible
 {
   private init() {}
   public var description = "No result"
@@ -22,14 +22,14 @@ public struct NoResult: ErrorType, CustomStringConvertible
 public enum Result<Value>: CustomStringConvertible
 {
   case value(Value)
-  case error(ErrorType)
+  case error(ErrorProtocol)
 
   public init()
   {
     self = .error(NoResult())
   }
 
-  public init(@noescape task: () throws -> Value)
+  public init(task: @noescape () throws -> Value)
   {
     do {
       let value = try task()
@@ -59,7 +59,7 @@ public enum Result<Value>: CustomStringConvertible
   }
 
 
-  public func map<Other>(@noescape transform: (Value) throws -> Other) -> Result<Other>
+  public func map<Other>(_ transform: @noescape (Value) throws -> Other) -> Result<Other>
   {
     switch self
     {
@@ -68,7 +68,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func flatMap<Other>(@noescape transform: (Value) -> Result<Other>) -> Result<Other>
+  public func flatMap<Other>(_ transform: @noescape (Value) -> Result<Other>) -> Result<Other>
   {
     switch self
     {
@@ -77,7 +77,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func apply<Other>(transform: Result<(Value) throws -> Other>) -> Result<Other>
+  public func apply<Other>(_ transform: Result<(Value) throws -> Other>) -> Result<Other>
   {
     switch self
     {
@@ -92,7 +92,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func apply<Other>(transform: Result<(Value) -> Result<Other>>) -> Result<Other>
+  public func apply<Other>(_ transform: Result<(Value) -> Result<Other>>) -> Result<Other>
   {
     switch self
     {
@@ -107,7 +107,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func recover(@noescape transform: (ErrorType) -> Result<Value>) -> Result<Value>
+  public func recover(_ transform: @noescape (ErrorProtocol) -> Result<Value>) -> Result<Value>
   {
     switch self
     {
@@ -117,7 +117,7 @@ public enum Result<Value>: CustomStringConvertible
   }
 }
 
-public func ?? <Value> (possible: Result<Value>, @autoclosure alternate: () -> Value) -> Value
+public func ?? <Value> (possible: Result<Value>, alternate: @autoclosure () -> Value) -> Value
 {
   switch possible
   {
@@ -146,7 +146,7 @@ public func != <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bo
   return !(lhr == rhr)
 }
 
-public func == <C: CollectionType, Value: Equatable where C.Generator.Element == Result<Value>> (lha: C, rha: C) -> Bool
+public func == <C: Collection, Value: Equatable where C.Iterator.Element == Result<Value>> (lha: C, rha: C) -> Bool
 {
   guard lha.count == rha.count else { return false }
 
@@ -158,7 +158,7 @@ public func == <C: CollectionType, Value: Equatable where C.Generator.Element ==
   return true
 }
 
-public func != <C: CollectionType, Value: Equatable where C.Generator.Element == Result<Value>> (lha: C, rha: C) -> Bool
+public func != <C: Collection, Value: Equatable where C.Iterator.Element == Result<Value>> (lha: C, rha: C) -> Bool
 {
   return !(lha == rha)
 }

@@ -343,7 +343,7 @@ class URLSessionTests: XCTestCase
 //      return -1
 //    }
 //
-//    let e = expectationWithDescription("Large file download, paused and resumed")
+//    let e = expectation(withDescription: "Large file download, paused and resumed")
 //
 //    combine(firstLength, finalLength).onValue {
 //      (l1, l2) in
@@ -352,7 +352,7 @@ class URLSessionTests: XCTestCase
 //      e.fulfill()
 //    }
 //
-//    waitForExpectationsWithTimeout(9.9) { _ in session.invalidateAndCancel() }
+//    waitForExpectations(withTimeout: 9.9) { _ in session.invalidateAndCancel() }
 //  }
 
   func testDownload_NotFound()

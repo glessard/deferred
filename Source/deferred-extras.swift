@@ -20,7 +20,7 @@ extension Deferred
   /// - parameter µs: a number of microseconds
   /// - returns: a `Deferred` reference
 
-  public final func delay(µs µs: Int) -> Deferred
+  public final func delay(µs: Int) -> Deferred
   {
     return delay64(ns: Int64(µs)*1000)
   }
@@ -29,7 +29,7 @@ extension Deferred
   /// - parameter ms: a number of milliseconds
   /// - returns: a `Deferred` reference
 
-  public final func delay(ms ms: Int) -> Deferred
+  public final func delay(ms: Int) -> Deferred
   {
     return delay64(ns: Int64(ms)*1_000_000)
   }
@@ -47,12 +47,12 @@ extension Deferred
   /// - parameter ns: a number of nanoseconds
   /// - returns: a `Deferred` reference
 
-  public final func delay(ns ns: Int) -> Deferred
+  public final func delay(ns: Int) -> Deferred
   {
     return delay64(ns: Int64(ns))
   }
 
-  private func delay64(ns ns: Int64) -> Deferred
+  private func delay64(ns: Int64) -> Deferred
   {
     if ns < 0 { return self }
     return Delayed(source: self, until: dispatch_time(DISPATCH_TIME_NOW, ns))
@@ -71,7 +71,7 @@ extension Deferred
   /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
-  public final func timeout(µs µs: Int, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(µs: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     return timeout64(ns: Int64(µs)*1000, reason: reason)
   }
@@ -82,7 +82,7 @@ extension Deferred
   /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
-  public final func timeout(ms ms: Int, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(ms: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     return timeout64(ns: Int64(ms)*1_000_000, reason: reason)
   }
@@ -104,12 +104,12 @@ extension Deferred
   /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
-  public final func timeout(ns ns: Int, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(ns: Int, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     return timeout64(ns: Int64(ns), reason: reason)
   }
 
-  private func timeout64(ns ns: Int64, reason: String) -> Deferred
+  private func timeout64(ns: Int64, reason: String) -> Deferred
   {
     if self.isDetermined { return self }
     if ns > 0
@@ -129,7 +129,7 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter task: the closure to be enqueued
 
-  public func onValue(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Value) -> Void)
+  public func onValue(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Value) -> Void)
   {
     notify(qos: qos) { if case let .value(v) = $0 { task(v) } }
   }
@@ -141,7 +141,7 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter task: the closure to be enqueued
 
-  public func onError(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (ErrorType) -> Void)
+  public func onError(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (ErrorProtocol) -> Void)
   {
     notify(qos: qos) { if case let .error(e) = $0 { task(e) } }
   }
@@ -156,7 +156,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) throws -> Other) -> Deferred<Other>
+  public func map<Other>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) throws -> Other) -> Deferred<Other>
   {
     return Mapped<Other>(qos: qos, source: self, transform: transform)
   }
@@ -166,7 +166,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) -> Result<Other>) -> Deferred<Other>
+  public func map<Other>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) -> Result<Other>) -> Deferred<Other>
   {
     return Mapped<Other>(qos: qos, source: self, transform: transform)
   }
@@ -181,7 +181,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) -> Deferred<Other>) -> Deferred<Other>
+  public func flatMap<Other>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (Value) -> Deferred<Other>) -> Deferred<Other>
   {
     return Bind<Other>(qos: qos, source: self, transform: transform)
   }
@@ -191,7 +191,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorType) -> Deferred<Value>) -> Deferred<Value>
+  public func recover(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: (ErrorProtocol) -> Deferred<Value>) -> Deferred<Value>
   {
     return Bind(qos: qos, source: self, transform: transform)
   }
@@ -206,7 +206,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) -> Result<Other>>) -> Deferred<Other>
+  public func apply<Other>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) -> Result<Other>>) -> Deferred<Other>
   {
     return Applicator<Other>(qos: qos, source: self, transform: transform)
   }
@@ -216,7 +216,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func apply<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) throws -> Other>) -> Deferred<Other>
+  public func apply<Other>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) throws -> Other>) -> Deferred<Other>
   {
     return Applicator<Other>(qos: qos, source: self, transform: transform)
   }
@@ -231,7 +231,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public final func apply<Other>(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) -> Other>) -> Deferred<Other>
+  public final func apply<Other>(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, transform: Deferred<(Value) -> Other>) -> Deferred<Other>
   {
     let retransform = transform.map(qos: qos) { transform in { v throws in transform(v) } }
     return Applicator<Other>(qos: qos, source: self, transform: retransform)

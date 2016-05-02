@@ -9,7 +9,7 @@
 import Foundation
 import Foundation.NSURLError
 
-public enum URLSessionError: ErrorType
+public enum URLSessionError: ErrorProtocol
 {
   case ServerStatus(Int)
   case InterruptedDownload(NSData)
@@ -22,7 +22,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
 
   init() { super.init(queue: dispatch_get_global_queue(qos_class_self(), 0)) }
 
-  override public func cancel(reason: String = "") -> Bool
+  override public func cancel(_ reason: String = "") -> Bool
   {
     guard !self.isDetermined,
           let task = sessionTask
@@ -30,7 +30,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
 
     // try to propagate the cancellation upstream
     task.cancel()
-    return task.state == .Canceling
+    return task.state == .canceling
   }
 
   public private(set) var task: NSURLSessionTask? {
@@ -49,7 +49,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     return super.result
   }
 
-  public override func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<Value>) -> Void)
+  public override func notify(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<Value>) -> Void)
   {
     self.task?.resume()
     self.beginExecution()
@@ -59,7 +59,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
 
 public extension NSURLSession
 {
-  private func dataCompletion(tbd: DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>) -> (NSData?, NSURLResponse?, NSError?) -> Void
+  private func dataCompletion(_ tbd: DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>) -> (NSData?, NSURLResponse?, NSError?) -> Void
   {
     return {
       (data: NSData?, response: NSURLResponse?, error: NSError?) in
@@ -79,40 +79,40 @@ public extension NSURLSession
     }
   }
 
-  public func deferredDataTask(request: NSURLRequest) -> DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>
+  public func deferredDataTask(with request: NSURLRequest) -> DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>
   {
     let tbd = DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>()
 
-    let task = self.dataTaskWithRequest(request, completionHandler: dataCompletion(tbd))
+    let task = self.dataTask(with: request, completionHandler: dataCompletion(tbd))
 
     tbd.task = task
     return tbd
   }
 
-  public func deferredDataTask(url: NSURL) -> DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>
+  public func deferredDataTask(with url: NSURL) -> DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>
   {
-    return deferredDataTask(NSURLRequest(URL: url))
+    return deferredDataTask(with: NSURLRequest(url: url))
   }
 }
 
 private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 {
-  override func cancel(reason: String = "") -> Bool
+  override func cancel(_ reason: String = "") -> Bool
   {
     guard !self.isDetermined,
           let task = sessionTask as? NSURLSessionDownloadTask
     else { return super.cancel(reason) }
 
     // try to propagate the cancellation upstream
-    task.cancelByProducingResumeData { _ in } // Let the completion handler collect the data for resuming.
-    // task.state == .Canceling (checking would be nice, but that would require sleeping the thread)
+    task.cancel { _ in } // Let the completion handler collect the data for resuming.
+    // task.state == .canceling (checking would be nice, but that would require sleeping the thread)
     return true
   }
 }
 
 extension NSURLSession
 {
-  private func downloadCompletion(tbd: DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>) -> (NSURL?, NSURLResponse?, NSError?) -> Void
+  private func downloadCompletion(_ tbd: DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>) -> (NSURL?, NSURLResponse?, NSError?) -> Void
   {
     return {
       (url: NSURL?, response: NSURLResponse?, error: NSError?) in
@@ -130,7 +130,7 @@ extension NSURLSession
       if let u = url, r = response as? NSHTTPURLResponse
       {
         do {
-          let f = try NSFileHandle(forReadingFromURL: u)
+          let f = try NSFileHandle(forReadingFrom: u)
           _ = try? tbd.determine( (u,f,r) )
         }
         catch {
@@ -144,26 +144,26 @@ extension NSURLSession
     }
   }
 
-  public func deferredDownloadTask(request: NSURLRequest) -> DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>
+  public func deferredDownloadTask(with request: NSURLRequest) -> DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>
   {
     let tbd = DeferredDownloadTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>()
 
-    let task = self.downloadTaskWithRequest(request, completionHandler: downloadCompletion(tbd))
+    let task = self.downloadTask(with: request, completionHandler: downloadCompletion(tbd))
 
     tbd.task = task
     return tbd
   }
 
-  public func deferredDownloadTask(url: NSURL) -> DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>
+  public func deferredDownloadTask(with url: NSURL) -> DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>
   {
-    return deferredDownloadTask(NSURLRequest(URL: url))
+    return deferredDownloadTask(with: NSURLRequest(url: url))
   }
 
   public func deferredDownloadTask(resumeData data: NSData) -> DeferredURLSessionTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>
   {
     let tbd = DeferredDownloadTask<(NSURL, NSFileHandle, NSHTTPURLResponse)>()
 
-    let task = self.downloadTaskWithResumeData(data, completionHandler: downloadCompletion(tbd))
+    let task = self.downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
 
     tbd.task = task
     return tbd
@@ -172,7 +172,7 @@ extension NSURLSession
 
 extension NSURLSession
 {
-  private func uploadCompletion(tbd: DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>) -> (NSData?, NSURLResponse?, NSError?) -> Void
+  private func uploadCompletion(_ tbd: DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>) -> (NSData?, NSURLResponse?, NSError?) -> Void
   {
     return {
       (data: NSData?, response: NSURLResponse?, error: NSError?) in
@@ -196,7 +196,7 @@ extension NSURLSession
   {
     let tbd = DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>()
 
-    let task = self.uploadTaskWithRequest(request, fromData: bodyData, completionHandler: uploadCompletion(tbd))
+    let task = self.uploadTask(with: request, from: bodyData, completionHandler: uploadCompletion(tbd))
 
     tbd.task = task
     return tbd
@@ -206,7 +206,7 @@ extension NSURLSession
   {
     let tbd = DeferredURLSessionTask<(NSData, NSHTTPURLResponse)>()
 
-    let task = self.uploadTaskWithRequest(request, fromFile: fileURL, completionHandler: uploadCompletion(tbd))
+    let task = self.uploadTask(with: request, fromFile: fileURL, completionHandler: uploadCompletion(tbd))
 
     tbd.task = task
     return tbd

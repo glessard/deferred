@@ -82,7 +82,7 @@ class TBDTests: XCTestCase
       else { XCTFail() }
     }
 
-    let e = expectationWithDescription("Cancel before setting")
+    let e = expectation(withDescription: "Cancel before setting")
     let tbd3 = TBD<UInt32>()
     Deferred(value: ()).delay(ms: 100).notify { _ in XCTAssert(tbd3.cancel() == true) }
     Deferred(value: ()).delay(ms: 200).notify { _ in
@@ -98,7 +98,7 @@ class TBDTests: XCTestCase
       }
     }
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testDealloc()
@@ -119,17 +119,17 @@ class TBDTests: XCTestCase
 
     do {
       // This will get deallocated because notify doesn't create reference cycles
-      let tbd = DeallocTBD(expectation: expectationWithDescription("will dealloc"))
+      let tbd = DeallocTBD(expectation: expectation(withDescription: "will dealloc"))
       for i in 1...3 { tbd.notify { _ in XCTFail("Notification \(i)") } }
     }
 
-    waitForExpectationsWithTimeout(0.1, handler: nil)
+    waitForExpectations(withTimeout: 0.1, handler: nil)
   }
 
   func testNotify1()
   {
     let value = arc4random() & 0x3fff_ffff
-    let e1 = expectationWithDescription("TBD notification after determination")
+    let e1 = expectation(withDescription: "TBD notification after determination")
     let tbd = TBD<UInt32>()
     try! tbd.determine(value)
 
@@ -137,12 +137,12 @@ class TBDTests: XCTestCase
       XCTAssert( $0 == Result.value(value) )
       e1.fulfill()
     }
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testNotify2()
   {
-    let e2 = expectationWithDescription("TBD notification after delay")
+    let e2 = expectation(withDescription: "TBD notification after delay")
     let tbd = TBD<UInt32>()
 
     var value = arc4random() & 0x3fff_ffff
@@ -157,12 +157,12 @@ class TBDTests: XCTestCase
       catch { XCTFail() }
     }
 
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testNotify3()
   {
-    let e3 = expectationWithDescription("TBD never determined")
+    let e3 = expectation(withDescription: "TBD never determined")
     let d3 = TBD<Int>()
     d3.notify {
       result in
@@ -177,7 +177,7 @@ class TBDTests: XCTestCase
       // This will trigger the `XCWaitCompletionHandler` in the `waitForExpectationsWithTimeout` call below.
       e3.fulfill()
     }
-    waitForExpectationsWithTimeout(1.0) { _ in d3.cancel() }
+    waitForExpectations(withTimeout: 1.0) { _ in d3.cancel() }
   }
 
   func testNeverDetermined()
@@ -216,7 +216,7 @@ class TBDTests: XCTestCase
     XCTAssert(first1.value == lucky)
     XCTAssert(first2.value == lucky)
 
-    for (i,d) in deferreds.enumerate()
+    for (i,d) in deferreds.enumerated()
     {
       do { try d.determine(i) }
       catch { XCTAssert(i == lucky) }
@@ -235,7 +235,7 @@ class TBDTests: XCTestCase
 
     let deferreds = (0..<count).map {
       i -> Deferred<Int> in
-      let e = expectationWithDescription(i.description)
+      let e = expectation(withDescription: i.description)
       return Deferred {
         _ in
         usleep(numericCast(i)*10_000)
@@ -244,13 +244,13 @@ class TBDTests: XCTestCase
       }
     }
 
-    func oneBy1(deferreds: [Deferred<Int>])
+    func oneBy1(_ deferreds: [Deferred<Int>])
     {
       let first = firstDetermined(deferreds)
-      if let index = deferreds.indexOf({ d in d === first.value })
+      if let index = deferreds.index(where: { d in d === first.value })
       {
         var d = deferreds
-        d.removeAtIndex(index)
+        d.remove(at: index)
         oneBy1(d)
       }
 
@@ -262,7 +262,7 @@ class TBDTests: XCTestCase
     }
 
     oneBy1(deferreds)
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testParallel1()
@@ -271,9 +271,9 @@ class TBDTests: XCTestCase
 
     // Verify that the right number of Deferreds get created
 
-    let e = (0..<count).map { expectationWithDescription("\($0)") }
+    let e = (0..<count).map { expectation(withDescription: "\($0)") }
     Deferred.inParallel(count: count, qos: QOS_CLASS_UTILITY) { i in e[i].fulfill() }
-    waitForExpectationsWithTimeout(1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
   func testParallel2()
@@ -290,7 +290,7 @@ class TBDTests: XCTestCase
     let determined = combine(arrays).map { $0.flatMap({$0}) }
     XCTAssert(determined.value?.count == count*count)
 
-    determined.value?.enumerate().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
+    determined.value?.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
   }
 
   func testParallel3()

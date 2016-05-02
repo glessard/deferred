@@ -36,7 +36,7 @@ public class Deferred<Value>
   private var currentState: Int32
 
   private let queue: dispatch_queue_t
-  private var waiters: UnsafeMutablePointer<Waiter<Value>> = nil
+  private var waiters: UnsafeMutablePointer<Waiter<Value>>? = nil
 
   deinit
   {
@@ -145,7 +145,7 @@ public class Deferred<Value>
   ///
   /// - parameter error: the error state of this `Deferred`'s `Result`
 
-  public convenience init(error: ErrorType)
+  public convenience init(error: ErrorProtocol)
   {
     self.init(Result.error(error))
   }
@@ -167,7 +167,7 @@ public class Deferred<Value>
   /// - parameter result: the intended `Result` to determine this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  private func determine(result: Result<Value>) -> Bool
+  private func determine(_ result: Result<Value>) -> Bool
   {
     // A turnstile to ensure only one thread can succeed
     while true
@@ -213,12 +213,12 @@ public class Deferred<Value>
   /// - parameter waiter: A `Waiter` to enqueue
   /// - returns: whether enqueueing was successful.
 
-  private func enqueue(waiter: UnsafeMutablePointer<Waiter<Value>>) -> Bool
+  private func enqueue(_ waiter: UnsafeMutablePointer<Waiter<Value>>) -> Bool
   {
     while true
     {
       let waitQueue = waiters
-      waiter.memory.next = waitQueue
+      waiter.pointee.next = waitQueue
       if syncread(&currentState) != DeferredState.determined.rawValue
       {
         if CAS(current: waitQueue, new: waiter, target: &waiters)
@@ -228,8 +228,8 @@ public class Deferred<Value>
       }
       else
       { // This Deferred has become determined; bail
-        waiter.destroy()
-        waiter.dealloc(1)
+        waiter.deinitialize()
+        waiter.deallocateCapacity(1)
         break
       }
     }
@@ -242,12 +242,12 @@ public class Deferred<Value>
   ///
   /// - parameter task:  the closure to be enqueued
 
-  public func notify(qos qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<Value>) -> Void)
+  public func notify(qos: qos_class_t = QOS_CLASS_UNSPECIFIED, task: (Result<Value>) -> Void)
   {
     if currentState != DeferredState.determined.rawValue
     {
-      let waiter = UnsafeMutablePointer<Waiter<Value>>.alloc(1)
-      waiter.initialize(Waiter(qos, task))
+      let waiter = UnsafeMutablePointer<Waiter<Value>>(allocatingCapacity: 1)
+      waiter.initialize(with: Waiter(qos, task))
 
       // waiter will be deallocated later
       if enqueue(waiter)
@@ -289,7 +289,7 @@ public class Deferred<Value>
   /// - parameter reason: a `String` detailing the reason for the attempted cancellation.
   /// - returns: whether the cancellation was performed successfully.
 
-  public func cancel(reason: String = "") -> Bool
+  public func cancel(_ reason: String = "") -> Bool
   {
     return determine(Result.error(DeferredError.canceled(reason)))
   }
@@ -340,7 +340,7 @@ public class Deferred<Value>
   ///
   /// - returns: this `Deferred`'s determined value, or `nil`
 
-  public var error: ErrorType? {
+  public var error: ErrorProtocol? {
     if case let .error(e) = result { return e }
     return nil
   }
@@ -483,7 +483,7 @@ internal final class Bind<Value>: Deferred<Value>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init(qos: qos_class_t, source: Deferred<Value>, transform: (ErrorType) -> Deferred<Value>)
+  init(qos: qos_class_t, source: Deferred<Value>, transform: (ErrorProtocol) -> Deferred<Value>)
   {
     super.init(queue: source.queue)
 
@@ -659,7 +659,7 @@ public class TBD<Value>: Deferred<Value>
   /// - parameter value: the intended value for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(value: Value) throws
+  public func determine(_ value: Value) throws
   {
     try determine(Result.value(value), place: #function)
   }
@@ -670,7 +670,7 @@ public class TBD<Value>: Deferred<Value>
   /// - parameter error: the intended error for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(error: ErrorType) throws
+  public func determine(_ error: ErrorProtocol) throws
   {
     try determine(Result.error(error), place: #function)
   }
@@ -681,12 +681,12 @@ public class TBD<Value>: Deferred<Value>
   /// - parameter result: the intended `Result` for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(result: Result<Value>) throws
+  public func determine(_ result: Result<Value>) throws
   {
     try determine(result, place: #function)
   }
 
-  private func determine(result: Result<Value>, place: String) throws
+  private func determine(_ result: Result<Value>, place: String) throws
   {
     guard super.determine(result) else { throw DeferredError.alreadyDetermined(place) }
   }

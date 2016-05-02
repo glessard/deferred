@@ -21,7 +21,7 @@
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value>(deferreds: [Deferred<Value>]) -> Deferred<[Value]>
+public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 {
   guard let first = deferreds.first else { return Deferred<[Value]>(value: []) }
 
@@ -47,8 +47,8 @@ public func combine<Value>(deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value, S: SequenceType where
-                    S.Generator.Element == Deferred<Value>>(deferreds: S) -> Deferred<[Value]>
+public func combine<Value, S: Sequence where
+                    S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<[Value]>
 {
   // We should combine on a background thread because S could block on next()
 
@@ -77,7 +77,7 @@ public func combine<Value, S: SequenceType where
 /// - parameter d2: a second `Deferred` to combine with `d1`
 /// - returns: a new `Deferred` whose value shall be a tuple of `d1.value` and `d2.value`
 
-public func combine<T1,T2>(d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(T1,T2)>
+public func combine<T1,T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(T1,T2)>
 {
   return d1.flatMap { t1 in d2.map { t2 in (t1,t2) } }
 }
@@ -92,7 +92,7 @@ public func combine<T1,T2>(d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(T1
 /// - parameter d3: a third `Deferred` to combine
 /// - returns: a new `Deferred` whose value shall be a tuple of the inputs's values
 
-public func combine<T1,T2,T3>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>) -> Deferred<(T1,T2,T3)>
+public func combine<T1,T2,T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>) -> Deferred<(T1,T2,T3)>
 {
   return combine(d1,d2).flatMap { (t1,t2) in d3.map { t3 in (t1,t2,t3) } }
 }
@@ -108,7 +108,7 @@ public func combine<T1,T2,T3>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferr
 /// - parameter d4: a fourth `Deferred` to combine
 /// - returns: a new `Deferred` whose value shall be a tuple of the inputs's values
 
-public func combine<T1,T2,T3,T4>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>) -> Deferred<(T1,T2,T3,T4)>
+public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>) -> Deferred<(T1,T2,T3,T4)>
 {
   return combine(d1,d2,d3).flatMap { (t1,t2,t3) in d4.map { t4 in (t1,t2,t3,t4) } }
 }
@@ -119,7 +119,7 @@ public func combine<T1,T2,T3,T4>(d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Def
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstValue<Value>(deferreds: [Deferred<Value>]) -> Deferred<Value>
+public func firstValue<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<Value>
 {
   if deferreds.count == 0
   {
@@ -129,8 +129,8 @@ public func firstValue<Value>(deferreds: [Deferred<Value>]) -> Deferred<Value>
   return firstDetermined(ShuffledSequence(deferreds)).flatMap { $0 }
 }
 
-public func firstValue<Value, S: SequenceType where
-                       S.Generator.Element == Deferred<Value>>(deferreds: S) -> Deferred<Value>
+public func firstValue<Value, S: Sequence where
+                       S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<Value>
 {
   return firstDetermined(deferreds).flatMap { $0 }
 }
@@ -141,7 +141,7 @@ public func firstValue<Value, S: SequenceType where
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstDetermined<Value>(deferreds: [Deferred<Value>]) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<Deferred<Value>>
 {
   if deferreds.count == 0
   {
@@ -153,8 +153,8 @@ public func firstDetermined<Value>(deferreds: [Deferred<Value>]) -> Deferred<Def
 
 import Dispatch
 
-public func firstDetermined<Value, S: SequenceType where
-                            S.Generator.Element == Deferred<Value>>(deferreds: S) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value, S: Sequence where
+                            S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<Deferred<Value>>
 {
   let first = TBD<Deferred<Value>>()
 
