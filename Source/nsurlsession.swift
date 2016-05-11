@@ -119,7 +119,7 @@ extension NSURLSession
       if let error = error
       {
         if error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled,
-           let info = error.userInfo[NSURLSessionDownloadTaskResumeData],
+           let info = error.userInfo[NSURLSessionDownloadTaskResumeData as NSString],
            let data = info as? NSData
         { _ = try? tbd.determine(URLSessionError.InterruptedDownload(data)) }
         else
