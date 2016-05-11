@@ -104,7 +104,7 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
     else { return super.cancel(reason) }
 
     // try to propagate the cancellation upstream
-    task.cancel { _ in } // Let the completion handler collect the data for resuming.
+    task.cancel(byProducingResumeData: { _ in }) // Let the completion handler collect the data for resuming.
     // task.state == .canceling (checking would be nice, but that would require sleeping the thread)
     return true
   }
