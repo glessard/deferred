@@ -46,7 +46,7 @@ extension Deferred
   }
 }
 
-extension Collection
+extension Collection where Self.Indices.Iterator.Element == Self.Index
 {
   /// Map a collection to an array of `Deferred` to be computed in parallel, at the current quality of service level
   ///

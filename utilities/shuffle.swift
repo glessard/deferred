@@ -25,7 +25,7 @@ public func shuffle<C: Collection>(_ c: C) -> ShuffledSequence<C>
   return ShuffledSequence(c)
 }
 
-public extension Collection
+public extension Collection where Self.Indices.Iterator.Element == Self.Index
 {
   /// Get a sequence/generator that will return a collection's elements in a random order.
   /// The input collection is not modified.
@@ -43,7 +43,7 @@ public extension Collection
 /// The input collection is not modified: the shuffling itself is done
 /// using an adjunct array of indices.
 
-public struct ShuffledSequence<C: Collection>: Sequence, IteratorProtocol
+public struct ShuffledSequence<C: Collection where C.Indices.Iterator.Element == C.Index>: Sequence, IteratorProtocol
 {
   public let collection: C
   private var shuffler: IndexShuffler<C.Index>
@@ -73,7 +73,7 @@ public struct ShuffledSequence<C: Collection>: Sequence, IteratorProtocol
 /// using a sequence of indices for the input. Elements (indices) from
 /// the input sequence are returned in a random order until exhaustion.
 
-public struct IndexShuffler<Index: ForwardIndex>: Sequence, IteratorProtocol
+public struct IndexShuffler<Index>: Sequence, IteratorProtocol
 {
   public let last: Int
   public private(set) var step: Int
