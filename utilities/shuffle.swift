@@ -46,47 +46,25 @@ public extension Collection
 public struct ShuffledSequence<C: Collection>: Sequence, IteratorProtocol
 {
   public let collection: C
-  public let last: Int
-
-  public private(set) var step: Int
-  private var i: [C.Index]
+  private var shuffler: IndexShuffler<C.Index>
 
   public init(_ input: C)
   {
     collection = input
-    i = Array(input.indices)
-    step = i.startIndex
-    last = i.endIndex
+    shuffler = IndexShuffler(input.indices)
   }
 
   public mutating func next() -> C.Iterator.Element?
   {
-    if step < last
+    if let index = shuffler.next()
     {
-      // select a random Index from the rest of the array
-#if os(Linux)
-      let j = step + Int(random() % (last-step)) // with slight modulo bias
-#else
-      let j = step + Int(arc4random_uniform(UInt32(last-step)))
-#endif
-
-      // swap that Index with the Index present at the current step in the array
-      if j != step
-      {
-        swap(&i[j], &i[step])
-      }
-
-      defer { step += 1 }
-      // return the new random Element.
-      return collection[i[step]]
+      return collection[index]
     }
-
     return nil
   }
 
-  public func underestimateCount() -> Int
-  {
-    return (last - step)
+  public var underestimatedCount: Int {
+    return shuffler.underestimatedCount
   }
 }
 
@@ -138,8 +116,7 @@ public struct IndexShuffler<Index: ForwardIndex>: Sequence, IteratorProtocol
     return nil
   }
 
-  public func underestimateCount() -> Int
-  {
+  public var underestimatedCount: Int {
     return (last - step)
   }
 }
