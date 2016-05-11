@@ -10,8 +10,8 @@
 import Dispatch
 import Foundation.NSThread
 
-private let PrintQueue = dispatch_queue_create("com.tffenterprises.syncprint", DISPATCH_QUEUE_SERIAL)
-private let PrintGroup = dispatch_group_create()
+private let PrintQueue: dispatch_queue_t = dispatch_queue_create("com.tffenterprises.syncprint", DISPATCH_QUEUE_SERIAL)
+private let PrintGroup: dispatch_group_t = dispatch_group_create()
 
 private var silenceOutput: Int32 = 0
 

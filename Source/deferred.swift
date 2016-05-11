@@ -315,7 +315,7 @@ public class Deferred<Value>
   public var result: Result<Value> {
     if currentState != DeferredState.determined.rawValue
     {
-      let block = dispatch_block_create(DISPATCH_BLOCK_ASSIGN_CURRENT, {})
+      let block: dispatch_block_t = dispatch_block_create(DISPATCH_BLOCK_ASSIGN_CURRENT, {})
       self.notify(qos: qos_class_self()) { _ in dispatch_block_perform(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block) }
       dispatch_block_wait(block, DISPATCH_TIME_FOREVER)
     }

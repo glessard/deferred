@@ -127,7 +127,7 @@ class DeferredTests: XCTestCase
 
     let value = arc4random() & 0x3fff_ffff
 
-    let s = dispatch_semaphore_create(0)
+    let s = dispatch_semaphore_create(0)!
     let busy = Deferred { _ -> UInt32 in
       dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
       return value
@@ -157,7 +157,7 @@ class DeferredTests: XCTestCase
 
     let value = arc4random() & 0x3fff_ffff
 
-    let s = dispatch_semaphore_create(0)
+    let s = dispatch_semaphore_create(0)!
     let busy = Deferred { _ -> UInt32 in
       dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
       return value
@@ -200,7 +200,7 @@ class DeferredTests: XCTestCase
     let e2 = expectation(withDescription: "Properly Deferred")
     let d2 = Deferred(value: value).delay(ms: 100)
     let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
-    let q2 = dispatch_queue_create("Test", a2)
+    let q2 = dispatch_queue_create("Test", a2)!
     d2.notifying(on: q2).notify(qos: QOS_CLASS_UTILITY) {
       XCTAssert( $0 == Result.value(value) )
       e2.fulfill()
@@ -212,7 +212,7 @@ class DeferredTests: XCTestCase
   {
     let e3 = expectation(withDescription: "Deferred forever")
     let d3 = Deferred { _ -> Int in
-      let s3 = dispatch_semaphore_create(0)
+      let s3 = dispatch_semaphore_create(0)!
       dispatch_semaphore_wait(s3, DISPATCH_TIME_FOREVER)
       return 42
     }

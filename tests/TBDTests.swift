@@ -298,7 +298,7 @@ class TBDTests: XCTestCase
     // Verify that "accidentally" passing a serial queue to inParallel doesn't cause a deadlock
 
     let a = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_UTILITY, 0)
-    let q = dispatch_queue_create("test1", a)
+    let q = dispatch_queue_create("test1", a)!
 
     let count = 20
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
