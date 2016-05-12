@@ -80,7 +80,7 @@ class ResultTests: XCTestCase
     }
 
     XCTAssert(res.description == val.description)
-}
+  }
 
   func testInitClosureError()
   {
@@ -96,6 +96,21 @@ class ResultTests: XCTestCase
     }
 
     XCTAssert(res.description.hasSuffix("\(err)"))
+  }
+
+  func testAccessors()
+  {
+    var res = Result<Int>()
+    XCTAssert(res.asValue() == nil)
+    XCTAssert(res.isValue == false)
+    XCTAssert(res.asError() != nil)
+    XCTAssert(res.isError)
+
+    res = Result.value(0)
+    XCTAssert(res.asValue() == 0)
+    XCTAssert(res.isValue)
+    XCTAssert(res.asError() == nil)
+    XCTAssert(res.isError == false)
   }
 
   func testMap()

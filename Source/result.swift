@@ -40,6 +40,40 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
+  public func asValue() -> Value?
+  {
+    switch self
+    {
+    case .value(let value): return value
+    case .error:            return nil
+    }
+  }
+
+  public var isValue: Bool {
+    switch self
+    {
+    case .value: return true
+    case .error: return false
+    }
+  }
+
+  public func asError() -> ErrorType?
+  {
+    switch self
+    {
+    case .value:            return nil
+    case .error(let error): return error
+    }
+  }
+
+  public var isError: Bool {
+    switch self
+    {
+    case .value: return false
+    case .error: return true
+    }
+  }
+
   public func getValue() throws -> Value
   {
     switch self
