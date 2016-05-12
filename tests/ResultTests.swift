@@ -80,7 +80,7 @@ class ResultTests: XCTestCase
     }
 
     XCTAssert(res.description == val.description)
-}
+  }
 
   func testInitClosureError()
   {
