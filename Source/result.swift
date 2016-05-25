@@ -57,7 +57,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func asError() -> ErrorType?
+  public func asError() -> ErrorProtocol?
   {
     switch self
     {
