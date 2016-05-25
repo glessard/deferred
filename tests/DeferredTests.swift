@@ -777,4 +777,23 @@ class DeferredTests: XCTestCase
     XCTAssert(c.value == nil)
     XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1,cancel2))))
   }
+
+  func testReduce()
+  {
+    let count = 9
+    let inputs = (0..<count).map { i in Deferred(value: arc4random_uniform(0x003f_fffe) + 1) } + [Deferred(value: 0)]
+
+    let c = reduce(AnySequence(inputs), initial: 0) {
+      a, i throws -> UInt32 in
+      if i > 0 { return a+i }
+      throw TestError(a)
+    }
+
+    XCTAssert(c.result.isValue == false)
+    XCTAssert(c.result.isError)
+    if let error = c.result.asError() as? TestError
+    {
+      XCTAssert(error.error >= 9)
+    }
+  }
 }
