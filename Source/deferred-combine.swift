@@ -15,7 +15,8 @@
 
 /// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.
 /// The combined `Deferred` will become determined after every input `Deferred` is determined.
-/// If any of the elements resolves to an error, the combined `Deferred` will be an error.
+///
+/// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
 /// The combined `Deferred` will use the queue from the first element of the input array (unless the input array is empty.)
 ///
 /// - parameter deferreds: an array of `Deferred`
@@ -23,26 +24,14 @@
 
 public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 {
-  guard let first = deferreds.first else { return Deferred<[Value]>(value: []) }
-
-  let accumulator = first.map { value in [value] }
-
-  return deferreds[1..<deferreds.endIndex].reduce(accumulator) {
-    (accumulator, element) in
-    accumulator.flatMap {
-      values in
-      return element.map {
-        value in
-        return values + [value]
-      }
-    }
-  }
+  return reduce(deferreds, initial: [Value](), combine: { values, value in values + [value] })
 }
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
-/// The combined `Deferred` will become determined after every input `Deferred` is determined.
-/// If any of the elements resolves to an error, the combined `Deferred` will be an error.
-/// The combined `Deferred` will use the queue from the first element of the input array (unless the input array is empty.)
+/// The combined `Deferred` will become determined after every input `Deferred` has become determined.
+///
+/// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
+/// The combined `Deferred` will use the concurrent queue at the current qos class.
 ///
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
@@ -50,17 +39,61 @@ public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 public func combine<Value, S: Sequence where
                     S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<[Value]>
 {
-  // We should combine on a background thread because S could block on next()
+  return reduce(deferreds, initial: [Value](), combine: { (values, value) in values + [value] })
+}
 
-  let combiner = Deferred<Deferred<[Value]>> {
-    deferreds.reduce(Deferred<[Value]>(value: [])) {
+/// Returns the result of repeatedly calling `combine` with an
+/// accumulated value initialized to `initial` and each element of
+/// `deferreds`, in turn. That is, return a deferred version of
+/// `combine(combine(...combine(combine(initial, deferreds[0].value),
+/// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
+///
+/// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
+/// If the reducing function throws an error, the resulting `Deferred` will contain that error.
+/// The combined `Deferred` will use the queue from the first element of the input array (unless the input array is empty.)
+///
+/// - parameter deferreds: an array of `Deferred`
+/// - parameter combine: a reducing function
+/// - returns: a new `Deferred`
+
+public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: (U,T) throws -> U) -> Deferred<U>
+{
+  guard let first = deferreds.first else { return Deferred(value: initial) }
+
+  let accumulator = first.map { value in try combine(initial, value) }
+
+  return deferreds[1..<deferreds.endIndex].reduce(accumulator) {
+    (accumulator, element) in
+    accumulator.flatMap {
+      u in element.map { t in try combine(u,t) }
+    }
+  }
+}
+
+/// Returns the result of repeatedly calling `combine` with an
+/// accumulated value initialized to `initial` and each element of
+/// `deferreds`, in turn. That is, return a deferred version of
+/// `combine(combine(...combine(combine(initial, deferreds[0].value),
+/// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
+/// (Never mind that you can't index a Sequence.)
+///
+/// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
+/// If the reducing function throws an error, the resulting `Deferred` will contain that error.
+/// The combined `Deferred` will use the concurrent queue at the current qos class.
+///
+/// - parameter deferreds: an array of `Deferred`
+/// - parameter combine: a reducing function
+/// - returns: a new `Deferred`
+
+public func reduce<S: Sequence, T, U where
+                   S.Iterator.Element == Deferred<T>>(_ deferreds: S, initial: U, combine: (U,T) throws -> U) -> Deferred<U>
+{
+  // We iterate on a background thread because S could block on next()
+  let combiner = Deferred<Deferred<U>> {
+    deferreds.reduce(Deferred(value: initial)) {
       (accumulator, element) in
       accumulator.flatMap {
-        values in
-        element.map {
-          value in
-          values + [value]
-        }
+        u in element.map { t in try combine(u,t) }
       }
     }
   }
@@ -151,7 +184,9 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<D
   return firstDetermined(ShuffledSequence(deferreds))
 }
 
-import Dispatch
+import func Dispatch.dispatch_async
+import func Dispatch.dispatch_get_global_queue
+import func Dispatch.qos_class_self
 
 public func firstDetermined<Value, S: Sequence where
                             S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<Deferred<Value>>
