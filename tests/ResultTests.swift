@@ -26,7 +26,7 @@ class ResultTests: XCTestCase
 
     let r2: Result<Int> = Result()
     do {
-      try r2.getValue()
+      _ = try r2.getValue()
       XCTFail()
     }
     catch {

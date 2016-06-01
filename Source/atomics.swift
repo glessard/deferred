@@ -9,13 +9,13 @@
 import Darwin
 
 
-@inline(__always) func CAS<T>(current: UnsafeMutablePointer<T>?, new: UnsafeMutablePointer<T>?,
+@inline(__always) @discardableResult func CAS<T>(current: UnsafeMutablePointer<T>?, new: UnsafeMutablePointer<T>?,
   target: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> Bool
 {
   return OSAtomicCompareAndSwapPtrBarrier(current, new, UnsafeMutablePointer(target))
 }
 
-@inline(__always) func CAS(current: Int32, new: Int32, target: UnsafeMutablePointer<Int32>) -> Bool
+@inline(__always) @discardableResult func CAS(current: Int32, new: Int32, target: UnsafeMutablePointer<Int32>) -> Bool
 {
   return OSAtomicCompareAndSwap32Barrier(current, new, target)
 }

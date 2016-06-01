@@ -323,7 +323,7 @@ class DeferredTests: XCTestCase
     let r4 = d4.recover { e in Deferred(value: value) }
     XCTAssert(r4.cancel(reason))
     do {
-      try r4.result.getValue()
+      _ = try r4.result.getValue()
       XCTFail()
     }
     catch DeferredError.canceled(let message) { XCTAssert(message == reason) }

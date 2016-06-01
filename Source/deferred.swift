@@ -167,6 +167,7 @@ public class Deferred<Value>
   /// - parameter result: the intended `Result` to determine this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
+  @discardableResult
   private func determine(_ result: Result<Value>) -> Bool
   {
     // A turnstile to ensure only one thread can succeed
@@ -289,6 +290,7 @@ public class Deferred<Value>
   /// - parameter reason: a `String` detailing the reason for the attempted cancellation.
   /// - returns: whether the cancellation was performed successfully.
 
+  @discardableResult
   public func cancel(_ reason: String = "") -> Bool
   {
     return determine(Result.error(DeferredError.canceled(reason)))

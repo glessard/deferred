@@ -167,7 +167,7 @@ class TBDTests: XCTestCase
     d3.notify {
       result in
       do {
-        try result.getValue()
+        _ = try result.getValue()
         XCTFail()
       }
       catch DeferredError.canceled {}
@@ -272,7 +272,7 @@ class TBDTests: XCTestCase
     // Verify that the right number of Deferreds get created
 
     let e = (0..<count).map { expectation(withDescription: "\($0)") }
-    Deferred.inParallel(count: count, qos: QOS_CLASS_UTILITY) { i in e[i].fulfill() }
+    _ = Deferred.inParallel(count: count, qos: QOS_CLASS_UTILITY) { i in e[i].fulfill() }
     waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
