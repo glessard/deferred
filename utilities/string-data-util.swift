@@ -10,9 +10,9 @@ import Foundation
 
 extension String
 {
-  public init(fromData data: NSData)
+  public init(fromData data: Data)
   {
-    self = String(data: data, encoding: NSUTF8StringEncoding) ?? ""
+    self = String(data: data, encoding: String.Encoding.utf8) ?? ""
   }
 }
 

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		031DD7CE1D11330600F4B44B /* nsurlsession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC51C76AB2200F4B44B /* nsurlsession.swift */; };
+		031DD7CF1D11330700F4B44B /* nsurlsession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC51C76AB2200F4B44B /* nsurlsession.swift */; };
 		03850AC81C76AB2200F4B44B /* atomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850ABE1C76AB2200F4B44B /* atomics.swift */; };
 		03850AC91C76AB2200F4B44B /* atomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850ABE1C76AB2200F4B44B /* atomics.swift */; };
 		03850ACC1C76AB2200F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC01C76AB2200F4B44B /* deferred-combine.swift */; };
@@ -19,8 +21,6 @@
 		03850AD31C76AB2200F4B44B /* deferred-parallelize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC31C76AB2200F4B44B /* deferred-parallelize.swift */; };
 		03850AD41C76AB2200F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC41C76AB2200F4B44B /* deferred.swift */; };
 		03850AD51C76AB2200F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC41C76AB2200F4B44B /* deferred.swift */; };
-		03850AD61C76AB2200F4B44B /* nsurlsession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC51C76AB2200F4B44B /* nsurlsession.swift */; };
-		03850AD71C76AB2200F4B44B /* nsurlsession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC51C76AB2200F4B44B /* nsurlsession.swift */; };
 		03850AD81C76AB2200F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC61C76AB2200F4B44B /* result.swift */; };
 		03850AD91C76AB2200F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC61C76AB2200F4B44B /* result.swift */; };
 		03850ADA1C76AB2200F4B44B /* waiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AC71C76AB2200F4B44B /* waiter.swift */; };
@@ -423,9 +423,11 @@
 				TargetAttributes = {
 					03B4E06C1C14003B00F4B44B = {
 						CreatedOnToolsVersion = 7.2;
+						LastSwiftMigration = 0800;
 					};
 					03B4E0751C14003C00F4B44B = {
 						CreatedOnToolsVersion = 7.2;
+						LastSwiftMigration = 0800;
 					};
 					03B4E0981C1403C300F4B44B = {
 						CreatedOnToolsVersion = 7.2;
@@ -511,12 +513,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				03850AD81C76AB2200F4B44B /* result.swift in Sources */,
+				031DD7CE1D11330600F4B44B /* nsurlsession.swift in Sources */,
 				03850AE01C76AB7D00F4B44B /* shuffle.swift in Sources */,
 				03850AC81C76AB2200F4B44B /* atomics.swift in Sources */,
 				03850ACC1C76AB2200F4B44B /* deferred-combine.swift in Sources */,
 				03850ACE1C76AB2200F4B44B /* deferred-error.swift in Sources */,
 				03850AD21C76AB2200F4B44B /* deferred-parallelize.swift in Sources */,
-				03850AD61C76AB2200F4B44B /* nsurlsession.swift in Sources */,
 				03850AD01C76AB2200F4B44B /* deferred-extras.swift in Sources */,
 				03850AD41C76AB2200F4B44B /* deferred.swift in Sources */,
 				03850ADA1C76AB2200F4B44B /* waiter.swift in Sources */,
@@ -542,12 +544,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				03850AD91C76AB2200F4B44B /* result.swift in Sources */,
+				031DD7CF1D11330700F4B44B /* nsurlsession.swift in Sources */,
 				03850AE11C76AB7D00F4B44B /* shuffle.swift in Sources */,
 				03850AC91C76AB2200F4B44B /* atomics.swift in Sources */,
 				03850ACD1C76AB2200F4B44B /* deferred-combine.swift in Sources */,
 				03850ACF1C76AB2200F4B44B /* deferred-error.swift in Sources */,
 				03850AD31C76AB2200F4B44B /* deferred-parallelize.swift in Sources */,
-				03850AD71C76AB2200F4B44B /* nsurlsession.swift in Sources */,
 				03850AD11C76AB2200F4B44B /* deferred-extras.swift in Sources */,
 				03850AD51C76AB2200F4B44B /* deferred.swift in Sources */,
 				03850ADB1C76AB2200F4B44B /* waiter.swift in Sources */,
@@ -641,6 +643,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferred;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -662,6 +665,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferred;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -678,6 +682,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -693,6 +698,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};

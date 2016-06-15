@@ -19,13 +19,13 @@ class TBDTimingTests: XCTestCase
       let iterations = 10_000
       let ref = NSDate.distantPast()
 
-      let first = TBD<(Int, NSDate, NSDate)>(qos: QOS_CLASS_USER_INITIATED)
+      let first = TBD<(Int, Date, Date)>(qos: .userInitiated)
       var dt: Deferred = first
       for _ in 0...iterations
       {
         dt = dt.map {
           (i, tic, toc) in
-          tic == ref ? (0, NSDate(), ref) : (i+1, tic, NSDate())
+          tic == ref ? (0, Date(), ref) : (i+1, tic, Date())
         }
       }
 
@@ -49,15 +49,14 @@ class TBDTimingTests: XCTestCase
     measure {
       let iterations = 10_000
 
-      let attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INITIATED, 0)
-      let start = TBD<NSDate>(queue: dispatch_queue_create("", attr))
+      let start = TBD<Date>(queue: DispatchQueue(label: "", attributes: [.serial, .qosUserInitiated]))
       for _ in 0..<iterations
       {
         start.notify { _ in }
       }
 
-      let dt = start.map { start in NSDate().timeIntervalSince(start) }
-      try! start.determine(NSDate())
+      let dt = start.map { start in Date().timeIntervalSince(start) }
+      try! start.determine(Date())
 
       switch dt.result
       {

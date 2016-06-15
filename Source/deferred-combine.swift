@@ -184,9 +184,7 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<D
   return firstDetermined(ShuffledSequence(deferreds))
 }
 
-import func Dispatch.dispatch_async
-import func Dispatch.dispatch_get_global_queue
-import func Dispatch.qos_class_self
+import Dispatch
 
 public func firstDetermined<Value, S: Sequence where
                             S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<Deferred<Value>>
@@ -194,7 +192,8 @@ public func firstDetermined<Value, S: Sequence where
   let first = TBD<Deferred<Value>>()
 
   // We iterate on a background thread because S could block on next()
-  dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+  // FIXME: obtain queue at intended qos
+  DispatchQueue.global().async {
     deferreds.forEach {
       deferred in
       deferred.notify {

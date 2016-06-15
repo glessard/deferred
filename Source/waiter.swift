@@ -10,34 +10,34 @@ import Dispatch
 
 struct Waiter<T>
 {
-  private let qos: qos_class_t
+  private let qos: DispatchQoS
   private let handler: (Result<T>) -> Void
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
-  init(_ qos: qos_class_t, _ handler: (Result<T>) -> Void)
+  init(_ qos: DispatchQoS, _ handler: (Result<T>) -> Void)
   {
     self.qos = qos
     self.handler = handler
   }
 
-  private func notify(_ queue: dispatch_queue_t, _ result: Result<T>)
+  private func notify(_ queue: DispatchQueue, _ result: Result<T>)
   {
     let closure = { [ handler = self.handler ] in handler(result) }
 
-    if qos == QOS_CLASS_UNSPECIFIED
+    if qos == .unspecified
     {
-      dispatch_async(queue, closure)
+      queue.async(execute: closure)
     }
     else
     {
-      dispatch_async(queue, dispatch_block_create_with_qos_class(DISPATCH_BLOCK_ENFORCE_QOS_CLASS, qos, 0, closure))
+      queue.async(qos: qos, flags: [.enforceQoS], execute: closure)
     }
   }
 }
 
 enum WaitQueue
 {
-  static func notifyAll<T>(_ queue: dispatch_queue_t, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ result: Result<T>)
+  static func notifyAll<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ result: Result<T>)
   {
     var head = reverseList(tail)
     while head != nil

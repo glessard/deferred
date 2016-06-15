@@ -10,17 +10,6 @@ import Dispatch
 
 extension Deferred
 {
-  /// Initialize an array of `Deferred` to be computed in parallel, at the current quality of service level
-  ///
-  /// - parameter count: the number of parallel tasks to perform
-  /// - parameter task: the computation to be performed in parallel
-  /// - returns: an array of `Deferred`
-
-  public static func inParallel(count: Int, task: (Int) throws -> Value) -> [Deferred<Value>]
-  {
-    return (0..<count).deferredMap(task)
-  }
-
   /// Initialize an array of `Deferred` to be computed in parallel, at the desired quality of service level
   ///
   /// - parameter count: the number of parallel tasks to perform
@@ -28,8 +17,8 @@ extension Deferred
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public static func inParallel(count: Int, qos: qos_class_t, task: (index: Int) throws -> Value) -> [Deferred<Value>]
-  {
+  public static func inParallel(count: Int, qos: DispatchQoS = .unspecified, task: (index: Int) throws -> Value) -> [Deferred<Value>]
+  { // FIXME: default qos value should be equivalent to qos_class_self()
     return (0..<count).deferredMap(qos: qos, task: task)
   }
 
@@ -40,7 +29,7 @@ extension Deferred
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public static func inParallel(count: Int, queue: dispatch_queue_t, task: (index: Int) throws -> Value) -> [Deferred<Value>]
+  public static func inParallel(count: Int, queue: DispatchQueue, task: (index: Int) throws -> Value) -> [Deferred<Value>]
   {
     return (0..<count).deferredMap(queue: queue, task: task)
   }
@@ -48,25 +37,16 @@ extension Deferred
 
 extension Collection where Self.Indices.Iterator.Element == Self.Index
 {
-  /// Map a collection to an array of `Deferred` to be computed in parallel, at the current quality of service level
-  ///
-  /// - parameter task: the computation to be performed in parallel
-  /// - returns: an array of `Deferred`
-
-  public func deferredMap<Value>(_ task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
-  {
-    return deferredMap(queue: dispatch_get_global_queue(qos_class_self(), 0), task: task)
-  }
-
   /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
   ///
   /// - parameter qos: the desired quality of service class for the new `Deferred` objects
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public func deferredMap<Value>(qos: qos_class_t, task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
-  {
-    return deferredMap(queue: dispatch_get_global_queue(qos, 0), task: task)
+  public func deferredMap<Value>(qos: DispatchQoS = .unspecified, task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+  { // FIXME: default qos value should be equivalent to qos_class_self()
+    // FIXME: obtain queue at intended qos
+    return deferredMap(queue: DispatchQueue.global(), task: task)
   }
 
   /// Map a collection to an array of `Deferred` to be computed in parallel, on the desired dispatch queue
@@ -75,15 +55,15 @@ extension Collection where Self.Indices.Iterator.Element == Self.Index
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public func deferredMap<Value>(queue: dispatch_queue_t, task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+  public func deferredMap<Value>(queue: DispatchQueue, task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
     // The following 2 lines exist to get around the fact that Self.Index.Distance does not convert to Int.
     let indices = Array(self.indices)
     let count = indices.count
 
-    let deferreds = (indices).map { _ in TBD<Value>() }
-    dispatch_async(dispatch_get_global_queue(dispatch_queue_get_qos_class(queue, nil), 0)) {
-      dispatch_apply(count, queue) {
+    let deferreds = indices.map { _ in TBD<Value>() }
+    queue.async {
+      DispatchQueue.concurrentPerform(iterations: count) {
         index in
         deferreds[index].beginExecution()
         let result = Result { try task(self[indices[index]]) }

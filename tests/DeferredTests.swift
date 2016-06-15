@@ -17,7 +17,7 @@ class DeferredTests: XCTestCase
   {
     syncprint("Starting")
 
-    let result1 = Deferred(qos: QOS_CLASS_BACKGROUND) {
+    let result1 = Deferred(qos: .background) {
       _ -> Double in
       defer { syncprint("Computing result1") }
       return 10.5
@@ -72,8 +72,8 @@ class DeferredTests: XCTestCase
   func testDelay()
   {
     let interval = 0.1
-    let d1 = Deferred(value: NSDate())
-    let d2 = d1.delay(seconds: interval).map { NSDate().timeIntervalSince($0) }
+    let d1 = Deferred(value: Date())
+    let d2 = d1.delay(seconds: interval).map { Date().timeIntervalSince($0) }
 
     XCTAssert(d2.value >= interval)
     XCTAssert(d2.value < 2.0*interval)
@@ -87,11 +87,11 @@ class DeferredTests: XCTestCase
 
     // a longer calculation is not delayed (significantly)
     let d5 = Deferred {
-      _ -> NSDate in
-      NSThread.sleep(forTimeInterval:interval)
-      return NSDate()
+      _ -> Date in
+      Thread.sleep(forTimeInterval:interval)
+      return Date()
     }
-    let d6 = d5.delay(seconds: interval/10).map { NSDate().timeIntervalSince($0) }
+    let d6 = d5.delay(seconds: interval/10).map { Date().timeIntervalSince($0) }
     let actualDelay = d6.delay(ns: 100).value
     XCTAssert(actualDelay < interval/10)
   }
@@ -127,28 +127,28 @@ class DeferredTests: XCTestCase
 
     let value = arc4random() & 0x3fff_ffff
 
-    let s = dispatch_semaphore_create(0)!
+    let s = DispatchSemaphore(value: 0)
     let busy = Deferred { _ -> UInt32 in
-      dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
+      s.wait()
       return value
     }
 
     let e = expectation(withDescription: "Timing out on Deferred")
-    let fulfillTime = dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns))
+    let fulfillTime = DispatchTime.now() + Double(waitns)*1e-9
 
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global().async {
       let v = busy.value
       XCTAssert(v == value)
 
-      let now = dispatch_time(DISPATCH_TIME_NOW, 0)
-      if now < fulfillTime { XCTFail("delayed.value unblocked too soon") }
+      let now = DispatchTime.now()
+      if now.rawValue < fulfillTime.rawValue { XCTFail("delayed.value unblocked too soon") }
     }
 
-    dispatch_after(fulfillTime, dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global().after(when: fulfillTime) {
       e.fulfill()
     }
 
-    waitForExpectations(withTimeout: 1.0) { _ in dispatch_semaphore_signal(s) }
+    waitForExpectations(withTimeout: 1.0) { _ in s.signal() }
   }
 
   func testValueUnblocks()
@@ -157,26 +157,26 @@ class DeferredTests: XCTestCase
 
     let value = arc4random() & 0x3fff_ffff
 
-    let s = dispatch_semaphore_create(0)!
+    let s = DispatchSemaphore(value: 0)
     let busy = Deferred { _ -> UInt32 in
-      dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
+      s.wait()
       return value
     }
 
     let e = expectation(withDescription: "Unblocking a Deferred")
-    let fulfillTime = dispatch_time(DISPATCH_TIME_NOW, numericCast(waitns))
+    let fulfillTime = DispatchTime.now() + Double(waitns)*1e-9
 
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global().async {
       let v = busy.value
       XCTAssert(v == value)
 
-      let now = dispatch_time(DISPATCH_TIME_NOW, 0)
-      if now < fulfillTime { XCTFail("delayed.value unblocked too soon") }
+      let now = DispatchTime.now()
+      if now.rawValue < fulfillTime.rawValue { XCTFail("delayed.value unblocked too soon") }
       else                 { e.fulfill() }
     }
 
-    dispatch_after(fulfillTime, dispatch_get_global_queue(qos_class_self(), 0)) {
-      dispatch_semaphore_signal(s)
+    DispatchQueue.global().after(when: fulfillTime) {
+      s.signal()
     }
 
     waitForExpectations(withTimeout: 1.0, handler: nil)
@@ -199,9 +199,8 @@ class DeferredTests: XCTestCase
     let value = arc4random() & 0x3fff_ffff
     let e2 = expectation(withDescription: "Properly Deferred")
     let d2 = Deferred(value: value).delay(ms: 100)
-    let a2 = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, 0)
-    let q2 = dispatch_queue_create("Test", a2)!
-    d2.notifying(on: q2).notify(qos: QOS_CLASS_UTILITY) {
+    let q2 = DispatchQueue(label: "Test", attributes: [.serial, .qosBackground])
+    d2.notifying(on: q2).notify(qos: .utility) {
       XCTAssert( $0 == Result.value(value) )
       e2.fulfill()
     }
@@ -212,8 +211,8 @@ class DeferredTests: XCTestCase
   {
     let e3 = expectation(withDescription: "Deferred forever")
     let d3 = Deferred { _ -> Int in
-      let s3 = dispatch_semaphore_create(0)!
-      dispatch_semaphore_wait(s3, DISPATCH_TIME_FOREVER)
+      let s3 = DispatchSemaphore(value: 0)
+      s3.wait()
       return 42
     }
     d3.notify {
@@ -227,7 +226,7 @@ class DeferredTests: XCTestCase
         return
       }
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global().after(when: DispatchTime.now() + 0.2) {
       e3.fulfill()
     }
 
@@ -303,7 +302,7 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, transform short-circuited
-    let d1 = goodOperand.recover(qos: QOS_CLASS_DEFAULT) { e in XCTFail(); return Deferred(error: TestError(error)) }
+    let d1 = goodOperand.recover(qos: .default) { e in XCTFail(); return Deferred(error: TestError(error)) }
     XCTAssert(d1.value == value)
     XCTAssert(d1.error == nil)
 
@@ -453,13 +452,14 @@ class DeferredTests: XCTestCase
 
   func testQOS()
   {
-    let q = dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0)
-    let qb = Deferred(queue: q, qos: QOS_CLASS_UTILITY) { qos_class_self() }
+    let q = DispatchQueue.global() // qos: .background
+    let qb = Deferred(queue: q, qos: .utility) { qos_class_self() }
     // Verify that the block's QOS was adjusted and is different from the queue's
-    XCTAssert(qb.qos != qb.value)
+    XCTAssert(qb.value == QOS_CLASS_UTILITY)
+    XCTAssert(qb.qos == DispatchQoS.background)
 
     let e1 = expectation(withDescription: "Waiting")
-    Deferred(qos: QOS_CLASS_BACKGROUND, result: Result.value(qos_class_self())).onValue {
+    Deferred(qos: .background, result: Result.value(qos_class_self())).onValue {
       qosv in
       // Verify that the QOS has been adjusted
       XCTAssert(qosv != qos_class_self())
@@ -467,7 +467,7 @@ class DeferredTests: XCTestCase
       e1.fulfill()
     }
 
-    let q2 = qb.notifying(at: QOS_CLASS_BACKGROUND, serially: true).map(qos: QOS_CLASS_USER_INITIATED) {
+    let q2 = qb.notifying(at: .background, serially: true).map(qos: .userInitiated) {
       qosv -> qos_class_t in
       XCTAssert(qosv == QOS_CLASS_UTILITY)
       // Verify that the QOS has changed
@@ -478,7 +478,7 @@ class DeferredTests: XCTestCase
     }
 
     let e2 = expectation(withDescription: "Waiting")
-    q2.notifying(at: QOS_CLASS_USER_INTERACTIVE).onValue {
+    q2.notifying(at: .userInteractive).onValue {
       qosv in
       // Last block was in fact executing at QOS_CLASS_USER_INITIATED
       XCTAssert(qosv == QOS_CLASS_USER_INITIATED)
@@ -486,6 +486,7 @@ class DeferredTests: XCTestCase
       XCTAssert(qosv != QOS_CLASS_BACKGROUND)
       // This block is executing at the queue's QOS.
       XCTAssert(qos_class_self() == QOS_CLASS_USER_INTERACTIVE)
+      XCTAssert(qos_class_self() != QOS_CLASS_BACKGROUND)
       e2.fulfill()
     }
 
@@ -494,7 +495,7 @@ class DeferredTests: XCTestCase
 
   func testCancel()
   {
-    let d1 = Deferred(qos: QOS_CLASS_UTILITY) {
+    let d1 = Deferred(qos: .utility) {
       () -> UInt32 in
       usleep(100_000)
       return arc4random() & 0x3fff_ffff
@@ -656,29 +657,28 @@ class DeferredTests: XCTestCase
   func testRace()
   {
     let count = 10_000
-    let queue = dispatch_get_global_queue(qos_class_self(), 0)
+    let queue = DispatchQueue.global()
 
     let tbd = TBD<Void>(queue: queue)
 
     let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/2
 
     var first: Int32 = -1
-    dispatch_async(queue) {
+    queue.async {
       for i in 0..<count
       {
-        dispatch_async(queue) {
+        queue.async {
           tbd.notify {
             _ in
             if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint("First: \(first)") }
           }
-          if i == lucky { dispatch_async(queue) { try! tbd.determine() } }
+          if i == lucky { queue.async { try! tbd.determine() } }
         }
       }
     }
 
     syncprint("Lucky: \(lucky)")
     syncprintwait()
-    dispatch_barrier_sync(queue) {}
   }
 
   func testCombine2()

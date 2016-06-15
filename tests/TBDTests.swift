@@ -38,7 +38,7 @@ class TBDTests: XCTestCase
     let tbd = TBD<UInt32>()
     tbd.beginExecution()
     var value = arc4random() & 0x3fff_ffff
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global().after(when: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
       value = arc4random() & 0x3fff_ffff
       do { try tbd.determine(value) }
       catch { XCTFail() }
@@ -109,7 +109,7 @@ class TBDTests: XCTestCase
       init(expectation: XCTestExpectation)
       {
         e = expectation
-        super.init(queue: dispatch_get_global_queue(qos_class_self(), 0))
+        super.init(queue: DispatchQueue.global())
       }
       deinit
       {
@@ -151,7 +151,7 @@ class TBDTests: XCTestCase
       e2.fulfill()
     }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000), dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global().after(when: DispatchTime.now() + Double(10_000) / Double(NSEC_PER_SEC)) {
       value = arc4random() & 0x3fff_ffff
       do { try tbd.determine(value) }
       catch { XCTFail() }
@@ -173,7 +173,7 @@ class TBDTests: XCTestCase
       catch DeferredError.canceled {}
       catch { XCTFail() }
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 200_000_000), dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global().after(when: DispatchTime.now() + Double(200_000_000) / Double(NSEC_PER_SEC)) {
       // This will trigger the `XCWaitCompletionHandler` in the `waitForExpectationsWithTimeout` call below.
       e3.fulfill()
     }
@@ -272,7 +272,7 @@ class TBDTests: XCTestCase
     // Verify that the right number of Deferreds get created
 
     let e = (0..<count).map { expectation(withDescription: "\($0)") }
-    _ = Deferred.inParallel(count: count, qos: QOS_CLASS_UTILITY) { i in e[i].fulfill() }
+    _ = Deferred.inParallel(count: count, qos: .utility) { i in e[i].fulfill() }
     waitForExpectations(withTimeout: 1.0, handler: nil)
   }
 
@@ -297,8 +297,7 @@ class TBDTests: XCTestCase
   {
     // Verify that "accidentally" passing a serial queue to inParallel doesn't cause a deadlock
 
-    let a = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_UTILITY, 0)
-    let q = dispatch_queue_create("test1", a)!
+    let q = DispatchQueue(label: "test1", attributes: [.serial, .qosUtility])
 
     let count = 20
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
