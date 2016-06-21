@@ -240,7 +240,7 @@ class DeferredTests: XCTestCase
     d4.onValue { _ in e4val.fulfill() }
     d4.onError { _ in XCTFail() }
 
-    let d5 = Deferred<Int>(error: NSError(domain: "", code: 0, userInfo: nil)).delay(ms: 50)
+    let d5 = Deferred<Int>(error: NSError(domain: "", code: 0)).delay(ms: 50)
     let e5err = expectation(withDescription: "Test onError()")
     d5.onValue { _ in XCTFail() }
     d5.onError { _ in e5err.fulfill() }
