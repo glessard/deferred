@@ -179,7 +179,7 @@ class DeferredTests: XCTestCase
       s.signal()
     }
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testNotify1()
@@ -191,7 +191,7 @@ class DeferredTests: XCTestCase
       XCTAssert( $0 == Result.value(value) )
       e1.fulfill()
     }
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testNotify2()
@@ -204,7 +204,7 @@ class DeferredTests: XCTestCase
       XCTAssert( $0 == Result.value(value) )
       e2.fulfill()
     }
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testNotify3()
@@ -245,7 +245,7 @@ class DeferredTests: XCTestCase
     d5.onValue { _ in XCTFail() }
     d5.onError { _ in e5err.fulfill() }
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testMap()
@@ -407,7 +407,7 @@ class DeferredTests: XCTestCase
     XCTAssert(transform.state == .waiting)
 
     try! g.determine()
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testApply2()
@@ -490,7 +490,7 @@ class DeferredTests: XCTestCase
       e2.fulfill()
     }
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testCancel()
@@ -557,7 +557,7 @@ class DeferredTests: XCTestCase
 
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testCancelDelay()
@@ -571,7 +571,7 @@ class DeferredTests: XCTestCase
 
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testCancelBind()
@@ -590,7 +590,7 @@ class DeferredTests: XCTestCase
 
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testCancelApply()
@@ -625,7 +625,7 @@ class DeferredTests: XCTestCase
 
     try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testTimeout()
@@ -651,7 +651,7 @@ class DeferredTests: XCTestCase
     d4.onValue { _ in e4.fulfill() }
     d4.onError { _ in XCTFail() }
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testRace()

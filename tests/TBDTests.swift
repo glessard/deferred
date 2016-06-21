@@ -98,7 +98,7 @@ class TBDTests: XCTestCase
       }
     }
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testDealloc()
@@ -123,7 +123,7 @@ class TBDTests: XCTestCase
       for i in 1...3 { tbd.notify { _ in XCTFail("Notification \(i)") } }
     }
 
-    waitForExpectations(withTimeout: 0.1, handler: nil)
+    waitForExpectations(withTimeout: 0.1)
   }
 
   func testNotify1()
@@ -137,7 +137,7 @@ class TBDTests: XCTestCase
       XCTAssert( $0 == Result.value(value) )
       e1.fulfill()
     }
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testNotify2()
@@ -157,7 +157,7 @@ class TBDTests: XCTestCase
       catch { XCTFail() }
     }
 
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testNotify3()
@@ -262,7 +262,7 @@ class TBDTests: XCTestCase
     }
 
     oneBy1(deferreds)
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testParallel1()
@@ -273,7 +273,7 @@ class TBDTests: XCTestCase
 
     let e = (0..<count).map { expectation(withDescription: "\($0)") }
     _ = Deferred.inParallel(count: count, qos: .utility) { i in e[i].fulfill() }
-    waitForExpectations(withTimeout: 1.0, handler: nil)
+    waitForExpectations(withTimeout: 1.0)
   }
 
   func testParallel2()
