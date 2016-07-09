@@ -17,7 +17,7 @@ class TBDTimingTests: XCTestCase
   {
     measure {
       let iterations = 10_000
-      let ref = NSDate.distantPast()
+      let ref = Date.distantPast
 
       let first = TBD<(Int, Date, Date)>(qos: .userInitiated)
       var dt: Deferred = first

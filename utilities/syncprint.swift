@@ -27,7 +27,7 @@ private var silenceOutput: Int32 = 0
 
 public func syncprint(_ item: Any)
 {
-  let thread = Thread.current().isMainThread ? "[main]" : "[back]"
+  let thread = Thread.current.isMainThread ? "[main]" : "[back]"
 
   PrintQueue.async(group: PrintGroup) {
     // Read silenceOutput atomically
