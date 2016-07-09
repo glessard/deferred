@@ -360,7 +360,6 @@ public class Deferred<Value>
   /// - parameter queue: the queue to be used by the returned `Deferred`
   /// - returns: a new `Deferred` whose notifications will run on `queue`
 
-  @warn_unused_result
   public func notifying(on queue: DispatchQueue) -> Deferred
   {
     if currentState == DeferredState.determined.rawValue
@@ -378,7 +377,6 @@ public class Deferred<Value>
   /// - parameter qos: the quality-of-service class to be used by the returned `Deferred`
   /// - returns: a new `Deferred` whose notifications will run at quality-of-service `qos`
 
-  @warn_unused_result
   public func notifying(at qos: DispatchQoS, serially: Bool = false) -> Deferred
   {
     if serially
