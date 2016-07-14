@@ -84,8 +84,8 @@ class TBDTests: XCTestCase
 
     let e = expectation(withDescription: "Cancel before setting")
     let tbd3 = TBD<UInt32>()
-    Deferred(value: ()).delay(ms: 100).notify { _ in XCTAssert(tbd3.cancel() == true) }
-    Deferred(value: ()).delay(ms: 200).notify { _ in
+    Deferred(value: ()).delay(.milliseconds(100)).notify { _ in XCTAssert(tbd3.cancel() == true) }
+    Deferred(value: ()).delay(.milliseconds(200)).notify { _ in
       do {
         try tbd3.determine(arc4random() & 0x3fff_ffff)
         XCTFail()
