@@ -16,58 +16,42 @@ import Dispatch
 
 extension Deferred
 {
-  /// Return a `Deferred` whose determination will occur at least `µs` microseconds from the time of evaluation.
-  /// - parameter µs: a number of microseconds
-  /// - returns: a `Deferred` reference
-
-  public final func delay(µs: Int) -> Deferred
-  {
-    return delay64(ns: Int64(µs)*1000)
-  }
-
-  /// Return a `Deferred` whose determination will occur at least `ms` milliseconds from the time of evaluation.
-  /// - parameter ms: a number of milliseconds
-  /// - returns: a `Deferred` reference
-
-  public final func delay(ms: Int) -> Deferred
-  {
-    return delay64(ns: Int64(ms)*1_000_000)
-  }
-
   /// Return a `Deferred` whose determination will occur at least a number of seconds from the time of evaluation.
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
   public final func delay(seconds s: Double) -> Deferred
   {
-    return delay64(ns: Int64(s*1e9))
+    if s > 0
+    {
+      return Delayed(source: self, until: .now() + s)
+    }
+    return self
   }
 
-  /// Return a `Deferred` whose determination will occur at least `ns` nanoseconds from the time of evaluation.
-  /// - parameter ns: a number of nanoseconds
+  /// Return a `Deferred` whose determination will occur at the earliest`delay` from the time of evaluation.
+  /// - parameter delay: a time interval, as `DispatchTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public final func delay(ns: Int) -> Deferred
+  public final func delay(_ delay: DispatchTimeInterval) -> Deferred
   {
-    return delay64(ns: Int64(ns))
-  }
-
-  private func delay64(ns: Int64) -> Deferred
-  {
-    if ns < 0 { return self }
-    return Delayed(source: self, until: DispatchTime(DispatchTime.now().rawValue + UInt64(max(ns,0))))
+    if delay.isPositive
+    {
+      return Delayed(source: self, until: .now() + delay)
+    }
+    return self
   }
 }
 
-extension DispatchTime
+extension DispatchTimeInterval
 {
-  // FIXME: eliminate this workaround
-  public init(_ rawValue: dispatch_time_t)
-  {
-    self.rawValue = rawValue
+  private var isPositive: Bool {
+    switch self
+    {
+    case .microseconds(let a), .milliseconds(let a), .nanoseconds(let a), .seconds(let a): return a > 0
+    }
   }
 }
-
 
 // MARK: maximum time until a `Deferred` becomes determined
 
@@ -75,28 +59,6 @@ private let DefaultTimeoutMessage = "Operation timed out"
 
 extension Deferred
 {
-  /// Return a `Deferred` whose determination will occur at most `µs` microseconds from the time of evaluation.
-  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
-  /// - parameter µs: a number of microseconds
-  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
-  /// - returns: a `Deferred` reference
-
-  public final func timeout(µs: Int, reason: String = DefaultTimeoutMessage) -> Deferred
-  {
-    return timeout64(ns: Int64(max(µs,0))*1000, reason: reason)
-  }
-
-  /// Return a `Deferred` whose determination will occur at most `ms` milliseconds from the time of evaluation.
-  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
-  /// - parameter ms: a number of milliseconds
-  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
-  /// - returns: a `Deferred` reference
-
-  public final func timeout(ms: Int, reason: String = DefaultTimeoutMessage) -> Deferred
-  {
-    return timeout64(ns: Int64(max(ms,0))*1_000_000, reason: reason)
-  }
-
   /// Return a `Deferred` whose determination will occur at most a number of seconds from the time of evaluation.
   /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
@@ -105,7 +67,12 @@ extension Deferred
 
   public final func timeout(seconds s: Double, reason: String = DefaultTimeoutMessage) -> Deferred
   {
-    return timeout64(ns: Int64(max(s*1e9,0)), reason: reason)
+    if self.isDetermined { return self }
+    if s > 0
+    {
+      return Timeout(source: self, deadline: .now() + s, reason: reason)
+    }
+    return Mapped(source: self, result: Result.error(DeferredError.canceled(reason)))
   }
 
   /// Return a `Deferred` whose determination will occur at most `ns` nanoseconds from the time of evaluation.
@@ -114,17 +81,12 @@ extension Deferred
   /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
-  public final func timeout(ns: Int, reason: String = DefaultTimeoutMessage) -> Deferred
-  {
-    return timeout64(ns: Int64(max(ns,0)), reason: reason)
-  }
-
-  private func timeout64(ns: Int64, reason: String) -> Deferred
+  public final func timeout(_ delay: DispatchTimeInterval, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     if self.isDetermined { return self }
-    if ns > 0
+    if delay.isPositive
     {
-      return Timeout(source: self, deadline: DispatchTime(DispatchTime.now().rawValue + UInt64(max(ns,0))), reason: reason)
+      return Timeout(source: self, deadline: .now() + delay, reason: reason)
     }
     return Mapped(source: self, result: Result.error(DeferredError.canceled(reason)))
   }
