@@ -68,7 +68,7 @@ public extension URLSession
         return
       }
 
-      if let d = data, r = response as? HTTPURLResponse
+      if let d = data, let r = response as? HTTPURLResponse
       {
         _ = try? tbd.determine( (d,r) )
         return
@@ -125,7 +125,7 @@ extension URLSession
         return
       }
 
-      if let u = url, r = response as? HTTPURLResponse
+      if let u = url, let r = response as? HTTPURLResponse
       {
         do {
           let f = try FileHandle(forReadingFrom: u)
@@ -180,7 +180,7 @@ extension URLSession
         return
       }
 
-      if let d = data, r = response as? HTTPURLResponse
+      if let d = data, let r = response as? HTTPURLResponse
       {
         _ = try? tbd.determine( (d,r) )
         return
