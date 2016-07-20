@@ -602,7 +602,7 @@ internal final class Delayed<Value>: Deferred<Value>
       result in
       if self.isDetermined { return }
 
-      if case .value = result where deadline.rawValue > DispatchTime.now().rawValue
+      if case .value = result, deadline.rawValue > DispatchTime.now().rawValue
       {
         self.beginExecution()
         self.queue.after(when: deadline) { self.determine(result) }
