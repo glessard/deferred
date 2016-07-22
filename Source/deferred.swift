@@ -594,7 +594,7 @@ internal final class Delayed<Value>: Deferred<Value>
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  init(source: Deferred<Value>, until deadline: DispatchTime)
+  init(source: Deferred<Value>, until time: DispatchTime)
   {
     super.init(queue: source.queue)
 
@@ -602,10 +602,11 @@ internal final class Delayed<Value>: Deferred<Value>
       result in
       if self.isDetermined { return }
 
-      if case .value = result, deadline.rawValue > DispatchTime.now().rawValue
+      // FIXME: use proper comparison
+      if case .value = result, time.rawValue > DispatchTime.now().rawValue
       {
         self.beginExecution()
-        self.queue.after(when: deadline) { self.determine(result) }
+        self.queue.after(when: time) { self.determine(result) }
       }
       else
       {
