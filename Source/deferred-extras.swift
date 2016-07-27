@@ -113,7 +113,7 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter task: the closure to be enqueued
 
-  public func onError(qos: DispatchQoS = .unspecified, task: (ErrorProtocol) -> Void)
+  public func onError(qos: DispatchQoS = .unspecified, task: (Error) -> Void)
   {
     notify(qos: qos) { if case let .error(e) = $0 { task(e) } }
   }
@@ -163,7 +163,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(qos: DispatchQoS = .unspecified, transform: (ErrorProtocol) -> Deferred<Value>) -> Deferred<Value>
+  public func recover(qos: DispatchQoS = .unspecified, transform: (Error) -> Deferred<Value>) -> Deferred<Value>
   {
     return Bind(qos: qos, source: self, transform: transform)
   }
