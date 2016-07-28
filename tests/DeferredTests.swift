@@ -75,8 +75,8 @@ class DeferredTests: XCTestCase
     let d1 = Deferred(value: Date())
     let d2 = d1.delay(seconds: interval).map { Date().timeIntervalSince($0) }
 
-    XCTAssert(d2.value >= interval)
-    XCTAssert(d2.value < 2.0*interval)
+    XCTAssert(d2.value! >= interval)
+    XCTAssert(d2.value! < 2.0*interval)
 
     // a negative delay returns the same reference
     let d3 = d1.delay(seconds: -0.001)
@@ -93,7 +93,7 @@ class DeferredTests: XCTestCase
     }
     let d6 = d5.delay(seconds: interval/10).map { Date().timeIntervalSince($0) }
     let actualDelay = d6.delay(.nanoseconds(100)).value
-    XCTAssert(actualDelay < interval/10)
+    XCTAssert(actualDelay! < interval/10)
   }
 
   func testValue()
@@ -144,7 +144,7 @@ class DeferredTests: XCTestCase
       if now.rawValue < fulfillTime.rawValue { XCTFail("delayed.value unblocked too soon") }
     }
 
-    DispatchQueue.global().after(when: fulfillTime) {
+    DispatchQueue.global().asyncAfter(deadline: fulfillTime) {
       e.fulfill()
     }
 
@@ -175,7 +175,7 @@ class DeferredTests: XCTestCase
       else                 { e.fulfill() }
     }
 
-    DispatchQueue.global().after(when: fulfillTime) {
+    DispatchQueue.global().asyncAfter(deadline: fulfillTime) {
       s.signal()
     }
 
@@ -199,7 +199,7 @@ class DeferredTests: XCTestCase
     let value = arc4random() & 0x3fff_ffff
     let e2 = expectation(description: "Properly Deferred")
     let d2 = Deferred(value: value).delay(.milliseconds(100))
-    let q2 = DispatchQueue(label: "Test", attributes: [.serial, .qosBackground])
+    let q2 = DispatchQueue(label: "Test", qos: .background)
     d2.notifying(on: q2).notify(qos: .utility) {
       XCTAssert( $0 == Result.value(value) )
       e2.fulfill()
@@ -226,7 +226,7 @@ class DeferredTests: XCTestCase
         return
       }
     }
-    DispatchQueue.global().after(when: DispatchTime.now() + 0.2) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
       e3.fulfill()
     }
 
@@ -452,7 +452,7 @@ class DeferredTests: XCTestCase
 
   func testQOS()
   {
-    let q = DispatchQueue.global() // qos: .background
+    let q = DispatchQueue.global(qos: .background)
     let qb = Deferred(queue: q, qos: .utility) { qos_class_self() }
     // Verify that the block's QOS was adjusted and is different from the queue's
     XCTAssert(qb.value == QOS_CLASS_UTILITY)

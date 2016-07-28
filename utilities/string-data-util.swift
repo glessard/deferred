@@ -22,10 +22,10 @@ extension NSData
   {
     let utf8 = string.utf8
     let count = utf8.count
-    let buffer = UnsafeMutablePointer<UTF8.CodeUnit>(allocatingCapacity: count)
-    buffer.initializeFrom(utf8)
+    let buffer = UnsafeMutablePointer<UTF8.CodeUnit>.allocate(capacity: count)
+    buffer.initialize(from: utf8)
     self.init(bytesNoCopy: buffer, length: count,
-              deallocator: { _ in buffer.deallocateCapacity(count) })
+              deallocator: { _ in buffer.deallocate(capacity: count) })
   }
 }
 

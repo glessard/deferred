@@ -71,9 +71,9 @@ public class Deferred<Value>
   /// - parameter task: the computation to be performed
 
   public convenience init(task: () throws -> Value)
-  { // FIXME: verify that qos is correct
+  { // FIXME: translate qos_class_self() more cleanly
     let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default)
-    self.dynamicType.init(queue: queue, task: task)
+    self.init(queue: queue, task: task)
     // was queue: dispatch_get_global_queue(qos_class_self(), 0)
   }
 
@@ -83,8 +83,8 @@ public class Deferred<Value>
   /// - parameter task: the computation to be performed
 
   public convenience init(qos: DispatchQoS, task: () throws -> Value)
-  { // FIXME: get queue at intended qos
-    self.dynamicType.init(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
+  {
+    self.init(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
     // was queue: dispatch_get_global_queue(qos, 0)
   }
 
@@ -95,7 +95,7 @@ public class Deferred<Value>
 
   public convenience init(queue: DispatchQueue, qos: DispatchQoS = .unspecified, task: () throws -> Value)
   {
-    self.dynamicType.init(queue: queue)
+    self.init(queue: queue)
 
     let closure = {
       let result = Result { _ in try task() }
@@ -122,8 +122,8 @@ public class Deferred<Value>
   /// - parameter result: the result of this `Deferred`
 
   public convenience init(qos: DispatchQoS, result: Result<Value>)
-  { // FIXME: get queue at intended qos
-    self.dynamicType.init(queue: DispatchQueue.global(qos: qos.qosClass), result: result)
+  {
+    self.init(queue: DispatchQueue.global(qos: qos.qosClass), result: result)
     // was queue: dispatch_get_global_queue(qos, 0)
   }
 
@@ -133,7 +133,7 @@ public class Deferred<Value>
 
   public convenience init(_ result: Result<Value>)
   {
-    self.dynamicType.init(queue: DispatchQueue.global(), result: result)
+    self.init(queue: DispatchQueue.global(), result: result)
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -142,7 +142,7 @@ public class Deferred<Value>
 
   public convenience init(value: Value)
   {
-    self.dynamicType.init(Result.value(value))
+    self.init(Result.value(value))
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -151,7 +151,7 @@ public class Deferred<Value>
 
   public convenience init(error: Error)
   {
-    self.dynamicType.init(Result.error(error))
+    self.init(Result.error(error))
   }
 
   // MARK: private methods
@@ -652,10 +652,9 @@ public class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the quality of service to be used when sending result notifications; defaults to the current quality-of-service class.
 
-  public convenience init(qos: DispatchQoS = .unspecified)
-  { // FIXME: should default to qos_class_self()
-    // FIXME: get queue at intended qos
-    self.dynamicType.init(queue: DispatchQueue.global())
+  public convenience init(qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0))
+  { // FIXME: translate qos_class_self() more cleanly
+    self.init(queue: DispatchQueue.global(qos: qos.qosClass))
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.determined`

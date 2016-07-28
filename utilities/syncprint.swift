@@ -10,7 +10,7 @@
 import Dispatch
 import Foundation.NSThread
 
-private let PrintQueue = DispatchQueue(label: "com.tffenterprises.syncprint", attributes: .serial)
+private let PrintQueue = DispatchQueue(label: "com.tffenterprises.syncprint")
 private let PrintGroup = DispatchGroup()
 
 private var silenceOutput: Int32 = 0
@@ -44,7 +44,7 @@ public func syncprintwait()
 {
   // Wait at most 200ms for the last messages to print out.
   let res = PrintGroup.wait(timeout: DispatchTime.now() + Double(200_000_000) / Double(NSEC_PER_SEC))
-  if res == .TimedOut
+  if res == .timedOut
   {
     OSAtomicIncrement32Barrier(&silenceOutput)
     PrintGroup.notify(queue: PrintQueue) {

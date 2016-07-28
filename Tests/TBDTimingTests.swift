@@ -49,7 +49,7 @@ class TBDTimingTests: XCTestCase
     measure {
       let iterations = 10_000
 
-      let start = TBD<Date>(queue: DispatchQueue(label: "", attributes: [.serial, .qosUserInitiated]))
+      let start = TBD<Date>(queue: DispatchQueue(label: "", qos: .userInitiated))
       for _ in 0..<iterations
       {
         start.notify { _ in }

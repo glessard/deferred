@@ -180,7 +180,8 @@ public func != <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bo
   return !(lhr == rhr)
 }
 
-public func == <C: Collection, Value: Equatable where C.Iterator.Element == Result<Value>> (lha: C, rha: C) -> Bool
+public func == <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
+  where C.Iterator.Element == Result<Value>
 {
   guard lha.count == rha.count else { return false }
 
@@ -192,7 +193,8 @@ public func == <C: Collection, Value: Equatable where C.Iterator.Element == Resu
   return true
 }
 
-public func != <C: Collection, Value: Equatable where C.Iterator.Element == Result<Value>> (lha: C, rha: C) -> Bool
+public func != <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
+  where C.Iterator.Element == Result<Value>
 {
   return !(lha == rha)
 }
