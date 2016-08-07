@@ -117,14 +117,11 @@ extension URLSession
       (url: URL?, response: URLResponse?, error: Error?) in
       if let error = error
       {
-        // FIXME: handle new errors
-        _ = error
-//        if error._domain == NSURLErrorDomain && error._code == NSURLErrorCancelled,
-//           let info = error._userInfo as? Dictionary,
-//           let data = info[NSURLSessionDownloadTaskResumeData as NSString] as? Data
-//        { _ = try? tbd.determine(URLSessionError.InterruptedDownload(data)) }
-//        else
-//        { _ = try? tbd.determine(error) }
+        if let error = error as? URLError, error.code == .cancelled,
+           let data = error.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
+        { _ = try? tbd.determine(URLSessionError.InterruptedDownload(data)) }
+        else
+        { _ = try? tbd.determine(error) }
         return
       }
 
