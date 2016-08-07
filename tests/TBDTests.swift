@@ -38,7 +38,7 @@ class TBDTests: XCTestCase
     let tbd = TBD<UInt32>()
     tbd.beginExecution()
     var value = arc4random() & 0x3fff_ffff
-    DispatchQueue.global().after(when: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
       value = arc4random() & 0x3fff_ffff
       do { try tbd.determine(value) }
       catch { XCTFail() }
@@ -151,7 +151,7 @@ class TBDTests: XCTestCase
       e2.fulfill()
     }
 
-    DispatchQueue.global().after(when: DispatchTime.now() + Double(10_000) / Double(NSEC_PER_SEC)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(10_000) / Double(NSEC_PER_SEC)) {
       value = arc4random() & 0x3fff_ffff
       do { try tbd.determine(value) }
       catch { XCTFail() }
@@ -173,7 +173,7 @@ class TBDTests: XCTestCase
       catch DeferredError.canceled {}
       catch { XCTFail() }
     }
-    DispatchQueue.global().after(when: DispatchTime.now() + Double(200_000_000) / Double(NSEC_PER_SEC)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(200_000_000) / Double(NSEC_PER_SEC)) {
       // This will trigger the `XCWaitCompletionHandler` in the `waitForExpectationsWithTimeout` call below.
       e3.fulfill()
     }
@@ -297,7 +297,7 @@ class TBDTests: XCTestCase
   {
     // Verify that "accidentally" passing a serial queue to inParallel doesn't cause a deadlock
 
-    let q = DispatchQueue(label: "test1", attributes: [.serial, .qosUtility])
+    let q = DispatchQueue(label: "test1", qos: .utility)
 
     let count = 20
     let d = Deferred.inParallel(count: count, queue: q) { $0 }

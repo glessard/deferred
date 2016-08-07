@@ -10,7 +10,7 @@
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredError: ErrorProtocol
+public enum DeferredError: Error
 {
   case canceled(String)
   case alreadyDetermined(String)

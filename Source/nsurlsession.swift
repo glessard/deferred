@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum URLSessionError: ErrorProtocol
+public enum URLSessionError: Error
 {
   case ServerStatus(Int)
   case InterruptedDownload(Data)
@@ -58,10 +58,10 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
 
 public extension URLSession
 {
-  private func dataCompletion(_ tbd: DeferredURLSessionTask<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, NSError?) -> Void
+  private func dataCompletion(_ tbd: DeferredURLSessionTask<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, Error?) -> Void
   {
     return {
-      (data: Data?, response: URLResponse?, error: NSError?) in
+      (data: Data?, response: URLResponse?, error: Error?) in
       if let error = error
       {
         _ = try? tbd.determine(error)
@@ -111,14 +111,14 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 
 extension URLSession
 {
-  private func downloadCompletion(_ tbd: DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>) -> (URL?, URLResponse?, NSError?) -> Void
+  private func downloadCompletion(_ tbd: DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>) -> (URL?, URLResponse?, Error?) -> Void
   {
     return {
-      (url: URL?, response: URLResponse?, error: NSError?) in
+      (url: URL?, response: URLResponse?, error: Error?) in
       if let error = error
       {
-        if error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled,
-           let data = error.userInfo[NSURLSessionDownloadTaskResumeData as NSString] as? Data
+        if let error = error as? URLError, error.code == .cancelled,
+           let data = error.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
         { _ = try? tbd.determine(URLSessionError.InterruptedDownload(data)) }
         else
         { _ = try? tbd.determine(error) }
@@ -170,10 +170,10 @@ extension URLSession
 
 extension URLSession
 {
-  private func uploadCompletion(_ tbd: DeferredURLSessionTask<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, NSError?) -> Void
+  private func uploadCompletion(_ tbd: DeferredURLSessionTask<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, Error?) -> Void
   {
     return {
-      (data: Data?, response: URLResponse?, error: NSError?) in
+      (data: Data?, response: URLResponse?, error: Error?) in
       if let error = error
       {
         _ = try? tbd.determine(error)

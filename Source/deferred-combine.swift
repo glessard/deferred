@@ -36,8 +36,8 @@ public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value, S: Sequence where
-                    S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<[Value]>
+public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
+  where S.Iterator.Element == Deferred<Value>
 {
   return reduce(deferreds, initial: [Value](), combine: { (values, value) in values + [value] })
 }
@@ -85,8 +85,8 @@ public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: (U,T) 
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
 
-public func reduce<S: Sequence, T, U where
-                   S.Iterator.Element == Deferred<T>>(_ deferreds: S, initial: U, combine: (U,T) throws -> U) -> Deferred<U>
+public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U, combine: (U,T) throws -> U) -> Deferred<U>
+  where S.Iterator.Element == Deferred<T>
 {
   // We iterate on a background thread because S could block on next()
   let combiner = Deferred<Deferred<U>> {
@@ -162,8 +162,8 @@ public func firstValue<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<Value>
   return firstDetermined(ShuffledSequence(deferreds)).flatMap { $0 }
 }
 
-public func firstValue<Value, S: Sequence where
-                       S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<Value>
+public func firstValue<Value, S: Sequence>(_ deferreds: S) -> Deferred<Value>
+  where S.Iterator.Element == Deferred<Value>
 {
   return firstDetermined(deferreds).flatMap { $0 }
 }
@@ -186,14 +186,16 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<D
 
 import Dispatch
 
-public func firstDetermined<Value, S: Sequence where
-                            S.Iterator.Element == Deferred<Value>>(_ deferreds: S) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value, S: Sequence>(_ deferreds: S) -> Deferred<Deferred<Value>>
+  where S.Iterator.Element == Deferred<Value>
 {
   let first = TBD<Deferred<Value>>()
 
+  // FIXME: translate qos_class_self() more cleanly
+  let qos = DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .unspecified
+
   // We iterate on a background thread because S could block on next()
-  // FIXME: obtain queue at intended qos
-  DispatchQueue.global().async {
+  DispatchQueue.global(qos: qos).async {
     deferreds.forEach {
       deferred in
       deferred.notify {

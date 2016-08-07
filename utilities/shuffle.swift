@@ -43,7 +43,8 @@ public extension Collection where Self.Indices.Iterator.Element == Self.Index
 /// The input collection is not modified: the shuffling itself is done
 /// using an adjunct array of indices.
 
-public struct ShuffledSequence<C: Collection where C.Indices.Iterator.Element == C.Index>: Sequence, IteratorProtocol
+public struct ShuffledSequence<C: Collection>: Sequence, IteratorProtocol
+  where C.Indices.Iterator.Element == C.Index
 {
   public let collection: C
   private var shuffler: IndexShuffler<C.Index>
@@ -79,7 +80,8 @@ public struct IndexShuffler<Index>: Sequence, IteratorProtocol
   public private(set) var step: Int
   private var i: [Index]
 
-  public init<S: Sequence where S.Iterator.Element == Index>(_ input: S)
+  public init<S: Sequence>(_ input: S)
+    where S.Iterator.Element == Index
   {
     self.init(Array(input))
   }

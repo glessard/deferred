@@ -8,7 +8,7 @@
 
 import Foundation.NSError
 
-public struct NoResult: ErrorProtocol, CustomStringConvertible
+public struct NoResult: Error, CustomStringConvertible
 {
   private init() {}
   public var description = "No result"
@@ -22,7 +22,7 @@ public struct NoResult: ErrorProtocol, CustomStringConvertible
 public enum Result<Value>: CustomStringConvertible
 {
   case value(Value)
-  case error(ErrorProtocol)
+  case error(Error)
 
   public init()
   {
@@ -57,7 +57,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func asError() -> ErrorProtocol?
+  public func asError() -> Error?
   {
     switch self
     {
@@ -141,7 +141,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func recover(_ transform: @noescape (ErrorProtocol) -> Result<Value>) -> Result<Value>
+  public func recover(_ transform: @noescape (Error) -> Result<Value>) -> Result<Value>
   {
     switch self
     {
@@ -180,7 +180,8 @@ public func != <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bo
   return !(lhr == rhr)
 }
 
-public func == <C: Collection, Value: Equatable where C.Iterator.Element == Result<Value>> (lha: C, rha: C) -> Bool
+public func == <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
+  where C.Iterator.Element == Result<Value>
 {
   guard lha.count == rha.count else { return false }
 
@@ -192,7 +193,8 @@ public func == <C: Collection, Value: Equatable where C.Iterator.Element == Resu
   return true
 }
 
-public func != <C: Collection, Value: Equatable where C.Iterator.Element == Result<Value>> (lha: C, rha: C) -> Bool
+public func != <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
+  where C.Iterator.Element == Result<Value>
 {
   return !(lha == rha)
 }

@@ -17,8 +17,8 @@ extension Deferred
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public static func inParallel(count: Int, qos: DispatchQoS = .unspecified, task: (index: Int) throws -> Value) -> [Deferred<Value>]
-  { // FIXME: default qos value should be equivalent to qos_class_self()
+  public static func inParallel(count: Int, qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0), task: (index: Int) throws -> Value) -> [Deferred<Value>]
+  { // FIXME: translate qos_class_self() more cleanly
     return (0..<count).deferredMap(qos: qos, task: task)
   }
 
@@ -43,10 +43,9 @@ extension Collection where Self.Indices.Iterator.Element == Self.Index
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public func deferredMap<Value>(qos: DispatchQoS = .unspecified, task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
-  { // FIXME: default qos value should be equivalent to qos_class_self()
-    // FIXME: obtain queue at intended qos
-    return deferredMap(queue: DispatchQueue.global(), task: task)
+  public func deferredMap<Value>(qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0), task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+  { // FIXME: translate qos_class_self() more cleanly
+    return deferredMap(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
   }
 
   /// Map a collection to an array of `Deferred` to be computed in parallel, on the desired dispatch queue

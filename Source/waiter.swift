@@ -48,7 +48,7 @@ enum WaitQueue
       current.pointee.notify(queue, result)
 
       current.deinitialize()
-      current.deallocateCapacity(1)
+      current.deallocate(capacity: 1)
     }
   }
 
@@ -61,7 +61,7 @@ enum WaitQueue
       waiter = current.pointee.next
 
       current.deinitialize()
-      current.deallocateCapacity(1)
+      current.deallocate(capacity: 1)
     }
   }
 

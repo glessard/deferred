@@ -71,8 +71,9 @@ public class Deferred<Value>
   /// - parameter task: the computation to be performed
 
   public convenience init(task: () throws -> Value)
-  {
-    self.init(queue: DispatchQueue.global(), task: task)
+  { // FIXME: translate qos_class_self() more cleanly
+    let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default)
+    self.init(queue: queue, task: task)
     // was queue: dispatch_get_global_queue(qos_class_self(), 0)
   }
 
@@ -82,8 +83,8 @@ public class Deferred<Value>
   /// - parameter task: the computation to be performed
 
   public convenience init(qos: DispatchQoS, task: () throws -> Value)
-  { // FIXME: get queue at intended qos
-    self.init(queue: DispatchQueue.global(), task: task)
+  {
+    self.init(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
     // was queue: dispatch_get_global_queue(qos, 0)
   }
 
@@ -121,8 +122,8 @@ public class Deferred<Value>
   /// - parameter result: the result of this `Deferred`
 
   public convenience init(qos: DispatchQoS, result: Result<Value>)
-  { // FIXME: get queue at intended qos
-    self.init(queue: DispatchQueue.global(), result: result)
+  {
+    self.init(queue: DispatchQueue.global(qos: qos.qosClass), result: result)
     // was queue: dispatch_get_global_queue(qos, 0)
   }
 
@@ -148,7 +149,7 @@ public class Deferred<Value>
   ///
   /// - parameter error: the error state of this `Deferred`'s `Result`
 
-  public convenience init(error: ErrorProtocol)
+  public convenience init(error: Error)
   {
     self.init(Result.error(error))
   }
@@ -233,7 +234,7 @@ public class Deferred<Value>
       else
       { // This Deferred has become determined; bail
         waiter.deinitialize()
-        waiter.deallocateCapacity(1)
+        waiter.deallocate(capacity: 1)
         break
       }
     }
@@ -250,8 +251,8 @@ public class Deferred<Value>
   {
     if currentState != DeferredState.determined.rawValue
     {
-      let waiter = UnsafeMutablePointer<Waiter<Value>>(allocatingCapacity: 1)
-      waiter.initialize(with: Waiter(qos, task))
+      let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
+      waiter.initialize(to: Waiter(qos, task))
 
       // waiter will be deallocated later
       if enqueue(waiter)
@@ -346,7 +347,7 @@ public class Deferred<Value>
   ///
   /// - returns: this `Deferred`'s determined value, or `nil`
 
-  public var error: ErrorProtocol? {
+  public var error: Error? {
     if case let .error(e) = result { return e }
     return nil
   }
@@ -380,13 +381,11 @@ public class Deferred<Value>
   public func notifying(at qos: DispatchQoS, serially: Bool = false) -> Deferred
   {
     if serially
-    { // FIXME: create queue at intended qos
-      let attr = DispatchQueueAttributes([.serial])
-      return notifying(on: DispatchQueue(label: "deferred-serial", attributes: attr))
+    {
+      return notifying(on: DispatchQueue(label: "deferred-serial", qos: qos))
     }
 
-    // FIXME: obtain queue at intended qos
-    return notifying(on: DispatchQueue.global())
+    return notifying(on: DispatchQueue.global(qos: qos.qosClass))
   }
 }
 
@@ -488,7 +487,7 @@ internal final class Bind<Value>: Deferred<Value>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init(qos: DispatchQoS, source: Deferred<Value>, transform: (ErrorProtocol) -> Deferred<Value>)
+  init(qos: DispatchQoS, source: Deferred<Value>, transform: (Error) -> Deferred<Value>)
   {
     super.init(queue: source.queue)
 
@@ -602,11 +601,10 @@ internal final class Delayed<Value>: Deferred<Value>
       result in
       if self.isDetermined { return }
 
-      // FIXME: use proper comparison
-      if case .value = result, time.rawValue > DispatchTime.now().rawValue
+      if case .value = result, time > DispatchTime.now()
       {
         self.beginExecution()
-        self.queue.after(when: time) { self.determine(result) }
+        self.queue.asyncAfter(deadline: time) { self.determine(result) }
       }
       else
       {
@@ -632,7 +630,7 @@ internal final class Timeout<Value>: Deferred<Value>
   init(source: Deferred<Value>, deadline: DispatchTime, reason: String)
   {
     super.init(queue: source.queue)
-    queue.after(when: deadline) { self.cancel(reason) }
+    queue.asyncAfter(deadline: deadline) { self.cancel(reason) }
     source.notify { self.determine($0) } // an error here means this `Deferred` was canceled or has timed out.
   }
 }
@@ -654,10 +652,9 @@ public class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the quality of service to be used when sending result notifications; defaults to the current quality-of-service class.
 
-  public convenience init(qos: DispatchQoS = .unspecified)
-  { // FIXME: should default to qos_class_self()
-    // FIXME: get queue at intended qos
-    self.init(queue: DispatchQueue.global())
+  public convenience init(qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0))
+  { // FIXME: translate qos_class_self() more cleanly
+    self.init(queue: DispatchQueue.global(qos: qos.qosClass))
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.determined`
@@ -677,7 +674,7 @@ public class TBD<Value>: Deferred<Value>
   /// - parameter error: the intended error for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(_ error: ErrorProtocol) throws
+  public func determine(_ error: Error) throws
   {
     try determine(Result.error(error), place: #function)
   }
