@@ -39,7 +39,6 @@
 		03850AF51C76ABF500F4B44B /* TBDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AED1C76ABF500F4B44B /* TBDTests.swift */; };
 		03850AF61C76ABF500F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AEE1C76ABF500F4B44B /* TestError.swift */; };
 		03850AF71C76ABF500F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850AEE1C76ABF500F4B44B /* TestError.swift */; };
-		03974B3F1D4A7AA200F4B44B /* qosTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03974B3E1D4A7AA200F4B44B /* qosTests.swift */; };
 		039BEF0B1CD3E22600F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */; };
 		039BEF0C1CD3E22700F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */; };
 		03B4E0771C14003C00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
@@ -118,9 +117,6 @@
 		03850AED1C76ABF500F4B44B /* TBDTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TBDTests.swift; sourceTree = "<group>"; };
 		03850AEE1C76ABF500F4B44B /* TestError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestError.swift; sourceTree = "<group>"; };
 		03850AEF1C76ABF500F4B44B /* URLSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLSessionTests.swift; sourceTree = "<group>"; };
-		03974B3C1D4A7AA200F4B44B /* qosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = qosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		03974B3E1D4A7AA200F4B44B /* qosTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = qosTests.swift; sourceTree = "<group>"; };
-		03974B401D4A7AA200F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		039BEF091CD3E1B800F4B44B /* TBDTimingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TBDTimingTests.swift; sourceTree = "<group>"; };
 		03B4E0641C13FF6900F4B44B /* deferred.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deferred.h; sourceTree = "<group>"; };
 		03B4E0651C13FF6900F4B44B /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -142,13 +138,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		03974B391D4A7AA200F4B44B /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		03B4E0691C14003B00F4B44B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -232,15 +221,6 @@
 			path = ../Tests;
 			sourceTree = "<group>";
 		};
-		03974B3D1D4A7AA200F4B44B /* qosTests */ = {
-			isa = PBXGroup;
-			children = (
-				03974B3E1D4A7AA200F4B44B /* qosTests.swift */,
-				03974B401D4A7AA200F4B44B /* Info.plist */,
-			);
-			path = qosTests;
-			sourceTree = "<group>";
-		};
 		03B4E0631C13FF6900F4B44B /* deferred */ = {
 			isa = PBXGroup;
 			children = (
@@ -302,7 +282,6 @@
 				03B4E09A1C1403C300F4B44B /* deferred-ios */,
 				03B4E0A81C1403C300F4B44B /* deferred-ios-tests */,
 				03D387981B7C713500F4B44B /* async-test */,
-				03974B3D1D4A7AA200F4B44B /* qosTests */,
 				03E60E2D1AAA571100F4B44B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -315,7 +294,6 @@
 				03B4E0761C14003C00F4B44B /* deferred-tests.xctest */,
 				03B4E0991C1403C300F4B44B /* deferred.framework */,
 				03B4E0A21C1403C300F4B44B /* deferred-tests.xctest */,
-				03974B3C1D4A7AA200F4B44B /* qosTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -341,23 +319,6 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		03974B3B1D4A7AA200F4B44B /* qosTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 03974B411D4A7AA200F4B44B /* Build configuration list for PBXNativeTarget "qosTests" */;
-			buildPhases = (
-				03974B381D4A7AA200F4B44B /* Sources */,
-				03974B391D4A7AA200F4B44B /* Frameworks */,
-				03974B3A1D4A7AA200F4B44B /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = qosTests;
-			productName = qosTests;
-			productReference = 03974B3C1D4A7AA200F4B44B /* qosTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		03B4E06C1C14003B00F4B44B /* deferred */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 03B4E07E1C14003C00F4B44B /* Build configuration list for PBXNativeTarget "deferred" */;
@@ -460,12 +421,6 @@
 				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = "Guillaume Lessard";
 				TargetAttributes = {
-					03974B3B1D4A7AA200F4B44B = {
-						CreatedOnToolsVersion = 8.0;
-						DevelopmentTeam = JMB77RELWN;
-						DevelopmentTeamName = "Guillaume Lessard (Personal Team)";
-						ProvisioningStyle = Automatic;
-					};
 					03B4E06C1C14003B00F4B44B = {
 						CreatedOnToolsVersion = 7.2;
 						LastSwiftMigration = 0800;
@@ -477,15 +432,18 @@
 					03B4E0981C1403C300F4B44B = {
 						CreatedOnToolsVersion = 7.2;
 						DevelopmentTeam = JMB77RELWN;
+						LastSwiftMigration = 0800;
 					};
 					03B4E0A11C1403C300F4B44B = {
 						CreatedOnToolsVersion = 7.2;
 						DevelopmentTeam = JMB77RELWN;
+						LastSwiftMigration = 0800;
 						TestTargetID = 03D387961B7C713500F4B44B;
 					};
 					03D387961B7C713500F4B44B = {
 						CreatedOnToolsVersion = 7.0;
 						DevelopmentTeam = JMB77RELWN;
+						LastSwiftMigration = 0800;
 					};
 				};
 			};
@@ -507,19 +465,11 @@
 				03B4E0981C1403C300F4B44B /* deferred-ios */,
 				03B4E0A11C1403C300F4B44B /* deferred-ios-tests */,
 				03D387961B7C713500F4B44B /* async-test */,
-				03974B3B1D4A7AA200F4B44B /* qosTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		03974B3A1D4A7AA200F4B44B /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		03B4E06B1C14003B00F4B44B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -561,14 +511,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		03974B381D4A7AA200F4B44B /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				03974B3F1D4A7AA200F4B44B /* qosTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		03B4E0681C14003B00F4B44B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -685,48 +627,6 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		03974B421D4A7AA200F4B44B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CODE_SIGN_IDENTITY = "-";
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_DYNAMIC_NO_PIC = NO;
-				INFOPLIST_FILE = qosTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				MTL_ENABLE_DEBUG_INFO = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.qosTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 3.0;
-			};
-			name = Debug;
-		};
-		03974B431D4A7AA200F4B44B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CODE_SIGN_IDENTITY = "-";
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				INFOPLIST_FILE = qosTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.qosTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Release;
-		};
 		03B4E07F1C14003C00F4B44B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -825,6 +725,7 @@
 				PRODUCT_NAME = deferred;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -848,6 +749,7 @@
 				PRODUCT_NAME = deferred;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -866,6 +768,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.deferred-iosTests";
 				PRODUCT_NAME = "deferred-tests";
 				SDKROOT = iphoneos;
+				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/async-test.app/async-test";
 			};
 			name = Debug;
@@ -882,6 +785,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.deferred-iosTests";
 				PRODUCT_NAME = "deferred-tests";
 				SDKROOT = iphoneos;
+				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/async-test.app/async-test";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -905,6 +809,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.deferred-test";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -926,6 +831,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.deferred-test";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -1016,15 +922,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		03974B411D4A7AA200F4B44B /* Build configuration list for PBXNativeTarget "qosTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				03974B421D4A7AA200F4B44B /* Debug */,
-				03974B431D4A7AA200F4B44B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		03B4E07E1C14003C00F4B44B /* Build configuration list for PBXNativeTarget "deferred" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
