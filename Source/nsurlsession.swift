@@ -17,7 +17,7 @@ public enum URLSessionError: Error
 
 public class DeferredURLSessionTask<Value>: TBD<Value>
 {
-  private weak var sessionTask: URLSessionTask? = nil
+  fileprivate weak var sessionTask: URLSessionTask? = nil
 
   init() { super.init(queue: DispatchQueue.global()) }
 
@@ -32,7 +32,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     return task.state == .canceling
   }
 
-  public private(set) var task: URLSessionTask? {
+  public fileprivate(set) var task: URLSessionTask? {
     get {
       // is this thread-safe, or is a capture-and-return necessary?
       return sessionTask
@@ -48,7 +48,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     return super.result
   }
 
-  public override func notify(qos: DispatchQoS = .unspecified, task: (Result<Value>) -> Void)
+  public override func notify(qos: DispatchQoS = .unspecified, task: @escaping (Result<Value>) -> Void)
   {
     self.task?.resume()
     self.beginExecution()

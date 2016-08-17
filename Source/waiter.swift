@@ -14,13 +14,13 @@ struct Waiter<T>
   private let handler: (Result<T>) -> Void
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
-  init(_ qos: DispatchQoS, _ handler: (Result<T>) -> Void)
+  init(_ qos: DispatchQoS, _ handler: @escaping (Result<T>) -> Void)
   {
     self.qos = qos
     self.handler = handler
   }
 
-  private func notify(_ queue: DispatchQueue, _ result: Result<T>)
+  fileprivate func notify(_ queue: DispatchQueue, _ result: Result<T>)
   {
     let closure = { [ handler = self.handler ] in handler(result) }
 

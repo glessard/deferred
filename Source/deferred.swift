@@ -26,16 +26,17 @@ private let transientState = Int32.max
 ///
 /// A closure supplied to the `notify` method will be called after the `Deferred` has become determined.
 
-public class Deferred<Value>
+open // would prefer "public", but an "open" class can only descend from another "open" class.
+class Deferred<Value>
 {
   private var r: Result<Value>
+
+  fileprivate let queue: DispatchQueue
 
   // Swift does not have a facility to read and write enum values atomically.
   // To get around this, we use a raw `Int32` value as a proxy for the enum value.
 
   private var currentState: Int32
-
-  private let queue: DispatchQueue
   private var waiters: UnsafeMutablePointer<Waiter<Value>>? = nil
 
   deinit
@@ -45,7 +46,7 @@ public class Deferred<Value>
 
   // MARK: designated initializers
 
-  private init(queue: DispatchQueue)
+  fileprivate init(queue: DispatchQueue)
   {
     r = Result()
     self.queue = queue
@@ -70,7 +71,7 @@ public class Deferred<Value>
   ///
   /// - parameter task: the computation to be performed
 
-  public convenience init(task: () throws -> Value)
+  public convenience init(task: @escaping () throws -> Value)
   { // FIXME: translate qos_class_self() more cleanly
     let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default)
     self.init(queue: queue, task: task)
@@ -82,7 +83,7 @@ public class Deferred<Value>
   /// - parameter qos:  the Quality-of-Service class at which the computation (and notifications) should be performed
   /// - parameter task: the computation to be performed
 
-  public convenience init(qos: DispatchQoS, task: () throws -> Value)
+  public convenience init(qos: DispatchQoS, task: @escaping () throws -> Value)
   {
     self.init(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
     // was queue: dispatch_get_global_queue(qos, 0)
@@ -93,7 +94,7 @@ public class Deferred<Value>
   /// - parameter queue: the `DispatchQueue` onto which the computation (and notifications) will be enqueued
   /// - parameter task:  the computation to be performed
 
-  public convenience init(queue: DispatchQueue, qos: DispatchQoS = .unspecified, task: () throws -> Value)
+  public convenience init(queue: DispatchQueue, qos: DispatchQoS = .unspecified, task: @escaping () throws -> Value)
   {
     self.init(queue: queue)
 
@@ -154,11 +155,11 @@ public class Deferred<Value>
     self.init(Result.error(error))
   }
 
-  // MARK: private methods
+  // MARK: fileprivate methods
 
   /// Change the state of this `Deferred` from `.waiting` to `.executing`
 
-  private func beginExecution()
+  fileprivate func beginExecution()
   {
     CAS(current: DeferredState.waiting.rawValue, new: DeferredState.executing.rawValue, target: &currentState)
   }
@@ -172,7 +173,7 @@ public class Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  private func determine(_ result: Result<Value>) -> Bool
+  fileprivate func determine(_ result: Result<Value>) -> Bool
   {
     // A turnstile to ensure only one thread can succeed
     while true
@@ -206,6 +207,8 @@ public class Deferred<Value>
     // The result is now available for the world
     return true
   }
+
+  // MARK: private methods
 
   /// Enqueue a Waiter to this Deferred's list of Waiters.
   /// This operation is lock-free and thread-safe.
@@ -247,7 +250,7 @@ public class Deferred<Value>
   ///
   /// - parameter task:  the closure to be enqueued
 
-  public func notify(qos: DispatchQoS = .unspecified, task: (Result<Value>) -> Void)
+  public func notify(qos: DispatchQoS = .unspecified, task: @escaping (Result<Value>) -> Void)
   {
     if currentState != DeferredState.determined.rawValue
     {
@@ -412,7 +415,7 @@ internal final class Mapped<Value>: Deferred<Value>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: DispatchQoS, source: Deferred<U>, transform: (U) throws -> Value)
+  init<U>(qos: DispatchQoS, source: Deferred<U>, transform: @escaping (U) throws -> Value)
   {
     super.init(queue: source.queue)
 
@@ -433,7 +436,7 @@ internal final class Mapped<Value>: Deferred<Value>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: DispatchQoS, source: Deferred<U>, transform: (U) -> Result<Value>)
+  init<U>(qos: DispatchQoS, source: Deferred<U>, transform: @escaping (U) -> Result<Value>)
   {
     super.init(queue: source.queue)
 
@@ -457,7 +460,7 @@ internal final class Bind<Value>: Deferred<Value>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init<U>(qos: DispatchQoS, source: Deferred<U>, transform: (U) -> Deferred<Value>)
+  init<U>(qos: DispatchQoS, source: Deferred<U>, transform: @escaping (U) -> Deferred<Value>)
   {
     super.init(queue: source.queue)
 
@@ -487,7 +490,7 @@ internal final class Bind<Value>: Deferred<Value>
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
-  init(qos: DispatchQoS, source: Deferred<Value>, transform: (Error) -> Deferred<Value>)
+  init(qos: DispatchQoS, source: Deferred<Value>, transform: @escaping (Error) -> Deferred<Value>)
   {
     super.init(queue: source.queue)
 
@@ -637,7 +640,7 @@ internal final class Timeout<Value>: Deferred<Value>
 
 /// A `Deferred` to be determined (`TBD`) manually.
 
-public class TBD<Value>: Deferred<Value>
+open class TBD<Value>: Deferred<Value>
 {
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
