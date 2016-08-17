@@ -96,12 +96,12 @@ class URLSessionTests: XCTestCase
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
-    switch deferred.result
+    if let e = deferred.error as? URLError
     {
-    case .error(let e as NSError):
-      XCTAssert(e.domain == NSURLErrorDomain)
-      XCTAssert(e.code == NSURLErrorCancelled)
-    default:
+      XCTAssert(e.code == .cancelled)
+    }
+    else
+    {
       XCTFail("failed to cancel?")
     }
 
@@ -120,13 +120,13 @@ class URLSessionTests: XCTestCase
 
     usleep(1000)
 
-    switch deferred.result
+    if let e = deferred.error as? URLError
     {
-    case .error(let e as NSError):
-      // Nope: XCTAssertNil(deferred.task)
-      XCTAssert(e.domain == NSURLErrorDomain)
-
-    default:
+      _ = e
+      // print(e.code.rawValue)
+    }
+    else
+    {
       XCTFail("failed to cancel?")
     }
 
@@ -144,14 +144,12 @@ class URLSessionTests: XCTestCase
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
-    switch deferred.result
+    if let e = deferred.error as? URLError
     {
-    case .error(let error):
-      XCTAssertFalse(error is DeferredError)
-      let e = error as NSError
-      XCTAssert(e.domain == NSURLErrorDomain)
-      XCTAssert(e.code == NSURLErrorCancelled)
-    default:
+      XCTAssert(e.code == .cancelled)
+    }
+    else
+    {
       XCTFail("failed to cancel?")
     }
 
@@ -228,12 +226,12 @@ class URLSessionTests: XCTestCase
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
-    switch deferred.result
+    if let e = deferred.error as? URLError
     {
-    case let .error(e as NSError):
-      XCTAssert(e.domain == NSURLErrorDomain)
-      XCTAssert(e.code == NSURLErrorCancelled)
-    default:
+      XCTAssert(e.code == .cancelled)
+    }
+    else
+    {
       XCTFail("failed to cancel?")
     }
 
@@ -252,14 +250,13 @@ class URLSessionTests: XCTestCase
 
     usleep(1000)
 
-    switch deferred.result
+    if let e = deferred.error as? URLError
     {
-    case .error(let e as NSError):
-      // Nope: XCTAssertNil(deferred.task)
-      XCTAssert(e.domain == NSURLErrorDomain)
-      print(String(describing: e))
-
-    default:
+      _ = e
+      // print(e.code.rawValue)
+    }
+    else
+    {
       XCTFail("failed to cancel?")
     }
 
@@ -277,14 +274,12 @@ class URLSessionTests: XCTestCase
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
-    switch deferred.result
+    if let e = deferred.error as? URLError
     {
-    case .error(let error):
-      XCTAssertFalse(error is DeferredError)
-      let e = error as NSError
-      XCTAssert(e.domain == NSURLErrorDomain)
-      XCTAssert(e.code == NSURLErrorCancelled)
-    default:
+      XCTAssert(e.code == .cancelled)
+    }
+    else
+    {
       XCTFail("failed to cancel?")
     }
 
@@ -392,12 +387,12 @@ class URLSessionTests: XCTestCase
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
-    switch deferred.result
+    if let e = deferred.error as? URLError
     {
-    case .error(let e as NSError):
-      XCTAssert(e.domain == NSURLErrorDomain)
-      XCTAssert(e.code == NSURLErrorCancelled)
-    default:
+      XCTAssert(e.code == .cancelled)
+    }
+    else
+    {
       XCTFail("failed to cancel?")
     }
 
