@@ -194,7 +194,7 @@ extension URLSession
     }
   }
 
-  public func deferredUploadTask(request: URLRequest, fromData bodyData: Data) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
+  public func deferredUploadTask(with request: URLRequest, fromData bodyData: Data) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
     let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>()
 
@@ -204,7 +204,7 @@ extension URLSession
     return tbd
   }
 
-  public func deferredUploadTask(request: URLRequest, fromFile fileURL: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
+  public func deferredUploadTask(with request: URLRequest, fromFile fileURL: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
     let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>()
 
