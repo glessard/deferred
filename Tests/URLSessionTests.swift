@@ -37,7 +37,7 @@ class URLSessionTests: XCTestCase
       return data
     }.map {
       data -> Bool in
-#if os(OSX) || os(Linux)
+#if os(macOS)
       let im = NSImage(data: data)
 #else
       let im = UIImage(data: data)
@@ -195,7 +195,7 @@ class URLSessionTests: XCTestCase
       return file.readDataToEndOfFile()
     }.map {
       data -> Bool in
-#if os(OSX) || os(Linux)
+#if os(macOS)
       let im = NSImage(data: data)
 #else
       let im = UIImage(data: data)
