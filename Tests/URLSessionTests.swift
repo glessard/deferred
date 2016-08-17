@@ -209,9 +209,8 @@ class URLSessionTests: XCTestCase
 
     switch success.result
     {
-    case .value(let success) where success == true: break // savor success
-    case .value:            XCTFail("Failed without error")
-    case .error(let error): XCTFail(String(describing: error))
+    case .value(let success): XCTAssert(success, "Failed without error")
+    case .error(let error):   XCTFail(String(describing: error))
     }
 
     session.invalidateAndCancel()
