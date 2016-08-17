@@ -11,7 +11,7 @@ import Foundation
 public enum URLSessionError: Error
 {
   case ServerStatus(Int)
-  case InterruptedDownload(Data)
+  case InterruptedDownload(URLError, Data)
   case InvalidState
 }
 
@@ -117,9 +117,13 @@ extension URLSession
       (url: URL?, response: URLResponse?, error: Error?) in
       if let error = error
       {
-        if let error = error as? URLError, error.code == .cancelled,
-           let data = error.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
-        { _ = try? tbd.determine(URLSessionError.InterruptedDownload(data)) }
+        if let error = error as? URLError, error.code == .cancelled
+        {
+          if let data = error.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
+          { _ = try? tbd.determine(URLSessionError.InterruptedDownload(error, data)) }
+          else
+          { _ = try? tbd.determine(DeferredError.canceled(error.localizedDescription)) }
+        }
         else
         { _ = try? tbd.determine(error) }
         return
