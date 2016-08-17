@@ -157,7 +157,7 @@ extension URLSession
     return deferredDownloadTask(with: URLRequest(url: url))
   }
 
-  public func deferredDownloadTask(resumeData data: Data) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
+  public func deferredDownloadTask(withResumeData data: Data) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
   {
     let tbd = DeferredDownloadTask<(URL, FileHandle, HTTPURLResponse)>()
 
