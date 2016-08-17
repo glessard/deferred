@@ -10,7 +10,7 @@ import Foundation.NSError
 
 public struct NoResult: Error, CustomStringConvertible
 {
-  private init() {}
+  fileprivate init() {}
   public var description = "No result"
 }
 
@@ -29,7 +29,7 @@ public enum Result<Value>: CustomStringConvertible
     self = .error(NoResult())
   }
 
-  public init(task: @noescape () throws -> Value)
+  public init(task: () throws -> Value)
   {
     do {
       let value = try task()
@@ -87,13 +87,13 @@ public enum Result<Value>: CustomStringConvertible
   public var description: String {
     switch self
     {
-    case .value(let value): return String(value)
+    case .value(let value): return String(describing: value)
     case .error(let error): return "Error: \(error)"
     }
   }
 
 
-  public func map<Other>(_ transform: @noescape (Value) throws -> Other) -> Result<Other>
+  public func map<Other>(_ transform: (Value) throws -> Other) -> Result<Other>
   {
     switch self
     {
@@ -102,7 +102,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func flatMap<Other>(_ transform: @noescape (Value) -> Result<Other>) -> Result<Other>
+  public func flatMap<Other>(_ transform: (Value) -> Result<Other>) -> Result<Other>
   {
     switch self
     {
@@ -141,7 +141,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func recover(_ transform: @noescape (Error) -> Result<Value>) -> Result<Value>
+  public func recover(_ transform: (Error) -> Result<Value>) -> Result<Value>
   {
     switch self
     {

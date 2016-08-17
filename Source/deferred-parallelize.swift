@@ -14,10 +14,10 @@ extension Deferred
   ///
   /// - parameter count: the number of parallel tasks to perform
   /// - parameter qos: the desired quality of service class for the new `Deferred` objects
-  /// - parameter task: the computation to be performed in parallel
+  /// - parameter task: the computation to be performed in parallel; the closure takes an index as its parameter
   /// - returns: an array of `Deferred`
 
-  public static func inParallel(count: Int, qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0), task: (index: Int) throws -> Value) -> [Deferred<Value>]
+  public static func inParallel(count: Int, qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0), task: @escaping (Int) throws -> Value) -> [Deferred<Value>]
   { // FIXME: translate qos_class_self() more cleanly
     return (0..<count).deferredMap(qos: qos, task: task)
   }
@@ -26,10 +26,10 @@ extension Deferred
   ///
   /// - parameter count: the number of parallel tasks to perform
   /// - parameter queue: the `dispatch_queue` onto which the `Deferreds` should be performed.
-  /// - parameter task: the computation to be performed in parallel
+  /// - parameter task: the computation to be performed in parallel; the closure takes an index as its parameter
   /// - returns: an array of `Deferred`
 
-  public static func inParallel(count: Int, queue: DispatchQueue, task: (index: Int) throws -> Value) -> [Deferred<Value>]
+  public static func inParallel(count: Int, queue: DispatchQueue, task: @escaping (Int) throws -> Value) -> [Deferred<Value>]
   {
     return (0..<count).deferredMap(queue: queue, task: task)
   }
@@ -43,7 +43,7 @@ extension Collection where Self.Indices.Iterator.Element == Self.Index
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public func deferredMap<Value>(qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0), task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+  public func deferredMap<Value>(qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0), task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   { // FIXME: translate qos_class_self() more cleanly
     return deferredMap(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
   }
@@ -54,7 +54,7 @@ extension Collection where Self.Indices.Iterator.Element == Self.Index
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public func deferredMap<Value>(queue: DispatchQueue, task: (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+  public func deferredMap<Value>(queue: DispatchQueue, task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
     // The following 2 lines exist to get around the fact that Self.Index.Distance does not convert to Int.
     let indices = Array(self.indices)

@@ -11,13 +11,13 @@ import Foundation
 public enum URLSessionError: Error
 {
   case ServerStatus(Int)
-  case InterruptedDownload(Data)
+  case InterruptedDownload(URLError, Data)
   case InvalidState
 }
 
 public class DeferredURLSessionTask<Value>: TBD<Value>
 {
-  private weak var sessionTask: URLSessionTask? = nil
+  fileprivate weak var sessionTask: URLSessionTask? = nil
 
   init() { super.init(queue: DispatchQueue.global()) }
 
@@ -32,7 +32,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     return task.state == .canceling
   }
 
-  public private(set) var task: URLSessionTask? {
+  public fileprivate(set) var task: URLSessionTask? {
     get {
       // is this thread-safe, or is a capture-and-return necessary?
       return sessionTask
@@ -48,7 +48,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     return super.result
   }
 
-  public override func notify(qos: DispatchQoS = .unspecified, task: (Result<Value>) -> Void)
+  public override func notify(qos: DispatchQoS = .unspecified, task: @escaping (Result<Value>) -> Void)
   {
     self.task?.resume()
     self.beginExecution()
@@ -117,9 +117,13 @@ extension URLSession
       (url: URL?, response: URLResponse?, error: Error?) in
       if let error = error
       {
-        if let error = error as? URLError, error.code == .cancelled,
-           let data = error.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
-        { _ = try? tbd.determine(URLSessionError.InterruptedDownload(data)) }
+        if let error = error as? URLError, error.code == .cancelled
+        {
+          if let data = error.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
+          { _ = try? tbd.determine(URLSessionError.InterruptedDownload(error, data)) }
+          else
+          { _ = try? tbd.determine(DeferredError.canceled(error.localizedDescription)) }
+        }
         else
         { _ = try? tbd.determine(error) }
         return
@@ -157,7 +161,7 @@ extension URLSession
     return deferredDownloadTask(with: URLRequest(url: url))
   }
 
-  public func deferredDownloadTask(resumeData data: Data) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
+  public func deferredDownloadTask(withResumeData data: Data) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
   {
     let tbd = DeferredDownloadTask<(URL, FileHandle, HTTPURLResponse)>()
 
@@ -190,7 +194,7 @@ extension URLSession
     }
   }
 
-  public func deferredUploadTask(request: URLRequest, fromData bodyData: Data) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
+  public func deferredUploadTask(with request: URLRequest, fromData bodyData: Data) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
     let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>()
 
@@ -200,7 +204,7 @@ extension URLSession
     return tbd
   }
 
-  public func deferredUploadTask(request: URLRequest, fromFile fileURL: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
+  public func deferredUploadTask(with request: URLRequest, fromFile fileURL: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
     let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>()
 

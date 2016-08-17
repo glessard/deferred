@@ -56,7 +56,7 @@ class TBDTests: XCTestCase
       XCTFail()
     }
     catch let error as DeferredError {
-      _ = String(error)
+      _ = String(describing: error)
       if case let .alreadyDetermined(message) = error
       {
         XCTAssert(error == .alreadyDetermined(message))

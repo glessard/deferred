@@ -56,7 +56,7 @@ public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
 
-public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: (U,T) throws -> U) -> Deferred<U>
+public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
 {
   guard let first = deferreds.first else { return Deferred(value: initial) }
 
@@ -85,7 +85,7 @@ public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: (U,T) 
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
 
-public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U, combine: (U,T) throws -> U) -> Deferred<U>
+public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
   where S.Iterator.Element == Deferred<T>
 {
   // We iterate on a background thread because S could block on next()

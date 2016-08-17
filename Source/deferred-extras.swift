@@ -45,7 +45,7 @@ extension Deferred
 
 extension DispatchTimeInterval
 {
-  private var isPositive: Bool {
+  fileprivate var isPositive: Bool {
     switch self
     {
     case .microseconds(let a), .milliseconds(let a), .nanoseconds(let a), .seconds(let a): return a > 0
@@ -101,7 +101,7 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter task: the closure to be enqueued
 
-  public func onValue(qos: DispatchQoS = .unspecified, task: (Value) -> Void)
+  public func onValue(qos: DispatchQoS = .unspecified, task: @escaping (Value) -> Void)
   {
     notify(qos: qos) { if case let .value(v) = $0 { task(v) } }
   }
@@ -113,7 +113,7 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter task: the closure to be enqueued
 
-  public func onError(qos: DispatchQoS = .unspecified, task: (Error) -> Void)
+  public func onError(qos: DispatchQoS = .unspecified, task: @escaping (Error) -> Void)
   {
     notify(qos: qos) { if case let .error(e) = $0 { task(e) } }
   }
@@ -128,7 +128,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<Other>(qos: DispatchQoS = .unspecified, transform: (Value) throws -> Other) -> Deferred<Other>
+  public func map<Other>(qos: DispatchQoS = .unspecified, transform: @escaping (Value) throws -> Other) -> Deferred<Other>
   {
     return Mapped<Other>(qos: qos, source: self, transform: transform)
   }
@@ -138,7 +138,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func map<Other>(qos: DispatchQoS = .unspecified, transform: (Value) -> Result<Other>) -> Deferred<Other>
+  public func map<Other>(qos: DispatchQoS = .unspecified, transform: @escaping (Value) -> Result<Other>) -> Deferred<Other>
   {
     return Mapped<Other>(qos: qos, source: self, transform: transform)
   }
@@ -153,7 +153,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func flatMap<Other>(qos: DispatchQoS = .unspecified, transform: (Value) -> Deferred<Other>) -> Deferred<Other>
+  public func flatMap<Other>(qos: DispatchQoS = .unspecified, transform: @escaping (Value) -> Deferred<Other>) -> Deferred<Other>
   {
     return Bind<Other>(qos: qos, source: self, transform: transform)
   }
@@ -163,7 +163,7 @@ extension Deferred
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
 
-  public func recover(qos: DispatchQoS = .unspecified, transform: (Error) -> Deferred<Value>) -> Deferred<Value>
+  public func recover(qos: DispatchQoS = .unspecified, transform: @escaping (Error) -> Deferred<Value>) -> Deferred<Value>
   {
     return Bind(qos: qos, source: self, transform: transform)
   }
