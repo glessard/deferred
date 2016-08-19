@@ -40,8 +40,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func asValue() -> Value?
-  {
+  public var value: Value? {
     switch self
     {
     case .value(let value): return value
@@ -57,8 +56,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func asError() -> Error?
-  {
+  public var error: Error? {
     switch self
     {
     case .value:            return nil

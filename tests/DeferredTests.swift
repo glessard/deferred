@@ -817,7 +817,7 @@ class DeferredTests: XCTestCase
 
     XCTAssert(c.result.isValue == false)
     XCTAssert(c.result.isError)
-    if let error = c.result.asError() as? TestError
+    if let error = c.result.error as? TestError
     {
       XCTAssert(error.error >= 9)
     }
