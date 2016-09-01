@@ -72,7 +72,7 @@ class Deferred<Value>
   /// - parameter task: the computation to be performed
 
   public convenience init(task: @escaping () throws -> Value)
-  { // FIXME: translate qos_class_self() more cleanly
+  {
     let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default)
     self.init(queue: queue, task: task)
     // was queue: dispatch_get_global_queue(qos_class_self(), 0)
@@ -325,7 +325,8 @@ class Deferred<Value>
     if currentState != DeferredState.determined.rawValue
     {
       let s = DispatchSemaphore(value: 0)
-      self.notify() { _ in s.signal() }
+      let qos = DispatchQoS.current(fallback: .unspecified)
+      self.notify(qos: qos) { _ in s.signal() }
       // was: self.notify(qos: qos_class_self())
       s.wait()
     }
@@ -655,8 +656,8 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the quality of service to be used when sending result notifications; defaults to the current quality-of-service class.
 
-  public convenience init(qos: DispatchQoS = DispatchQoS(qosClass: DispatchQoS.QoSClass(rawValue: qos_class_self())!, relativePriority: 0))
-  { // FIXME: translate qos_class_self() more cleanly
+  public convenience init(qos: DispatchQoS = DispatchQoS.current())
+  {
     self.init(queue: DispatchQueue.global(qos: qos.qosClass))
   }
 
