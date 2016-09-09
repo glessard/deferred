@@ -10,22 +10,21 @@ import Foundation
 
 extension String
 {
-  public init(fromData data: NSData)
+  public init(fromData data: Data)
   {
-    self = String(data: data, encoding: NSUTF8StringEncoding) ?? ""
+    self = String(data: data, encoding: String.Encoding.utf8) ?? ""
   }
 }
 
-extension NSData
+extension Data
 {
-  public convenience init(fromString string: String)
+  public init(fromString string: String)
   {
     let utf8 = string.utf8
     let count = utf8.count
-    let buffer = UnsafeMutablePointer<UTF8.CodeUnit>.alloc(count)
-    buffer.initializeFrom(utf8)
-    self.init(bytesNoCopy: buffer, length: count,
-              deallocator: { _ in buffer.dealloc(count) })
+    let buffer = UnsafeMutablePointer<UTF8.CodeUnit>.allocate(capacity: count)
+    buffer.initialize(from: utf8)
+    self.init(bytesNoCopy: buffer, count: count,
+              deallocator: .custom({ _ in buffer.deallocate(capacity: count) }))
   }
 }
-

@@ -4,14 +4,15 @@
 //  Created by Guillaume Lessard on 2014-08-22.
 //  Copyright (c) 2014, 2015 Guillaume Lessard. All rights reserved.
 //
+//  https://github.com/glessard/syncprint
 //  https://gist.github.com/glessard/826241431dcea3655d1e
 //
 
 import Dispatch
 import Foundation.NSThread
 
-private let PrintQueue = dispatch_queue_create("com.tffenterprises.syncprint", DISPATCH_QUEUE_SERIAL)
-private let PrintGroup = dispatch_group_create()
+private let printQueue = DispatchQueue(label: "com.tffenterprises.syncprint")
+private let printGroup = DispatchGroup()
 
 private var silenceOutput: Int32 = 0
 
@@ -25,11 +26,11 @@ private var silenceOutput: Int32 = 0
 ///
 ///  - parameter item: the item to be printed
 
-public func syncprint(item: Any)
+public func syncprint(_ item: Any)
 {
-  let thread = NSThread.currentThread().isMainThread ? "[main]" : "[back]"
+  let thread = Thread.current.isMainThread ? "[main]" : "[back]"
 
-  dispatch_group_async(PrintGroup, PrintQueue) {
+  printQueue.async(group: printGroup) {
     // Read silenceOutput atomically
     if OSAtomicAdd32(0, &silenceOutput) == 0
     {
@@ -43,11 +44,11 @@ public func syncprint(item: Any)
 public func syncprintwait()
 {
   // Wait at most 200ms for the last messages to print out.
-  let res = dispatch_group_wait(PrintGroup, dispatch_time(DISPATCH_TIME_NOW, 200_000_000))
-  if res != 0
+  let res = printGroup.wait(timeout: DispatchTime.now() + 0.2)
+  if res == .timedOut
   {
     OSAtomicIncrement32Barrier(&silenceOutput)
-    dispatch_group_notify(PrintGroup, PrintQueue) {
+    printGroup.notify(queue: printQueue) {
       print("Skipped output")
       OSAtomicDecrement32Barrier(&silenceOutput)
     }

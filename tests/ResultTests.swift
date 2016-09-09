@@ -26,7 +26,7 @@ class ResultTests: XCTestCase
 
     let r2: Result<Int> = Result()
     do {
-      try r2.getValue()
+      _ = try r2.getValue()
       XCTFail()
     }
     catch {
@@ -101,15 +101,15 @@ class ResultTests: XCTestCase
   func testAccessors()
   {
     var res = Result<Int>()
-    XCTAssert(res.asValue() == nil)
+    XCTAssert(res.value == nil)
     XCTAssert(res.isValue == false)
-    XCTAssert(res.asError() != nil)
+    XCTAssert(res.error != nil)
     XCTAssert(res.isError)
 
     res = Result.value(0)
-    XCTAssert(res.asValue() == 0)
+    XCTAssert(res.value == 0)
     XCTAssert(res.isValue)
-    XCTAssert(res.asError() == nil)
+    XCTAssert(res.error == nil)
     XCTAssert(res.isError == false)
   }
 
@@ -186,7 +186,7 @@ class ResultTests: XCTestCase
 
     // Bad operand: transform not applied
     let o2 = Result<Int>.error(TestError(error))
-    let t2 = Result.value({ (i:Int) throws -> CGPoint in XCTFail(); return CGPointZero })
+    let t2 = Result.value({ (i:Int) throws -> CGPoint in XCTFail(); return CGPoint.zero })
     let r2 = o2.apply(t2)
     XCTAssert(r2 == Result.error(TestError(error)))
 
@@ -210,7 +210,7 @@ class ResultTests: XCTestCase
 
     // Bad operand: transform not applied
     let o2 = Result<Int>.error(TestError(error))
-    let t2 = Result.value { (i:Int) in Result<CGPoint> { XCTFail(); return CGPointZero } }
+    let t2 = Result.value { (i:Int) in Result<CGPoint> { XCTFail(); return CGPoint.zero } }
     let r2 = o2.apply(t2)
     XCTAssert(r2 == Result.error(TestError(error)))
 

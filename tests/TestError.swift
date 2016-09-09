@@ -6,7 +6,7 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-struct TestError: ErrorType, Equatable
+struct TestError: Error, Equatable
 {
   let error: UInt32
   init(_ e: UInt32 = 0) { error = e }
