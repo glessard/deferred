@@ -6,13 +6,18 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin
+import func Darwin.libkern.OSAtomic.OSAtomicCompareAndSwapPtrBarrier
+import func Darwin.libkern.OSAtomic.OSAtomicCompareAndSwap32Barrier
+import func Darwin.libkern.OSAtomic.OSAtomicAdd32Barrier
 
 
 @inline(__always) @discardableResult
-func CAS<T>(current: UnsafeMutablePointer<T>?, new: UnsafeMutablePointer<T>?, target: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> Bool
+func CAS<T>(current: UnsafeMutablePointer<T>?, new: UnsafeMutablePointer<T>?,
+            target: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> Bool
 {
-  return target.withMemoryRebound(to: (UnsafeMutableRawPointer?).self, capacity: 1) { OSAtomicCompareAndSwapPtrBarrier(current, new, $0) }
+  return target.withMemoryRebound(to: (UnsafeMutableRawPointer?).self, capacity: 1) {
+    OSAtomicCompareAndSwapPtrBarrier(current, new, $0)
+  }
 }
 
 @inline(__always) @discardableResult
