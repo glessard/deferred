@@ -8,6 +8,10 @@
 
 import Dispatch
 
+#if SWIFT_PACKAGE
+  import utilities
+#endif
+
 /// The possible states of a `Deferred`.
 ///
 /// Must be a top-level type because Deferred is generic.

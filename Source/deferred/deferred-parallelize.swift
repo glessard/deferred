@@ -8,6 +8,10 @@
 
 import Dispatch
 
+#if SWIFT_PACKAGE
+  import utilities
+#endif
+
 extension Deferred
 {
   /// Initialize an array of `Deferred` to be computed in parallel, at the desired quality of service level
