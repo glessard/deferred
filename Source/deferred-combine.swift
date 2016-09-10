@@ -6,8 +6,7 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-// Until Xcode supports the Swift package manager, compile with the flag "-D XCODE"
-#if !XCODE
+#if SWIFT_PACKAGE
   import shuffle
 #endif
 
