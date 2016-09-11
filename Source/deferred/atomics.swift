@@ -6,9 +6,9 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-import func Darwin.libkern.OSAtomic.OSAtomicCompareAndSwapPtrBarrier
-import func Darwin.libkern.OSAtomic.OSAtomicCompareAndSwap32Barrier
-import func Darwin.libkern.OSAtomic.OSAtomicAdd32Barrier
+import func Darwin.OSAtomicCompareAndSwapPtrBarrier
+import func Darwin.OSAtomicCompareAndSwap32Barrier
+import func Darwin.OSAtomicAdd32Barrier
 
 
 @inline(__always) @discardableResult

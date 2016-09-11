@@ -11,7 +11,7 @@
 #if os(Linux)
 import func Glibc.random
 #else
-import func Darwin.C.stdlib.arc4random_uniform
+import func Darwin.arc4random_uniform
 #endif
 
 /// Get a sequence/generator that will return a collection's elements in a random order.
