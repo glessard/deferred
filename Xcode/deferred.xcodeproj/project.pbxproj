@@ -275,8 +275,8 @@
 			children = (
 				034857621C11BD5E00F4B44B /* Package.swift */,
 				03850ABD1C76AB2200F4B44B /* Source */,
-				03850AEA1C76ABF500F4B44B /* Tests */,
 				03850ADC1C76AB7D00F4B44B /* utilities */,
+				03850AEA1C76ABF500F4B44B /* Tests */,
 				03B4E0631C13FF6900F4B44B /* deferred */,
 				03B4E07A1C14003C00F4B44B /* deferred-tests */,
 				03B4E09A1C1403C300F4B44B /* deferred-ios */,
