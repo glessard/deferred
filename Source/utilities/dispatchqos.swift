@@ -10,9 +10,17 @@ import Dispatch
 
 extension DispatchQoS
 {
+#if SWIFT_PACKAGE
   public static func current(fallback: DispatchQoS.QoSClass = .utility) -> DispatchQoS
   {
     let qos = DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? fallback
     return DispatchQoS(qosClass: qos, relativePriority: 0)
   }
+#else
+  static func current(fallback: DispatchQoS.QoSClass = .utility) -> DispatchQoS
+  {
+    let qos = DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? fallback
+    return DispatchQoS(qosClass: qos, relativePriority: 0)
+  }
+#endif
 }
