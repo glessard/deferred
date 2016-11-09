@@ -9,7 +9,7 @@
 //
 
 import Dispatch
-import Foundation.NSThread
+import class Foundation.Thread
 
 private let printQueue = DispatchQueue(label: "com.tffenterprises.syncprint")
 private let printGroup = DispatchGroup()
