@@ -6,7 +6,7 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-import Foundation.NSError
+import class Foundation.NSError
 
 public struct NoResult: Error, CustomStringConvertible
 {
