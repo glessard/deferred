@@ -58,7 +58,7 @@ class DeferredTests: XCTestCase
       usleep(50000)
       return 1.0
     }
-    print(d.value)
+    d.value.map { print($0) }
   }
 
   func testExample3()
@@ -66,7 +66,7 @@ class DeferredTests: XCTestCase
     let transform = Deferred { i throws in Double(7*i) }         // Deferred<Int throws -> Double>
     let operand = Deferred(value: 6)                             // Deferred<Int>
     let result = operand.apply(transform: transform).map { $0.description } // Deferred<String>
-    print(result.value)                                          // 42.0
+    result.value.map { print($0) }                               // 42.0
   }
 
   func testDelay()
