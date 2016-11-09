@@ -33,7 +33,7 @@ private let transientState = Int32.max
 open // would prefer "public", but an "open" class can only descend from another "open" class.
 class Deferred<Value>
 {
-  private var r: Result<Value>
+  private var r: UnsafeMutablePointer<Result<Value>>? = nil
 
   fileprivate let queue: DispatchQueue
 
@@ -46,13 +46,17 @@ class Deferred<Value>
   deinit
   {
     WaitQueue.dealloc(waiters)
+    if let p = r
+    {
+      p.deinitialize(count: 1)
+      p.deallocate(capacity: 1)
+    }
   }
 
   // MARK: designated initializers
 
   fileprivate init(queue: DispatchQueue)
   {
-    r = Result()
     self.queue = queue
     currentState = DeferredState.waiting.rawValue
   }
@@ -64,7 +68,9 @@ class Deferred<Value>
 
   public init(queue: DispatchQueue, result: Result<Value>)
   {
-    r = result
+    let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
+    p.initialize(to: result)
+    self.r = p
     self.queue = queue
     currentState = DeferredState.determined.rawValue
   }
@@ -179,21 +185,30 @@ class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
+    if r != nil
+    {
+      return false
+    }
+
+    let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
+    p.initialize(to: result)
+
     // A turnstile to ensure only one thread can succeed
     while true
-    { // Allow multiple tries in case another thread concurrently switches state from .waiting to .executing
-      let initialState = currentState
-      if initialState >= DeferredState.determined.rawValue
-      { // this thread will not succeed
-        return false
-      }
-      if CAS(current: initialState, new: transientState, target: &currentState)
-      { // this thread has succeeded; change `r` and enqueue notification blocks.
+    {
+      if CAS(current: nil, new: p, target: &r)
+      {
         break
+      }
+
+      if r != nil
+      {
+        p.deinitialize(count: 1)
+        p.deallocate(capacity: 1)
+        return false
       }
     }
 
-    r = result
     currentState = DeferredState.determined.rawValue
     OSMemoryBarrier()
 
@@ -269,7 +284,8 @@ class Deferred<Value>
     }
 
     // result has been determined
-    let result = self.r
+    guard let p = self.r else { fatalError() }
+    let result = p.pointee
 
     if qos == .unspecified
     {
@@ -315,11 +331,11 @@ class Deferred<Value>
 
   public func peek() -> Result<Value>?
   {
-    if currentState != DeferredState.determined.rawValue
+    if let p = r
     {
-      return nil
+      return p.pointee
     }
-    return r
+    return nil
   }
 
   /// Get this `Deferred`'s value as a `Result`, blocking if necessary until it becomes determined.
@@ -327,7 +343,7 @@ class Deferred<Value>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<Value> {
-    if currentState != DeferredState.determined.rawValue
+    if r == nil
     {
       let s = DispatchSemaphore(value: 0)
       let qos = DispatchQoS.current(fallback: .unspecified)
@@ -336,7 +352,8 @@ class Deferred<Value>
       s.wait()
     }
 
-    return r
+    guard let p = r else { fatalError() }
+    return p.pointee
   }
 
   /// Get this `Deferred` value, blocking if necessary until it becomes determined.
@@ -372,9 +389,9 @@ class Deferred<Value>
 
   public func notifying(on queue: DispatchQueue) -> Deferred
   {
-    if currentState == DeferredState.determined.rawValue
+    if let p = r
     {
-      return Deferred(queue: queue, result: self.r)
+      return Deferred(queue: queue, result: p.pointee)
     }
 
     let deferred = Deferred(queue: queue)
