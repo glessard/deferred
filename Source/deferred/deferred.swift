@@ -268,15 +268,16 @@ class Deferred<Value>
       }
     }
 
-    let closure = { [ result = self.r ] in task(result) }
+    // result has been determined
+    let result = self.r
 
     if qos == .unspecified
     {
-      queue.async(execute: closure)
+      queue.async { task(result) }
     }
     else
     {
-      queue.async(qos: qos, flags: [.enforceQoS], execute: closure)
+      queue.async(qos: qos, flags: [.enforceQoS]) { task(result) }
     }
   }
 
