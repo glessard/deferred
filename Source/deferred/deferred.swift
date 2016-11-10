@@ -220,45 +220,13 @@ class Deferred<Value>
     return true
   }
 
-  // MARK: private methods
-
-  /// Enqueue a Waiter to this Deferred's list of Waiters.
-  /// This operation is lock-free and thread-safe.
-  /// Multiple threads can attempt to enqueue at once; they will succeed in turn and return true.
-  /// If one or more thread enters a race to enqueue with `determine()`, as soon as `determine()` succeeds
-  /// all current and subsequent attempts to enqueue will fail and return false.
-  ///
-  /// A failure to enqueue indicates that this `Deferred` is now determined and can now make its Result available.
-  ///
-  /// - parameter waiter: A `Waiter` to enqueue
-  /// - returns: whether enqueueing was successful.
-
-  private func enqueue(_ waiter: UnsafeMutablePointer<Waiter<Value>>) -> Bool
-  {
-    while true
-    {
-      let waitQueue = waiters
-      waiter.pointee.next = waitQueue
-      if r == nil
-      {
-        if CAS(current: waitQueue, new: waiter, target: &waiters)
-        { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
-          return true
-        }
-      }
-      else
-      { // This Deferred has become determined; bail
-        waiter.deinitialize()
-        waiter.deallocate(capacity: 1)
-        break
-      }
-    }
-    return false
-  }
-
   // MARK: public interface
 
   /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined
+  /// This operation is lock-free and thread-safe.
+  /// Multiple threads can call this method at once; they will succeed in turn.
+  /// If one or more thread enters a race to enqueue with `determine()`, as soon as `determine()` succeeds
+  /// all current and subsequent attempts to enqueue will result in immediate dispatch of the task.
   ///
   /// - parameter task:  the closure to be enqueued
 
@@ -269,10 +237,23 @@ class Deferred<Value>
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(qos, task))
 
-      // waiter will be deallocated later
-      if enqueue(waiter)
+      while true
       {
-        return
+        let waitQueue = waiters
+        waiter.pointee.next = waitQueue
+        if r == nil
+        {
+          if CAS(current: waitQueue, new: waiter, target: &waiters)
+          { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
+            return
+          }
+        }
+        else
+        { // this Deferred has become determined; clean up
+          waiter.deinitialize()
+          waiter.deallocate(capacity: 1)
+          break
+        }
       }
     }
 
