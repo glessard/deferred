@@ -181,8 +181,8 @@ class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
-    if r != nil
-    {
+    if !CAS(current: nil, new: nil, target: &r)
+    { // this `Deferred` is already determined
       return false
     }
 
