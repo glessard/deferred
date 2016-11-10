@@ -20,6 +20,18 @@ func CAS<T>(current: UnsafeMutablePointer<T>?, new: UnsafeMutablePointer<T>?,
   }
 }
 
+@inline(__always) func syncread<T>(_ p: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> UnsafeMutablePointer<T>?
+{
+  while true
+  {
+    let pointer = p.pointee
+    let result = p.withMemoryRebound(to: (UnsafeMutableRawPointer?).self, capacity: 1) {
+      OSAtomicCompareAndSwapPtrBarrier(pointer, pointer, $0)
+    }
+    if result { return pointer }
+  }
+}
+
 @inline(__always) @discardableResult
 func CAS(current: Int32, new: Int32, target: UnsafeMutablePointer<Int32>) -> Bool
 {

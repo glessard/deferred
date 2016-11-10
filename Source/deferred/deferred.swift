@@ -16,8 +16,7 @@ import Dispatch
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredState: Int32 { case waiting = 0, executing = 1, determined = 2 }
-private let transientState = Int32.max
+public enum DeferredState { case waiting, executing, determined }
 
 /// An asynchronous computation.
 ///
@@ -33,28 +32,29 @@ private let transientState = Int32.max
 open // would prefer "public", but an "open" class can only descend from another "open" class.
 class Deferred<Value>
 {
-  private var r: Result<Value>
-
   fileprivate let queue: DispatchQueue
 
-  // Swift does not have a facility to read and write enum values atomically.
-  // To get around this, we use a raw `Int32` value as a proxy for the enum value.
+  private var r: UnsafeMutablePointer<Result<Value>>? = nil
 
-  private var currentState: Int32
   private var waiters: UnsafeMutablePointer<Waiter<Value>>? = nil
+  private var started: Int32
 
   deinit
   {
     WaitQueue.dealloc(waiters)
+    if let p = r
+    {
+      p.deinitialize(count: 1)
+      p.deallocate(capacity: 1)
+    }
   }
 
   // MARK: designated initializers
 
   fileprivate init(queue: DispatchQueue)
   {
-    r = Result()
     self.queue = queue
-    currentState = DeferredState.waiting.rawValue
+    self.started = 0
   }
 
   /// Initialize to an already determined state
@@ -64,9 +64,11 @@ class Deferred<Value>
 
   public init(queue: DispatchQueue, result: Result<Value>)
   {
-    r = result
+    let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
+    p.initialize(to: result)
+    self.r = p
     self.queue = queue
-    currentState = DeferredState.determined.rawValue
+    self.started = 1
   }
 
   // MARK: initialize with a closure
@@ -107,7 +109,7 @@ class Deferred<Value>
       self.determine(result) // an error here means this `Deferred` has been canceled.
     }
 
-    currentState = DeferredState.executing.rawValue
+    self.started = 1
     if qos == .unspecified
     {
       queue.async(execute: closure)
@@ -165,7 +167,7 @@ class Deferred<Value>
 
   fileprivate func beginExecution()
   {
-    CAS(current: DeferredState.waiting.rawValue, new: DeferredState.executing.rawValue, target: &currentState)
+    if started == 0 { OSAtomicIncrement32(&started) }
   }
 
   /// Set the `Result` of this `Deferred`, change its state to `DeferredState.determined`,
@@ -179,23 +181,29 @@ class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
-    // A turnstile to ensure only one thread can succeed
-    while true
-    { // Allow multiple tries in case another thread concurrently switches state from .waiting to .executing
-      let initialState = currentState
-      if initialState >= DeferredState.determined.rawValue
-      { // this thread will not succeed
-        return false
-      }
-      if CAS(current: initialState, new: transientState, target: &currentState)
-      { // this thread has succeeded; change `r` and enqueue notification blocks.
-        break
-      }
+    if !CAS(current: nil, new: nil, target: &r)
+    { // this `Deferred` is already determined
+      return false
     }
 
-    r = result
-    currentState = DeferredState.determined.rawValue
-    OSMemoryBarrier()
+    let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
+    p.initialize(to: result)
+
+    // A turnstile to ensure only one thread can succeed
+    while true
+    {
+      if CAS(current: nil, new: p, target: &r)
+      {
+        break
+      }
+
+      if r != nil
+      {
+        p.deinitialize(count: 1)
+        p.deallocate(capacity: 1)
+        return false
+      }
+    }
 
     while true
     {
@@ -231,7 +239,7 @@ class Deferred<Value>
     {
       let waitQueue = waiters
       waiter.pointee.next = waitQueue
-      if syncread(&currentState) != DeferredState.determined.rawValue
+      if r == nil
       {
         if CAS(current: waitQueue, new: waiter, target: &waiters)
         { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
@@ -256,7 +264,7 @@ class Deferred<Value>
 
   public func notify(qos: DispatchQoS = .unspecified, task: @escaping (Result<Value>) -> Void)
   {
-    if currentState != DeferredState.determined.rawValue
+    if r == nil
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(qos, task))
@@ -269,7 +277,8 @@ class Deferred<Value>
     }
 
     // result has been determined
-    let result = self.r
+    guard let p = r else { fatalError() }
+    let result = p.pointee
 
     if qos == .unspecified
     {
@@ -285,13 +294,20 @@ class Deferred<Value>
   ///
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
-  public var state: DeferredState { return DeferredState(rawValue: currentState) ?? .executing }
+  public var state: DeferredState {
+    if r == nil
+    {
+      let waiting = syncread(&started) == 0
+      return waiting ? .waiting : .executing
+    }
+    return .determined
+  }
 
   /// Query whether this `Deferred` has been determined.
   ///
   /// - returns: wheither this `Deferred` has been determined.
 
-  public var isDetermined: Bool { return currentState == DeferredState.determined.rawValue }
+  public var isDetermined: Bool { return r != nil }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
   /// A successful cancellation will determine result in a `Deferred` equivalent as if it had been initialized as follows:
@@ -315,11 +331,11 @@ class Deferred<Value>
 
   public func peek() -> Result<Value>?
   {
-    if currentState != DeferredState.determined.rawValue
+    if let p = r
     {
-      return nil
+      return p.pointee
     }
-    return r
+    return nil
   }
 
   /// Get this `Deferred`'s value as a `Result`, blocking if necessary until it becomes determined.
@@ -327,7 +343,7 @@ class Deferred<Value>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<Value> {
-    if currentState != DeferredState.determined.rawValue
+    if r == nil
     {
       let s = DispatchSemaphore(value: 0)
       let qos = DispatchQoS.current(fallback: .unspecified)
@@ -336,7 +352,8 @@ class Deferred<Value>
       s.wait()
     }
 
-    return r
+    guard let p = r else { fatalError() }
+    return p.pointee
   }
 
   /// Get this `Deferred` value, blocking if necessary until it becomes determined.
@@ -372,9 +389,9 @@ class Deferred<Value>
 
   public func notifying(on queue: DispatchQueue) -> Deferred
   {
-    if currentState == DeferredState.determined.rawValue
+    if let p = r
     {
-      return Deferred(queue: queue, result: self.r)
+      return Deferred(queue: queue, result: p.pointee)
     }
 
     let deferred = Deferred(queue: queue)
