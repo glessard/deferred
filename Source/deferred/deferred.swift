@@ -171,7 +171,7 @@ class Deferred<Value>
   }
 
   /// Set the `Result` of this `Deferred`, change its state to `DeferredState.determined`,
-  /// enqueue all notifications on the dispatch_queue, then return `true`.
+  /// enqueue all notifications on the DispatchQueue, then return `true`.
   /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
   ///
@@ -182,14 +182,14 @@ class Deferred<Value>
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
     if !CAS(current: nil, new: nil, target: &r)
-    { // this `Deferred` is already determined
+    { // this Deferred is already determined
       return false
     }
 
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
     p.initialize(to: result)
 
-    // A turnstile to ensure only one thread can succeed
+    // ensure that only one thread can succeed
     while true
     {
       if CAS(current: nil, new: p, target: &r)
@@ -198,7 +198,8 @@ class Deferred<Value>
       }
 
       if r != nil
-      {
+      { // another thread succeeded ahead of this one
+        assert(r != p)
         p.deinitialize(count: 1)
         p.deallocate(capacity: 1)
         return false
@@ -209,8 +210,7 @@ class Deferred<Value>
     {
       let waitQueue = waiters
       if CAS(current: waitQueue, new: nil, target: &waiters)
-      {
-        // only this thread has the pointer `waitQueue`.
+      { // only this thread knows the pointer `waitQueue`.
         WaitQueue.notifyAll(queue, waitQueue, result)
         break
       }
@@ -276,9 +276,8 @@ class Deferred<Value>
       }
     }
 
-    // result has been determined
-    guard let p = r else { fatalError() }
-    let result = p.pointee
+    // this Deferred is determined
+    let result = r!.pointee
 
     if qos == .unspecified
     {
