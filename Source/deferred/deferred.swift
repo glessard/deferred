@@ -16,8 +16,7 @@ import Dispatch
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredState: Int32 { case waiting = 0, executing = 1, determined = 2 }
-private let transientState = Int32.max
+public enum DeferredState { case waiting, executing, determined }
 
 /// An asynchronous computation.
 ///
@@ -33,15 +32,12 @@ private let transientState = Int32.max
 open // would prefer "public", but an "open" class can only descend from another "open" class.
 class Deferred<Value>
 {
-  private var r: UnsafeMutablePointer<Result<Value>>? = nil
-
   fileprivate let queue: DispatchQueue
 
-  // Swift does not have a facility to read and write enum values atomically.
-  // To get around this, we use a raw `Int32` value as a proxy for the enum value.
+  private var r: UnsafeMutablePointer<Result<Value>>? = nil
 
-  private var currentState: Int32
   private var waiters: UnsafeMutablePointer<Waiter<Value>>? = nil
+  private var started: Int32
 
   deinit
   {
@@ -58,7 +54,7 @@ class Deferred<Value>
   fileprivate init(queue: DispatchQueue)
   {
     self.queue = queue
-    currentState = DeferredState.waiting.rawValue
+    self.started = 0
   }
 
   /// Initialize to an already determined state
@@ -72,7 +68,7 @@ class Deferred<Value>
     p.initialize(to: result)
     self.r = p
     self.queue = queue
-    currentState = DeferredState.determined.rawValue
+    self.started = 1
   }
 
   // MARK: initialize with a closure
@@ -113,7 +109,7 @@ class Deferred<Value>
       self.determine(result) // an error here means this `Deferred` has been canceled.
     }
 
-    currentState = DeferredState.executing.rawValue
+    self.started = 1
     if qos == .unspecified
     {
       queue.async(execute: closure)
@@ -171,7 +167,7 @@ class Deferred<Value>
 
   fileprivate func beginExecution()
   {
-    CAS(current: DeferredState.waiting.rawValue, new: DeferredState.executing.rawValue, target: &currentState)
+    if started == 0 { OSAtomicIncrement32(&started) }
   }
 
   /// Set the `Result` of this `Deferred`, change its state to `DeferredState.determined`,
@@ -209,9 +205,6 @@ class Deferred<Value>
       }
     }
 
-    currentState = DeferredState.determined.rawValue
-    OSMemoryBarrier()
-
     while true
     {
       let waitQueue = waiters
@@ -246,7 +239,7 @@ class Deferred<Value>
     {
       let waitQueue = waiters
       waiter.pointee.next = waitQueue
-      if syncread(&currentState) != DeferredState.determined.rawValue
+      if r == nil
       {
         if CAS(current: waitQueue, new: waiter, target: &waiters)
         { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
@@ -271,7 +264,7 @@ class Deferred<Value>
 
   public func notify(qos: DispatchQoS = .unspecified, task: @escaping (Result<Value>) -> Void)
   {
-    if currentState != DeferredState.determined.rawValue
+    if r == nil
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(qos, task))
@@ -284,7 +277,7 @@ class Deferred<Value>
     }
 
     // result has been determined
-    guard let p = self.r else { fatalError() }
+    guard let p = r else { fatalError() }
     let result = p.pointee
 
     if qos == .unspecified
@@ -301,13 +294,20 @@ class Deferred<Value>
   ///
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
-  public var state: DeferredState { return DeferredState(rawValue: currentState) ?? .executing }
+  public var state: DeferredState {
+    if r == nil
+    {
+      let waiting = syncread(&started) == 0
+      return waiting ? .waiting : .executing
+    }
+    return .determined
+  }
 
   /// Query whether this `Deferred` has been determined.
   ///
   /// - returns: wheither this `Deferred` has been determined.
 
-  public var isDetermined: Bool { return currentState == DeferredState.determined.rawValue }
+  public var isDetermined: Bool { return r != nil }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
   /// A successful cancellation will determine result in a `Deferred` equivalent as if it had been initialized as follows:
