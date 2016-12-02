@@ -181,11 +181,13 @@ class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
-    if !CAS(current: nil, new: nil, target: &r)
-    { // this Deferred is already determined
+    // ideally this `nil` check would be done with a relaxed atomic read
+    guard CAS(current: nil, new: nil, target: &r)
+    else { // this Deferred is already determined
       return false
     }
 
+    // optimistically allocate storage for result
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
     p.initialize(to: result)
 
@@ -198,7 +200,7 @@ class Deferred<Value>
       }
 
       if r != nil
-      { // another thread succeeded ahead of this one
+      { // another thread succeeded ahead of this one; clean up
         assert(r != p)
         p.deinitialize(count: 1)
         p.deallocate(capacity: 1)
@@ -207,7 +209,7 @@ class Deferred<Value>
     }
 
     while true
-    {
+    { // a tortured implementation of an atomic swap
       let waitQueue = waiters
       if CAS(current: waitQueue, new: nil, target: &waiters)
       { // only this thread knows the pointer `waitQueue`.
