@@ -9,6 +9,8 @@
 import XCTest
 import Foundation
 
+#if false
+
 import deferred
 
 let basePath = "http://localhost:9973/"
@@ -515,3 +517,5 @@ class URLSessionTests: XCTestCase
 
 #endif
 }
+
+#endif

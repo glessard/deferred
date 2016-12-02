@@ -8,5 +8,6 @@ let package = Package(
   ],
   dependencies: [
     .Package(url: "https://github.com/glessard/shuffle.git", majorVersion: 2),
+    .Package(url: "https://github.com/glessard/syncprint.git", majorVersion: 2)
   ]
 )
