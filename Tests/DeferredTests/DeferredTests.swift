@@ -8,10 +8,12 @@
 
 import XCTest
 
-import deferred
 #if SWIFT_PACKAGE
   import syncprint
 #endif
+
+import deferred
+
 
 class DeferredTests: XCTestCase
 {
