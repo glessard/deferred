@@ -11,18 +11,16 @@ import Dispatch
 extension DispatchQoS
 {
 #if SWIFT_PACKAGE
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
   public static func current(fallback: DispatchQoS.QoSClass = .utility) -> DispatchQoS
   {
-    let qos = DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? fallback
+    let qos: DispatchQoS.QoSClass
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+    qos = DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? fallback
+#else // platforms that rely on swift-corelibs-libdispatch
+    qos = fallback
+#endif
     return DispatchQoS(qosClass: qos, relativePriority: 0)
   }
-#else // presumably Linux or Windows
-  public static func current(fallback: DispatchQoS.QoSClass = .utility) -> DispatchQoS
-  {
-    return DispatchQoS(qosClass: fallback, relativePrority: 0)
-  }
-#endif
 #else
   static func current(fallback: DispatchQoS.QoSClass = .utility) -> DispatchQoS
   {
