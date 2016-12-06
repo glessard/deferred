@@ -47,13 +47,8 @@ func swap<T>(value: UnsafeMutablePointer<T>?,
   }
 }
 
-@inline(__always) @discardableResult
-func CAS(current: Int32, new: Int32, target: UnsafeMutablePointer<Int32>) -> Bool
-{
-  return OSAtomicCompareAndSwap32Barrier(current, new, target)
-}
-
-@inline(__always) func syncread(_ p: UnsafeMutablePointer<Int32>) -> Int32
+@inline(__always)
+func syncread(_ p: UnsafeMutablePointer<Int32>) -> Int32
 {
   return OSAtomicAdd32Barrier(0, p)
 }
