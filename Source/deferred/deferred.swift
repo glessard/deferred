@@ -277,10 +277,13 @@ class Deferred<Value>
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
   public var state: DeferredState {
-    if r == nil
+    if syncread(&r) == nil
     {
-      let waiting = syncread(&started) == 0
-      return waiting ? .waiting : .executing
+      if syncread(&started) == 0
+      {
+        return .waiting
+      }
+      return .executing
     }
     return .determined
   }
