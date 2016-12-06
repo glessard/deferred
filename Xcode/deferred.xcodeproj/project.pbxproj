@@ -51,6 +51,10 @@
 		03D3879F1B7C713500F4B44B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 03D3879D1B7C713500F4B44B /* Main.storyboard */; };
 		03D387A11B7C713500F4B44B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03D387A01B7C713500F4B44B /* Assets.xcassets */; };
 		03D387A41B7C713500F4B44B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 03D387A21B7C713500F4B44B /* LaunchScreen.storyboard */; };
+		03D6A8491DF786F300F4B44B /* ClangAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A8471DF786F300F4B44B /* ClangAtomics.c */; };
+		03D6A84A1DF786F300F4B44B /* ClangAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A8471DF786F300F4B44B /* ClangAtomics.c */; };
+		03D6A84B1DF786F300F4B44B /* ClangAtomics.h in Headers */ = {isa = PBXBuildFile; fileRef = 03D6A8481DF786F300F4B44B /* ClangAtomics.h */; };
+		03D6A84C1DF786F300F4B44B /* ClangAtomics.h in Headers */ = {isa = PBXBuildFile; fileRef = 03D6A8481DF786F300F4B44B /* ClangAtomics.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -109,7 +113,7 @@
 		035D0C131D84A8DB00F4B44B /* result.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = result.swift; path = deferred/result.swift; sourceTree = "<group>"; };
 		035D0C141D84A8DB00F4B44B /* waiter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = waiter.swift; path = deferred/waiter.swift; sourceTree = "<group>"; };
 		035D0C261D84A8FD00F4B44B /* dispatchqos.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = dispatchqos.swift; path = ../Source/utilities/dispatchqos.swift; sourceTree = "<group>"; };
-		035D0C2B1D84B0B300F4B44B /* atomics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = atomics.swift; path = deferred/atomics.swift; sourceTree = "<group>"; };
+		035D0C2B1D84B0B300F4B44B /* atomics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = atomics.swift; path = ../Source/deferred/atomics.swift; sourceTree = "<group>"; };
 		0366AE501DF0FEC400F4B44B /* DeferredTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredTests.swift; path = DeferredTests/DeferredTests.swift; sourceTree = "<group>"; };
 		0366AE511DF0FEC400F4B44B /* ResultTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ResultTests.swift; path = DeferredTests/ResultTests.swift; sourceTree = "<group>"; };
 		0366AE521DF0FEC400F4B44B /* TBDTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TBDTests.swift; path = DeferredTests/TBDTests.swift; sourceTree = "<group>"; };
@@ -135,6 +139,9 @@
 		03D387A01B7C713500F4B44B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		03D387A31B7C713500F4B44B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		03D387A51B7C713500F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		03D6A8461DF786F300F4B44B /* module.map */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; name = module.map; path = ../Xcode/utilities/ClangAtomics/module.map; sourceTree = "<group>"; };
+		03D6A8471DF786F300F4B44B /* ClangAtomics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ClangAtomics.c; path = ../Xcode/utilities/ClangAtomics/ClangAtomics.c; sourceTree = "<group>"; };
+		03D6A8481DF786F300F4B44B /* ClangAtomics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ClangAtomics.h; path = ../Xcode/utilities/ClangAtomics/ClangAtomics.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,7 +196,6 @@
 				035D0C101D84A8DB00F4B44B /* deferred-parallelize.swift */,
 				035D0C121D84A8DB00F4B44B /* nsurlsession.swift */,
 				035D0C131D84A8DB00F4B44B /* result.swift */,
-				035D0C2B1D84B0B300F4B44B /* atomics.swift */,
 				035D0C141D84A8DB00F4B44B /* waiter.swift */,
 			);
 			name = Source;
@@ -199,6 +205,8 @@
 		03850ADC1C76AB7D00F4B44B /* utilities */ = {
 			isa = PBXGroup;
 			children = (
+				035D0C2B1D84B0B300F4B44B /* atomics.swift */,
+				03D6A8451DF786BA00F4B44B /* atomics */,
 				03850ADD1C76AB7D00F4B44B /* shuffle.swift */,
 				03850ADF1C76AB7D00F4B44B /* syncprint.swift */,
 				035D0C261D84A8FD00F4B44B /* dispatchqos.swift */,
@@ -270,6 +278,16 @@
 			path = "async-test";
 			sourceTree = "<group>";
 		};
+		03D6A8451DF786BA00F4B44B /* atomics */ = {
+			isa = PBXGroup;
+			children = (
+				03D6A8461DF786F300F4B44B /* module.map */,
+				03D6A8481DF786F300F4B44B /* ClangAtomics.h */,
+				03D6A8471DF786F300F4B44B /* ClangAtomics.c */,
+			);
+			name = atomics;
+			sourceTree = "<group>";
+		};
 		03E60E221AAA571100F4B44B = {
 			isa = PBXGroup;
 			children = (
@@ -305,6 +323,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03D6A84B1DF786F300F4B44B /* ClangAtomics.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +332,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03B4E09C1C1403C300F4B44B /* deferred-ios.h in Headers */,
+				03D6A84C1DF786F300F4B44B /* ClangAtomics.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -423,7 +443,7 @@
 				TargetAttributes = {
 					03B4E06C1C14003B00F4B44B = {
 						CreatedOnToolsVersion = 7.2;
-						LastSwiftMigration = 0800;
+						LastSwiftMigration = 0820;
 					};
 					03B4E0751C14003C00F4B44B = {
 						CreatedOnToolsVersion = 7.2;
@@ -432,7 +452,7 @@
 					03B4E0981C1403C300F4B44B = {
 						CreatedOnToolsVersion = 7.2;
 						DevelopmentTeam = JMB77RELWN;
-						LastSwiftMigration = 0800;
+						LastSwiftMigration = 0820;
 					};
 					03B4E0A11C1403C300F4B44B = {
 						CreatedOnToolsVersion = 7.2;
@@ -515,6 +535,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03D6A8491DF786F300F4B44B /* ClangAtomics.c in Sources */,
 				035D0C2C1D84B0B300F4B44B /* atomics.swift in Sources */,
 				035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				035D0C1F1D84A8DB00F4B44B /* nsurlsession.swift in Sources */,
@@ -546,6 +567,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03D6A84A1DF786F300F4B44B /* ClangAtomics.c in Sources */,
 				035D0C2D1D84B0B300F4B44B /* atomics.swift in Sources */,
 				035D0C181D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				035D0C201D84A8DB00F4B44B /* nsurlsession.swift in Sources */,
@@ -632,6 +654,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
@@ -646,6 +669,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferred;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/ClangAtomics;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
@@ -655,6 +680,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
@@ -668,6 +694,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferred;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/ClangAtomics;
 				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
@@ -710,6 +737,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				DEFINES_MODULE = YES;
@@ -725,6 +753,7 @@
 				PRODUCT_NAME = deferred;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -735,6 +764,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				DEFINES_MODULE = YES;
