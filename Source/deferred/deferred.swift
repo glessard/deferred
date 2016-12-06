@@ -208,15 +208,8 @@ class Deferred<Value>
       }
     }
 
-    while true
-    { // a tortured implementation of an atomic swap
-      let waitQueue = waiters
-      if CAS(current: waitQueue, new: nil, target: &waiters)
-      { // only this thread knows the pointer `waitQueue`.
-        WaitQueue.notifyAll(queue, waitQueue, result)
-        break
-      }
-    }
+    let waitQueue = swap(value: nil, target: &waiters)
+    WaitQueue.notifyAll(queue, waitQueue, result)
 
     // The result is now available for the world
     return true

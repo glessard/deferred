@@ -33,6 +33,20 @@ func syncread<T>(_ p: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> UnsafeM
   }
 }
 
+@inline(__always)
+func swap<T>(value: UnsafeMutablePointer<T>?,
+             target: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> UnsafeMutablePointer<T>?
+{
+  while true
+  { // a tortured implementation for an atomic swap
+    let current = target.pointee
+    if CAS(current: current, new: value, target: target)
+    {
+      return current
+    }
+  }
+}
+
 @inline(__always) @discardableResult
 func CAS(current: Int32, new: Int32, target: UnsafeMutablePointer<Int32>) -> Bool
 {
