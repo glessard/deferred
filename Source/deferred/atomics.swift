@@ -20,25 +20,35 @@ func CAS<T>(current: UnsafeMutablePointer<T>?, new: UnsafeMutablePointer<T>?,
   }
 }
 
-@inline(__always) func syncread<T>(_ p: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> UnsafeMutablePointer<T>?
+@inline(__always)
+func syncread<T>(_ p: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> UnsafeMutablePointer<T>?
 {
   while true
   {
     let pointer = p.pointee
-    let result = p.withMemoryRebound(to: (UnsafeMutableRawPointer?).self, capacity: 1) {
-      OSAtomicCompareAndSwapPtrBarrier(pointer, pointer, $0)
+    if CAS(current: pointer, new: pointer, target: p)
+    {
+      return pointer
     }
-    if result { return pointer }
   }
 }
 
-@inline(__always) @discardableResult
-func CAS(current: Int32, new: Int32, target: UnsafeMutablePointer<Int32>) -> Bool
+@inline(__always)
+func swap<T>(value: UnsafeMutablePointer<T>?,
+             target: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> UnsafeMutablePointer<T>?
 {
-  return OSAtomicCompareAndSwap32Barrier(current, new, target)
+  while true
+  { // a tortured implementation for an atomic swap
+    let current = target.pointee
+    if CAS(current: current, new: value, target: target)
+    {
+      return current
+    }
+  }
 }
 
-@inline(__always) func syncread(_ p: UnsafeMutablePointer<Int32>) -> Int32
+@inline(__always)
+func syncread(_ p: UnsafeMutablePointer<Int32>) -> Int32
 {
   return OSAtomicAdd32Barrier(0, p)
 }

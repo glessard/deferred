@@ -182,7 +182,7 @@ class Deferred<Value>
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
     // ideally this `nil` check would be done with a relaxed atomic read
-    guard CAS(current: nil, new: nil, target: &r)
+    guard syncread(&r) == nil
     else { // this Deferred is already determined
       return false
     }
@@ -208,15 +208,8 @@ class Deferred<Value>
       }
     }
 
-    while true
-    { // a tortured implementation of an atomic swap
-      let waitQueue = waiters
-      if CAS(current: waitQueue, new: nil, target: &waiters)
-      { // only this thread knows the pointer `waitQueue`.
-        WaitQueue.notifyAll(queue, waitQueue, result)
-        break
-      }
-    }
+    let waitQueue = swap(value: nil, target: &waiters)
+    WaitQueue.notifyAll(queue, waitQueue, result)
 
     // The result is now available for the world
     return true
@@ -277,10 +270,13 @@ class Deferred<Value>
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
   public var state: DeferredState {
-    if r == nil
+    if syncread(&r) == nil
     {
-      let waiting = syncread(&started) == 0
-      return waiting ? .waiting : .executing
+      if syncread(&started) == 0
+      {
+        return .waiting
+      }
+      return .executing
     }
     return .determined
   }
