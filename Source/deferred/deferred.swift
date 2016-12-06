@@ -182,7 +182,7 @@ class Deferred<Value>
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
     // ideally this `nil` check would be done with a relaxed atomic read
-    guard CAS(current: nil, new: nil, target: &r)
+    guard syncread(&r) == nil
     else { // this Deferred is already determined
       return false
     }
