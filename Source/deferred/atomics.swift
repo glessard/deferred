@@ -6,7 +6,7 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-#if !SWIFT_PACKAGE
+#if false // !SWIFT_PACKAGE
 
 import func Darwin.OSAtomicCompareAndSwapPtrBarrier
 import func Darwin.OSAtomicCompareAndSwap32Barrier
@@ -58,33 +58,54 @@ func syncread(_ p: UnsafeMutablePointer<Int32>) -> Int32
 
 import ClangAtomics
 
-func CAS<T>(current: UnsafeMutablePointer<T>?, new: UnsafeMutablePointer<T>?,
-            target: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> Bool
+public struct AtomicMutablePointer<Pointee>
 {
-  if target.pointee == current
-  {
-    target.pointee = new
-    return true
+  fileprivate var ptr: UnsafeMutableRawPointer?
+  public init(_ ptr: UnsafeMutablePointer<Pointee>? = nil) { self.ptr = UnsafeMutableRawPointer(ptr) }
+
+  public var pointer: UnsafeMutablePointer<Pointee>? {
+    mutating get {
+      return ReadRawPtr(&ptr, memory_order_relaxed)?.assumingMemoryBound(to: Pointee.self)
+    }
   }
-  return false
+
+  @inline(__always)
+  public mutating func load(order: LoadMemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
+  {
+    return ReadRawPtr(&ptr, order.order)?.assumingMemoryBound(to: Pointee.self)
+  }
+
+  @inline(__always)
+  public mutating func swap(_ pointer: UnsafeMutablePointer<Pointee>?, order: MemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
+  {
+    return SwapRawPtr(UnsafePointer(pointer), &ptr, order.order)?.assumingMemoryBound(to: (Pointee).self)
+  }
+
+  @inline(__always) @discardableResult
+  public mutating func CAS(current: UnsafeMutablePointer<Pointee>?, future: UnsafeMutablePointer<Pointee>?,
+                           orderSuccess: MemoryOrder = .sequential,
+                           orderFailure: LoadMemoryOrder = .sequential) -> Bool
+  {
+    precondition(orderFailure.rawValue <= orderSuccess.rawValue)
+    var expect = UnsafeMutableRawPointer(current)
+    return CASWeakRawPtr(&expect, UnsafePointer(future), &ptr, orderSuccess.order, orderFailure.order)
+  }
 }
 
-func syncread<T>(_ p: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> UnsafeMutablePointer<T>?
+public struct AtomicInt32
 {
-  return p.pointee
-}
+  fileprivate var val: Int32 = 0
+  public init(_ v: Int32 = 0) { val = v }
 
-func swap<T>(value: UnsafeMutablePointer<T>?,
-             target: UnsafeMutablePointer<UnsafeMutablePointer<T>?>) -> UnsafeMutablePointer<T>?
-{
-  let cur = target.pointee
-  target.pointee = value
-  return cur
-}
+  public var value: Int32 {
+    mutating get { return Read32(&val, memory_order_relaxed) }
+  }
 
-func syncread(_ p: UnsafeMutablePointer<Int32>) -> Int32
-{
-  return p.pointee
+  @inline(__always)
+  public mutating func store(_ value: Int32, order: StoreMemoryOrder = .relaxed)
+  {
+    Store32(value, &val, order.order)
+  }
 }
 
 #endif

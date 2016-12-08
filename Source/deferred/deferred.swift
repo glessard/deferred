@@ -34,15 +34,26 @@ class Deferred<Value>
 {
   fileprivate let queue: DispatchQueue
 
-  private var r: UnsafeMutablePointer<Result<Value>>? = nil
-
-  private var waiters: UnsafeMutablePointer<Waiter<Value>>? = nil
+#if true // SWIFT_PACKAGE
+  private var resultp: AtomicMutablePointer<Result<Value>>
+  private var waiters: AtomicMutablePointer<Waiter<Value>>
+  private var started: AtomicInt32
+#else
+  private var resultp: UnsafeMutablePointer<Result<Value>>?
+  private var waiters: UnsafeMutablePointer<Waiter<Value>>?
   private var started: Int32
+#endif
 
   deinit
   {
+#if true // SWIFT_PACKAGE
+    WaitQueue.dealloc(waiters.pointer)
+    let p = resultp.pointer
+#else
     WaitQueue.dealloc(waiters)
-    if let p = r
+    let p = resultp
+#endif
+    if let p = p
     {
       p.deinitialize(count: 1)
       p.deallocate(capacity: 1)
@@ -53,8 +64,16 @@ class Deferred<Value>
 
   fileprivate init(queue: DispatchQueue)
   {
-    self.queue = queue
+#if true // SWIFT_PACKAGE
+    self.resultp = AtomicMutablePointer(nil)
+    self.waiters = AtomicMutablePointer(nil)
+    self.started = AtomicInt32(0)
+#else
+    self.resultp = nil
+    self.waiters = nil
     self.started = 0
+#endif
+    self.queue = queue
   }
 
   /// Initialize to an already determined state
@@ -66,9 +85,16 @@ class Deferred<Value>
   {
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
     p.initialize(to: result)
-    self.r = p
-    self.queue = queue
+#if true // SWIFT_PACKAGE
+    self.resultp = AtomicMutablePointer(p)
+    self.waiters = AtomicMutablePointer(nil)
+    self.started = AtomicInt32(1)
+#else
+    self.resultp = p
+    self.waiters = nil
     self.started = 1
+#endif
+    self.queue = queue
   }
 
   // MARK: initialize with a closure
@@ -109,7 +135,11 @@ class Deferred<Value>
       self.determine(result) // an error here means this `Deferred` has been canceled.
     }
 
+#if true // SWIFT_PACKAGE
+    self.started = AtomicInt32(1)
+#else
     self.started = 1
+#endif
     if qos == .unspecified
     {
       queue.async(execute: closure)
@@ -167,7 +197,11 @@ class Deferred<Value>
 
   fileprivate func beginExecution()
   {
+#if true // SWIFT_PACKAGE
+    if started.value == 0 { started.store(1) }
+#else
     if started == 0 { OSAtomicIncrement32(&started) }
+#endif
   }
 
   /// Set the `Result` of this `Deferred`, change its state to `DeferredState.determined`,
@@ -181,8 +215,12 @@ class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
-    // ideally this `nil` check would be done with a relaxed atomic read
-    guard syncread(&r) == nil
+#if true // SWIFT_PACKAGE
+    let c = resultp.pointer
+#else
+    let c = syncread(&resultp)
+#endif
+    guard c == nil
     else { // this Deferred is already determined
       return false
     }
@@ -191,24 +229,46 @@ class Deferred<Value>
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
     p.initialize(to: result)
 
-    // ensure that only one thread can succeed
+#if true // SWIFT_PACKAGE
     while true
     {
-      if CAS(current: nil, new: p, target: &r)
+      if resultp.CAS(current: nil, future: p, orderSuccess: .release, orderFailure: .relaxed)
       {
         break
       }
 
-      if r != nil
+      if resultp.pointer != nil
       { // another thread succeeded ahead of this one; clean up
-        assert(r != p)
+        assert(resultp.pointer != p)
         p.deinitialize(count: 1)
         p.deallocate(capacity: 1)
         return false
       }
     }
+#else
+    // ensure that only one thread can succeed
+    while true
+    {
+      if CAS(current: nil, new: p, target: &resultp)
+      {
+        break
+      }
 
+      if resultp != nil
+      { // another thread succeeded ahead of this one; clean up
+        assert(resultp != p)
+        p.deinitialize(count: 1)
+        p.deallocate(capacity: 1)
+        return false
+      }
+    }
+#endif
+
+#if true // SWIFT_PACKAGE
+    let waitQueue = waiters.swap(nil, order: .consume)
+#else
     let waitQueue = swap(value: nil, target: &waiters)
+#endif
     WaitQueue.notifyAll(queue, waitQueue, result)
 
     // The result is now available for the world
@@ -227,18 +287,37 @@ class Deferred<Value>
 
   public func notify(qos: DispatchQoS = .unspecified, task: @escaping (Result<Value>) -> Void)
   {
-    if r == nil
+#if true // SWIFT_PACKAGE
+    var c = resultp.load(order: .consume)
+#else
+    var c = resultp
+#endif
+    if c == nil
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(qos, task))
 
       while true
       {
+#if true // SWIFT_PACKAGE
+        let waitQueue = waiters.pointer
+#else
         let waitQueue = waiters
+#endif
         waiter.pointee.next = waitQueue
-        if r == nil
+#if true // SWIFT_PACKAGE
+        c = resultp.load(order: .consume)
+#else
+        c = resultp
+#endif
+        if c == nil
         {
-          if CAS(current: waitQueue, new: waiter, target: &waiters)
+#if true // SWIFT_PACKAGE
+          let success = waiters.CAS(current: waitQueue, future: waiter, orderSuccess: .release, orderFailure: .relaxed)
+#else
+          let success = CAS(current: waitQueue, new: waiter, target: &waiters)
+#endif
+          if success
           { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
             return
           }
@@ -253,7 +332,8 @@ class Deferred<Value>
     }
 
     // this Deferred is determined
-    let result = r!.pointee
+    guard let pointer = c else { fatalError() }
+    let result = pointer.pointee
 
     if qos == .unspecified
     {
@@ -270,9 +350,20 @@ class Deferred<Value>
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
   public var state: DeferredState {
-    if syncread(&r) == nil
+#if true // SWIFT_PACKAGE
+    let pointer = resultp.pointer
+#else
+    let pointer = syncread(&resultp)
+#endif
+
+    if pointer == nil
     {
-      if syncread(&started) == 0
+#if true // SWIFT_PACKAGE
+      let started = self.started.value
+#else
+      let started = syncread(&self.started)
+#endif
+      if started == 0
       {
         return .waiting
       }
@@ -285,7 +376,13 @@ class Deferred<Value>
   ///
   /// - returns: wheither this `Deferred` has been determined.
 
-  public var isDetermined: Bool { return r != nil }
+  public var isDetermined: Bool {
+#if true // SWIFT_PACKAGE
+    return resultp.pointer != nil
+#else
+    return resultp != nil
+#endif
+  }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
   /// A successful cancellation will determine result in a `Deferred` equivalent as if it had been initialized as follows:
@@ -309,7 +406,12 @@ class Deferred<Value>
 
   public func peek() -> Result<Value>?
   {
-    if let p = r
+#if true // SWIFT_PACKAGE
+    let c = resultp.pointer
+#else
+    let c = resultp
+#endif
+    if let p = c
     {
       return p.pointee
     }
@@ -321,16 +423,27 @@ class Deferred<Value>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<Value> {
-    if r == nil
+#if true // SWIFT_PACKAGE
+    var c = resultp.pointer
+#else
+    var c = resultp
+#endif
+    if c == nil
     {
       let s = DispatchSemaphore(value: 0)
       let qos = DispatchQoS.current(fallback: .unspecified)
       self.notify(qos: qos) { _ in s.signal() }
       // was: self.notify(qos: qos_class_self())
       s.wait()
+#if true // SWIFT_PACKAGE
+    c = resultp.pointer
+#else
+    c = resultp
+#endif
+
     }
 
-    guard let p = r else { fatalError() }
+    guard let p = c else { fatalError() }
     return p.pointee
   }
 
@@ -367,7 +480,12 @@ class Deferred<Value>
 
   public func notifying(on queue: DispatchQueue) -> Deferred
   {
-    if let p = r
+#if true // SWIFT_PACKAGE
+    let c = resultp.pointer
+#else
+    let c = resultp
+#endif
+    if let p = c
     {
       return Deferred(queue: queue, result: p.pointee)
     }

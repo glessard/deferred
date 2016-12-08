@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0330941F1DF8DB2C00F4B44B /* memory-order.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0330941E1DF8DB2C00F4B44B /* memory-order.swift */; };
+		033094201DF8DB2C00F4B44B /* memory-order.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0330941E1DF8DB2C00F4B44B /* memory-order.swift */; };
 		035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
 		035D0C161D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
 		035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0E1D84A8DB00F4B44B /* deferred-error.swift */; };
@@ -103,6 +105,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0330941E1DF8DB2C00F4B44B /* memory-order.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "memory-order.swift"; path = "../../swift-atomics/Sources/Atomics/memory-order.swift"; sourceTree = "<group>"; };
 		034857621C11BD5E00F4B44B /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
 		035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-combine.swift"; path = "deferred/deferred-combine.swift"; sourceTree = "<group>"; };
 		035D0C0E1D84A8DB00F4B44B /* deferred-error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-error.swift"; path = "deferred/deferred-error.swift"; sourceTree = "<group>"; };
@@ -206,6 +209,7 @@
 			isa = PBXGroup;
 			children = (
 				035D0C2B1D84B0B300F4B44B /* atomics.swift */,
+				0330941E1DF8DB2C00F4B44B /* memory-order.swift */,
 				03D6A8451DF786BA00F4B44B /* atomics */,
 				03850ADD1C76AB7D00F4B44B /* shuffle.swift */,
 				03850ADF1C76AB7D00F4B44B /* syncprint.swift */,
@@ -540,6 +544,7 @@
 				035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				035D0C1F1D84A8DB00F4B44B /* nsurlsession.swift in Sources */,
 				035D0C291D84A8FD00F4B44B /* dispatchqos.swift in Sources */,
+				0330941F1DF8DB2C00F4B44B /* memory-order.swift in Sources */,
 				035D0C211D84A8DB00F4B44B /* result.swift in Sources */,
 				035D0C1B1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
 				03850AE01C76AB7D00F4B44B /* shuffle.swift in Sources */,
@@ -572,6 +577,7 @@
 				035D0C181D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				035D0C201D84A8DB00F4B44B /* nsurlsession.swift in Sources */,
 				035D0C2A1D84A8FD00F4B44B /* dispatchqos.swift in Sources */,
+				033094201DF8DB2C00F4B44B /* memory-order.swift in Sources */,
 				035D0C221D84A8DB00F4B44B /* result.swift in Sources */,
 				035D0C1C1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
 				03850AE11C76AB7D00F4B44B /* shuffle.swift in Sources */,
