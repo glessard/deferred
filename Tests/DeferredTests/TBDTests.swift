@@ -287,10 +287,14 @@ class TBDTests: XCTestCase
       (0..<count).map { i in index*count+i }
     }
 
+    let e = expectation(description: "e")
     let determined = combine(arrays).map { $0.flatMap({$0}) }
+    determined.notify { _ in e.fulfill() }
     XCTAssert(determined.value?.count == count*count)
 
     determined.value?.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
+
+    waitForExpectations(timeout: 1.0)
   }
 
   func testParallel3()
@@ -300,8 +304,12 @@ class TBDTests: XCTestCase
     let q = DispatchQueue(label: "test1", qos: .utility)
 
     let count = 20
+    let e = expectation(description: "e")
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
     let c = combine(d)
+    c.notify { _ in e.fulfill() }
     XCTAssert(c.value?.count == count)
+
+    waitForExpectations(timeout: 1.0)
   }
 }
