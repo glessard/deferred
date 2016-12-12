@@ -190,7 +190,7 @@ public func firstDetermined<Value, S: Sequence>(_ deferreds: S) -> Deferred<Defe
 {
   let first = TBD<Deferred<Value>>()
 
-  let qos = DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .utility
+  let qos = DispatchQoS.QoSClass.current(fallback: .utility)
 
   // We iterate on a background thread because the sequence (type S) could block on next()
   DispatchQueue.global(qos: qos).async {
