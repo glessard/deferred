@@ -79,7 +79,7 @@ class Deferred<Value>
 
   public convenience init(task: @escaping () throws -> Value)
   {
-    let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default)
+    let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.current(fallback: .default))
     self.init(queue: queue, task: task)
     // was queue: dispatch_get_global_queue(qos_class_self(), 0)
   }
