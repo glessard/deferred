@@ -7,6 +7,8 @@
 //
 
 import XCTest
+import Foundation
+import Dispatch
 
 import deferred
 
@@ -17,7 +19,7 @@ class TBDTests: XCTestCase
   {
     let tbd = TBD<UInt32>()
     tbd.beginExecution()
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     do { try tbd.determine(value) }
     catch { XCTFail() }
     XCTAssert(tbd.isDetermined)
@@ -37,9 +39,9 @@ class TBDTests: XCTestCase
   {
     let tbd = TBD<UInt32>()
     tbd.beginExecution()
-    var value = arc4random() & 0x3fff_ffff
-    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
-      value = arc4random() & 0x3fff_ffff
+    var value = nzRandom()
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.01) {
+      value = nzRandom()
       do { try tbd.determine(value) }
       catch { XCTFail() }
     }
@@ -84,10 +86,10 @@ class TBDTests: XCTestCase
 
     let e = expectation(description: "Cancel before setting")
     let tbd3 = TBD<UInt32>()
-    Deferred(value: ()).delay(.milliseconds(100)).notify { _ in XCTAssert(tbd3.cancel() == true) }
-    Deferred(value: ()).delay(.milliseconds(200)).notify { _ in
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) { XCTAssert(tbd3.cancel() == true) }
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
       do {
-        try tbd3.determine(arc4random() & 0x3fff_ffff)
+        try tbd3.determine(nzRandom())
         XCTFail()
       }
       catch DeferredError.alreadyDetermined {
@@ -128,7 +130,7 @@ class TBDTests: XCTestCase
 
   func testNotify1()
   {
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     let e1 = expectation(description: "TBD notification after determination")
     let tbd = TBD<UInt32>()
     try! tbd.determine(value)
@@ -145,14 +147,14 @@ class TBDTests: XCTestCase
     let e2 = expectation(description: "TBD notification after delay")
     let tbd = TBD<UInt32>()
 
-    var value = arc4random() & 0x3fff_ffff
+    var value = nzRandom()
     tbd.notify {
       XCTAssert( $0 == Result.value(value) )
       e2.fulfill()
     }
 
-    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(10_000) / Double(NSEC_PER_SEC)) {
-      value = arc4random() & 0x3fff_ffff
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 10e-6) {
+      value = nzRandom()
       do { try tbd.determine(value) }
       catch { XCTFail() }
     }
@@ -173,7 +175,7 @@ class TBDTests: XCTestCase
       catch DeferredError.canceled {}
       catch { XCTFail() }
     }
-    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(200_000_000) / Double(NSEC_PER_SEC)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
       // This will trigger the `XCWaitCompletionHandler` in the `waitForExpectationsWithTimeout` call below.
       e3.fulfill()
     }
@@ -204,7 +206,7 @@ class TBDTests: XCTestCase
   func testFirstValue()
   {
     let count = 10
-    let lucky = Int(arc4random_uniform(numericCast(count)))
+    let lucky = Int(nzRandom()) % count
 
     let deferreds = (0..<count).map { _ in TBD<Int>() }
     let first1 = firstValue(deferreds)

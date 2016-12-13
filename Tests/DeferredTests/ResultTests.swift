@@ -36,7 +36,7 @@ class ResultTests: XCTestCase
 
   func testInitValue()
   {
-    let val = arc4random() & 0x3fff_ffff
+    let val = nzRandom()
     let res = Result.value(val)
 
     do {
@@ -52,7 +52,7 @@ class ResultTests: XCTestCase
 
   func testInitError()
   {
-    let err = TestError(arc4random() & 0x3fff_ffff)
+    let err = TestError(nzRandom())
     let res = Result<Int>.error(err)
 
     do {
@@ -68,7 +68,7 @@ class ResultTests: XCTestCase
 
   func testInitClosureSuccess()
   {
-    let val = arc4random() & 0x3fff_ffff
+    let val = nzRandom()
     let res = Result { _ throws -> UInt32 in val }
 
     do {
@@ -84,7 +84,7 @@ class ResultTests: XCTestCase
 
   func testInitClosureError()
   {
-    let err = TestError(arc4random() & 0x3fff_ffff)
+    let err = TestError(nzRandom())
     let res = Result { _ throws -> UInt32 in throw err }
 
     do {
@@ -115,7 +115,7 @@ class ResultTests: XCTestCase
 
   func testMap()
   {
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     let goodres = Result.value(value)
 
     // Good operand, good transform
@@ -123,7 +123,7 @@ class ResultTests: XCTestCase
     XCTAssert(r1 == Result.value(Int(value)*2))
 
     // Good operand, transform throws
-    let r2 = goodres.map { (i:UInt32) throws -> NSObject in throw TestError(i) }
+    let r2 = goodres.map { (i:UInt32) throws -> Double in throw TestError(i) }
     XCTAssert(r2 == Result.error(TestError(value)))
 
     let badres = Result<Double>()
@@ -135,7 +135,7 @@ class ResultTests: XCTestCase
 
   func testFlatMap()
   {
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     let goodres = Result.value(value)
 
     // Good operand, good transform
@@ -155,7 +155,7 @@ class ResultTests: XCTestCase
 
   func testRecover()
   {
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     let goodres = Result.value(value)
 
     // Good operand, transform short-circuited
@@ -175,8 +175,8 @@ class ResultTests: XCTestCase
 
   func testApplyA()
   {
-    let value = Int(arc4random() & 0x7fff + 10000)
-    let error = arc4random() & 0x3fff_ffff
+    let value = Int(nzRandom() & 0x7fff + 10000)
+    let error = nzRandom()
 
     // Good operand, good transform
     let o1 = Result.value(value)
@@ -186,7 +186,7 @@ class ResultTests: XCTestCase
 
     // Bad operand: transform not applied
     let o2 = Result<Int>.error(TestError(error))
-    let t2 = Result.value({ (i:Int) throws -> CGPoint in XCTFail(); return CGPoint.zero })
+    let t2 = Result.value({ (i:Int) throws -> Double in XCTFail(); return 0.0 })
     let r2 = o2.apply(t2)
     XCTAssert(r2 == Result.error(TestError(error)))
 
@@ -199,8 +199,8 @@ class ResultTests: XCTestCase
 
   func testApplyB()
   {
-    let value = Int(arc4random() & 0x7fff + 10000)
-    let error = arc4random() & 0x3fff_ffff
+    let value = Int(nzRandom() & 0x7fff + 10000)
+    let error = nzRandom()
 
     // Good operand, good transform
     let o1 = Result.value(value)
@@ -210,24 +210,24 @@ class ResultTests: XCTestCase
 
     // Bad operand: transform not applied
     let o2 = Result<Int>.error(TestError(error))
-    let t2 = Result.value { (i:Int) in Result<CGPoint> { XCTFail(); return CGPoint.zero } }
+    let t2 = Result.value { (i:Int) in Result<Double> { XCTFail(); return 0.0 } }
     let r2 = o2.apply(t2)
     XCTAssert(r2 == Result.error(TestError(error)))
 
     // Good operand, transform Result carries error
     let o4 = Result.value(value)
-    let t4 = Result.error(TestError(error)) as Result<(Int) -> Result<UnsafeMutablePointer<AnyObject>>>
+    let t4 = Result.error(TestError(error)) as Result<(Int) -> Result<UnsafeRawPointer>>
     let r4 = o4.apply(t4)
     XCTAssert(r4 == Result.error(TestError(error)))
   }
 
   func testQuestionMarkQuestionMarkOperator()
   {
-    let r1 = Result.value(Int(arc4random() & 0x3fff_fff0 + 1))
+    let r1 = Result.value(Int(nzRandom()))
     let v1 = r1 ?? -1
     XCTAssert(v1 > 0)
 
-    let r2 = Result<Int>.error(TestError(arc4random() & 0x3fff_ffff))
+    let r2 = Result<Int>.error(TestError(nzRandom()))
     let v2 = r2 ?? -1
     XCTAssert(v2 < 0)
   }

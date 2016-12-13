@@ -7,9 +7,12 @@
 //
 
 import XCTest
+import Foundation
+import Dispatch
 
 #if SWIFT_PACKAGE
   import syncprint
+  import Atomics
 #endif
 
 import deferred
@@ -132,7 +135,7 @@ class DeferredTests: XCTestCase
   {
     let waitns = 100_000_000
 
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
 
     let s = DispatchSemaphore(value: 0)
     let busy = Deferred { _ -> UInt32 in
@@ -162,7 +165,7 @@ class DeferredTests: XCTestCase
   {
     let waitns = 100_000_000
 
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
 
     let s = DispatchSemaphore(value: 0)
     let busy = Deferred { _ -> UInt32 in
@@ -191,7 +194,7 @@ class DeferredTests: XCTestCase
 
   func testNotify1()
   {
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     let e1 = expectation(description: "Pre-set Deferred")
     let d1 = Deferred(value: value)
     d1.notify {
@@ -203,7 +206,7 @@ class DeferredTests: XCTestCase
 
   func testNotify2()
   {
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     let e2 = expectation(description: "Properly Deferred")
     let d1 = Deferred(value: value)
     let d2 = d1.delay(.milliseconds(100))
@@ -244,7 +247,7 @@ class DeferredTests: XCTestCase
 
   func testNotify4()
   {
-    let d4 = Deferred(value: arc4random() & 0x3fff_ffff)
+    let d4 = Deferred(value: nzRandom())
     let delayed4 = d4.delay(.milliseconds(50))
     let e4 = expectation(description: "Test onValue()")
     delayed4.onValue { _ in e4.fulfill() }
@@ -261,8 +264,8 @@ class DeferredTests: XCTestCase
 
   func testMap()
   {
-    let value = arc4random() & 0x3fff_ffff
-    let error = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
+    let error = nzRandom()
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
@@ -284,8 +287,8 @@ class DeferredTests: XCTestCase
 
   func testMap2()
   {
-    let value = arc4random() & 0x3fff_ffff
-    let error = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
+    let error = nzRandom()
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
@@ -307,8 +310,8 @@ class DeferredTests: XCTestCase
 
   func testRecover()
   {
-    let value = arc4random() & 0x3fff_ffff
-    let error = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
+    let error = nzRandom()
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
@@ -342,8 +345,8 @@ class DeferredTests: XCTestCase
 
   func testFlatMap()
   {
-    let value = arc4random() & 0x3fff_ffff
-    let error = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
+    let error = nzRandom()
     let goodOperand = Deferred(value: value)
     let badOperand  = Deferred<Double>(error: TestError(error))
 
@@ -368,8 +371,8 @@ class DeferredTests: XCTestCase
     // a simple curried function.
     let curriedSum: (Int) -> (Int) -> Int = { a in { b in (a+b) } }
 
-    let value1 = Int(arc4random() & 0x3fff_ffff)
-    let value2 = Int(arc4random() & 0x3fff_ffff)
+    let value1 = Int(nzRandom())
+    let value2 = Int(nzRandom())
     let v1 = Deferred(value: value1)
     let v2 = Deferred(value: curriedSum(value2))
     let deferred = v1.apply(transform: v2)
@@ -405,12 +408,12 @@ class DeferredTests: XCTestCase
     let g = TBD<Void>()
 
     g.delay(.milliseconds(100)).notify { _ in
-      v1 = Int(arc4random() & 0x7fff + 10000)
+      v1 = Int(nzRandom() & 0x7fff + 10000)
       try! transform.determine { i in Double(v1*i) }
     }
 
     g.delay(.milliseconds(200)).notify { _ in
-      v2 = Int(arc4random() & 0x7fff + 10000)
+      v2 = Int(nzRandom() & 0x7fff + 10000)
       try! operand.determine(v2)
     }
 
@@ -425,8 +428,8 @@ class DeferredTests: XCTestCase
 
   func testApply2()
   {
-    let value = Int(arc4random() & 0x7fff + 10000)
-    let error = arc4random() & 0x3fff_ffff
+    let value = Int(nzRandom() & 0x7fff + 10000)
+    let error = nzRandom()
 
     // good operand, good transform
     let o1 = Deferred(value: value)
@@ -451,8 +454,8 @@ class DeferredTests: XCTestCase
 
   func testApply3()
   {
-    let value = Int(arc4random() & 0x7fff + 10000)
-    let error = arc4random() & 0x3fff_ffff
+    let value = Int(nzRandom() & 0x7fff + 10000)
+    let error = nzRandom()
 
     // good operand, good transform
     let o1 = Deferred(value: value)
@@ -477,6 +480,7 @@ class DeferredTests: XCTestCase
 
   func testQOS()
   {
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     let q = DispatchQueue.global(qos: .background)
     let qb = Deferred(queue: q, qos: .utility) { qos_class_self() }
     // Verify that the block's QOS was adjusted and is different from the queue's
@@ -524,21 +528,24 @@ class DeferredTests: XCTestCase
     }
 
     waitForExpectations(timeout: 1.0)
-  }
+#else
+    print("testQoS() not implemented for swift-corelibs-dispatch platforms")
+#endif
+    }
 
   func testCancel()
   {
     let d1 = Deferred(qos: .utility) {
       () -> UInt32 in
       usleep(100_000)
-      return arc4random() & 0x3fff_ffff
+      return nzRandom()
     }
 
     XCTAssert(d1.cancel() == true)
     XCTAssert(d1.value == nil)
 
     // Set before canceling -- cancellation failure
-    let d2 = Deferred(value: arc4random() & 0x3fff_ffff)
+    let d2 = Deferred(value: nzRandom())
     XCTAssert(d2.cancel("message") == false)
 
     if let e = d1.error as? DeferredError
@@ -588,7 +595,7 @@ class DeferredTests: XCTestCase
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
-    try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
+    try! tbd.determine(numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -602,7 +609,7 @@ class DeferredTests: XCTestCase
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
-    try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
+    try! tbd.determine(numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -621,7 +628,7 @@ class DeferredTests: XCTestCase
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
-    try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
+    try! tbd.determine(numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -656,14 +663,14 @@ class DeferredTests: XCTestCase
     usleep(1000)
     XCTAssert(d4.cancel() == true)
 
-    try! tbd.determine(numericCast(arc4random() & 0x3fff_ffff))
+    try! tbd.determine(numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
 
   func testTimeout1()
   {
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     let d = Deferred(value: value)
 
     let d1 = d.timeout(.milliseconds(5))
@@ -689,7 +696,7 @@ class DeferredTests: XCTestCase
 
   func testTimeout2()
   {
-    let value = arc4random() & 0x3fff_ffff
+    let value = nzRandom()
     let d = Deferred(value: value)
 
     let d1 = d.timeout(seconds: 0.005)
@@ -720,16 +727,24 @@ class DeferredTests: XCTestCase
 
     let tbd = TBD<Void>(queue: queue)
 
-    let lucky = Int(arc4random_uniform(UInt32(count/4))) + count/2
+    let lucky = Int(nzRandom() % UInt32(count/4)) + count/2
 
-    var first: Int32 = -1
+#if SWIFT_PACKAGE
+    var first = AtomicInt(-1)
+#else
+    var first = Int32(-1)
+#endif
     queue.async {
       for i in 0..<count
       {
         queue.async {
           tbd.notify {
             _ in
+#if SWIFT_PACKAGE
+            if first.CAS(current: -1, future: i) { syncprint("First: \(first)")}
+#else
             if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint("First: \(first)") }
+#endif
           }
           if i == lucky { queue.async { try! tbd.determine() } }
         }
@@ -742,8 +757,8 @@ class DeferredTests: XCTestCase
 
   func testCombine2()
   {
-    let v1 = Int(arc4random() & 0x3fff_ffff)
-    let v2 = UInt64(arc4random())
+    let v1 = Int(nzRandom())
+    let v2 = UInt64(nzRandom())
 
     let d1 = Deferred(value: v1)
     let d2 = Deferred(value: v2)
@@ -757,9 +772,9 @@ class DeferredTests: XCTestCase
 
   func testCombine3()
   {
-    let v1 = Int(arc4random() & 0x3fff_ffff)
-    let v2 = UInt64(arc4random())
-    let v3 = arc4random().description
+    let v1 = Int(nzRandom())
+    let v2 = UInt64(nzRandom())
+    let v3 = String(nzRandom())
 
     let d1 = Deferred(value: v1)
     let d2 = Deferred(value: v2)
@@ -777,9 +792,9 @@ class DeferredTests: XCTestCase
 
   func testCombine4()
   {
-    let v1 = Int(arc4random() & 0x3fff_ffff)
-    let v2 = UInt64(arc4random())
-    let v3 = arc4random().description
+    let v1 = Int(nzRandom())
+    let v2 = UInt64(nzRandom())
+    let v3 = String(nzRandom())
     let v4 = sin(Double(v2))
 
     let d1 = Deferred(value: v1)
@@ -798,7 +813,7 @@ class DeferredTests: XCTestCase
   {
     let count = 10
 
-    let inputs = (0..<count).map { i in Deferred(value: arc4random() & 0x3fff_ffff) }
+    let inputs = (0..<count).map { i in Deferred(value: nzRandom()) }
     let combined = combine(AnySequence(inputs))
     if let values = combined.value
     {
@@ -829,8 +844,8 @@ class DeferredTests: XCTestCase
     // If any one is in error, the combined whole will be in error.
     // The first error encountered will be passed on.
 
-    let cancel1 = Int(arc4random_uniform(numericCast(count)))
-    let cancel2 = Int(arc4random_uniform(numericCast(count)))
+    let cancel1 = Int(nzRandom() % numericCast(count))
+    let cancel2 = Int(nzRandom() % numericCast(count))
 
     d[cancel1].cancel(String(cancel1))
     d[cancel2].cancel(String(cancel2))
@@ -848,7 +863,7 @@ class DeferredTests: XCTestCase
   func testReduce()
   {
     let count = 9
-    let inputs = (0..<count).map { i in Deferred(value: arc4random_uniform(0x003f_fffe) + 1) } + [Deferred(value: 0)]
+    let inputs = (0..<count).map { i in Deferred(value: nzRandom() & 0x003f_fffe + 1) } + [Deferred(value: 0)]
 
     let e = expectation(description: "reduce")
     let c = reduce(AnySequence(inputs), initial: 0) {
