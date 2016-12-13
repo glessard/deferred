@@ -60,8 +60,11 @@ internal enum StoreMemoryOrder: Int
 
 internal struct AtomicMutablePointer<Pointee>
 {
-  fileprivate var ptr: UnsafeMutableRawPointer?
-  internal init(_ ptr: UnsafeMutablePointer<Pointee>? = nil) { self.ptr = UnsafeMutableRawPointer(ptr) }
+  fileprivate var ptr = RawPtr()
+  internal init(_ p: UnsafeMutablePointer<Pointee>? = nil)
+  {
+    StoreRawPtr(UnsafeRawPointer(p), &ptr, memory_order_relaxed)
+  }
 
   internal var pointer: UnsafeMutablePointer<Pointee>? {
     mutating get {
@@ -89,14 +92,17 @@ internal struct AtomicMutablePointer<Pointee>
   {
     precondition(orderFailure.rawValue <= orderSuccess.rawValue)
     var expect = UnsafeMutableRawPointer(current)
-    return CASWeakRawPtr(&expect, UnsafePointer(future), &ptr, orderSuccess.order, orderFailure.order)
+    return WeakCASRawPtr(&expect, UnsafePointer(future), &ptr, orderSuccess.order, orderFailure.order)
   }
 }
 
 internal struct AtomicInt32
 {
-  fileprivate var val: Int32 = 0
-  internal init(_ v: Int32 = 0) { val = v }
+  fileprivate var val = Atomic32()
+  internal init(_ value: Int32 = 0)
+  {
+    Store32(value, &val, memory_order_relaxed)
+  }
 
   internal var value: Int32 {
     mutating get { return Read32(&val, memory_order_relaxed) }
