@@ -174,7 +174,7 @@ class DeferredTests: XCTestCase
 
   func testValueBlocks()
   {
-    let waitns = 100_000_000
+    let wait = 0.1
 
     let value = nzRandom()
 
@@ -185,7 +185,7 @@ class DeferredTests: XCTestCase
     }
 
     let e = expectation(description: "Timing out on Deferred")
-    let fulfillTime = DispatchTime.now() + Double(waitns)*1e-9
+    let fulfillTime = DispatchTime.now() + wait
 
     DispatchQueue.global().async {
       let v = busy.value
@@ -195,16 +195,16 @@ class DeferredTests: XCTestCase
       if now.rawValue < fulfillTime.rawValue { XCTFail("delayed.value unblocked too soon") }
     }
 
-    DispatchQueue.global().asyncAfter(deadline: fulfillTime) {
+    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: fulfillTime) {
       e.fulfill()
     }
 
-    waitForExpectations(timeout: 1.0) { _ in s.signal() }
+    waitForExpectations(timeout: 2.0) { _ in s.signal() }
   }
 
   func testValueUnblocks()
   {
-    let waitns = 100_000_000
+    let wait = 0.1
 
     let value = nzRandom()
 
@@ -215,7 +215,7 @@ class DeferredTests: XCTestCase
     }
 
     let e = expectation(description: "Unblocking a Deferred")
-    let fulfillTime = DispatchTime.now() + Double(waitns)*1e-9
+    let fulfillTime = DispatchTime.now() + wait
 
     DispatchQueue.global().async {
       let v = busy.value
@@ -226,11 +226,11 @@ class DeferredTests: XCTestCase
       else                 { e.fulfill() }
     }
 
-    DispatchQueue.global().asyncAfter(deadline: fulfillTime) {
+    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: fulfillTime) {
       s.signal()
     }
 
-    waitForExpectations(timeout: 1.0)
+    waitForExpectations(timeout: 2.0)
   }
 
   func testNotify1()
