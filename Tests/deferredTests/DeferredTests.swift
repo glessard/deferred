@@ -782,7 +782,7 @@ class DeferredTests: XCTestCase
           tbd.notify {
             _ in
 #if SWIFT_PACKAGE
-            if first.CAS(current: -1, future: i) { syncprint("First: \(first)")}
+            if first.CAS(current: -1, future: i) { syncprint("First: \(first.value)")}
 #else
             if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint("First: \(first)") }
 #endif
