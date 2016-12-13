@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		035896491DFC49BD00F4B44B /* RacetestsAtomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035896461DFC498F00F4B44B /* RacetestsAtomics.swift */; };
-		0358964A1DFC49BD00F4B44B /* RacetestsAtomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035896461DFC498F00F4B44B /* RacetestsAtomics.swift */; };
+		035896491DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035896461DFC498F00F4B44B /* AtomicsRacetests.swift */; };
+		0358964A1DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035896461DFC498F00F4B44B /* AtomicsRacetests.swift */; };
 		0358964F1DFC8DF200F4B44B /* atomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0358964E1DFC8DF200F4B44B /* atomics.swift */; };
 		035896501DFC8DF200F4B44B /* atomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0358964E1DFC8DF200F4B44B /* atomics.swift */; };
 		035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
@@ -108,8 +108,8 @@
 
 /* Begin PBXFileReference section */
 		034857621C11BD5E00F4B44B /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
-		035896461DFC498F00F4B44B /* RacetestsAtomics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RacetestsAtomics.swift; path = DeferredTests/RacetestsAtomics.swift; sourceTree = "<group>"; };
-		0358964E1DFC8DF200F4B44B /* atomics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = atomics.swift; path = utilities/atomics.swift; sourceTree = SOURCE_ROOT; };
+		035896461DFC498F00F4B44B /* AtomicsRacetests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AtomicsRacetests.swift; path = DeferredTests/AtomicsRacetests.swift; sourceTree = "<group>"; };
+		0358964E1DFC8DF200F4B44B /* atomics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = atomics.swift; sourceTree = "<group>"; };
 		035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-combine.swift"; path = "deferred/deferred-combine.swift"; sourceTree = "<group>"; };
 		035D0C0E1D84A8DB00F4B44B /* deferred-error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-error.swift"; path = "deferred/deferred-error.swift"; sourceTree = "<group>"; };
 		035D0C0F1D84A8DB00F4B44B /* deferred-extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-extras.swift"; path = "deferred/deferred-extras.swift"; sourceTree = "<group>"; };
@@ -126,8 +126,9 @@
 		0366AE541DF0FEC400F4B44B /* TestError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TestError.swift; path = DeferredTests/TestError.swift; sourceTree = "<group>"; };
 		0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = URLSessionTests.swift; path = DeferredTests/URLSessionTests.swift; sourceTree = "<group>"; };
 		0374DFB01DFF5BD800F4B44B /* nzRandom.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nzRandom.swift; path = DeferredTests/nzRandom.swift; sourceTree = "<group>"; };
-		03850ADD1C76AB7D00F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = shuffle.swift; path = utilities/shuffle.swift; sourceTree = SOURCE_ROOT; };
-		03850ADF1C76AB7D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = syncprint.swift; path = utilities/syncprint.swift; sourceTree = SOURCE_ROOT; };
+		03850ADD1C76AB7D00F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = shuffle.swift; sourceTree = "<group>"; };
+		03850ADF1C76AB7D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
+		039E18431DFF77F900F4B44B /* LinuxMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
 		03B4E0641C13FF6900F4B44B /* deferred.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deferred.h; sourceTree = "<group>"; };
 		03B4E0651C13FF6900F4B44B /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03B4E06D1C14003B00F4B44B /* deferred.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = deferred.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -145,9 +146,9 @@
 		03D387A01B7C713500F4B44B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		03D387A31B7C713500F4B44B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		03D387A51B7C713500F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		03D6A8461DF786F300F4B44B /* module.map */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; name = module.map; path = utilities/ClangAtomics/module.map; sourceTree = SOURCE_ROOT; };
-		03D6A8471DF786F300F4B44B /* ClangAtomics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ClangAtomics.c; path = utilities/ClangAtomics/ClangAtomics.c; sourceTree = SOURCE_ROOT; };
-		03D6A8481DF786F300F4B44B /* ClangAtomics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ClangAtomics.h; path = utilities/ClangAtomics/ClangAtomics.h; sourceTree = SOURCE_ROOT; };
+		03D6A8461DF786F300F4B44B /* module.map */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = module.map; sourceTree = "<group>"; };
+		03D6A8471DF786F300F4B44B /* ClangAtomics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ClangAtomics.c; sourceTree = "<group>"; };
+		03D6A8481DF786F300F4B44B /* ClangAtomics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClangAtomics.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -206,7 +207,7 @@
 			);
 			name = Source;
 			path = ../Source;
-			sourceTree = "<group>";
+			sourceTree = SOURCE_ROOT;
 		};
 		03850ADC1C76AB7D00F4B44B /* utilities */ = {
 			isa = PBXGroup;
@@ -217,25 +218,25 @@
 				03850ADF1C76AB7D00F4B44B /* syncprint.swift */,
 				035D0C261D84A8FD00F4B44B /* dispatchqos.swift */,
 			);
-			name = utilities;
-			path = ../utilities;
-			sourceTree = "<group>";
+			path = utilities;
+			sourceTree = SOURCE_ROOT;
 		};
 		03850AEA1C76ABF500F4B44B /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				039E18431DFF77F900F4B44B /* LinuxMain.swift */,
 				0366AE501DF0FEC400F4B44B /* DeferredTests.swift */,
 				0366AE511DF0FEC400F4B44B /* ResultTests.swift */,
 				0366AE521DF0FEC400F4B44B /* TBDTests.swift */,
 				0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */,
 				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
-				035896461DFC498F00F4B44B /* RacetestsAtomics.swift */,
+				035896461DFC498F00F4B44B /* AtomicsRacetests.swift */,
 				0366AE541DF0FEC400F4B44B /* TestError.swift */,
 				0374DFB01DFF5BD800F4B44B /* nzRandom.swift */,
 			);
 			name = Tests;
 			path = ../Tests;
-			sourceTree = "<group>";
+			sourceTree = SOURCE_ROOT;
 		};
 		03B4E0631C13FF6900F4B44B /* deferred */ = {
 			isa = PBXGroup;
@@ -294,7 +295,8 @@
 				03D6A8471DF786F300F4B44B /* ClangAtomics.c */,
 			);
 			name = atomics;
-			sourceTree = SOURCE_ROOT;
+			path = ClangAtomics;
+			sourceTree = "<group>";
 		};
 		03E60E221AAA571100F4B44B = {
 			isa = PBXGroup;
@@ -569,7 +571,7 @@
 				0366AE561DF0FEC400F4B44B /* DeferredTests.swift in Sources */,
 				0366AE5A1DF0FEC400F4B44B /* TBDTests.swift in Sources */,
 				0366AE581DF0FEC400F4B44B /* ResultTests.swift in Sources */,
-				035896491DFC49BD00F4B44B /* RacetestsAtomics.swift in Sources */,
+				035896491DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -603,7 +605,7 @@
 				0366AE571DF0FEC400F4B44B /* DeferredTests.swift in Sources */,
 				0366AE5B1DF0FEC400F4B44B /* TBDTests.swift in Sources */,
 				0366AE591DF0FEC400F4B44B /* ResultTests.swift in Sources */,
-				0358964A1DFC49BD00F4B44B /* RacetestsAtomics.swift in Sources */,
+				0358964A1DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

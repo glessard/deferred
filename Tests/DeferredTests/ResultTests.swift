@@ -1,6 +1,6 @@
 //
 //  ResultTests.swift
-//  async-deferred-tests
+//  deferred-tests
 //
 //  Created by Guillaume Lessard on 2015-07-30.
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
@@ -13,6 +13,25 @@ import deferred
 
 class ResultTests: XCTestCase
 {
+  static var allTests: [(String, (ResultTests) -> () throws -> Void)] {
+    return [
+      ("testInit", testInit),
+      ("testInitValue", testInitValue),
+      ("testInitError", testInitError),
+      ("testInitClosureSuccess", testInitClosureSuccess),
+      ("testInitClosureError", testInitClosureError),
+      ("testAccessors", testAccessors),
+      ("testMap", testMap),
+      ("testFlatMap", testFlatMap),
+      ("testRecover", testRecover),
+      ("testApplyA", testApplyA),
+      ("testApplyB", testApplyB),
+      ("testQuestionMarkQuestionMarkOperator", testQuestionMarkQuestionMarkOperator),
+      ("testEquals", testEquals),
+      ("testEquals2", testEquals2),
+    ]
+  }
+
   func testInit()
   {
     let r1: Result<Void> = Result()

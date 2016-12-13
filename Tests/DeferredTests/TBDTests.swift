@@ -15,6 +15,24 @@ import deferred
 
 class TBDTests: XCTestCase
 {
+  static var allTests: [(String, (TBDTests) -> () throws -> Void)] {
+    return [
+      ("testDetermine1", testDetermine1),
+      ("testDetermine2", testDetermine2),
+      ("testCancel", testCancel),
+      ("testDealloc", testDealloc),
+      ("testNotify1", testNotify1),
+      ("testNotify2", testNotify2),
+      ("testNotify3", testNotify3),
+      ("testNeverDetermined", testNeverDetermined),
+      ("testFirstValue", testFirstValue),
+      ("testFirstDetermined", testFirstDetermined),
+      ("testParallel1", testParallel1),
+      ("testParallel2", testParallel2),
+      ("testParallel3", testParallel3),
+    ]
+  }
+
   func testDetermine1()
   {
     let tbd = TBD<UInt32>()

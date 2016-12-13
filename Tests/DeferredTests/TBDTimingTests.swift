@@ -15,6 +15,13 @@ import deferred
 
 class TBDTimingTests: XCTestCase
 {
+  static var allTests: [(String, (TBDTimingTests) -> () throws -> Void)] {
+    return [
+      ("testPerformancePropagationTime", testPerformancePropagationTime),
+      ("testPerformanceNotificationTime", testPerformanceNotificationTime),
+    ]
+  }
+
   func testPerformancePropagationTime()
   {
     measure {
