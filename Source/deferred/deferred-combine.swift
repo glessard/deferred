@@ -146,7 +146,7 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
-/// Note that if the array is empty the resulting `Deferred` will resolve to a `NoResult` error.
+/// Note that if the array is empty the resulting `Deferred` will resolve to a `DeferredError.canceled` error.
 ///
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
@@ -155,7 +155,7 @@ public func firstValue<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<Value>
 {
   if deferreds.count == 0
   {
-    return Deferred(Result())
+    return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
   }
 
   return firstDetermined(ShuffledSequence(deferreds)).flatMap { $0 }
@@ -168,7 +168,7 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S) -> Deferred<Value>
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
-/// Note that if the array is empty the resulting `Deferred` will resolve to a `NoResult` error.
+/// Note that if the array is empty the resulting `Deferred` will resolve to a `DeferredError.canceled` error.
 ///
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
@@ -177,7 +177,7 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<D
 {
   if deferreds.count == 0
   {
-    return Deferred(Result())
+    return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
   }
 
   return firstDetermined(ShuffledSequence(deferreds))

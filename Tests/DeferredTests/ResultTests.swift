@@ -15,7 +15,6 @@ class ResultTests: XCTestCase
 {
   static var allTests: [(String, (ResultTests) -> () throws -> Void)] {
     return [
-      ("testInit", testInit),
       ("testInitValue", testInitValue),
       ("testInitError", testInitError),
       ("testInitClosureSuccess", testInitClosureSuccess),
@@ -30,27 +29,6 @@ class ResultTests: XCTestCase
       ("testEquals", testEquals),
       ("testEquals2", testEquals2),
     ]
-  }
-
-  func testInit()
-  {
-    let r1: Result<Void> = Result()
-    do {
-      try r1.getValue()
-      XCTFail()
-    }
-    catch {
-      XCTAssert(error is NoResult)
-    }
-
-    let r2: Result<Int> = Result()
-    do {
-      _ = try r2.getValue()
-      XCTFail()
-    }
-    catch {
-      XCTAssert(error is NoResult)
-    }
   }
 
   func testInitValue()
@@ -119,10 +97,10 @@ class ResultTests: XCTestCase
 
   func testAccessors()
   {
-    var res = Result<Int>()
+    var res = Result<Int>.error(TestError())
     XCTAssert(res.value == nil)
     XCTAssert(res.isValue == false)
-    XCTAssert(res.error != nil)
+    XCTAssert(res.error is TestError)
     XCTAssert(res.isError)
 
     res = Result.value(0)
@@ -145,11 +123,11 @@ class ResultTests: XCTestCase
     let r2 = goodres.map { (i:UInt32) throws -> Double in throw TestError(i) }
     XCTAssert(r2 == Result.error(TestError(value)))
 
-    let badres = Result<Double>()
+    let badres = Result<Double>.error(TestError(value))
 
     // Bad operand, transform not used
     let r3 = badres.map { (d: Double) throws -> Int in XCTFail(); return 0 }
-    XCTAssert(r3 == Result())
+    XCTAssert(r3 == Result.error(TestError(value)))
   }
 
   func testFlatMap()
@@ -165,11 +143,11 @@ class ResultTests: XCTestCase
     let r2 = goodres.flatMap { Result<Double>.error(TestError($0)) }
     XCTAssert(r2 == Result.error(TestError(value)))
 
-    let badres = Result<Double>()
+    let badres = Result<Double>.error(TestError(value))
 
     // Bad operand, transform not used
     let r3 = badres.flatMap { _ in Result<String> { XCTFail(); return "" } }
-    XCTAssert(r3 == Result())
+    XCTAssert(r3 == Result.error(TestError(value)))
   }
 
   func testRecover()
@@ -181,7 +159,7 @@ class ResultTests: XCTestCase
     let r1 = goodres.recover { e in Result.value(value*2) }
     XCTAssert(r1 == Result.value(value))
 
-    let badres = Result<Double>()
+    let badres = Result<Double>.error(TestError())
 
     // Bad operand, transform throws
     let r2 = badres.recover { e in Result.error(TestError(value)) }

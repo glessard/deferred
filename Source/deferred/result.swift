@@ -8,12 +8,6 @@
 
 import class Foundation.NSError
 
-public struct NoResult: Error, CustomStringConvertible
-{
-  fileprivate init() {}
-  public var description = "No result"
-}
-
 /// A Result type, approximately like everyone else has done.
 ///
 /// The error case does not encode type beyond ErrorType.
@@ -23,11 +17,6 @@ public enum Result<Value>: CustomStringConvertible
 {
   case value(Value)
   case error(Error)
-
-  public init()
-  {
-    self = .error(NoResult())
-  }
 
   public init(task: () throws -> Value)
   {

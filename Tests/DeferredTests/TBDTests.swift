@@ -246,7 +246,7 @@ class TBDTests: XCTestCase
 
     let never = firstValue([Deferred<Any>]())
     XCTAssert(never.value == nil)
-    XCTAssert(never.error is NoResult)
+    XCTAssert(never.error is DeferredError)
   }
 
   func testFirstDetermined()
@@ -277,7 +277,7 @@ class TBDTests: XCTestCase
       if deferreds.count == 0
       {
         XCTAssert(first.value == nil)
-        XCTAssert(first.error is NoResult)
+        XCTAssert(first.error is DeferredError)
       }
     }
 
