@@ -35,6 +35,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
 
   init() { super.init(queue: DispatchQueue.global()) }
 
+  @discardableResult
   override public func cancel(_ reason: String = "") -> Bool
   {
     guard !self.isDetermined,
@@ -110,6 +111,7 @@ public extension URLSession
 
 private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 {
+  @discardableResult
   override func cancel(_ reason: String = "") -> Bool
   {
     guard !self.isDetermined,
@@ -133,7 +135,10 @@ extension URLSession
       {
         if let error = error as? URLError, error.code == .cancelled
         {
-          if let data = error.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+          let URLSessionDownloadTaskResumeData = NSURLSessionDownloadTaskResumeData
+#endif
+          if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
           { _ = try? tbd.determine(URLSessionError.InterruptedDownload(error, data)) }
           else
           { _ = try? tbd.determine(DeferredError.canceled(error.localizedDescription)) }
@@ -179,9 +184,14 @@ extension URLSession
   {
     let tbd = DeferredDownloadTask<(URL, FileHandle, HTTPURLResponse)>()
 
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     let task = self.downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
 
     tbd.task = task
+#else // swift-corelibs-foundation has the wrong signature for URLSession.downloadTask(withResumeData: …)
+    tbd.cancel("URLSession.downloadTask(withResumeData: ) is not implemented in swift-corelibs-foundation")
+#endif
+
     return tbd
   }
 }
