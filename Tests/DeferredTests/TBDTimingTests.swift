@@ -32,7 +32,8 @@ class TBDTimingTests: XCTestCase
       var dt: Deferred = first
       for _ in 0...iterations
       {
-        dt = dt.map {
+        let prev = dt
+        dt = prev.map {
           (i, tic, toc) in
           tic == ref ? (0, Date(), ref) : (i+1, tic, Date())
         }
@@ -61,7 +62,7 @@ class TBDTimingTests: XCTestCase
       let start = TBD<Date>(queue: DispatchQueue(label: "", qos: .userInitiated))
       for _ in 0..<iterations
       {
-        start.notify { _ in }
+        start.notify { result in _ = result.value! }
       }
 
       let dt = start.map { start in Date().timeIntervalSince(start) }
