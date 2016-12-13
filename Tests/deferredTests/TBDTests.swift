@@ -307,14 +307,16 @@ class TBDTests: XCTestCase
       (0..<count).map { i in index*count+i }
     }
 
-    let e = expectation(description: "e")
-    let determined = combine(arrays).map { $0.flatMap({$0}) }
-    determined.notify { _ in e.fulfill() }
-    XCTAssert(determined.value?.count == count*count)
+    let combined = combine(arrays)
+    let determined = combined.map { $0.flatMap({$0}) }
 
-    determined.value?.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
-
-    waitForExpectations(timeout: 1.0)
+    switch determined.result
+    {
+    case .value(let value):
+      XCTAssert(value.count == count*count)
+      value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
+    default: XCTFail()
+    }
   }
 
   func testParallel3()
@@ -327,8 +329,16 @@ class TBDTests: XCTestCase
     let e = expectation(description: "e")
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
     let c = combine(d)
-    c.notify { _ in e.fulfill() }
-    XCTAssert(c.value?.count == count)
+    c.notify {
+      r in
+      switch r
+      {
+      case .value(let value):
+        XCTAssert(value.count == count)
+        e.fulfill()
+      default: XCTFail()
+      }
+    }
 
     waitForExpectations(timeout: 1.0)
   }
