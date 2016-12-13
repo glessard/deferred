@@ -604,20 +604,26 @@ class DeferredTests: XCTestCase
     let d1 = tbd.map { $0 * 2 }
     let e1 = expectation(description: "first deferred")
     d1.onValue { _ in XCTFail() }
-    d1.notify  { r in XCTAssert(r == Result.error(DeferredError.canceled(""))) }
+    d1.notify  { r in XCTAssert(r.error != nil) }
     d1.onError {
       e in
-      guard let _ = e as? DeferredError else { fatalError() }
+      guard let de = e as? DeferredError else { fatalError() }
+      guard case .canceled(let m) = de, m == "test" else { fatalError() }
       e1.fulfill()
     }
 
     let d2 = d1.map  { $0 + 100 }
     let e2 = expectation(description: "second deferred")
     d2.onValue { _ in XCTFail() }
-    d2.notify  { r in XCTAssert(r == Result.error(DeferredError.canceled(""))) }
-    d2.onError { _ in e2.fulfill() }
+    d2.notify  { r in XCTAssert(r.error != nil) }
+    d2.onError {
+      e in
+      guard let de = e as? DeferredError else { fatalError() }
+      guard case .canceled(let m) = de, m == "test" else { fatalError() }
+      e2.fulfill()
+    }
 
-    d1.cancel()
+    d1.cancel("test")
 
     waitForExpectations(timeout: 1.0) { _ in tbd.cancel() }
   }
