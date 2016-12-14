@@ -321,7 +321,7 @@ class Deferred<Value>
 
   public func peek() -> Result<Value>?
   {
-    if let p = resultp.pointer
+    if let p = resultp.load(order: .consume)
     {
       return p.pointee
     }
@@ -342,7 +342,7 @@ class Deferred<Value>
       // was: self.notify(qos: qos_class_self())
       s.wait()
 
-      c = resultp.load(order: .sequential)
+      c = resultp.load(order: .consume)
     }
 
     guard let p = c else { fatalError("Pointer should be non-null in \(#function)") }
