@@ -199,7 +199,7 @@ class Deferred<Value>
 
     while true
     {
-      if resultp.CAS(current: nil, future: p, orderSuccess: .release, orderFailure: .relaxed)
+      if resultp.CAS(current: nil, future: p, type: .weak, orderSuccess: .release, orderFailure: .relaxed)
       {
         break
       }
@@ -246,7 +246,7 @@ class Deferred<Value>
         c = resultp.load(order: .consume)
         if c == nil
         {
-          if waiters.CAS(current: waitQueue, future: waiter, orderSuccess: .release, orderFailure: .relaxed)
+          if waiters.CAS(current: waitQueue, future: waiter, type: .weak, orderSuccess: .release, orderFailure: .relaxed)
           { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
             return
           }
