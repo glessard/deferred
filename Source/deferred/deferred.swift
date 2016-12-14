@@ -53,9 +53,9 @@ class Deferred<Value>
 
   fileprivate init(queue: DispatchQueue)
   {
-    self.resultp = AtomicMutablePointer(nil)
-    self.waiters = AtomicMutablePointer(nil)
-    self.started = AtomicInt32(0)
+    resultp = AtomicMutablePointer(nil)
+    waiters = AtomicMutablePointer(nil)
+    started = AtomicInt32(0)
 
     self.queue = queue
   }
@@ -70,9 +70,9 @@ class Deferred<Value>
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
     p.initialize(to: result)
 
-    self.resultp = AtomicMutablePointer(p)
-    self.waiters = AtomicMutablePointer(nil)
-    self.started = AtomicInt32(1)
+    resultp = AtomicMutablePointer(p)
+    waiters = AtomicMutablePointer(nil)
+    started = AtomicInt32(1)
 
     self.queue = queue
   }
@@ -115,7 +115,7 @@ class Deferred<Value>
       self.determine(result) // an error here means this `Deferred` has been canceled.
     }
 
-    self.started = AtomicInt32(1)
+    started.store(1)
 
     if qos == .unspecified
     {
