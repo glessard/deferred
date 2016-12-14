@@ -261,7 +261,7 @@ class Deferred<Value>
     }
 
     // this Deferred is determined
-    guard let pointer = c else { fatalError() }
+    guard let pointer = c else { fatalError("Pointer should be non-null in \(#function)") }
     let result = pointer.pointee
     let closure = { task(result) }
 
@@ -345,7 +345,7 @@ class Deferred<Value>
       c = resultp.load(order: .sequential)
     }
 
-    guard let p = c else { fatalError() }
+    guard let p = c else { fatalError("Pointer should be non-null in \(#function)") }
     return p.pointee
   }
 
