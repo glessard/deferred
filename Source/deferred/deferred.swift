@@ -53,9 +53,9 @@ class Deferred<Value>
 
   fileprivate init(queue: DispatchQueue)
   {
-    self.resultp = AtomicMutablePointer(nil)
-    self.waiters = AtomicMutablePointer(nil)
-    self.started = AtomicInt32(0)
+    resultp = AtomicMutablePointer(nil)
+    waiters = AtomicMutablePointer(nil)
+    started = AtomicInt32(0)
 
     self.queue = queue
   }
@@ -70,9 +70,9 @@ class Deferred<Value>
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
     p.initialize(to: result)
 
-    self.resultp = AtomicMutablePointer(p)
-    self.waiters = AtomicMutablePointer(nil)
-    self.started = AtomicInt32(1)
+    resultp = AtomicMutablePointer(p)
+    waiters = AtomicMutablePointer(nil)
+    started = AtomicInt32(1)
 
     self.queue = queue
   }
@@ -115,7 +115,7 @@ class Deferred<Value>
       self.determine(result) // an error here means this `Deferred` has been canceled.
     }
 
-    self.started = AtomicInt32(1)
+    started.store(1)
 
     if qos == .unspecified
     {
@@ -199,7 +199,7 @@ class Deferred<Value>
 
     while true
     {
-      if resultp.CAS(current: nil, future: p, orderSuccess: .release, orderFailure: .relaxed)
+      if resultp.CAS(current: nil, future: p, type: .weak, orderSuccess: .release, orderFailure: .relaxed)
       {
         break
       }
@@ -246,7 +246,7 @@ class Deferred<Value>
         c = resultp.load(order: .consume)
         if c == nil
         {
-          if waiters.CAS(current: waitQueue, future: waiter, orderSuccess: .release, orderFailure: .relaxed)
+          if waiters.CAS(current: waitQueue, future: waiter, type: .weak, orderSuccess: .release, orderFailure: .relaxed)
           { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
             return
           }
@@ -320,7 +320,7 @@ class Deferred<Value>
 
   public func peek() -> Result<Value>?
   {
-    if let p = resultp.pointer
+    if let p = resultp.load(order: .consume)
     {
       return p.pointee
     }
@@ -341,10 +341,10 @@ class Deferred<Value>
       // was: self.notify(qos: qos_class_self())
       s.wait()
 
-      c = resultp.load(order: .sequential)
+      c = resultp.load(order: .consume)
     }
 
-    guard let p = c else { fatalError() }
+    guard let p = c else { fatalError("Pointer should be non-null in \(#function)") }
     return p.pointee
   }
 

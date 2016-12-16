@@ -112,7 +112,7 @@ class ResultTests: XCTestCase
 
   func testMap()
   {
-    let value = nzRandom()
+    var value = nzRandom()
     let goodres = Result.value(value)
 
     // Good operand, good transform
@@ -121,18 +121,18 @@ class ResultTests: XCTestCase
 
     // Good operand, transform throws
     let r2 = goodres.map { (i:UInt32) throws -> Double in throw TestError(i) }
-    XCTAssert(r2 == Result.error(TestError(value)))
-
-    let badres = Result<Double>.error(TestError(value))
+    XCTAssert(TestError(value).matches(r2))
 
     // Bad operand, transform not used
+    value = nzRandom()
+    let badres = Result<Double>.error(TestError(value))
     let r3 = badres.map { (d: Double) throws -> Int in XCTFail(); return 0 }
-    XCTAssert(r3 == Result.error(TestError(value)))
+    XCTAssert(TestError(value).matches(r3))
   }
 
   func testFlatMap()
   {
-    let value = nzRandom()
+    var value = nzRandom()
     let goodres = Result.value(value)
 
     // Good operand, good transform
@@ -141,18 +141,18 @@ class ResultTests: XCTestCase
 
     // Good operand, transform errors
     let r2 = goodres.flatMap { Result<Double>.error(TestError($0)) }
-    XCTAssert(r2 == Result.error(TestError(value)))
-
-    let badres = Result<Double>.error(TestError(value))
+    XCTAssert(TestError(value).matches(r2))
 
     // Bad operand, transform not used
+    value = nzRandom()
+    let badres = Result<Double>.error(TestError(value))
     let r3 = badres.flatMap { _ in Result<String> { XCTFail(); return "" } }
-    XCTAssert(r3 == Result.error(TestError(value)))
+    XCTAssert(TestError(value).matches(r3))
   }
 
   func testRecover()
   {
-    let value = nzRandom()
+    var value = nzRandom()
     let goodres = Result.value(value)
 
     // Good operand, transform short-circuited
@@ -163,9 +163,10 @@ class ResultTests: XCTestCase
 
     // Bad operand, transform throws
     let r2 = badres.recover { e in Result.error(TestError(value)) }
-    XCTAssert(r2 == Result.error(TestError(value)))
+    XCTAssert(TestError(value).matches(r2))
 
     // Bad operand, transform executes
+    value = nzRandom()
     let r3 = badres.recover { e in Result.value(Double(value)) }
     XCTAssert(r3 == Result.value(Double(value)))
   }
@@ -173,7 +174,7 @@ class ResultTests: XCTestCase
   func testApplyA()
   {
     let value = Int(nzRandom() & 0x7fff + 10000)
-    let error = nzRandom()
+    var error = nzRandom()
 
     // Good operand, good transform
     let o1 = Result.value(value)
@@ -185,19 +186,20 @@ class ResultTests: XCTestCase
     let o2 = Result<Int>.error(TestError(error))
     let t2 = Result.value({ (i:Int) throws -> Double in XCTFail(); return 0.0 })
     let r2 = o2.apply(t2)
-    XCTAssert(r2 == Result.error(TestError(error)))
+    XCTAssert(TestError(error).matches(r2))
 
     // Good operand, transform Result carries error
+    error = nzRandom()
     let o4 = Result.value(value)
     let t4 = Result.error(TestError(error)) as Result<(Int) throws -> UnsafeMutablePointer<AnyObject>>
     let r4 = o4.apply(t4)
-    XCTAssert(r4 == Result.error(TestError(error)))
+    XCTAssert(TestError(error).matches(r4))
   }
 
   func testApplyB()
   {
     let value = Int(nzRandom() & 0x7fff + 10000)
-    let error = nzRandom()
+    var error = nzRandom()
 
     // Good operand, good transform
     let o1 = Result.value(value)
@@ -209,13 +211,14 @@ class ResultTests: XCTestCase
     let o2 = Result<Int>.error(TestError(error))
     let t2 = Result.value { (i:Int) in Result<Double> { XCTFail(); return 0.0 } }
     let r2 = o2.apply(t2)
-    XCTAssert(r2 == Result.error(TestError(error)))
+    XCTAssert(TestError(error).matches(r2))
 
     // Good operand, transform Result carries error
+    error = nzRandom()
     let o4 = Result.value(value)
     let t4 = Result.error(TestError(error)) as Result<(Int) -> Result<UnsafeRawPointer>>
     let r4 = o4.apply(t4)
-    XCTAssert(r4 == Result.error(TestError(error)))
+    XCTAssert(TestError(error).matches(r4))
   }
 
   func testQuestionMarkQuestionMarkOperator()
@@ -235,7 +238,13 @@ class ResultTests: XCTestCase
     XCTAssert(r1 == Result.value(1))
 
     let r2 = Result<Int> { throw TestError() }
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     XCTAssert(r2 == Result.error(TestError()))
+#else
+    // a poor substitute
+    XCTAssert(TestError().matches(r2))
+    XCTAssert(r2 != Result.error(TestError()))
+#endif
 
     XCTAssert(r1 != r2)
   }

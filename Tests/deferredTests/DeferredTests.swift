@@ -174,7 +174,7 @@ class DeferredTests: XCTestCase
 
   func testValueBlocks()
   {
-    let waitns = 100_000_000
+    let wait = 0.1
 
     let value = nzRandom()
 
@@ -185,7 +185,7 @@ class DeferredTests: XCTestCase
     }
 
     let e = expectation(description: "Timing out on Deferred")
-    let fulfillTime = DispatchTime.now() + Double(waitns)*1e-9
+    let fulfillTime = DispatchTime.now() + wait
 
     DispatchQueue.global().async {
       let v = busy.value
@@ -195,16 +195,16 @@ class DeferredTests: XCTestCase
       if now.rawValue < fulfillTime.rawValue { XCTFail("delayed.value unblocked too soon") }
     }
 
-    DispatchQueue.global().asyncAfter(deadline: fulfillTime) {
+    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: fulfillTime) {
       e.fulfill()
     }
 
-    waitForExpectations(timeout: 1.0) { _ in s.signal() }
+    waitForExpectations(timeout: 2.0) { _ in s.signal() }
   }
 
   func testValueUnblocks()
   {
-    let waitns = 100_000_000
+    let wait = 0.1
 
     let value = nzRandom()
 
@@ -215,7 +215,7 @@ class DeferredTests: XCTestCase
     }
 
     let e = expectation(description: "Unblocking a Deferred")
-    let fulfillTime = DispatchTime.now() + Double(waitns)*1e-9
+    let fulfillTime = DispatchTime.now() + wait
 
     DispatchQueue.global().async {
       let v = busy.value
@@ -226,11 +226,11 @@ class DeferredTests: XCTestCase
       else                 { e.fulfill() }
     }
 
-    DispatchQueue.global().asyncAfter(deadline: fulfillTime) {
+    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: fulfillTime) {
       s.signal()
     }
 
-    waitForExpectations(timeout: 1.0)
+    waitForExpectations(timeout: 2.0)
   }
 
   func testNotify1()
@@ -604,20 +604,26 @@ class DeferredTests: XCTestCase
     let d1 = tbd.map { $0 * 2 }
     let e1 = expectation(description: "first deferred")
     d1.onValue { _ in XCTFail() }
-    d1.notify  { r in XCTAssert(r == Result.error(DeferredError.canceled(""))) }
+    d1.notify  { r in XCTAssert(r.error != nil) }
     d1.onError {
       e in
-      guard let _ = e as? DeferredError else { fatalError() }
+      guard let de = e as? DeferredError else { fatalError() }
+      guard case .canceled(let m) = de, m == "test" else { fatalError() }
       e1.fulfill()
     }
 
     let d2 = d1.map  { $0 + 100 }
     let e2 = expectation(description: "second deferred")
     d2.onValue { _ in XCTFail() }
-    d2.notify  { r in XCTAssert(r == Result.error(DeferredError.canceled(""))) }
-    d2.onError { _ in e2.fulfill() }
+    d2.notify  { r in XCTAssert(r.error != nil) }
+    d2.onError {
+      e in
+      guard let de = e as? DeferredError else { fatalError() }
+      guard case .canceled(let m) = de, m == "test" else { fatalError() }
+      e2.fulfill()
+    }
 
-    d1.cancel()
+    d1.cancel("test")
 
     waitForExpectations(timeout: 1.0) { _ in tbd.cancel() }
   }
@@ -782,7 +788,7 @@ class DeferredTests: XCTestCase
           tbd.notify {
             _ in
 #if SWIFT_PACKAGE
-            if first.CAS(current: -1, future: i) { syncprint("First: \(first)")}
+            if first.CAS(current: -1, future: i) { syncprint("First: \(first.value)")}
 #else
             if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint("First: \(first)") }
 #endif
