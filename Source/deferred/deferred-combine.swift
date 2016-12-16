@@ -158,7 +158,7 @@ public func firstValue<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<Value>
     return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
   }
 
-  return firstDetermined(AnySequence(deferreds)).flatMap { $0 }
+  return firstDetermined(deferreds).flatMap { $0 }
 }
 
 public func firstValue<Value, S: Sequence>(_ deferreds: S) -> Deferred<Value>
@@ -184,7 +184,18 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<D
     return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
   }
 
-  return firstDetermined(AnySequence(deferreds))
+  let first = TBD<Deferred<Value>>()
+
+  deferreds.forEach {
+    deferred in
+    deferred.notify {
+      _ in
+      // an error here just means `deferred` wasn't the first to become determined
+      _ = try? first.determine(deferred)
+    }
+  }
+
+  return first
 }
 
 import Dispatch
