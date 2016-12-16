@@ -6,10 +6,6 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-#if SWIFT_PACKAGE
-  import shuffle
-#endif
-
 // combine two or more Deferred objects into one.
 
 /// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.
@@ -146,7 +142,11 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
-/// Note that if the array is empty the resulting `Deferred` will resolve to a `DeferredError.canceled` error.
+/// Note that if the array is empty the resulting `Deferred` will resolve to a
+/// `DeferredError.canceled` error.
+/// Note also that if more than one element is already determined at the time
+/// the function is called, the earliest one will be considered first; if this
+/// biasing is a problem, consider shuffling the array first.
 ///
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
@@ -158,7 +158,7 @@ public func firstValue<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<Value>
     return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
   }
 
-  return firstDetermined(ShuffledSequence(deferreds)).flatMap { $0 }
+  return firstDetermined(AnySequence(deferreds)).flatMap { $0 }
 }
 
 public func firstValue<Value, S: Sequence>(_ deferreds: S) -> Deferred<Value>
@@ -168,7 +168,11 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S) -> Deferred<Value>
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
-/// Note that if the array is empty the resulting `Deferred` will resolve to a `DeferredError.canceled` error.
+/// Note that if the array is empty the resulting `Deferred` will resolve to a
+/// `DeferredError.canceled` error.
+/// Note also that if more than one element is already determined at the time
+/// the function is called, the earliest one will be considered first; if this
+/// biasing is a problem, consider shuffling the array first.
 ///
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
@@ -180,7 +184,7 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<D
     return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
   }
 
-  return firstDetermined(ShuffledSequence(deferreds))
+  return firstDetermined(AnySequence(deferreds))
 }
 
 import Dispatch
