@@ -42,7 +42,7 @@ class DeferredTests: XCTestCase
       ("testApply1", testApply1),
       ("testApply2", testApply2),
       ("testApply3", testApply3),
-      ("testQOS", testQOS),
+      ("testQoS", testQoS),
       ("testCancel", testCancel),
       ("testCancelAndNotify", testCancelAndNotify),
       ("testCancelMap", testCancelMap),
@@ -519,7 +519,7 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testQOS()
+  func testQoS()
   {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     let q = DispatchQueue.global(qos: .background)
@@ -570,7 +570,7 @@ class DeferredTests: XCTestCase
 
     waitForExpectations(timeout: 1.0)
 #else
-    print("testQoS() not implemented for swift-corelibs-dispatch platforms")
+    XCTFail("testQoS() not implemented for swift-corelibs-dispatch platforms")
 #endif
     }
 

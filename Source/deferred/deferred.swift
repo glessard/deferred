@@ -261,8 +261,7 @@ class Deferred<Value>
     }
 
     // this Deferred is determined
-    guard let pointer = c else { fatalError("Pointer should be non-null in \(#function)") }
-    let result = pointer.pointee
+    guard let result = c?.pointee else { fatalError("Pointer should be non-null in \(#function)") }
     let closure = { task(result) }
 
     if qos == .unspecified
