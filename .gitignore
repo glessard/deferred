@@ -19,5 +19,8 @@ DerivedData
 *.xcuserstate
 *.xcscmblueprint
 contents.xcworkspacedata
+
+# swiftpm
+deferred.xcodeproj
 .build
 Packages
