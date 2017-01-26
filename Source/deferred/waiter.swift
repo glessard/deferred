@@ -47,7 +47,7 @@ enum WaitQueue
 
       current.pointee.notify(queue, result)
 
-      current.deinitialize()
+      current.deinitialize(count: 1)
       current.deallocate(capacity: 1)
     }
   }
@@ -60,7 +60,7 @@ enum WaitQueue
       let current = waiter!
       waiter = current.pointee.next
 
-      current.deinitialize()
+      current.deinitialize(count: 1)
       current.deallocate(capacity: 1)
     }
   }
