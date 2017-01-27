@@ -216,6 +216,8 @@ class Deferred<Value>
     let waitQueue = waiters.swap(nil, order: .consume)
     WaitQueue.notifyAll(queue, waitQueue, result)
 
+    assert(waiters.pointer == nil)
+
     // The result is now available for the world
     return true
   }
@@ -241,6 +243,7 @@ class Deferred<Value>
       while true
       {
         let waitQueue = waiters.pointer
+        assert(waitQueue != waiter)
         waiter.pointee.next = waitQueue
 
         c = resultp.load(order: .consume)
