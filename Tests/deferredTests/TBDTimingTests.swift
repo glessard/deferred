@@ -48,7 +48,7 @@ class TBDTimingTests: XCTestCase
         // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per message")
         _ = interval/Double(iterations)
         break
-        
+
       default: XCTFail()
       }
     }
@@ -74,10 +74,10 @@ class TBDTimingTests: XCTestCase
         // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per notification")
         _ = interval
         break
-        
+
       default: XCTFail()
       }
     }
   }
-  
+
 }

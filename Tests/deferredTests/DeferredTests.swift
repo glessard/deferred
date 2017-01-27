@@ -766,7 +766,7 @@ class DeferredTests: XCTestCase
 
     waitForExpectations(timeout: 1.0)
   }
-  
+
   func testRace()
   {
     let count = 10_000
