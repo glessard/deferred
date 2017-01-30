@@ -58,6 +58,7 @@ class DeferredTests: XCTestCase
       ("testCombineArray1", testCombineArray1),
       ("testCombineArray2", testCombineArray2),
       ("testReduce", testReduce),
+      ("testReduceCancel", testReduceCancel),
     ]
   }
 
@@ -879,7 +880,7 @@ class DeferredTests: XCTestCase
   func testCombineArray2()
   {
     let count = 10
-    let e = (0..<10).map { i in expectation(description: String(describing: i)) }
+    let e = (0..<count).map { i in expectation(description: String(describing: i)) }
 
     let d = Deferred.inParallel(count: count) {
       i -> Int in
@@ -926,6 +927,35 @@ class DeferredTests: XCTestCase
     {
       XCTAssert(error.error >= 9)
     }
+
+    waitForExpectations(timeout: 1.0)
+  }
+
+  func testReduceCancel()
+  {
+    let count = 10
+    let e = (0..<count).map { i in expectation(description: String(describing: i)) }
+
+    let d = e.map {
+      e in
+      Deferred<Int> {
+        usleep((nzRandom() % 10 + 2) * 10_000)
+        e.fulfill()
+        return Int(nzRandom())
+      }
+    }
+
+    let cancel1 = Int(nzRandom() % numericCast(count))
+    let cancel2 = Int(nzRandom() % numericCast(count))
+    d[cancel1].cancel(String(cancel1))
+    d[cancel2].cancel(String(cancel2))
+
+    let c = reduce(d, initial: 0, combine: { a, b in return a+b })
+    let x = expectation(description: "reduced")
+    c.notify { _ in x.fulfill() }
+
+    XCTAssert(c.value == nil)
+    XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1, cancel2))))
 
     waitForExpectations(timeout: 1.0)
   }
