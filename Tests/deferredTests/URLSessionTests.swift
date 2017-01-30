@@ -135,7 +135,7 @@ class URLSessionTests: XCTestCase
     let canceled = deferred.cancel()
     XCTAssert(canceled == false)
   }
-  
+
   func testData_SuspendCancel()
   {
     let url = URL(string: imagePath)!
@@ -264,7 +264,7 @@ class URLSessionTests: XCTestCase
     let canceled = deferred.cancel()
     XCTAssert(canceled == false)
   }
-  
+
   func testDownload_SuspendCancel()
   {
     let url = URL(string: imagePath)!

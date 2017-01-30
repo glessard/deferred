@@ -40,14 +40,13 @@ enum WaitQueue
   static func notifyAll<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ result: Result<T>)
   {
     var head = reverseList(tail)
-    while head != nil
+    while let current = head
     {
-      let current = head!
       head = current.pointee.next
 
       current.pointee.notify(queue, result)
 
-      current.deinitialize()
+      current.deinitialize(count: 1)
       current.deallocate(capacity: 1)
     }
   }
@@ -55,12 +54,11 @@ enum WaitQueue
   static func dealloc<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?)
   {
     var waiter = tail
-    while waiter != nil
+    while let current = waiter
     {
-      let current = waiter!
       waiter = current.pointee.next
 
-      current.deinitialize()
+      current.deinitialize(count: 1)
       current.deallocate(capacity: 1)
     }
   }
