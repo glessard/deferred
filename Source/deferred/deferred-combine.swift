@@ -19,7 +19,10 @@
 
 public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 {
-  return reduce(deferreds, initial: [Value](), combine: { values, value in values + [value] })
+  var combined = [Value]()
+  let reduced = reduce(deferreds, initial: (), combine: { _, value in combined.append(value) })
+
+  return reduced.map { _ in combined }
 }
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
@@ -34,7 +37,10 @@ public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
   where S.Iterator.Element == Deferred<Value>
 {
-  return reduce(deferreds, initial: [Value](), combine: { (values, value) in values + [value] })
+  var combined = [Value]()
+  let reduced = reduce(deferreds, initial: (), combine: { _, value in combined.append(value) })
+
+  return reduced.map { _ in combined }
 }
 
 /// Returns the result of repeatedly calling `combine` with an
