@@ -22,12 +22,14 @@ class TBDTimingTests: XCTestCase
     ]
   }
 
+  let propagationTestCount = 10_000
+
   func testPerformancePropagationTime()
   {
-    measure {
-      let iterations = 10_000
-      let ref = Date.distantPast
+    let iterations = propagationTestCount
+    let ref = Date.distantPast
 
+    measure {
       let first = TBD<(Int, Date, Date)>(qos: .userInitiated)
       var dt: Deferred = first
       for _ in 0...iterations
@@ -56,9 +58,9 @@ class TBDTimingTests: XCTestCase
 
   func testPerformanceNotificationTime()
   {
-    measure {
-      let iterations = 10_000
+    let iterations = propagationTestCount
 
+    measure {
       let start = TBD<Date>(queue: DispatchQueue(label: "", qos: .userInitiated))
       for _ in 0..<iterations
       {
@@ -79,5 +81,4 @@ class TBDTimingTests: XCTestCase
       }
     }
   }
-
 }
