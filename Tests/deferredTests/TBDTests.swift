@@ -25,8 +25,6 @@ class TBDTests: XCTestCase
       ("testNotify2", testNotify2),
       ("testNotify3", testNotify3),
       ("testNeverDetermined", testNeverDetermined),
-      ("testFirstValue", testFirstValue),
-      ("testFirstDetermined", testFirstDetermined),
       ("testParallel1", testParallel1),
       ("testParallel2", testParallel2),
       ("testParallel3", testParallel3),
@@ -219,70 +217,6 @@ class TBDTests: XCTestCase
     XCTAssertNil(first.value)
     XCTAssertNil(other.value)
     XCTAssertNil(third.value)
-  }
-
-  func testFirstValue()
-  {
-    let count = 10
-    let lucky = Int(nzRandom()) % count
-
-    let deferreds = (0..<count).map { _ in TBD<Int>() }
-    let first1 = firstValue(deferreds)
-    let first2 = firstValue(AnySequence(deferreds.map({$0 as Deferred})))
-
-    do { try deferreds[lucky].determine(lucky) }
-    catch { XCTFail() }
-
-    XCTAssert(first1.value == lucky)
-    XCTAssert(first2.value == lucky)
-
-    for (i,d) in deferreds.enumerated()
-    {
-      do { try d.determine(i) }
-      catch { XCTAssert(i == lucky) }
-    }
-
-    _ = deferreds.map { d in d.cancel() }
-
-    let never = firstValue([Deferred<Any>]())
-    XCTAssert(never.value == nil)
-    XCTAssert(never.error is DeferredError)
-  }
-
-  func testFirstDetermined()
-  {
-    let count = 10
-
-    let deferreds = (0..<count).map {
-      i -> Deferred<Int> in
-      let e = expectation(description: i.description)
-      return Deferred {
-        _ in
-        usleep(numericCast(i)*10_000)
-        e.fulfill()
-        return i
-      }
-    }
-
-    func oneBy1(_ deferreds: [Deferred<Int>])
-    {
-      let first = firstDetermined(deferreds)
-      if let index = deferreds.index(where: { d in d === first.value })
-      {
-        var d = deferreds
-        d.remove(at: index)
-        oneBy1(d)
-      }
-
-      if deferreds.count == 0
-      {
-        XCTAssert(first.value == nil)
-        XCTAssert(first.error is DeferredError)
-      }
-    }
-
-    oneBy1(deferreds)
-    waitForExpectations(timeout: 1.0)
   }
 
   func testParallel1()

@@ -45,8 +45,8 @@
 		03850AE81C76AB9900F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850ADF1C76AB7D00F4B44B /* syncprint.swift */; };
 		039E18411DFF621300F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		039E18421DFF621400F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
-		03AA21741E3FF9D600F4B44B /* DeferredReduceTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredReduceTimingTests.swift */; };
-		03AA21751E3FF9D600F4B44B /* DeferredReduceTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredReduceTimingTests.swift */; };
+		03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */; };
+		03AA21751E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */; };
 		03B4E0771C14003C00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
 		03B4E09C1C1403C300F4B44B /* deferred-ios.h in Headers */ = {isa = PBXBuildFile; fileRef = 03B4E09B1C1403C300F4B44B /* deferred-ios.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		03B4E0A31C1403C300F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E0991C1403C300F4B44B /* deferred.framework */; };
@@ -131,7 +131,7 @@
 		03850ADD1C76AB7D00F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = shuffle.swift; sourceTree = "<group>"; };
 		03850ADF1C76AB7D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
 		039E18431DFF77F900F4B44B /* LinuxMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
-		03AA21731E3FF9D600F4B44B /* DeferredReduceTimingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredReduceTimingTests.swift; path = deferredTests/DeferredReduceTimingTests.swift; sourceTree = "<group>"; };
+		03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredCombinationTests.swift; path = deferredTests/DeferredCombinationTests.swift; sourceTree = "<group>"; };
 		03B4E0641C13FF6900F4B44B /* deferred.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deferred.h; sourceTree = "<group>"; };
 		03B4E0651C13FF6900F4B44B /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03B4E06D1C14003B00F4B44B /* deferred.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = deferred.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -230,7 +230,7 @@
 				039E18431DFF77F900F4B44B /* LinuxMain.swift */,
 				0366AE511DF0FEC400F4B44B /* ResultTests.swift */,
 				0366AE501DF0FEC400F4B44B /* DeferredTests.swift */,
-				03AA21731E3FF9D600F4B44B /* DeferredReduceTimingTests.swift */,
+				03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */,
 				0366AE521DF0FEC400F4B44B /* TBDTests.swift */,
 				0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */,
 				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
@@ -569,7 +569,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */,
-				03AA21741E3FF9D600F4B44B /* DeferredReduceTimingTests.swift in Sources */,
+				03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */,
 				0366AE5C1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */,
 				039E18411DFF621300F4B44B /* nzRandom.swift in Sources */,
 				03850AE61C76AB9900F4B44B /* syncprint.swift in Sources */,
@@ -604,7 +604,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0366AE5F1DF0FEC400F4B44B /* TestError.swift in Sources */,
-				03AA21751E3FF9D600F4B44B /* DeferredReduceTimingTests.swift in Sources */,
+				03AA21751E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */,
 				0366AE5D1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */,
 				039E18421DFF621400F4B44B /* nzRandom.swift in Sources */,
 				03850AE81C76AB9900F4B44B /* syncprint.swift in Sources */,
