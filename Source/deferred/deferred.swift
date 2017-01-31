@@ -415,16 +415,6 @@ class Deferred<Value>
 
 internal final class Mapped<Value>: Deferred<Value>
 {
-  /// Initialize to an already determined state, and copy the queue reference from another `Deferred`
-  ///
-  /// - parameter source: a `Deferred` whose dispatch queue shoud be used to enqueue future notifications for this `Deferred`
-  /// - parameter result: the result of this `Deferred`
-
-  init<U>(source: Deferred<U>, result: Result<Value>)
-  {
-    super.init(queue: source.queue, result: result)
-  }
-
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `map`
   ///
@@ -651,7 +641,7 @@ internal final class Timeout<Value>: Deferred<Value>
   init(source: Deferred<Value>, deadline: DispatchTime, reason: String)
   {
     super.init(queue: source.queue)
-    queue.asyncAfter(deadline: deadline) { self.cancel(reason) }
+    queue.asyncAfter(deadline: deadline) { source.cancel(reason) }
     source.notify { self.determine($0) } // an error here means this `Deferred` was canceled or has timed out.
   }
 }

@@ -51,6 +51,16 @@ extension DispatchTimeInterval
     case .microseconds(let a), .milliseconds(let a), .nanoseconds(let a), .seconds(let a): return a > 0
     }
   }
+
+  fileprivate var seconds: Double {
+    switch self
+    {
+    case .nanoseconds(let ns):  return Double(ns)*10e-9
+    case .microseconds(let µs): return Double(µs)*10e-6
+    case .milliseconds(let ms): return Double(ms)*10e-3
+    case .seconds(let secs):    return Double(secs)
+    }
+  }
 }
 
 // MARK: maximum time until a `Deferred` becomes determined
@@ -60,35 +70,35 @@ private let DefaultTimeoutMessage = "Operation timed out"
 extension Deferred
 {
   /// Return a `Deferred` whose determination will occur at most a number of seconds from the time of evaluation.
-  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
+  /// If `self` has not become determined after the timeout delay, `self` will be canceled.
+  ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
-  public final func timeout(seconds s: Double, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(seconds: Double, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     if self.isDetermined { return self }
-    if s > 0
+
+    guard seconds > 0 else
     {
-      return Timeout(source: self, deadline: .now() + s, reason: reason)
+      self.cancel(reason)
+      return self
     }
-    return Mapped(source: self, result: Result.error(DeferredError.canceled(reason)))
+
+    return Timeout(source: self, deadline: .now() + seconds, reason: reason)
   }
 
   /// Return a `Deferred` whose determination will occur at most `ns` nanoseconds from the time of evaluation.
-  /// If `self` has not become determined after the timeout delay, the new `Deferred` will be canceled.
-  /// - parameter ns: a number of nanoseconds
+  /// If `self` has not become determined after the timeout delay, `self` will be canceled.
+  ///
+  /// - parameter deadline: a time interval
   /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
   /// - returns: a `Deferred` reference
 
-  public final func timeout(_ delay: DispatchTimeInterval, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(_ deadline: DispatchTimeInterval, reason: String = DefaultTimeoutMessage) -> Deferred
   {
-    if self.isDetermined { return self }
-    if delay.isPositive
-    {
-      return Timeout(source: self, deadline: .now() + delay, reason: reason)
-    }
-    return Mapped(source: self, result: Result.error(DeferredError.canceled(reason)))
+    return timeout(seconds: deadline.seconds, reason: reason)
   }
 }
 

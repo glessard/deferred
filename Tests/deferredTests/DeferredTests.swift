@@ -49,8 +49,7 @@ class DeferredTests: XCTestCase
       ("testCancelDelay", testCancelDelay),
       ("testCancelBind", testCancelBind),
       ("testCancelApply", testCancelApply),
-      ("testTimeout1", testTimeout1),
-      ("testTimeout2", testTimeout2),
+      ("testTimeout", testTimeout),
       ("testRace", testRace),
       ("testCombine2", testCombine2),
       ("testCombine3", testCombine3),
@@ -716,7 +715,7 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testTimeout1()
+  func testTimeout()
   {
     let value = nzRandom()
     let d = Deferred(value: value)
@@ -734,36 +733,16 @@ class DeferredTests: XCTestCase
     d3.onValue { _ in XCTFail() }
     d3.onError { _ in e3.fulfill() }
 
-    let d4 = d.delay(.milliseconds(50)).timeout(.seconds(1))
+    let d4 = d.delay(.milliseconds(50)).timeout(seconds: 0.5)
     let e4 = expectation(description: "Timeout test 4")
     d4.onValue { _ in e4.fulfill() }
     d4.onError { _ in XCTFail() }
 
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testTimeout2()
-  {
-    let value = nzRandom()
-    let d = Deferred(value: value)
-
-    let d1 = d.timeout(seconds: 0.005)
-    XCTAssert(d1.value == value)
-
-    let d2 = d.delay(.seconds(5)).timeout(seconds: 0.002)
-    let e2 = expectation(description: "Timeout test")
-    d2.onValue { _ in XCTFail() }
-    d2.onError { _ in e2.fulfill() }
-
-    let d3 = d.delay(.milliseconds(100)).timeout(seconds: -1)
-    let e3 = expectation(description: "Unreasonable timeout test")
-    d3.onValue { _ in XCTFail() }
-    d3.onError { _ in e3.fulfill() }
-
-    let d4 = d.delay(.milliseconds(50)).timeout(seconds: 1)
-    let e4 = expectation(description: "Timeout test 4")
-    d4.onValue { _ in e4.fulfill() }
-    d4.onError { _ in XCTFail() }
+    let d5 = TBD<Double>()
+    let e5 = expectation(description: "Timeout test 5")
+    d5.onValue { _ in XCTFail() }
+    d5.onError { _ in e5.fulfill() }
+    _ = d5.timeout(.microseconds(1))
 
     waitForExpectations(timeout: 1.0)
   }
