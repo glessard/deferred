@@ -20,7 +20,6 @@ class TBDTests: XCTestCase
       ("testDetermine1", testDetermine1),
       ("testDetermine2", testDetermine2),
       ("testCancel", testCancel),
-      ("testDealloc", testDealloc),
       ("testNotify1", testNotify1),
       ("testNotify2", testNotify2),
       ("testNotify3", testNotify3),
@@ -117,31 +116,6 @@ class TBDTests: XCTestCase
     }
 
     waitForExpectations(timeout: 1.0)
-  }
-
-  func testDealloc()
-  {
-    class DeallocTBD: TBD<Void>
-    {
-      let e: XCTestExpectation
-      init(expectation: XCTestExpectation)
-      {
-        e = expectation
-        super.init(queue: DispatchQueue.global())
-      }
-      deinit
-      {
-        e.fulfill()
-      }
-    }
-
-    do {
-      // This will get deallocated because notify doesn't create reference cycles
-      let tbd = DeallocTBD(expectation: expectation(description: "will dealloc"))
-      for i in 1...3 { tbd.notify { _ in XCTFail("Notification \(i)") } }
-    }
-
-    waitForExpectations(timeout: 0.1)
   }
 
   func testNotify1()

@@ -7,6 +7,7 @@ XCTMain([
   testCase(DeferredTests.allTests),
   testCase(DeferredCombinationTests.allTests),
   testCase(DeferredCombinationTimedTests.allTests),
+  testCase(DeletionTests.allTests),
   testCase(TBDTests.allTests),
   testCase(TBDTimingTests.allTests),
 ])
