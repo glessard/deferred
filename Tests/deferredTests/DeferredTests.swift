@@ -49,16 +49,7 @@ class DeferredTests: XCTestCase
       ("testCancelDelay", testCancelDelay),
       ("testCancelBind", testCancelBind),
       ("testCancelApply", testCancelApply),
-      ("testTimeout1", testTimeout1),
-      ("testTimeout2", testTimeout2),
-      ("testRace", testRace),
-      ("testCombine2", testCombine2),
-      ("testCombine3", testCombine3),
-      ("testCombine4", testCombine4),
-      ("testCombineArray1", testCombineArray1),
-      ("testCombineArray2", testCombineArray2),
-      ("testReduce", testReduce),
-      ("testReduceCancel", testReduceCancel),
+      ("testTimeout", testTimeout),
     ]
   }
 
@@ -290,16 +281,14 @@ class DeferredTests: XCTestCase
   func testNotify4()
   {
     let d4 = Deferred(value: nzRandom())
-    let delayed4 = d4.delay(.milliseconds(50))
     let e4 = expectation(description: "Test onValue()")
-    delayed4.onValue { _ in e4.fulfill() }
-    delayed4.onError { _ in XCTFail() }
+    d4.onValue { _ in e4.fulfill() }
+    d4.onError { _ in XCTFail() }
 
     let d5 = Deferred<Int>(error: NSError(domain: "", code: 0))
-    let delayed5 = d5.delay(.milliseconds(50))
     let e5 = expectation(description: "Test onError()")
-    delayed5.onValue { _ in XCTFail() }
-    delayed5.onError { _ in e5.fulfill() }
+    d5.onValue { _ in XCTFail() }
+    d5.onError { _ in e5.fulfill() }
 
     waitForExpectations(timeout: 1.0)
   }
@@ -449,12 +438,12 @@ class DeferredTests: XCTestCase
 
     let g = TBD<Void>()
 
-    g.delay(.milliseconds(100)).notify { _ in
+    g.notify { _ in
       v1 = Int(nzRandom() & 0x7fff + 10000)
       try! transform.determine { i in Double(v1*i) }
     }
 
-    g.delay(.milliseconds(200)).notify { _ in
+    g.notify { _ in
       v2 = Int(nzRandom() & 0x7fff + 10000)
       try! operand.determine(v2)
     }
@@ -716,7 +705,7 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testTimeout1()
+  func testTimeout()
   {
     let value = nzRandom()
     let d = Deferred(value: value)
@@ -734,228 +723,16 @@ class DeferredTests: XCTestCase
     d3.onValue { _ in XCTFail() }
     d3.onError { _ in e3.fulfill() }
 
-    let d4 = d.delay(.milliseconds(50)).timeout(.seconds(1))
+    let d4 = d.delay(.milliseconds(50)).timeout(seconds: 0.5)
     let e4 = expectation(description: "Timeout test 4")
     d4.onValue { _ in e4.fulfill() }
     d4.onError { _ in XCTFail() }
 
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testTimeout2()
-  {
-    let value = nzRandom()
-    let d = Deferred(value: value)
-
-    let d1 = d.timeout(seconds: 0.005)
-    XCTAssert(d1.value == value)
-
-    let d2 = d.delay(.seconds(5)).timeout(seconds: 0.002)
-    let e2 = expectation(description: "Timeout test")
-    d2.onValue { _ in XCTFail() }
-    d2.onError { _ in e2.fulfill() }
-
-    let d3 = d.delay(.milliseconds(100)).timeout(seconds: -1)
-    let e3 = expectation(description: "Unreasonable timeout test")
-    d3.onValue { _ in XCTFail() }
-    d3.onError { _ in e3.fulfill() }
-
-    let d4 = d.delay(.milliseconds(50)).timeout(seconds: 1)
-    let e4 = expectation(description: "Timeout test 4")
-    d4.onValue { _ in e4.fulfill() }
-    d4.onError { _ in XCTFail() }
-
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testRace()
-  {
-    let count = 10_000
-    let queue = DispatchQueue.global()
-
-    let tbd = TBD<Void>(queue: queue)
-
-    let lucky = Int(nzRandom() % UInt32(count/4)) + count/2
-
-#if SWIFT_PACKAGE
-    var first = AtomicInt(-1)
-#else
-    var first = Int32(-1)
-#endif
-    queue.async {
-      for i in 0..<count
-      {
-        queue.async {
-          tbd.notify {
-            _ in
-#if SWIFT_PACKAGE
-            if first.CAS(current: -1, future: i) { syncprint("First: \(first.value)")}
-#else
-            if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint("First: \(first)") }
-#endif
-          }
-          if i == lucky { queue.async { try! tbd.determine() } }
-        }
-      }
-    }
-
-    syncprint("Lucky: \(lucky)")
-    syncprintwait()
-  }
-
-  func testCombine2()
-  {
-    let v1 = Int(nzRandom())
-    let v2 = UInt64(nzRandom())
-
-    let d1 = Deferred(value: v1)
-    let d2 = Deferred(value: v2)
-    let d3 = d1.delay(.milliseconds(100))
-    let d4 = d2.delay(.milliseconds(200))
-
-    let c = combine(d3,d4).value
-    XCTAssert(c?.0 == v1)
-    XCTAssert(c?.1 == v2)
-  }
-
-  func testCombine3()
-  {
-    let v1 = Int(nzRandom())
-    let v2 = UInt64(nzRandom())
-    let v3 = String(nzRandom())
-
-    let d1 = Deferred(value: v1)
-    let d2 = Deferred(value: v2)
-    let d3 = Deferred(value: v3)
-    // let d4 = Deferred { v3 }                        // infers Deferred<()->String> rather than Deferred<String>
-    // let d5 = Deferred { () -> String in v3 }        // infers Deferred<()->String> rather than Deferred<String>
-    // let d6 = Deferred { _ in v3 }                   // infers Deferred<String> as expected
-    // let d7 = Deferred { () throws -> String in v3 } // infers Deferred<String> as expected
-
-    let c = combine(d1,d2,d3.delay(seconds: 0.001)).value
-    XCTAssert(c?.0 == v1)
-    XCTAssert(c?.1 == v2)
-    XCTAssert(c?.2 == v3)
-  }
-
-  func testCombine4()
-  {
-    let v1 = Int(nzRandom())
-    let v2 = UInt64(nzRandom())
-    let v3 = String(nzRandom())
-    let v4 = sin(Double(v2))
-
-    let d1 = Deferred(value: v1)
-    let d2 = Deferred(value: v2)
-    let d3 = Deferred(value: v3)
-    let d4 = Deferred(value: v4)
-
-    let c = combine(d1,d2,d3,d4.delay(.milliseconds(1))).value
-    XCTAssert(c?.0 == v1)
-    XCTAssert(c?.1 == v2)
-    XCTAssert(c?.2 == v3)
-    XCTAssert(c?.3 == v4)
-  }
-
-  func testCombineArray1()
-  {
-    let count = 10
-
-    let inputs = (0..<count).map { i in Deferred(value: nzRandom()) }
-    let combined = combine(AnySequence(inputs))
-    if let values = combined.value
-    {
-      XCTAssert(values.count == count)
-      for (a,b) in zip(inputs, values)
-      {
-        XCTAssert(a.value == b)
-      }
-    }
-    XCTAssert(combined.error == nil)
-
-    let combined1 = combine([Deferred<Int>]())
-    XCTAssert(combined1.value?.count == 0)
-  }
-
-  func testCombineArray2()
-  {
-    let count = 10
-    let e = (0..<count).map { i in expectation(description: String(describing: i)) }
-
-    let d = Deferred.inParallel(count: count) {
-      i -> Int in
-      usleep(numericCast((i+1)*10_000))
-      e[i].fulfill()
-      return i
-    }
-
-    // If any one is in error, the combined whole will be in error.
-    // The first error encountered will be passed on.
-
-    let cancel1 = Int(nzRandom() % numericCast(count))
-    let cancel2 = Int(nzRandom() % numericCast(count))
-
-    d[cancel1].cancel(String(cancel1))
-    d[cancel2].cancel(String(cancel2))
-
-    let c = combine(d)
-    let x = expectation(description: "result")
-    c.notify { _ in x.fulfill() }
-
-    XCTAssert(c.value == nil)
-    XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1,cancel2))))
-
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testReduce()
-  {
-    let count = 9
-    let inputs = (0..<count).map { i in Deferred(value: nzRandom() & 0x003f_fffe + 1) } + [Deferred(value: 0)]
-
-    let e = expectation(description: "reduce")
-    let c = reduce(AnySequence(inputs), initial: 0) {
-      a, i throws -> UInt32 in
-      if i > 0 { return a+i }
-      throw TestError(a)
-    }
-    c.notify { _ in e.fulfill() }
-
-    XCTAssert(c.result.isValue == false)
-    XCTAssert(c.result.isError)
-    if let error = c.result.error as? TestError
-    {
-      XCTAssert(error.error >= 9)
-    }
-
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testReduceCancel()
-  {
-    let count = 10
-    let e = (0..<count).map { i in expectation(description: String(describing: i)) }
-
-    let d = e.map {
-      e in
-      Deferred<Int> {
-        usleep((nzRandom() % 10 + 2) * 10_000)
-        e.fulfill()
-        return Int(nzRandom())
-      }
-    }
-
-    let cancel1 = Int(nzRandom() % numericCast(count))
-    let cancel2 = Int(nzRandom() % numericCast(count))
-    d[cancel1].cancel(String(cancel1))
-    d[cancel2].cancel(String(cancel2))
-
-    let c = reduce(d, initial: 0, combine: { a, b in return a+b })
-    let x = expectation(description: "reduced")
-    c.notify { _ in x.fulfill() }
-
-    XCTAssert(c.value == nil)
-    XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1, cancel2))))
+    let d5 = TBD<Double>()
+    let e5 = expectation(description: "Timeout test 5")
+    d5.onValue { _ in XCTFail() }
+    d5.onError { _ in e5.fulfill() }
+    _ = d5.timeout(.microseconds(1))
 
     waitForExpectations(timeout: 1.0)
   }
