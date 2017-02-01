@@ -33,6 +33,10 @@ struct Waiter<T>
       queue.async(qos: qos, flags: [.enforceQoS], execute: closure)
     }
   }
+
+  static var invalid: UnsafeMutablePointer<Waiter<T>>? {
+    return UnsafeMutablePointer(bitPattern: 0x7)
+  }
 }
 
 enum WaitQueue
