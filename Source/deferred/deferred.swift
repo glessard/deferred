@@ -41,7 +41,11 @@ class Deferred<Value>
 
   deinit
   {
-    WaitQueue.dealloc(waiters.pointer)
+    if let w = waiters.pointer, w != Waiter.invalid
+    {
+      WaitQueue.dealloc(w)
+    }
+
     if let p = resultp.pointer
     {
       p.deinitialize(count: 1)
@@ -213,10 +217,10 @@ class Deferred<Value>
       }
     }
 
-    let waitQueue = waiters.swap(nil, order: .consume)
+    let waitQueue = waiters.swap(Waiter.invalid, order: .consume)
     WaitQueue.notifyAll(queue, waitQueue, result)
 
-    assert(waiters.pointer == nil)
+    assert(waiters.pointer == Waiter.invalid)
 
     // The result is now available for the world
     return true
