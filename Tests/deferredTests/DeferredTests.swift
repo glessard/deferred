@@ -50,7 +50,6 @@ class DeferredTests: XCTestCase
       ("testCancelBind", testCancelBind),
       ("testCancelApply", testCancelApply),
       ("testTimeout", testTimeout),
-      ("testRace", testRace),
     ]
   }
 
@@ -282,16 +281,14 @@ class DeferredTests: XCTestCase
   func testNotify4()
   {
     let d4 = Deferred(value: nzRandom())
-    let delayed4 = d4.delay(.milliseconds(50))
     let e4 = expectation(description: "Test onValue()")
-    delayed4.onValue { _ in e4.fulfill() }
-    delayed4.onError { _ in XCTFail() }
+    d4.onValue { _ in e4.fulfill() }
+    d4.onError { _ in XCTFail() }
 
     let d5 = Deferred<Int>(error: NSError(domain: "", code: 0))
-    let delayed5 = d5.delay(.milliseconds(50))
     let e5 = expectation(description: "Test onError()")
-    delayed5.onValue { _ in XCTFail() }
-    delayed5.onError { _ in e5.fulfill() }
+    d5.onValue { _ in XCTFail() }
+    d5.onError { _ in e5.fulfill() }
 
     waitForExpectations(timeout: 1.0)
   }
@@ -441,12 +438,12 @@ class DeferredTests: XCTestCase
 
     let g = TBD<Void>()
 
-    g.delay(.milliseconds(100)).notify { _ in
+    g.notify { _ in
       v1 = Int(nzRandom() & 0x7fff + 10000)
       try! transform.determine { i in Double(v1*i) }
     }
 
-    g.delay(.milliseconds(200)).notify { _ in
+    g.notify { _ in
       v2 = Int(nzRandom() & 0x7fff + 10000)
       try! operand.determine(v2)
     }
@@ -738,40 +735,5 @@ class DeferredTests: XCTestCase
     _ = d5.timeout(.microseconds(1))
 
     waitForExpectations(timeout: 1.0)
-  }
-
-  func testRace()
-  {
-    let count = 10_000
-    let queue = DispatchQueue.global()
-
-    let tbd = TBD<Void>(queue: queue)
-
-    let lucky = Int(nzRandom() % UInt32(count/4)) + count/2
-
-#if SWIFT_PACKAGE
-    var first = AtomicInt(-1)
-#else
-    var first = Int32(-1)
-#endif
-    queue.async {
-      for i in 0..<count
-      {
-        queue.async {
-          tbd.notify {
-            _ in
-#if SWIFT_PACKAGE
-            if first.CAS(current: -1, future: i) { syncprint("First: \(first.value)")}
-#else
-            if OSAtomicCompareAndSwap32Barrier(-1, Int32(i), &first) { syncprint("First: \(first)") }
-#endif
-          }
-          if i == lucky { queue.async { try! tbd.determine() } }
-        }
-      }
-    }
-
-    syncprint("Lucky: \(lucky)")
-    syncprintwait()
   }
 }
