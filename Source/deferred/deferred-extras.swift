@@ -86,7 +86,7 @@ extension Deferred
       return self
     }
 
-    return Timeout(source: self, deadline: .now() + seconds, reason: reason)
+    return timeout(after: .now() + seconds, reason: reason)
   }
 
   /// Return a `Deferred` whose determination will occur at most `ns` nanoseconds from the time of evaluation.
@@ -99,6 +99,18 @@ extension Deferred
   public final func timeout(_ deadline: DispatchTimeInterval, reason: String = DefaultTimeoutMessage) -> Deferred
   {
     return timeout(seconds: deadline.seconds, reason: reason)
+  }
+
+  /// Return a `Deferred` whose determination will occur before the given deadline.
+  /// If `self` has not become determined after the given timestamp, `self` will be canceled.
+  ///
+  /// - parameter deadline: a timestamp used as a deadline
+  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
+  /// - returns: a `Deferred` reference
+
+  public final func timeout(after deadline: DispatchTime, reason: String = DefaultTimeoutMessage) -> Deferred
+  {
+    return Timeout(source: self, deadline: deadline, reason: reason)
   }
 }
 
