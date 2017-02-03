@@ -26,11 +26,10 @@ extension Deferred
   {
     if s > 0
     {
-      return delay(until: .now() + s)
+      return self.delay(until: .now() + s)
     }
     return self
   }
-
 
   /// Return a `Deferred` whose determination will occur at the earliest`delay` from the time of evaluation.
   /// Note that a cancelation or error will result in early determination.
@@ -40,11 +39,7 @@ extension Deferred
 
   public final func delay(_ delay: DispatchTimeInterval) -> Deferred
   {
-    if delay.isPositive
-    {
-      return self.delay(until: .now() + delay)
-    }
-    return self
+    return self.delay(seconds: delay.seconds)
   }
 
   /// Return a `Deferred` whose determination will occur after a given timestamp.
@@ -61,20 +56,13 @@ extension Deferred
 
 extension DispatchTimeInterval
 {
-  fileprivate var isPositive: Bool {
-    switch self
-    {
-    case .microseconds(let a), .milliseconds(let a), .nanoseconds(let a), .seconds(let a): return a > 0
-    }
-  }
-
   fileprivate var seconds: Double {
     switch self
     {
-    case .nanoseconds(let ns):  return Double(ns)*10e-9
-    case .microseconds(let µs): return Double(µs)*10e-6
-    case .milliseconds(let ms): return Double(ms)*10e-3
-    case .seconds(let secs):    return Double(secs)
+    case .nanoseconds(let ns):  return Double(ns)*1e-9
+    case .microseconds(let µs): return Double(µs)*1e-6
+    case .milliseconds(let ms): return Double(ms)*1e-3
+    case .seconds(let seconds): return Double(seconds)
     }
   }
 }
