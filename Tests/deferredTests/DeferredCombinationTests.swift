@@ -265,8 +265,9 @@ class DeferredCombinationTimedTests: XCTestCase
   {
     let iterations = loopTestCount
 
-    measure {
+    measureMetrics([XCTPerformanceMetric_WallClockTime], automaticallyStartMeasuring: false) {
       let inputs = (1...iterations).map { Deferred(value: $0) }
+      self.startMeasuring()
       let c = reduce(inputs, initial: 0, combine: +)
       switch c.result
       {
@@ -275,15 +276,17 @@ class DeferredCombinationTimedTests: XCTestCase
       default:
         XCTFail()
       }
+      self.stopMeasuring()
     }
   }
 
   func testPerformanceABAProneReduce()
   {
-    let iterations = loopTestCount
+    let iterations = 10 // loopTestCount
 
-    measure {
+    measureMetrics([XCTPerformanceMetric_WallClockTime], automaticallyStartMeasuring: false) {
       let inputs = (1...iterations).map {Deferred(value: $0) }
+      self.startMeasuring()
       let accumulator = Deferred(value: 0)
       let c = inputs.reduce(accumulator) {
         (accumulator, deferred) in
@@ -298,6 +301,7 @@ class DeferredCombinationTimedTests: XCTestCase
       default:
         XCTFail()
       }
+      self.stopMeasuring()
     }
   }
 
@@ -305,8 +309,9 @@ class DeferredCombinationTimedTests: XCTestCase
   {
     let iterations = loopTestCount
 
-    measure {
+    measureMetrics([XCTPerformanceMetric_WallClockTime], automaticallyStartMeasuring: false) {
       let inputs = (1...iterations).map { Deferred(value: $0) }
+      self.startMeasuring()
       let c = combine(inputs)
       switch c.result
       {
@@ -315,6 +320,7 @@ class DeferredCombinationTimedTests: XCTestCase
       default:
         XCTFail()
       }
+      self.stopMeasuring()
     }
   }
 }
