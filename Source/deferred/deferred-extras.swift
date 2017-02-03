@@ -17,6 +17,8 @@ import Dispatch
 extension Deferred
 {
   /// Return a `Deferred` whose determination will occur at least a number of seconds from the time of evaluation.
+  /// Note that a cancelation or error will result in early determination.
+  ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
@@ -24,12 +26,15 @@ extension Deferred
   {
     if s > 0
     {
-      return Delayed(source: self, until: .now() + s)
+      return delay(until: .now() + s)
     }
     return self
   }
 
+
   /// Return a `Deferred` whose determination will occur at the earliest`delay` from the time of evaluation.
+  /// Note that a cancelation or error will result in early determination.
+  ///
   /// - parameter delay: a time interval, as `DispatchTimeInterval`
   /// - returns: a `Deferred` reference
 
@@ -37,9 +42,20 @@ extension Deferred
   {
     if delay.isPositive
     {
-      return Delayed(source: self, until: .now() + delay)
+      return self.delay(until: .now() + delay)
     }
     return self
+  }
+
+  /// Return a `Deferred` whose determination will occur after a given timestamp.
+  /// Note that a cancelation or error will result in early determination.
+  ///
+  /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
+  /// - returns: a `Deferred` reference
+
+  public final func delay(until time: DispatchTime) -> Deferred
+  {
+    return Delayed(source: self, until: time)
   }
 }
 
