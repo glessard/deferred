@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		035896491DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035896461DFC498F00F4B44B /* AtomicsRacetests.swift */; };
 		0358964A1DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035896461DFC498F00F4B44B /* AtomicsRacetests.swift */; };
 		0358964F1DFC8DF200F4B44B /* atomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0358964E1DFC8DF200F4B44B /* atomics.swift */; };
@@ -39,6 +40,7 @@
 		0366AE5D1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */; };
 		0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
 		0366AE5F1DF0FEC400F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
+		0381475B1E4138BA00F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		03850AE01C76AB7D00F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850ADD1C76AB7D00F4B44B /* shuffle.swift */; };
 		03850AE11C76AB7D00F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850ADD1C76AB7D00F4B44B /* shuffle.swift */; };
 		03850AE61C76AB9900F4B44B /* syncprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03850ADF1C76AB7D00F4B44B /* syncprint.swift */; };
@@ -128,6 +130,7 @@
 		0366AE541DF0FEC400F4B44B /* TestError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TestError.swift; path = DeferredTests/TestError.swift; sourceTree = "<group>"; };
 		0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = URLSessionTests.swift; path = DeferredTests/URLSessionTests.swift; sourceTree = "<group>"; };
 		0374DFB01DFF5BD800F4B44B /* nzRandom.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nzRandom.swift; path = DeferredTests/nzRandom.swift; sourceTree = "<group>"; };
+		038147591E4138BA00F4B44B /* DeletionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeletionTests.swift; path = deferredTests/DeletionTests.swift; sourceTree = "<group>"; };
 		03850ADD1C76AB7D00F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = shuffle.swift; sourceTree = "<group>"; };
 		03850ADF1C76AB7D00F4B44B /* syncprint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = syncprint.swift; sourceTree = "<group>"; };
 		039E18431DFF77F900F4B44B /* LinuxMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
@@ -231,6 +234,7 @@
 				0366AE511DF0FEC400F4B44B /* ResultTests.swift */,
 				0366AE501DF0FEC400F4B44B /* DeferredTests.swift */,
 				03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */,
+				038147591E4138BA00F4B44B /* DeletionTests.swift */,
 				0366AE521DF0FEC400F4B44B /* TBDTests.swift */,
 				0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */,
 				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
@@ -575,6 +579,7 @@
 				03850AE61C76AB9900F4B44B /* syncprint.swift in Sources */,
 				0366AE561DF0FEC400F4B44B /* DeferredTests.swift in Sources */,
 				0366AE5A1DF0FEC400F4B44B /* TBDTests.swift in Sources */,
+				032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */,
 				0366AE581DF0FEC400F4B44B /* ResultTests.swift in Sources */,
 				035896491DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */,
 			);
@@ -610,6 +615,7 @@
 				03850AE81C76AB9900F4B44B /* syncprint.swift in Sources */,
 				0366AE571DF0FEC400F4B44B /* DeferredTests.swift in Sources */,
 				0366AE5B1DF0FEC400F4B44B /* TBDTests.swift in Sources */,
+				0381475B1E4138BA00F4B44B /* DeletionTests.swift in Sources */,
 				0366AE591DF0FEC400F4B44B /* ResultTests.swift in Sources */,
 				0358964A1DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */,
 			);

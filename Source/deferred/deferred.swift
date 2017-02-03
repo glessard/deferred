@@ -55,7 +55,7 @@ class Deferred<Value>
 
   // MARK: designated initializers
 
-  fileprivate init(queue: DispatchQueue)
+  internal init(queue: DispatchQueue)
   {
     resultp = AtomicMutablePointer(nil)
     waiters = AtomicMutablePointer(nil)
