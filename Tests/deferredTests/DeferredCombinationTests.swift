@@ -255,6 +255,7 @@ class DeferredCombinationTimedTests: XCTestCase
     return [
       ("testPerformanceReduce", testPerformanceReduce),
       ("testPerformanceCombine", testPerformanceCombine),
+      ("testPerformanceABAProneReduce", testPerformanceABAProneReduce),
     ]
   }
 
@@ -267,6 +268,29 @@ class DeferredCombinationTimedTests: XCTestCase
     measure {
       let inputs = (1...iterations).map { Deferred(value: $0) }
       let c = reduce(inputs, initial: 0, combine: +)
+      switch c.result
+      {
+      case .value(let v):
+        XCTAssert(v == (iterations*(iterations+1)/2))
+      default:
+        XCTFail()
+      }
+    }
+  }
+
+  func testPerformanceABAProneReduce()
+  {
+    let iterations = loopTestCount
+
+    measure {
+      let inputs = (1...iterations).map {Deferred(value: $0) }
+      let accumulator = Deferred(value: 0)
+      let c = inputs.reduce(accumulator) {
+        (accumulator, deferred) in
+        accumulator.flatMap {
+          u in deferred.map { t in u+t }
+        }
+      }
       switch c.result
       {
       case .value(let v):
