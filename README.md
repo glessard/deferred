@@ -1,4 +1,4 @@
-# deferred
+# deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=master)](https://travis-ci.org/glessard/deferred)
 A library to help you transfer data, including errors, between asynchronous blocks in Swift; 
 fast and lock-free. This could be used as a pure-Swift alternative to NSOperation.
 
