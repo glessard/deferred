@@ -17,7 +17,7 @@ extension Deferred
   /// Initialize an array of `Deferred` to be computed in parallel, at the desired quality of service level
   ///
   /// - parameter count: the number of parallel tasks to perform
-  /// - parameter qos: the desired quality of service class for the new `Deferred` objects
+  /// - parameter qos: the quality of service class at which the parallel task should be performed
   /// - parameter task: the computation to be performed in parallel; the closure takes an index as its parameter
   /// - returns: an array of `Deferred`
 
@@ -30,7 +30,7 @@ extension Deferred
   /// Initialize an array of `Deferred` to be computed in parallel, on the desired dispatch queue
   ///
   /// - parameter count: the number of parallel tasks to perform
-  /// - parameter queue: the `dispatch_queue` onto which the `Deferreds` should be performed.
+  /// - parameter queue: the `DispatchQueue` onto which the parallel task should be performed.
   /// - parameter task: the computation to be performed in parallel; the closure takes an index as its parameter
   /// - returns: an array of `Deferred`
 
@@ -40,11 +40,11 @@ extension Deferred
   }
 }
 
-extension Collection where Self.Indices.Iterator.Element == Self.Index
+extension Collection where Index == Indices.Iterator.Element
 {
   /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
   ///
-  /// - parameter qos: the desired quality of service class for the new `Deferred` objects
+  /// - parameter qos: the quality of service class at which the parallel task should be performed
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
@@ -56,23 +56,22 @@ extension Collection where Self.Indices.Iterator.Element == Self.Index
 
   /// Map a collection to an array of `Deferred` to be computed in parallel, on the desired dispatch queue
   ///
-  /// - parameter queue: the `dispatch_queue` onto which the `Deferreds` should be performed.
+  /// - parameter queue: the `DispatchQueue` on which the parallel task should be performed.
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
   public func deferredMap<Value>(queue: DispatchQueue, task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-    // The following 2 lines exist to get around the fact that Self.Index.Distance does not convert to Int.
-    let indices = Array(self.indices)
-    let count = indices.count
+    let count: Int = numericCast(self.count)
+    let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) }
+    let indexList = Array(self.indices)
 
-    let deferreds = indices.map { _ in TBD<Value>() }
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {
-        index in
-        deferreds[index].beginExecution()
-        let result = Result { try task(self[indices[index]]) }
-        _ = try? deferreds[index].determine(result) // an error here means `deferred[index]` has been canceled
+        iteration in
+        deferreds[iteration].beginExecution()
+        let result = Result { try task(self[indexList[iteration]]) }
+        _ = try? deferreds[iteration].determine(result) // an error here means `deferred[index]` has been canceled
       }
     }
     return deferreds
