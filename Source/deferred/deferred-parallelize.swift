@@ -17,7 +17,7 @@ extension Deferred
   /// Initialize an array of `Deferred` to be computed in parallel, at the desired quality of service level
   ///
   /// - parameter count: the number of parallel tasks to perform
-  /// - parameter qos: the desired quality of service class for the new `Deferred` objects
+  /// - parameter qos: the quality of service class at which the parallel task should be performed
   /// - parameter task: the computation to be performed in parallel; the closure takes an index as its parameter
   /// - returns: an array of `Deferred`
 
@@ -30,7 +30,7 @@ extension Deferred
   /// Initialize an array of `Deferred` to be computed in parallel, on the desired dispatch queue
   ///
   /// - parameter count: the number of parallel tasks to perform
-  /// - parameter queue: the `dispatch_queue` onto which the `Deferreds` should be performed.
+  /// - parameter queue: the `DispatchQueue` onto which the parallel task should be performed.
   /// - parameter task: the computation to be performed in parallel; the closure takes an index as its parameter
   /// - returns: an array of `Deferred`
 
@@ -44,7 +44,7 @@ extension Collection where Index == Indices.Iterator.Element
 {
   /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
   ///
-  /// - parameter qos: the desired quality of service class for the new `Deferred` objects
+  /// - parameter qos: the quality of service class at which the parallel task should be performed
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
@@ -56,7 +56,7 @@ extension Collection where Index == Indices.Iterator.Element
 
   /// Map a collection to an array of `Deferred` to be computed in parallel, on the desired dispatch queue
   ///
-  /// - parameter queue: the `dispatch_queue` onto which the `Deferreds` should be performed.
+  /// - parameter queue: the `DispatchQueue` on which the parallel task should be performed.
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
