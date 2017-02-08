@@ -190,26 +190,21 @@ class DeferredCombinationTests: XCTestCase
     let lucky = Int(nzRandom()) % count
 
     let deferreds = (0..<count).map { _ in TBD<Int>() }
-    let first1 = firstValue(deferreds)
-    let first2 = firstValue(AnySequence(deferreds.map({$0 as Deferred})))
+    let first = firstValue(AnySequence(deferreds.map({$0 as Deferred})), cancelOthers: true)
 
     do { try deferreds[lucky].determine(lucky) }
     catch { XCTFail() }
 
-    XCTAssert(first1.value == lucky)
-    XCTAssert(first2.value == lucky)
+    XCTAssert(first.value == lucky)
 
-    for (i,d) in deferreds.enumerated()
-    {
-      do { try d.determine(i) }
-      catch { XCTAssert(i == lucky) }
-    }
-
-    _ = deferreds.map { d in d.cancel() }
+    deferreds.forEach { d in XCTAssertFalse(d.cancel()) }
 
     let never = firstValue([Deferred<Any>]())
     XCTAssert(never.value == nil)
     XCTAssert(never.error is DeferredError)
+
+    let one = firstValue([Deferred(value: ())])
+    XCTAssert(one.error == nil)
   }
 
   func testFirstDetermined()
@@ -229,7 +224,7 @@ class DeferredCombinationTests: XCTestCase
 
     func oneBy1(_ deferreds: [Deferred<Int>])
     {
-      let first = firstDetermined(deferreds)
+      let first = firstDetermined(deferreds, cancelOthers: true)
       if let index = deferreds.index(where: { d in d === first.value })
       {
         var d = deferreds
