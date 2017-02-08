@@ -79,7 +79,7 @@ class DeferredTests: XCTestCase
 
     let result4 = combine(result1, result2)
 
-    let result5 = result2.timeout(.milliseconds(50))
+    let result5 = result2.map(transform: Double.init).timeout(.milliseconds(50))
 
     syncprint("Waiting")
     syncprint("Result 1: \(result1.result)")
@@ -89,6 +89,12 @@ class DeferredTests: XCTestCase
     syncprint("Result 5: \(result5.result)")
     syncprint("Done")
     syncprintwait()
+
+    XCTAssert(result1.error == nil)
+    XCTAssert(result2.error == nil)
+    XCTAssert(result3.error == nil)
+    XCTAssert(result4.error == nil)
+    XCTAssert(result5.value == nil)
   }
 
   func testExample2()
