@@ -86,11 +86,11 @@ internal struct AtomicMutablePointer<Pointee>
 
   @inline(__always) @discardableResult
   internal mutating func CAS(current: UnsafeMutablePointer<Pointee>?, future: UnsafeMutablePointer<Pointee>?,
-                             type: CASType = .weak,
+                             type: CASType = .weak, // ignored
                              orderSuccess: MemoryOrder = .sequential,
                              orderFailure: LoadMemoryOrder = .sequential) -> Bool
   {
-    precondition(orderFailure.rawValue <= orderSuccess.rawValue)
+    assert(orderFailure.rawValue <= orderSuccess.rawValue)
     var expect = UnsafeMutableRawPointer(current)
     return WeakCASRawPtr(&expect, UnsafePointer(future), &ptr, orderSuccess.order, orderFailure.order)
   }
