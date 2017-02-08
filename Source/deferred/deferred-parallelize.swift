@@ -40,7 +40,7 @@ extension Deferred
   }
 }
 
-extension Collection where Self.Indices.Iterator.Element == Self.Index
+extension Collection where Index == Indices.Iterator.Element
 {
   /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
   ///
@@ -62,17 +62,16 @@ extension Collection where Self.Indices.Iterator.Element == Self.Index
 
   public func deferredMap<Value>(queue: DispatchQueue, task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-    // The following 2 lines exist to get around the fact that Self.Index.Distance does not convert to Int.
-    let indices = Array(self.indices)
-    let count = indices.count
+    let count: Int = numericCast(self.count)
+    let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) }
+    let indexList = Array(self.indices)
 
-    let deferreds = indices.map { _ in TBD<Value>() }
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {
-        index in
-        deferreds[index].beginExecution()
-        let result = Result { try task(self[indices[index]]) }
-        _ = try? deferreds[index].determine(result) // an error here means `deferred[index]` has been canceled
+        iteration in
+        deferreds[iteration].beginExecution()
+        let result = Result { try task(self[indexList[iteration]]) }
+        _ = try? deferreds[iteration].determine(result) // an error here means `deferred[index]` has been canceled
       }
     }
     return deferreds
