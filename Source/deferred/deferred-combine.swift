@@ -164,20 +164,20 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstValue<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<Value>
+public func firstValue<Value>(_ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Value>
 {
   if deferreds.count == 0
   {
     return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
   }
 
-  return firstDetermined(deferreds).flatMap { $0 }
+  return firstDetermined(deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
 
-public func firstValue<Value, S: Sequence>(_ deferreds: S) -> Deferred<Value>
+public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
   where S.Iterator.Element == Deferred<Value>
 {
-  return firstDetermined(deferreds).flatMap { $0 }
+  return firstDetermined(deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
@@ -190,7 +190,7 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S) -> Deferred<Value>
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value>(_ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
 {
   if deferreds.count == 0
   {
@@ -208,12 +208,17 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<D
     }
   }
 
+  if cancelOthers
+  {
+    first.notify { _ in deferreds.forEach { $0.cancel() } }
+  }
+
   return first
 }
 
 import Dispatch
 
-public func firstDetermined<Value, S: Sequence>(_ deferreds: S) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
   where S.Iterator.Element == Deferred<Value>
 {
   let first = TBD<Deferred<Value>>()
@@ -228,6 +233,10 @@ public func firstDetermined<Value, S: Sequence>(_ deferreds: S) -> Deferred<Defe
         _ in
         // an error here just means `deferred` wasn't the first to become determined
         _ = try? first.determine(deferred)
+      }
+      if cancelOthers
+      {
+        first.notify { _ in deferred.cancel() }
       }
     }
   }
