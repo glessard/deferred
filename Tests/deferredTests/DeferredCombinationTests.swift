@@ -197,11 +197,26 @@ class DeferredCombinationTests: XCTestCase
 
     XCTAssert(first.value == lucky)
 
-    deferreds.forEach { d in XCTAssertFalse(d.cancel()) }
+    deferreds.forEach {
+      d in
+      switch d.result
+      {
+      case .value(let value):
+        XCTAssert(value == lucky)
+      case .error(let error as DeferredError):
+        XCTAssert(error == DeferredError.canceled(""))
+      case .error(let error):
+        XCTFail("Wrong error: \(error)")
+      }
+    }
 
     let never = firstValue([Deferred<Any>]())
-    XCTAssert(never.value == nil)
-    XCTAssert(never.error is DeferredError)
+    do {
+      _ = try never.result.getValue()
+      XCTFail()
+    }
+    catch DeferredError.canceled(let s) { XCTAssert(s != "") }
+    catch { XCTFail("Wrong error: \(error)") }
 
     let one = firstValue([Deferred(value: ())])
     XCTAssert(one.error == nil)
