@@ -193,9 +193,7 @@ class Deferred<Value>
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
     guard resultp.pointer == nil
-    else { // this Deferred is already determined
-      return false
-    }
+    else { return false } // this Deferred is already determined
 
     // optimistically allocate storage for result
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
@@ -208,9 +206,9 @@ class Deferred<Value>
         break
       }
 
-      if resultp.pointer != nil
+      if let o = resultp.pointer
       { // another thread succeeded ahead of this one; clean up
-        assert(resultp.pointer != p)
+        assert(p != o)
         p.deinitialize(count: 1)
         p.deallocate(capacity: 1)
         return false
@@ -220,7 +218,7 @@ class Deferred<Value>
     let waitQueue = waiters.swap(Waiter.invalid, order: .consume)
     WaitQueue.notifyAll(queue, waitQueue, result)
 
-    assert(waiters.pointer == Waiter.invalid)
+    assert(waiters.pointer == Waiter.invalid, "waiters.pointer has incorrect value \(waiters.pointer)")
 
     // The result is now available for the world
     return true
