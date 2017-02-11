@@ -15,32 +15,42 @@
 
 // pointer
 
-void* ReadRawPtr(struct RawPtr* ptr, memory_order order)
+void InitRawPtr(const void* val, struct RawPointer *ptr)
 {
-  return atomic_load_explicit(&(ptr->a), order);
+  atomic_init(&(ptr->a), (uintptr_t)val);
 }
 
-void StoreRawPtr(const void* val, struct RawPtr* ptr, memory_order order)
+void* ReadRawPtr(struct RawPointer *ptr, memory_order order)
 {
-  atomic_store_explicit(&(ptr->a), (void*)val, order);
+  return (void*) atomic_load_explicit(&(ptr->a), order);
 }
 
-void* SwapRawPtr(const void* val, struct RawPtr* ptr, memory_order order)
+void StoreRawPtr(const void* val, struct RawPointer *ptr, memory_order order)
 {
-  return atomic_exchange_explicit(&(ptr->a), (void*)val, order);
+  atomic_store_explicit(&(ptr->a), (uintptr_t)val, order);
 }
 
-_Bool CASRawPtr(void** current, const void* future, struct RawPtr* ptr, memory_order succ, memory_order fail)
+void* SwapRawPtr(const void* val, struct RawPointer *ptr, memory_order order)
 {
-  return atomic_compare_exchange_strong_explicit(&(ptr->a), (void**)current, (void*)future, succ, fail);
+  return (void*) atomic_exchange_explicit(&(ptr->a), (uintptr_t)val, order);
 }
 
-_Bool WeakCASRawPtr(void** current, const void* future, struct RawPtr* ptr, memory_order succ, memory_order fail)
+_Bool CASRawPtr(const void** current, const void* future, struct RawPointer *ptr, memory_order succ, memory_order fail)
 {
-  return atomic_compare_exchange_weak_explicit(&(ptr->a), (void**)current, (void*)future, succ, fail);
+  return atomic_compare_exchange_strong_explicit(&(ptr->a), (uintptr_t*)current, (uintptr_t)future, succ, fail);
+}
+
+_Bool WeakCASRawPtr(const void** current, const void* future, struct RawPointer *ptr, memory_order succ, memory_order fail)
+{
+  return atomic_compare_exchange_weak_explicit(&(ptr->a), (uintptr_t*)current, (uintptr_t)future, succ, fail);
 }
 
 // pointer-sized integer
+
+void InitWord(long val, struct AtomicWord *ptr)
+{
+  atomic_init(&(ptr->a), val);
+}
 
 long ReadWord(struct AtomicWord *ptr, memory_order order)
 {
@@ -94,6 +104,11 @@ _Bool WeakCASWord(long* current, long future, struct AtomicWord *ptr, memory_ord
 
 // 32-bit integer
 
+void Init32(int val, struct Atomic32 *ptr)
+{
+  atomic_init(&(ptr->a), val);
+}
+
 int Read32(struct Atomic32 *ptr, memory_order order)
 {
   return atomic_load_explicit(&(ptr->a), order);
@@ -146,6 +161,11 @@ _Bool WeakCAS32(int* current, int future, struct Atomic32 *ptr, memory_order suc
 
 // 64-bit integer
 
+void Init64(long long val, struct Atomic64 *ptr)
+{
+  atomic_init(&(ptr->a), val);
+}
+
 long long Read64(struct Atomic64 *ptr, memory_order order)
 {
   return atomic_load_explicit(&(ptr->a), order);
@@ -194,4 +214,11 @@ _Bool CAS64(long long* current, long long future, struct Atomic64 *ptr, memory_o
 _Bool WeakCAS64(long long* current, long long future, struct Atomic64 *ptr, memory_order succ, memory_order fail)
 {
   return atomic_compare_exchange_weak_explicit(&(ptr->a), current, future, succ, fail);
+}
+
+// fence
+
+void ThreadFence(memory_order order)
+{
+  atomic_thread_fence(order);
 }

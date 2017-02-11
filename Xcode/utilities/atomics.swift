@@ -60,7 +60,7 @@ internal enum StoreMemoryOrder: Int
 
 internal struct AtomicMutablePointer<Pointee>
 {
-  fileprivate var ptr = RawPtr()
+  fileprivate var ptr = RawPointer()
   internal init(_ p: UnsafeMutablePointer<Pointee>? = nil)
   {
     StoreRawPtr(UnsafeRawPointer(p), &ptr, memory_order_relaxed)
@@ -85,14 +85,17 @@ internal struct AtomicMutablePointer<Pointee>
   }
 
   @inline(__always) @discardableResult
-  internal mutating func CAS(current: UnsafeMutablePointer<Pointee>?, future: UnsafeMutablePointer<Pointee>?,
-                             type: CASType = .weak, // ignored
-                             orderSuccess: MemoryOrder = .sequential,
-                             orderFailure: LoadMemoryOrder = .sequential) -> Bool
+  public mutating func loadCAS(current: UnsafeMutablePointer<UnsafeMutablePointer<Pointee>?>,
+                               future: UnsafeMutablePointer<Pointee>?,
+                               type: CASType = .weak, // ignored
+                               orderSwap: MemoryOrder = .sequential,
+                               orderLoad: LoadMemoryOrder = .sequential) -> Bool
   {
-    assert(orderFailure.rawValue <= orderSuccess.rawValue)
-    var expect = UnsafeMutableRawPointer(current)
-    return WeakCASRawPtr(&expect, UnsafePointer(future), &ptr, orderSuccess.order, orderFailure.order)
+    assert(orderLoad.rawValue <= orderSwap.rawValue)
+    return current.withMemoryRebound(to: Optional<UnsafeRawPointer>.self, capacity: 1) {
+      current in
+      WeakCASRawPtr(current, future, &ptr, orderSwap.order, orderLoad.order)
+    }
   }
 }
 
