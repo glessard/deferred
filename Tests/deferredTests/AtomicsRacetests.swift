@@ -20,7 +20,7 @@ class AtomicsRaceTests: XCTestCase
   static var raceTests: [(String, (AtomicsRaceTests) -> () throws -> Void)] {
     return [
       ("testRaceCrash", testRaceCrash),
-      ("testRacePointerCAS", testRacePointerCAS),
+      ("testRacePointerCAS", testRacePointerLoadCAS),
     ]
   }
 
@@ -57,7 +57,7 @@ class AtomicsRaceTests: XCTestCase
     q.sync(flags: .barrier) {}
   }
 
-  func testRacePointerCAS()
+  func testRacePointerLoadCAS()
   {
     let q = DispatchQueue(label: "", attributes: .concurrent)
 
@@ -65,14 +65,13 @@ class AtomicsRaceTests: XCTestCase
     {
       var p = AtomicMutablePointer(UnsafeMutablePointer<Point>.allocate(capacity: 1))
       let closure = {
+        var c = p.pointer
         while true
         {
-          if let c = p.pointer
+          if p.loadCAS(current: &c, future: nil, type: .weak, orderSwap: .release, orderLoad: .consume),
+            let c = c
           {
-            if p.CAS(current: c, future: nil, type: .weak, orderSuccess: .sequential)
-            {
-              c.deallocate(capacity: 1)
-            }
+            c.deallocate(capacity: 1)
           }
           else // pointer is deallocated
           {
