@@ -107,8 +107,10 @@ internal struct AtomicInt32
     Store32(value, &val, memory_order_relaxed)
   }
 
-  internal var value: Int32 {
-    mutating get { return Read32(&val, memory_order_relaxed) }
+  @inline(__always)
+  internal mutating func load(order: LoadMemoryOrder = .relaxed) -> Int32
+  {
+    return Read32(&val, order.order)
   }
 
   @inline(__always)

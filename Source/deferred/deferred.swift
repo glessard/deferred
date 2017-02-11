@@ -41,12 +41,12 @@ class Deferred<Value>
 
   deinit
   {
-    if let w = waiters.pointer, w != Waiter.invalid
+    if let w = waiters.load(order: .acquire), w != Waiter.invalid
     {
       WaitQueue.dealloc(w)
     }
 
-    if let p = resultp.pointer
+    if let p = resultp.load(order: .acquire)
     {
       p.deinitialize(count: 1)
       p.deallocate(capacity: 1)
@@ -178,7 +178,7 @@ class Deferred<Value>
 
   fileprivate func beginExecution()
   {
-    if started.value == 0 { started.store(1) }
+    if started.load() == 0 { started.store(1) }
   }
 
   /// Set the `Result` of this `Deferred`, change its state to `DeferredState.determined`,
@@ -192,7 +192,7 @@ class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
-    guard resultp.pointer == nil
+    guard resultp.load(order: .relaxed) == nil
     else { return false } // this Deferred is already determined
 
     // optimistically allocate storage for result
@@ -285,13 +285,9 @@ class Deferred<Value>
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
   public var state: DeferredState {
-    if resultp.pointer == nil
+    if resultp.load(order: .relaxed) == nil
     {
-      if started.value == 0
-      {
-        return .waiting
-      }
-      return .executing
+      return (started.load() == 0) ? .waiting : .executing
     }
     return .determined
   }
@@ -301,7 +297,7 @@ class Deferred<Value>
   /// - returns: wheither this `Deferred` has been determined.
 
   public var isDetermined: Bool {
-    return resultp.pointer != nil
+    return resultp.load(order: .relaxed) != nil
   }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
