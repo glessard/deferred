@@ -17,12 +17,12 @@ internal enum CASType
 
 internal enum MemoryOrder: Int
 {
-  case relaxed = 0, consume, acquire, release, acqrel, sequential
+  case relaxed = 0, /* consume, */ acquire = 2, release, acqrel, sequential
 
   var order: memory_order {
     switch self {
     case .relaxed:    return memory_order_relaxed
-    case .consume:    return memory_order_consume
+    // case .consume:    return memory_order_consume
     case .acquire:    return memory_order_acquire
     case .release:    return memory_order_release
     case .acqrel:     return memory_order_acq_rel
@@ -33,12 +33,12 @@ internal enum MemoryOrder: Int
 
 internal enum LoadMemoryOrder: Int
 {
-  case relaxed = 0, consume, acquire, sequential = 5
+  case relaxed = 0, /* consume, */ acquire = 2, sequential = 5
 
   var order: memory_order {
     switch self {
     case .relaxed:    return memory_order_relaxed
-    case .consume:    return memory_order_consume
+    // case .consume:    return memory_order_consume
     case .acquire:    return memory_order_acquire
     case .sequential: return memory_order_seq_cst
     }

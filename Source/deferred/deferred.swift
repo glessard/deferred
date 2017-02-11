@@ -216,7 +216,7 @@ class Deferred<Value>
       }
     }
 
-    let waitQueue = waiters.swap(Waiter.invalid, order: .consume)
+    let waitQueue = waiters.swap(Waiter.invalid, order: .acquire)
     WaitQueue.notifyAll(queue, waitQueue, result)
 
     assert(waiters.pointer == Waiter.invalid, "waiters.pointer has incorrect value \(waiters.pointer)")
@@ -237,7 +237,7 @@ class Deferred<Value>
 
   public func notify(qos: DispatchQoS = .unspecified, task: @escaping (Result<Value>) -> Void)
   {
-    var c = resultp.load(order: .consume)
+    var c = resultp.load(order: .acquire)
     if c == nil
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
@@ -249,7 +249,7 @@ class Deferred<Value>
         assert(waitQueue != waiter)
         waiter.pointee.next = waitQueue
 
-        c = resultp.load(order: .consume)
+        c = resultp.load(order: .acquire)
         if c == nil
         {
           if waiters.loadCAS(current: &waitQueue, future: waiter, type: .weak, orderSwap: .release, orderLoad: .relaxed)
@@ -326,7 +326,7 @@ class Deferred<Value>
 
   public func peek() -> Result<Value>?
   {
-    if let p = resultp.load(order: .consume)
+    if let p = resultp.load(order: .acquire)
     {
       return p.pointee
     }
@@ -338,7 +338,7 @@ class Deferred<Value>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<Value> {
-    var c = resultp.load(order: .consume)
+    var c = resultp.load(order: .acquire)
     if c == nil
     {
       let s = DispatchSemaphore(value: 0)
@@ -347,7 +347,7 @@ class Deferred<Value>
       // was: self.notify(qos: qos_class_self())
       s.wait()
 
-      c = resultp.load(order: .consume)
+      c = resultp.load(order: .acquire)
     }
 
     guard let p = c else { fatalError("Pointer should be non-null in \(#function)") }
@@ -387,7 +387,7 @@ class Deferred<Value>
 
   public func notifying(on queue: DispatchQueue) -> Deferred
   {
-    if let p = resultp.load(order: .consume)
+    if let p = resultp.load(order: .acquire)
     {
       return Deferred(queue: queue, result: p.pointee)
     }
