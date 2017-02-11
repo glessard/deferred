@@ -10,7 +10,7 @@ import class Foundation.NSError
 
 /// A Result type, approximately like everyone else has done.
 ///
-/// The error case does not encode type beyond ErrorType.
+/// The error case does not encode type beyond the Error protocol.
 /// This way there is no need to ever map between error types, which mostly cannot make sense.
 
 public enum Result<Value>: CustomStringConvertible
