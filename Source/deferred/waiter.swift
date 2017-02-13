@@ -39,49 +39,46 @@ struct Waiter<T>
   }
 }
 
-enum WaitQueue
+func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ result: Result<T>)
 {
-  static func notifyAll<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ result: Result<T>)
+  var head = reverseList(tail)
+  while let current = head
   {
-    var head = reverseList(tail)
-    while let current = head
-    {
-      head = current.pointee.next
+    head = current.pointee.next
 
-      current.pointee.notify(queue, result)
+    current.pointee.notify(queue, result)
 
-      current.deinitialize(count: 1)
-      current.deallocate(capacity: 1)
-    }
+    current.deinitialize(count: 1)
+    current.deallocate(capacity: 1)
   }
+}
 
-  static func dealloc<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?)
+func deallocateWaiters<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?)
+{
+  var waiter = tail
+  while let current = waiter
   {
-    var waiter = tail
-    while let current = waiter
-    {
-      waiter = current.pointee.next
+    waiter = current.pointee.next
 
-      current.deinitialize(count: 1)
-      current.deallocate(capacity: 1)
-    }
+    current.deinitialize(count: 1)
+    current.deallocate(capacity: 1)
   }
+}
 
-  private static func reverseList<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?) -> UnsafeMutablePointer<Waiter<T>>?
+private func reverseList<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?) -> UnsafeMutablePointer<Waiter<T>>?
+{
+  if tail != nil && tail!.pointee.next != nil
   {
-    if tail != nil && tail!.pointee.next != nil
+    var head: UnsafeMutablePointer<Waiter<T>>? = nil
+    var current = tail
+    while let element = current
     {
-      var head: UnsafeMutablePointer<Waiter<T>>? = nil
-      var current = tail
-      while let element = current
-      {
-        current = element.pointee.next
+      current = element.pointee.next
 
-        element.pointee.next = head
-        head = element
-      }
-      return head
+      element.pointee.next = head
+      head = element
     }
-    return tail
+    return head
   }
+  return tail
 }

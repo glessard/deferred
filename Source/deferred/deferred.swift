@@ -43,7 +43,7 @@ class Deferred<Value>
   {
     if let w = waiters.load(order: .acquire), w != Waiter.invalid
     {
-      WaitQueue.dealloc(w)
+      deallocateWaiters(w)
     }
 
     if let p = resultp.load(order: .acquire)
@@ -217,7 +217,7 @@ class Deferred<Value>
     }
 
     let waitQueue = waiters.swap(Waiter.invalid, order: .acquire)
-    WaitQueue.notifyAll(queue, waitQueue, result)
+    notifyWaiters(queue, waitQueue, result)
 
     assert(waiters.pointer == Waiter.invalid, "waiters.pointer has incorrect value \(waiters.pointer)")
 
