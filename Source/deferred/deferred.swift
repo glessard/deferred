@@ -9,7 +9,6 @@
 import Dispatch
 
 #if SWIFT_PACKAGE
-  import utilities
   import Atomics
 #endif
 
