@@ -8,9 +8,6 @@
 
 import Dispatch
 
-#if SWIFT_PACKAGE
-  import utilities
-#endif
 
 extension Deferred
 {

@@ -28,8 +28,6 @@
 		035D0C221D84A8DB00F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C131D84A8DB00F4B44B /* result.swift */; };
 		035D0C231D84A8DB00F4B44B /* waiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C141D84A8DB00F4B44B /* waiter.swift */; };
 		035D0C241D84A8DB00F4B44B /* waiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C141D84A8DB00F4B44B /* waiter.swift */; };
-		035D0C291D84A8FD00F4B44B /* dispatchqos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C261D84A8FD00F4B44B /* dispatchqos.swift */; };
-		035D0C2A1D84A8FD00F4B44B /* dispatchqos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C261D84A8FD00F4B44B /* dispatchqos.swift */; };
 		0366AE561DF0FEC400F4B44B /* DeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE501DF0FEC400F4B44B /* DeferredTests.swift */; };
 		0366AE571DF0FEC400F4B44B /* DeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE501DF0FEC400F4B44B /* DeferredTests.swift */; };
 		0366AE581DF0FEC400F4B44B /* ResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE511DF0FEC400F4B44B /* ResultTests.swift */; };
@@ -57,6 +55,8 @@
 		03D3879F1B7C713500F4B44B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 03D3879D1B7C713500F4B44B /* Main.storyboard */; };
 		03D387A11B7C713500F4B44B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03D387A01B7C713500F4B44B /* Assets.xcassets */; };
 		03D387A41B7C713500F4B44B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 03D387A21B7C713500F4B44B /* LaunchScreen.storyboard */; };
+		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
+		03D5D78B1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
 		03D6A8491DF786F300F4B44B /* ClangAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A8471DF786F300F4B44B /* ClangAtomics.c */; };
 		03D6A84A1DF786F300F4B44B /* ClangAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A8471DF786F300F4B44B /* ClangAtomics.c */; };
 		03D6A84B1DF786F300F4B44B /* ClangAtomics.h in Headers */ = {isa = PBXBuildFile; fileRef = 03D6A8481DF786F300F4B44B /* ClangAtomics.h */; };
@@ -120,7 +120,6 @@
 		035D0C121D84A8DB00F4B44B /* nsurlsession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nsurlsession.swift; path = deferred/nsurlsession.swift; sourceTree = "<group>"; };
 		035D0C131D84A8DB00F4B44B /* result.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = result.swift; path = deferred/result.swift; sourceTree = "<group>"; };
 		035D0C141D84A8DB00F4B44B /* waiter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = waiter.swift; path = deferred/waiter.swift; sourceTree = "<group>"; };
-		035D0C261D84A8FD00F4B44B /* dispatchqos.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = dispatchqos.swift; path = ../Source/utilities/dispatchqos.swift; sourceTree = SOURCE_ROOT; };
 		0366AE501DF0FEC400F4B44B /* DeferredTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredTests.swift; path = DeferredTests/DeferredTests.swift; sourceTree = "<group>"; };
 		0366AE511DF0FEC400F4B44B /* ResultTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ResultTests.swift; path = DeferredTests/ResultTests.swift; sourceTree = "<group>"; };
 		0366AE521DF0FEC400F4B44B /* TBDTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TBDTests.swift; path = DeferredTests/TBDTests.swift; sourceTree = "<group>"; };
@@ -149,6 +148,7 @@
 		03D387A01B7C713500F4B44B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		03D387A31B7C713500F4B44B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		03D387A51B7C713500F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "dispatch-utilities.swift"; path = "deferred/dispatch-utilities.swift"; sourceTree = "<group>"; };
 		03D6A8461DF786F300F4B44B /* module.map */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = module.map; sourceTree = "<group>"; };
 		03D6A8471DF786F300F4B44B /* ClangAtomics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ClangAtomics.c; sourceTree = "<group>"; };
 		03D6A8481DF786F300F4B44B /* ClangAtomics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClangAtomics.h; sourceTree = "<group>"; };
@@ -207,6 +207,7 @@
 				035D0C121D84A8DB00F4B44B /* nsurlsession.swift */,
 				035D0C131D84A8DB00F4B44B /* result.swift */,
 				035D0C141D84A8DB00F4B44B /* waiter.swift */,
+				03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */,
 			);
 			name = Source;
 			path = ../Source;
@@ -218,7 +219,6 @@
 				0358964E1DFC8DF200F4B44B /* atomics.swift */,
 				03D6A8451DF786BA00F4B44B /* atomics */,
 				03850ADF1C76AB7D00F4B44B /* syncprint.swift */,
-				035D0C261D84A8FD00F4B44B /* dispatchqos.swift */,
 			);
 			path = utilities;
 			sourceTree = SOURCE_ROOT;
@@ -553,10 +553,10 @@
 				03D6A8491DF786F300F4B44B /* ClangAtomics.c in Sources */,
 				035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				035D0C1F1D84A8DB00F4B44B /* nsurlsession.swift in Sources */,
-				035D0C291D84A8FD00F4B44B /* dispatchqos.swift in Sources */,
 				035D0C211D84A8DB00F4B44B /* result.swift in Sources */,
 				035D0C1B1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
 				035D0C1D1D84A8DB00F4B44B /* deferred.swift in Sources */,
+				03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */,
 				035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */,
 				035D0C191D84A8DB00F4B44B /* deferred-extras.swift in Sources */,
 				035D0C231D84A8DB00F4B44B /* waiter.swift in Sources */,
@@ -588,10 +588,10 @@
 				03D6A84A1DF786F300F4B44B /* ClangAtomics.c in Sources */,
 				035D0C181D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				035D0C201D84A8DB00F4B44B /* nsurlsession.swift in Sources */,
-				035D0C2A1D84A8FD00F4B44B /* dispatchqos.swift in Sources */,
 				035D0C221D84A8DB00F4B44B /* result.swift in Sources */,
 				035D0C1C1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
 				035D0C1E1D84A8DB00F4B44B /* deferred.swift in Sources */,
+				03D5D78B1E52339C00F4B44B /* dispatch-utilities.swift in Sources */,
 				035D0C161D84A8DB00F4B44B /* deferred-combine.swift in Sources */,
 				035D0C1A1D84A8DB00F4B44B /* deferred-extras.swift in Sources */,
 				035D0C241D84A8DB00F4B44B /* waiter.swift in Sources */,
