@@ -10,12 +10,12 @@
 
 import ClangAtomics
 
-internal enum CASType
+enum CASType
 {
   case strong, weak
 }
 
-internal enum MemoryOrder: Int
+enum MemoryOrder: Int
 {
   case relaxed = 0, /* consume, */ acquire = 2, release, acqrel, sequential
 
@@ -31,7 +31,7 @@ internal enum MemoryOrder: Int
   }
 }
 
-internal enum LoadMemoryOrder: Int
+enum LoadMemoryOrder: Int
 {
   case relaxed = 0, /* consume, */ acquire = 2, sequential = 5
 
@@ -45,7 +45,7 @@ internal enum LoadMemoryOrder: Int
   }
 }
 
-internal enum StoreMemoryOrder: Int
+enum StoreMemoryOrder: Int
 {
   case relaxed = 0, release = 3, sequential = 5
 
@@ -58,32 +58,32 @@ internal enum StoreMemoryOrder: Int
   }
 }
 
-internal struct AtomicMutablePointer<Pointee>
+struct AtomicMutablePointer<Pointee>
 {
-  fileprivate var ptr = RawPointer()
-  internal init(_ p: UnsafeMutablePointer<Pointee>? = nil)
+  private var ptr = RawPointer()
+  init(_ p: UnsafeMutablePointer<Pointee>? = nil)
   {
     InitRawPtr(UnsafeRawPointer(p), &ptr)
   }
 
   @inline(__always)
-  internal mutating func load(order: LoadMemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
+  mutating func load(order: LoadMemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
   {
     return ReadRawPtr(&ptr, order.order)?.assumingMemoryBound(to: Pointee.self)
   }
 
   @inline(__always)
-  internal mutating func swap(_ pointer: UnsafeMutablePointer<Pointee>?, order: MemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
+  mutating func swap(_ pointer: UnsafeMutablePointer<Pointee>?, order: MemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
   {
     return SwapRawPtr(pointer, &ptr, order.order)?.assumingMemoryBound(to: (Pointee).self)
   }
 
   @inline(__always) @discardableResult
-  public mutating func loadCAS(current: UnsafeMutablePointer<UnsafeMutablePointer<Pointee>?>,
-                               future: UnsafeMutablePointer<Pointee>?,
-                               type: CASType = .weak, // ignored
-                               orderSwap: MemoryOrder = .sequential,
-                               orderLoad: LoadMemoryOrder = .sequential) -> Bool
+  mutating func loadCAS(current: UnsafeMutablePointer<UnsafeMutablePointer<Pointee>?>,
+                        future: UnsafeMutablePointer<Pointee>?,
+                        type: CASType = .weak, // ignored
+                        orderSwap: MemoryOrder = .sequential,
+                        orderLoad: LoadMemoryOrder = .sequential) -> Bool
   {
     assert(orderLoad.rawValue <= orderSwap.rawValue)
     return current.withMemoryRebound(to: Optional<UnsafeRawPointer>.self, capacity: 1) {
@@ -93,22 +93,22 @@ internal struct AtomicMutablePointer<Pointee>
   }
 }
 
-internal struct AtomicInt32
+struct AtomicInt32
 {
-  fileprivate var val = Atomic32()
-  internal init(_ value: Int32 = 0)
+  private var val = Atomic32()
+  init(_ value: Int32 = 0)
   {
     Init32(value, &val)
   }
 
   @inline(__always)
-  internal mutating func load(order: LoadMemoryOrder = .relaxed) -> Int32
+  mutating func load(order: LoadMemoryOrder = .relaxed) -> Int32
   {
     return Read32(&val, order.order)
   }
 
   @inline(__always)
-  internal mutating func store(_ value: Int32, order: StoreMemoryOrder = .relaxed)
+  mutating func store(_ value: Int32, order: StoreMemoryOrder = .relaxed)
   {
     Store32(value, &val, order.order)
   }
