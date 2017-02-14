@@ -66,12 +66,6 @@ internal struct AtomicMutablePointer<Pointee>
     StoreRawPtr(UnsafeRawPointer(p), &ptr, memory_order_relaxed)
   }
 
-  internal var pointer: UnsafeMutablePointer<Pointee>? {
-    mutating get {
-      return ReadRawPtr(&ptr, memory_order_relaxed)?.assumingMemoryBound(to: Pointee.self)
-    }
-  }
-
   @inline(__always)
   internal mutating func load(order: LoadMemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
   {

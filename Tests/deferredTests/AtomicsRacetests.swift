@@ -65,7 +65,7 @@ class AtomicsRaceTests: XCTestCase
     {
       var p = AtomicMutablePointer(UnsafeMutablePointer<Point>.allocate(capacity: 1))
       let closure = {
-        var c = p.pointer
+        var c = p.load()
         while true
         {
           if p.loadCAS(current: &c, future: nil, type: .weak, orderSwap: .release, orderLoad: .acquire),
