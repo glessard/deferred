@@ -63,7 +63,7 @@ internal struct AtomicMutablePointer<Pointee>
   fileprivate var ptr = RawPointer()
   internal init(_ p: UnsafeMutablePointer<Pointee>? = nil)
   {
-    StoreRawPtr(UnsafeRawPointer(p), &ptr, memory_order_relaxed)
+    InitRawPtr(UnsafeRawPointer(p), &ptr)
   }
 
   @inline(__always)
@@ -98,7 +98,7 @@ internal struct AtomicInt32
   fileprivate var val = Atomic32()
   internal init(_ value: Int32 = 0)
   {
-    Store32(value, &val, memory_order_relaxed)
+    Init32(value, &val)
   }
 
   @inline(__always)
