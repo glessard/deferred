@@ -75,7 +75,7 @@ internal struct AtomicMutablePointer<Pointee>
   @inline(__always)
   internal mutating func swap(_ pointer: UnsafeMutablePointer<Pointee>?, order: MemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
   {
-    return SwapRawPtr(UnsafePointer(pointer), &ptr, order.order)?.assumingMemoryBound(to: (Pointee).self)
+    return SwapRawPtr(pointer, &ptr, order.order)?.assumingMemoryBound(to: (Pointee).self)
   }
 
   @inline(__always) @discardableResult
