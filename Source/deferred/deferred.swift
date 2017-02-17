@@ -29,8 +29,7 @@ public enum DeferredState { case waiting, executing, determined }
 ///
 /// A closure supplied to the `notify` method will be called after the `Deferred` has become determined.
 
-open // would prefer "public", but an "open" class can only descend from another "open" class.
-class Deferred<Value>
+open class Deferred<Value>
 {
   fileprivate let queue: DispatchQueue
 
@@ -225,7 +224,7 @@ class Deferred<Value>
   ///
   /// - parameter task:  the closure to be enqueued
 
-  public func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
+  open func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
   {
     var c = resultp.load(order: .acquire)
     if c == nil
@@ -292,7 +291,7 @@ class Deferred<Value>
   /// - returns: whether the cancellation was performed successfully.
 
   @discardableResult
-  public func cancel(_ reason: String = "") -> Bool
+  open func cancel(_ reason: String = "") -> Bool
   {
     return determine(Result.error(DeferredError.canceled(reason)))
   }
@@ -686,7 +685,7 @@ open class TBD<Value>: Deferred<Value>
 
   /// Change the state of this `TBD` from `.waiting` to `.executing`
 
-  public override func beginExecution()
+  open override func beginExecution()
   {
     super.beginExecution()
   }
