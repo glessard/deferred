@@ -672,9 +672,10 @@ open class TBD<Value>: Deferred<Value>
   /// - parameter value: the intended value for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(_ value: Value) throws
+  @discardableResult
+  public func determine(_ value: Value) -> Bool
   {
-    try determine(Result.value(value), place: #function)
+    return determine(Result.value(value))
   }
 
   /// Set this `Deferred` to an error and change its state to `DeferredState.determined`
@@ -683,9 +684,10 @@ open class TBD<Value>: Deferred<Value>
   /// - parameter error: the intended error for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(_ error: Error) throws
+  @discardableResult
+  public func determine(_ error: Error) -> Bool
   {
-    try determine(Result.error(error), place: #function)
+    return determine(Result.error(error))
   }
 
   /// Set the `Result` of this `Deferred` and change its state to `DeferredState.determined`
@@ -694,14 +696,10 @@ open class TBD<Value>: Deferred<Value>
   /// - parameter result: the intended `Result` for this `Deferred`
   /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
 
-  public func determine(_ result: Result<Value>) throws
+  @discardableResult
+  public override func determine(_ result: Result<Value>) -> Bool
   {
-    try determine(result, place: #function)
-  }
-
-  private func determine(_ result: Result<Value>, place: String) throws
-  {
-    guard super.determine(result) else { throw DeferredError.alreadyDetermined(place) }
+    return super.determine(result)
   }
 
   /// Change the state of this `TBD` from `.waiting` to `.executing`

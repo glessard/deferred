@@ -68,7 +68,7 @@ extension Collection where Index == Indices.Iterator.Element
         iteration in
         deferreds[iteration].beginExecution()
         let result = Result { try task(self[indexList[iteration]]) }
-        _ = try? deferreds[iteration].determine(result) // an error here means `deferred[index]` has been canceled
+        deferreds[iteration].determine(result) // an error here means `deferred[index]` has been canceled
       }
     }
     return deferreds

@@ -192,9 +192,7 @@ class DeferredCombinationTests: XCTestCase
     let deferreds = (0..<count).map { _ in TBD<Int>() }
     let first = firstValue(AnySequence(deferreds.map({$0 as Deferred})), cancelOthers: true)
 
-    do { try deferreds[lucky].determine(lucky) }
-    catch { XCTFail() }
-
+    XCTAssert(deferreds[lucky].determine(lucky))
     XCTAssert(first.value == lucky)
 
     deferreds.forEach {

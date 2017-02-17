@@ -204,7 +204,7 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>], cancelOthers:
     deferred.notify {
       _ in
       // an error here just means `deferred` wasn't the first to become determined
-      _ = try? first.determine(deferred)
+      first.determine(deferred)
     }
   }
 
@@ -232,7 +232,7 @@ public func firstDetermined<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bo
       deferred.notify {
         _ in
         // an error here just means `deferred` wasn't the first to become determined
-        _ = try? first.determine(deferred)
+        first.determine(deferred)
       }
       if cancelOthers
       {

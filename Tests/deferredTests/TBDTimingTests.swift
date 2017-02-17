@@ -41,7 +41,7 @@ class TBDTimingTests: XCTestCase
         }
       }
 
-      try! first.determine( (0, ref, ref) )
+      first.determine( (0, ref, ref) )
 
       switch dt.result
       {
@@ -68,7 +68,7 @@ class TBDTimingTests: XCTestCase
       }
 
       let dt = start.map { start in Date().timeIntervalSince(start) }
-      try! start.determine(Date())
+      start.determine(Date())
 
       switch dt.result
       {

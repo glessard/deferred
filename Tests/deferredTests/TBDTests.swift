@@ -35,16 +35,14 @@ class TBDTests: XCTestCase
     let tbd = TBD<UInt32>()
     tbd.beginExecution()
     let value = nzRandom()
-    do { try tbd.determine(value) }
-    catch { XCTFail() }
+    XCTAssert(tbd.determine(value))
     XCTAssert(tbd.isDetermined)
     XCTAssert(tbd.value == value)
     XCTAssert(tbd.error == nil)
 
     let tbe = TBD<Void>()
     tbe.beginExecution()
-    do { try tbe.determine(TestError(value)) }
-    catch { XCTFail() }
+    XCTAssert(tbe.determine(TestError(value)))
     XCTAssert(tbe.isDetermined)
     XCTAssert(tbe.value == nil)
     XCTAssert(tbe.error as? TestError == TestError(value))
@@ -57,8 +55,7 @@ class TBDTests: XCTestCase
     var value = nzRandom()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.01) {
       value = nzRandom()
-      do { try tbd.determine(value) }
-      catch { XCTFail() }
+      XCTAssert(tbd.determine(value))
     }
 
     XCTAssert(tbd.isDetermined == false)
@@ -68,18 +65,7 @@ class TBDTests: XCTestCase
     XCTAssert(tbd.error == nil)
 
     // Try and fail to determine tbd a second time.
-    do {
-      try tbd.determine(value)
-      XCTFail()
-    }
-    catch let error as DeferredError {
-      _ = String(describing: error)
-      if case let .alreadyDetermined(message) = error
-      {
-        XCTAssert(error == .alreadyDetermined(message))
-      }
-    }
-    catch { XCTFail() }
+    XCTAssert(tbd.determine(value) == false)
   }
 
   func testCancel()
@@ -103,15 +89,13 @@ class TBDTests: XCTestCase
     let tbd3 = TBD<UInt32>()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) { XCTAssert(tbd3.cancel() == true) }
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
-      do {
-        try tbd3.determine(nzRandom())
+      if tbd3.determine(nzRandom())
+      {
         XCTFail()
       }
-      catch DeferredError.alreadyDetermined {
+      else
+      {
         e.fulfill()
-      }
-      catch {
-        XCTFail()
       }
     }
 
@@ -123,7 +107,7 @@ class TBDTests: XCTestCase
     let value = nzRandom()
     let e1 = expectation(description: "TBD notification after determination")
     let tbd = TBD<UInt32>()
-    try! tbd.determine(value)
+    tbd.determine(value)
 
     tbd.notify {
       XCTAssert( $0 == Result.value(value) )
@@ -145,8 +129,7 @@ class TBDTests: XCTestCase
 
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 10e-6) {
       value = nzRandom()
-      do { try tbd.determine(value) }
-      catch { XCTFail() }
+      XCTAssert(tbd.determine(value))
     }
 
     waitForExpectations(timeout: 1.0)

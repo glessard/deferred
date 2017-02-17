@@ -79,17 +79,17 @@ public extension URLSession
       (data: Data?, response: URLResponse?, error: Error?) in
       if let error = error
       {
-        _ = try? tbd.determine(error)
+        tbd.determine(error)
         return
       }
 
       if let d = data, let r = response as? HTTPURLResponse
       {
-        _ = try? tbd.determine( (d,r) )
+        tbd.determine( (d,r) )
         return
       }
       // Probably an impossible situation
-      _ = try? tbd.determine(URLSessionError.InvalidState)
+      tbd.determine(URLSessionError.InvalidState)
     }
   }
 
@@ -139,12 +139,12 @@ extension URLSession
           let URLSessionDownloadTaskResumeData = NSURLSessionDownloadTaskResumeData
 #endif
           if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
-          { _ = try? tbd.determine(URLSessionError.InterruptedDownload(error, data)) }
+          { tbd.determine(URLSessionError.InterruptedDownload(error, data)) }
           else
-          { _ = try? tbd.determine(DeferredError.canceled(error.localizedDescription)) }
+          { tbd.determine(DeferredError.canceled(error.localizedDescription)) }
         }
         else
-        { _ = try? tbd.determine(error) }
+        { tbd.determine(error) }
         return
       }
 
@@ -152,16 +152,16 @@ extension URLSession
       {
         do {
           let f = try FileHandle(forReadingFrom: u)
-          _ = try? tbd.determine( (u,f,r) )
+          tbd.determine( (u,f,r) )
         }
         catch {
           // Likely an impossible situation
-          _ = try? tbd.determine(error)
+          tbd.determine(error)
         }
         return
       }
       // Probably an impossible situation
-      _ = try? tbd.determine(URLSessionError.InvalidState)
+      tbd.determine(URLSessionError.InvalidState)
     }
   }
 
@@ -204,17 +204,17 @@ extension URLSession
       (data: Data?, response: URLResponse?, error: Error?) in
       if let error = error
       {
-        _ = try? tbd.determine(error)
+        tbd.determine(error)
         return
       }
 
       if let d = data, let r = response as? HTTPURLResponse
       {
-        _ = try? tbd.determine( (d,r) )
+        tbd.determine( (d,r) )
         return
       }
       // Probably an impossible situation
-      _ = try? tbd.determine(URLSessionError.InvalidState)
+      tbd.determine(URLSessionError.InvalidState)
     }
   }
 
