@@ -589,7 +589,6 @@ class DeferredTests: XCTestCase
     {
       XCTAssert(e.description != "")
       XCTAssert(e == DeferredError.canceled(""))
-      XCTAssert(e != DeferredError.alreadyDetermined(""))
     }
   }
 
