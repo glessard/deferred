@@ -60,7 +60,7 @@ enum StoreMemoryOrder: Int
 
 struct AtomicMutablePointer<Pointee>
 {
-  private var ptr = RawPointer()
+  @_versioned var ptr = RawPointer()
   init(_ p: UnsafeMutablePointer<Pointee>? = nil)
   {
     InitRawPtr(UnsafeRawPointer(p), &ptr)
@@ -95,7 +95,7 @@ struct AtomicMutablePointer<Pointee>
 
 struct AtomicInt32
 {
-  private var val = Atomic32()
+  @_versioned var val = Atomic32()
   init(_ value: Int32 = 0)
   {
     Init32(value, &val)
