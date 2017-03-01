@@ -218,7 +218,7 @@ class Deferred<Value>
     let waitQueue = waiters.swap(Waiter.invalid, order: .acquire)
     notifyWaiters(queue, waitQueue, result)
 
-    assert(waiters.load() == Waiter.invalid, "waiters.pointer has incorrect value \(waiters.load())")
+    assert(waiters.load() == Waiter.invalid, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
 
     // The result is now available for the world
     return true
