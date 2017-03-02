@@ -72,7 +72,7 @@ struct AtomicMutablePointer<Pointee>
     return ReadRawPtr(&ptr, order.order)?.assumingMemoryBound(to: Pointee.self)
   }
 
-  @inline(__always)
+  @inline(__always) @discardableResult
   mutating func swap(_ pointer: UnsafeMutablePointer<Pointee>?, order: MemoryOrder = .sequential) -> UnsafeMutablePointer<Pointee>?
   {
     return SwapRawPtr(pointer, &ptr, order.order)?.assumingMemoryBound(to: (Pointee).self)
@@ -86,6 +86,7 @@ struct AtomicMutablePointer<Pointee>
                         orderLoad: LoadMemoryOrder = .sequential) -> Bool
   {
     assert(orderLoad.rawValue <= orderSwap.rawValue)
+    assert(orderSwap == .release ? orderLoad == .relaxed : true)
     return current.withMemoryRebound(to: Optional<UnsafeRawPointer>.self, capacity: 1) {
       current in
       WeakCASRawPtr(current, future, &ptr, orderSwap.order, orderLoad.order)
@@ -111,6 +112,26 @@ struct AtomicInt32
   mutating func store(_ value: Int32, order: StoreMemoryOrder = .relaxed)
   {
     Store32(value, &val, order.order)
+  }
+
+  @inline(__always) @discardableResult
+  mutating func loadCAS(current: UnsafeMutablePointer<Int32>, future: Int32,
+                        type: CASType = .weak, // ignored
+                        orderSwap: MemoryOrder = .relaxed,
+                        orderLoad: LoadMemoryOrder = .relaxed) -> Bool
+  {
+    assert(orderLoad.rawValue <= orderSwap.rawValue)
+    assert(orderSwap == .release ? orderLoad == .relaxed : true)
+    return WeakCAS32(current, future, &val, orderSwap.order, orderLoad.order)
+  }
+
+  @inline(__always) @discardableResult
+  mutating func CAS(current: Int32, future: Int32,
+                    type: CASType = .weak, // ignored
+                    order: MemoryOrder = .relaxed) -> Bool
+  {
+    var expect = current
+    return loadCAS(current: &expect, future: future, type: type, orderSwap: order, orderLoad: .relaxed)
   }
 }
 
