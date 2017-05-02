@@ -21,9 +21,9 @@ extension DeferredError: CustomStringConvertible
     switch self
     {
     case .canceled(let message):
-      guard message != ""
-        else { return "Deferred was canceled before result became available" }
-      return "Deferred canceled: \(message)"
+      return message.isEmpty ?
+        "Deferred was canceled before a result became available" :
+        "Deferred canceled: \(message)"
     }
   }
 }
@@ -34,6 +34,6 @@ public func == (a: DeferredError, b: DeferredError) -> Bool
 {
   switch (a,b)
   {
-  case let (.canceled(ma), .canceled(mb)):                   return ma == mb
+  case (.canceled(let ma), .canceled(let mb)): return ma == mb
   }
 }
