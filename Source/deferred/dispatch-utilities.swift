@@ -28,21 +28,39 @@ extension DispatchTimeInterval
 
 extension DispatchQoS
 {
-  static func current(fallback: DispatchQoS.QoSClass = .utility) -> DispatchQoS
+  static var current: DispatchQoS?
   {
-    let qosClass = DispatchQoS.QoSClass.current(fallback: fallback)
-    return DispatchQoS(qosClass: qosClass, relativePriority: 0)
+    if let qosClass = DispatchQoS.QoSClass.current
+    {
+      return DispatchQoS(qosClass: qosClass, relativePriority: 0)
+    }
+    return nil
   }
 }
 
 extension DispatchQoS.QoSClass
 {
-  static func current(fallback: DispatchQoS.QoSClass = .utility) -> DispatchQoS.QoSClass
+  static var current: DispatchQoS.QoSClass?
   {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    return DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? fallback
+    return DispatchQoS.QoSClass(rawValue: qos_class_self())
 #else // platforms that rely on swift-corelibs-libdispatch
-    return fallback
+    return nil
 #endif
+  }
+}
+
+extension DispatchQueue
+{
+  func async(qos: DispatchQoS?, execute closure: @escaping () -> Void)
+  {
+    if let qos = qos
+    {
+      self.async(qos: qos, flags: [.enforceQoS], execute: closure)
+    }
+    else
+    {
+      self.async(execute: closure)
+    }
   }
 }

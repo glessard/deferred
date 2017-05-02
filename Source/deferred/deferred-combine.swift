@@ -92,7 +92,7 @@ public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: @escap
 public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
   where S.Iterator.Element == Deferred<T>
 {
-  let qos = DispatchQoS(qosClass: DispatchQoS.QoSClass.current(fallback: .default), relativePriority: 0)
+  let qos = DispatchQoS(qosClass: DispatchQoS.QoSClass.current ?? .default, relativePriority: 0)
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
   let accumulator = Deferred(queue: queue, result: Result.value(initial))
 
@@ -223,10 +223,10 @@ public func firstDetermined<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bo
 {
   let first = TBD<Deferred<Value>>()
 
-  let qos = DispatchQoS.QoSClass.current(fallback: .utility)
+  let qosClass = DispatchQoS.QoSClass.current ?? .utility
 
   // We iterate on a background thread because the sequence (type S) could block on next()
-  DispatchQueue.global(qos: qos).async {
+  DispatchQueue.global(qos: qosClass).async {
     deferreds.forEach {
       deferred in
       deferred.notify {

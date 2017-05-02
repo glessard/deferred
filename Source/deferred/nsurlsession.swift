@@ -57,7 +57,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     }
   }
 
-  public override func notify(qos: DispatchQoS = .unspecified, task: @escaping (Result<Value>) -> Void)
+  public override func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
   {
     self.task?.resume()
     self.beginExecution()
