@@ -10,11 +10,11 @@ import Dispatch
 
 struct Waiter<T>
 {
-  private let qos: DispatchQoS
+  private let qos: DispatchQoS?
   private let handler: (Result<T>) -> Void
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
-  init(_ qos: DispatchQoS, _ handler: @escaping (Result<T>) -> Void)
+  init(_ qos: DispatchQoS? = nil, _ handler: @escaping (Result<T>) -> Void)
   {
     self.qos = qos
     self.handler = handler
@@ -22,16 +22,7 @@ struct Waiter<T>
 
   fileprivate func notify(_ queue: DispatchQueue, _ result: Result<T>)
   {
-    let closure = { [ handler = self.handler ] in handler(result) }
-
-    if qos == .unspecified
-    {
-      queue.async(execute: closure)
-    }
-    else
-    {
-      queue.async(qos: qos, flags: [.enforceQoS], execute: closure)
-    }
+    queue.async(qos: qos) { [ handler = self.handler ] in handler(result) }
   }
 
   static var invalid: UnsafeMutablePointer<Waiter<T>>? {
