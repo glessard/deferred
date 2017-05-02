@@ -31,15 +31,14 @@ public enum URLSessionError: Error
 
 public class DeferredURLSessionTask<Value>: TBD<Value>
 {
-  fileprivate weak var sessionTask: URLSessionTask? = nil
+  private weak var sessionTask: URLSessionTask? = nil
 
   init() { super.init(queue: DispatchQueue.global()) }
 
   @discardableResult
   override public func cancel(_ reason: String = "") -> Bool
   {
-    guard !self.isDetermined,
-          let task = sessionTask
+    guard !self.isDetermined, let task = sessionTask
     else { return super.cancel(reason) }
 
     // try to propagate the cancellation upstream
@@ -109,7 +108,7 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
   override func cancel(_ reason: String = "") -> Bool
   {
     guard !self.isDetermined,
-          let task = sessionTask as? URLSessionDownloadTask
+          let task = self.task as? URLSessionDownloadTask
     else { return super.cancel(reason) }
 
     // try to propagate the cancellation upstream
