@@ -267,7 +267,7 @@ class DeferredCombinationTimedTests: XCTestCase
     ]
   }
 
-  let loopTestCount = 10_000
+  let loopTestCount = 5_000
 
   func testPerformanceReduce()
   {
@@ -290,7 +290,7 @@ class DeferredCombinationTimedTests: XCTestCase
 
   func testPerformanceABAProneReduce()
   {
-    let iterations = 10 // loopTestCount
+    let iterations = loopTestCount / 10
 
     measureMetrics([XCTPerformanceMetric_WallClockTime], automaticallyStartMeasuring: false) {
       let inputs = (1...iterations).map {Deferred(value: $0) }
