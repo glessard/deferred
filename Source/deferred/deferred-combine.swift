@@ -172,20 +172,17 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstValue<Value>(_ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Value>
+public func firstValue<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                              _ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Value>
 {
-  if deferreds.count == 0
-  {
-    return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
-  }
-
-  return firstDetermined(deferreds, cancelOthers: cancelOthers).flatMap { $0 }
+  return firstDetermined(qos: qos, deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
 
-public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
+public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                           _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
   where S.Iterator.Element == Deferred<Value>
 {
-  return firstDetermined(deferreds, cancelOthers: cancelOthers).flatMap { $0 }
+  return firstDetermined(qos: qos, deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
@@ -198,14 +195,17 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = 
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstDetermined<Value>(_ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                   _ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
 {
   if deferreds.count == 0
   {
-    return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
+    let error = DeferredError.canceled("cannot find first determined from an empty set in \(#function)")
+    return Deferred(qos: qos, result: Result.error(error))
   }
 
-  let first = TBD<Deferred<Value>>()
+  let queue = DispatchQueue.global(qos: qos.qosClass)
+  let first = TBD<Deferred<Value>>(queue: queue)
 
   deferreds.forEach {
     deferred in
@@ -214,37 +214,40 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>], cancelOthers:
       // an error here just means `deferred` wasn't the first to become determined
       first.determine(deferred)
     }
-  }
 
-  if cancelOthers
-  {
-    first.notify { _ in deferreds.forEach { $0.cancel() } }
+    if cancelOthers { first.notify { _ in deferred.cancel() } }
   }
 
   return first
 }
 
-public func firstDetermined<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                                _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
   where S.Iterator.Element == Deferred<Value>
 {
-  let first = TBD<Deferred<Value>>()
-
-  let qosClass = DispatchQoS.QoSClass.current ?? .utility
+  let queue = DispatchQueue.global(qos: qos.qosClass)
+  let first = TBD<Deferred<Value>>(queue: queue)
 
   // We iterate on a background thread because the sequence (type S) could block on next()
-  DispatchQueue.global(qos: qosClass).async {
+  queue.async {
+    var subscribed = false
     deferreds.forEach {
       deferred in
+      subscribed = true
       deferred.notify {
         _ in
         // an error here just means `deferred` wasn't the first to become determined
         first.determine(deferred)
       }
-      if cancelOthers
-      {
-        first.notify { _ in deferred.cancel() }
-      }
+
+      if cancelOthers { first.notify { _ in deferred.cancel() } }
+    }
+
+    if !subscribed
+    {
+      first.cancel("cannot find first determined from an empty set in \(#function)")
     }
   }
+
   return first
 }
