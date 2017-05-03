@@ -100,12 +100,12 @@ open class Deferred<Value>
   public convenience init(qos: DispatchQoS, task: @escaping () throws -> Value)
   {
     self.init(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
-    // was queue: dispatch_get_global_queue(qos, 0)
   }
 
   /// Initialize with a computation task to be performed on the specified queue
   ///
-  /// - parameter queue: the `DispatchQueue` onto which the computation (and notifications) will be enqueued
+  /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
+  /// - parameter qos:   the Quality-of-Service class at which the computation should be performed; defaults to the QOS class of `queue`
   /// - parameter task:  the computation to be performed
 
   public convenience init(queue: DispatchQueue, qos: DispatchQoS? = nil, task: @escaping () throws -> Value)
@@ -124,14 +124,12 @@ open class Deferred<Value>
 
   /// Initialize to an already determined state
   ///
-  /// - parameter qos:    the quality of service of the concurrent queue upon which to execute future notifications for this `Deferred`
-  ///                     `qos` defaults to the currently-executing quality-of-service class.
+  /// - parameter qos:    the Quality-of-Service class at which the notifications should be performed.
   /// - parameter result: the result of this `Deferred`
 
   public convenience init(qos: DispatchQoS, result: Result<Value>)
   {
     self.init(queue: DispatchQueue.global(qos: qos.qosClass), result: result)
-    // was queue: dispatch_get_global_queue(qos, 0)
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -216,13 +214,14 @@ open class Deferred<Value>
 
   // MARK: public interface
 
-  /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined
+  /// Enqueue a closure to be performed asynchronously as a notification after this `Deferred` becomes determined.
   /// This operation is lock-free and thread-safe.
   /// Multiple threads can call this method at once; they will succeed in turn.
   /// If one or more thread enters a race to enqueue with `determine()`, as soon as `determine()` succeeds
   /// all current and subsequent attempts to enqueue will result in immediate dispatch of the task.
   ///
-  /// - parameter task:  the closure to be enqueued
+  /// - parameter qos:  the Quality-of-Service class at which this notification should execute; defaults to the QOS class of this `Deferred`'s queue.
+  /// - parameter task: the closure to be executed as a notification
 
   open func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
   {
@@ -282,9 +281,9 @@ open class Deferred<Value>
   }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
-  /// A successful cancellation will determine result in a `Deferred` equivalent as if it had been initialized as follows:
+  /// A successful cancellation will result in a `Deferred` equivalent as if it had been initialized as follows:
   /// ```
-  /// Deferred<Value>(error: DeferredError.Canceled(reason))
+  /// Deferred<Value>(error: DeferredError.canceled(reason))
   /// ```
   ///
   /// - parameter reason: a `String` detailing the reason for the attempted cancellation.
@@ -296,7 +295,7 @@ open class Deferred<Value>
     return determine(Result.error(DeferredError.canceled(reason)))
   }
 
-  /// Get this `Deferred` value if it has been determined, `nil` otherwise.
+  /// Get this `Deferred`'s value if it has been determined, `nil` otherwise.
   /// (This call does not block)
   ///
   /// - returns: this `Deferred`'s value, or `nil`
@@ -358,7 +357,7 @@ open class Deferred<Value>
 
   /// Set the queue to be used for future notifications
   /// - parameter queue: the queue to be used by the returned `Deferred`
-  /// - returns: a new `Deferred` whose notifications will run on `queue`
+  /// - returns: a new `Deferred` whose notifications will execute on `queue`
 
   public func notifying(on queue: DispatchQueue) -> Deferred
   {
@@ -397,7 +396,7 @@ internal final class Mapped<Value>: Deferred<Value>
   /// This constructor is used by `map`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -418,7 +417,7 @@ internal final class Mapped<Value>: Deferred<Value>
   /// This constructor is used by the version of `map` that uses a transform to a `Result`.
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -442,7 +441,7 @@ internal final class Bind<Value>: Deferred<Value>
   /// This constructor is used by `flatMap`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -472,7 +471,7 @@ internal final class Bind<Value>: Deferred<Value>
   /// This constructor is used by `recover` -- flatMap for the `ErrorType` path.
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -507,7 +506,7 @@ internal final class Applicator<Value>: Deferred<Value>
   /// This constructor is used by `apply`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -540,7 +539,7 @@ internal final class Applicator<Value>: Deferred<Value>
   /// This constructor is used by `apply`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the queue's QOS class.
+  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
 
@@ -630,7 +629,7 @@ open class TBD<Value>: Deferred<Value>
 {
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
-  /// - parameter queue: the queue to be used when sending result notifications
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
   public override init(queue: DispatchQueue)
   {
@@ -639,7 +638,7 @@ open class TBD<Value>: Deferred<Value>
 
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
-  /// - parameter qos: the quality of service to be used when sending result notifications; defaults to the current quality-of-service class.
+  /// - parameter qos: the Quality-of-Service class at which the notifications should be performed; defaults to the current quality-of-service class.
 
   public convenience init(qos: DispatchQoS? = nil)
   {
@@ -648,10 +647,10 @@ open class TBD<Value>: Deferred<Value>
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.determined`
-  /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
+  /// Note that a `Deferred` can only be determined once.
   ///
   /// - parameter value: the intended value for this `Deferred`
-  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
+  /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
   public func determine(_ value: Value) -> Bool
@@ -663,7 +662,7 @@ open class TBD<Value>: Deferred<Value>
   /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter error: the intended error for this `Deferred`
-  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
+  /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
   public func determine(_ error: Error) -> Bool
@@ -675,7 +674,7 @@ open class TBD<Value>: Deferred<Value>
   /// Note that a `Deferred` can only be determined once. On subsequent calls, `determine` will throw an `AlreadyDetermined` error.
   ///
   /// - parameter result: the intended `Result` for this `Deferred`
-  /// - throws: `DeferredError.AlreadyDetermined` if the `Deferred` was already determined upon calling this method.
+  /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
   public override func determine(_ result: Result<Value>) -> Bool
