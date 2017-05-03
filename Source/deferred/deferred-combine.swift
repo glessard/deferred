@@ -6,6 +6,8 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 // combine two or more Deferred objects into one.
 
 /// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.
@@ -17,12 +19,13 @@
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
+public func combine<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                           _ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 {
   var combined = [Value]()
   combined.reserveCapacity(deferreds.count)
 
-  let reduced = reduce(deferreds, initial: (), combine: { _, value in combined.append(value) })
+  let reduced = reduce(qos: qos, deferreds, initial: (), combine: { _, value in combined.append(value) })
   return reduced.map { _ in combined }
 }
 
@@ -35,12 +38,13 @@ public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
+public func combine<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                        _ deferreds: S) -> Deferred<[Value]>
   where S.Iterator.Element == Deferred<Value>
 {
   var combined = [Value]()
 
-  let reduced = reduce(deferreds, initial: (), combine: { _, value in combined.append(value) })
+  let reduced = reduce(qos: qos, deferreds, initial: (), combine: { _, value in combined.append(value) })
   return reduced.map { _ in combined }
 }
 
@@ -54,15 +58,18 @@ public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
 /// The combined `Deferred` will use the qos from the first element of the input array (unless the input array is empty.)
 ///
+/// - parameter qos: the Quality-of-Service at which the `reduce` operation and its notifications should occur; defaults to the current QoS
 /// - parameter deferreds: an array of `Deferred`
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
 
-public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
+public func reduce<T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ deferreds: [Deferred<T>],
+                         initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
 {
-  guard let first = deferreds.first else { return Deferred(value: initial) }
+  guard deferreds.isEmpty == false
+    else { return Deferred(qos: qos, result: Result.value(initial)) }
 
-  let queue = DispatchQueue(label: "reduce-collection", qos: first.qos)
+  let queue = DispatchQueue(label: "reduce-collection", qos: qos)
   let accumulator = Deferred(queue: queue, result: Result.value(initial))
 
   let reduced = deferreds.reduce(accumulator) {
@@ -90,10 +97,10 @@ public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: @escap
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
 
-public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
+public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ deferreds: S,
+                                      initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
   where S.Iterator.Element == Deferred<T>
 {
-  let qos = DispatchQoS(qosClass: DispatchQoS.QoSClass.current ?? .default, relativePriority: 0)
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
   let accumulator = Deferred(queue: queue, result: Result.value(initial))
 
@@ -216,8 +223,6 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>], cancelOthers:
 
   return first
 }
-
-import Dispatch
 
 public func firstDetermined<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
   where S.Iterator.Element == Deferred<Value>
