@@ -81,23 +81,12 @@ open class Deferred<Value>
 
   // MARK: initialize with a closure
 
-  /// Initialize with a computation task to be performed in the background, at the current quality of service
-  ///
-  /// - parameter task: the computation to be performed
-
-  public convenience init(task: @escaping () throws -> Value)
-  {
-    let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.current ?? .default)
-    self.init(queue: queue, task: task)
-    // was queue: dispatch_get_global_queue(qos_class_self(), 0)
-  }
-
   /// Initialize with a computation task to be performed in the background
   ///
   /// - parameter qos:  the Quality-of-Service class at which the computation (and notifications) should be performed
   /// - parameter task: the computation to be performed
 
-  public convenience init(qos: DispatchQoS, task: @escaping () throws -> Value)
+  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, task: @escaping () throws -> Value)
   {
     self.init(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
   }
@@ -138,7 +127,7 @@ open class Deferred<Value>
 
   public convenience init(_ result: Result<Value>)
   {
-    self.init(queue: DispatchQueue.global(), result: result)
+    self.init(qos: DispatchQoS.current ?? .utility, result: result)
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -640,10 +629,9 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the Quality-of-Service class at which the notifications should be performed; defaults to the current quality-of-service class.
 
-  public convenience init(qos: DispatchQoS? = nil)
+  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .utility)
   {
-    let qosClass = qos?.qosClass ?? DispatchQoS.QoSClass.current ?? .utility
-    self.init(queue: DispatchQueue.global(qos: qosClass))
+    self.init(queue: DispatchQueue.global(qos: qos.qosClass))
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.determined`
