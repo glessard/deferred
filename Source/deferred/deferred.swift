@@ -83,7 +83,7 @@ open class Deferred<Value>
 
   /// Initialize with a computation task to be performed in the background
   ///
-  /// - parameter qos:  the Quality-of-Service class at which the computation (and notifications) should be performed
+  /// - parameter qos:  the Quality-of-Service class at which the computation (and notifications) should be performed; defaults to the current QoS.
   /// - parameter task: the computation to be performed
 
   public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, task: @escaping () throws -> Value)
