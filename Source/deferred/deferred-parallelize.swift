@@ -18,7 +18,7 @@ extension Deferred
   /// - parameter task: the computation to be performed in parallel; the closure takes an index as its parameter
   /// - returns: an array of `Deferred`
 
-  public static func inParallel(count: Int, qos: DispatchQoS? = nil,
+  public static func inParallel(count: Int, qos: DispatchQoS = DispatchQoS.current ?? .default,
                                 task: @escaping (Int) throws -> Value) -> [Deferred<Value>]
   {
     return (0..<count).deferredMap(qos: qos, task: task)
@@ -45,11 +45,10 @@ extension Collection where Index == Indices.Iterator.Element
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
 
-  public func deferredMap<Value>(qos: DispatchQoS? = nil,
+  public func deferredMap<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                  task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-    let qos = qos?.qosClass ?? DispatchQoS.QoSClass.current ?? .utility
-    return deferredMap(queue: DispatchQueue.global(qos: qos), task: task)
+    return deferredMap(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
   }
 
   /// Map a collection to an array of `Deferred` to be computed in parallel, on the desired dispatch queue

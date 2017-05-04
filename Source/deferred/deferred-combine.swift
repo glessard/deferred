@@ -6,6 +6,8 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 // combine two or more Deferred objects into one.
 
 /// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.
@@ -17,12 +19,13 @@
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
+public func combine<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                           _ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 {
   var combined = [Value]()
   combined.reserveCapacity(deferreds.count)
 
-  let reduced = reduce(deferreds, initial: (), combine: { _, value in combined.append(value) })
+  let reduced = reduce(qos: qos, deferreds, initial: (), combine: { _, value in combined.append(value) })
   return reduced.map { _ in combined }
 }
 
@@ -35,12 +38,13 @@ public func combine<Value>(_ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
+public func combine<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                        _ deferreds: S) -> Deferred<[Value]>
   where S.Iterator.Element == Deferred<Value>
 {
   var combined = [Value]()
 
-  let reduced = reduce(deferreds, initial: (), combine: { _, value in combined.append(value) })
+  let reduced = reduce(qos: qos, deferreds, initial: (), combine: { _, value in combined.append(value) })
   return reduced.map { _ in combined }
 }
 
@@ -54,15 +58,18 @@ public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
 /// The combined `Deferred` will use the qos from the first element of the input array (unless the input array is empty.)
 ///
+/// - parameter qos: the Quality-of-Service at which the `reduce` operation and its notifications should occur; defaults to the current QoS
 /// - parameter deferreds: an array of `Deferred`
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
 
-public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
+public func reduce<T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ deferreds: [Deferred<T>],
+                         initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
 {
-  guard let first = deferreds.first else { return Deferred(value: initial) }
+  guard deferreds.isEmpty == false
+    else { return Deferred(qos: qos, result: Result.value(initial)) }
 
-  let queue = DispatchQueue(label: "reduce-collection", qos: first.qos)
+  let queue = DispatchQueue(label: "reduce-collection", qos: qos)
   let accumulator = Deferred(queue: queue, result: Result.value(initial))
 
   let reduced = deferreds.reduce(accumulator) {
@@ -90,10 +97,10 @@ public func reduce<T, U>(_ deferreds: [Deferred<T>], initial: U, combine: @escap
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
 
-public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
+public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ deferreds: S,
+                                      initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
   where S.Iterator.Element == Deferred<T>
 {
-  let qos = DispatchQoS(qosClass: DispatchQoS.QoSClass.current ?? .default, relativePriority: 0)
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
   let accumulator = Deferred(queue: queue, result: Result.value(initial))
 
@@ -165,20 +172,17 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstValue<Value>(_ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Value>
+public func firstValue<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                              _ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Value>
 {
-  if deferreds.count == 0
-  {
-    return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
-  }
-
-  return firstDetermined(deferreds, cancelOthers: cancelOthers).flatMap { $0 }
+  return firstDetermined(qos: qos, deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
 
-public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
+public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                           _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
   where S.Iterator.Element == Deferred<Value>
 {
-  return firstDetermined(deferreds, cancelOthers: cancelOthers).flatMap { $0 }
+  return firstDetermined(qos: qos, deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
@@ -191,14 +195,17 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = 
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstDetermined<Value>(_ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                   _ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
 {
   if deferreds.count == 0
   {
-    return Deferred(error: DeferredError.canceled("cannot find first determined from an empty set in \(#function)"))
+    let error = DeferredError.canceled("cannot find first determined from an empty set in \(#function)")
+    return Deferred(qos: qos, result: Result.error(error))
   }
 
-  let first = TBD<Deferred<Value>>()
+  let queue = DispatchQueue.global(qos: qos.qosClass)
+  let first = TBD<Deferred<Value>>(queue: queue)
 
   deferreds.forEach {
     deferred in
@@ -207,39 +214,40 @@ public func firstDetermined<Value>(_ deferreds: [Deferred<Value>], cancelOthers:
       // an error here just means `deferred` wasn't the first to become determined
       first.determine(deferred)
     }
-  }
 
-  if cancelOthers
-  {
-    first.notify { _ in deferreds.forEach { $0.cancel() } }
+    if cancelOthers { first.notify { _ in deferred.cancel() } }
   }
 
   return first
 }
 
-import Dispatch
-
-public func firstDetermined<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                                _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
   where S.Iterator.Element == Deferred<Value>
 {
-  let first = TBD<Deferred<Value>>()
-
-  let qosClass = DispatchQoS.QoSClass.current ?? .utility
+  let queue = DispatchQueue.global(qos: qos.qosClass)
+  let first = TBD<Deferred<Value>>(queue: queue)
 
   // We iterate on a background thread because the sequence (type S) could block on next()
-  DispatchQueue.global(qos: qosClass).async {
+  queue.async {
+    var subscribed = false
     deferreds.forEach {
       deferred in
+      subscribed = true
       deferred.notify {
         _ in
         // an error here just means `deferred` wasn't the first to become determined
         first.determine(deferred)
       }
-      if cancelOthers
-      {
-        first.notify { _ in deferred.cancel() }
-      }
+
+      if cancelOthers { first.notify { _ in deferred.cancel() } }
+    }
+
+    if !subscribed
+    {
+      first.cancel("cannot find first determined from an empty set in \(#function)")
     }
   }
+
   return first
 }
