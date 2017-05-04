@@ -88,7 +88,8 @@ open class Deferred<Value>
 
   public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, task: @escaping () throws -> Value)
   {
-    self.init(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
+    let queue = DispatchQueue.global(qos: qos.qosClass)
+    self.init(queue: queue, task: task)
   }
 
   /// Initialize with a computation task to be performed on the specified queue
@@ -118,7 +119,8 @@ open class Deferred<Value>
 
   public convenience init(qos: DispatchQoS, result: Result<Value>)
   {
-    self.init(queue: DispatchQueue.global(qos: qos.qosClass), result: result)
+    let queue = DispatchQueue.global(qos: qos.qosClass)
+    self.init(queue: queue, result: result)
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -367,12 +369,8 @@ open class Deferred<Value>
 
   public func notifying(at qos: DispatchQoS, serially: Bool = false) -> Deferred
   {
-    if serially
-    {
-      return notifying(on: DispatchQueue(label: "deferred-serial", qos: qos))
-    }
-
-    return notifying(on: DispatchQueue.global(qos: qos.qosClass))
+    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: serially ? [] : .concurrent)
+    return notifying(on: queue)
   }
 }
 
@@ -631,7 +629,8 @@ open class TBD<Value>: Deferred<Value>
 
   public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .utility)
   {
-    self.init(queue: DispatchQueue.global(qos: qos.qosClass))
+    let queue = DispatchQueue.global(qos: qos.qosClass)
+    self.init(queue: queue)
   }
 
   /// Set the value of this `Deferred` and change its state to `DeferredState.determined`
