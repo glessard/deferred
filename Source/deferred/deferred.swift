@@ -129,7 +129,7 @@ open class Deferred<Value>
 
   public convenience init(_ result: Result<Value>)
   {
-    self.init(qos: DispatchQoS.current ?? .utility, result: result)
+    self.init(qos: DispatchQoS.current ?? .default, result: result)
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -627,7 +627,7 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the Quality-of-Service class at which the notifications should be performed; defaults to the current quality-of-service class.
 
-  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .utility)
+  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default)
   {
     let queue = DispatchQueue.global(qos: qos.qosClass)
     self.init(queue: queue)
