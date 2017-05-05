@@ -33,7 +33,11 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
 {
   private weak var sessionTask: URLSessionTask? = nil
 
-  init() { super.init(queue: DispatchQueue.global()) }
+  init(qos: DispatchQoS)
+  {
+    let queue = DispatchQueue(label: "urlsession", qos: qos, attributes: .concurrent)
+    super.init(queue: queue)
+  }
 
   @discardableResult
   override public func cancel(_ reason: String = "") -> Bool
@@ -86,9 +90,10 @@ public extension URLSession
     }
   }
 
-  public func deferredDataTask(with request: URLRequest) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
+  public func deferredDataTask(qos: DispatchQoS = DispatchQoS.current ?? .utility,
+                               with request: URLRequest) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>()
+    let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>(qos: qos)
 
     let task = self.dataTask(with: request, completionHandler: dataCompletion(tbd))
 
@@ -96,9 +101,10 @@ public extension URLSession
     return tbd
   }
 
-  public func deferredDataTask(with url: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
+  public func deferredDataTask(qos: DispatchQoS = DispatchQoS.current ?? .utility,
+                               with url: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    return deferredDataTask(with: URLRequest(url: url))
+    return deferredDataTask(qos: qos, with: URLRequest(url: url))
   }
 }
 
@@ -158,9 +164,10 @@ extension URLSession
     }
   }
 
-  public func deferredDownloadTask(with request: URLRequest) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
+  public func deferredDownloadTask(qos: DispatchQoS = DispatchQoS.current ?? .utility,
+                                   with request: URLRequest) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
   {
-    let tbd = DeferredDownloadTask<(URL, FileHandle, HTTPURLResponse)>()
+    let tbd = DeferredDownloadTask<(URL, FileHandle, HTTPURLResponse)>(qos: qos)
 
     let task = self.downloadTask(with: request, completionHandler: downloadCompletion(tbd))
 
@@ -168,14 +175,16 @@ extension URLSession
     return tbd
   }
 
-  public func deferredDownloadTask(with url: URL) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
+  public func deferredDownloadTask(qos: DispatchQoS = DispatchQoS.current ?? .utility,
+                                   with url: URL) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
   {
-    return deferredDownloadTask(with: URLRequest(url: url))
+    return deferredDownloadTask(qos: qos, with: URLRequest(url: url))
   }
 
-  public func deferredDownloadTask(withResumeData data: Data) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
+  public func deferredDownloadTask(qos: DispatchQoS = DispatchQoS.current ?? .utility,
+                                   withResumeData data: Data) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
   {
-    let tbd = DeferredDownloadTask<(URL, FileHandle, HTTPURLResponse)>()
+    let tbd = DeferredDownloadTask<(URL, FileHandle, HTTPURLResponse)>(qos: qos)
 
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     let task = self.downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
@@ -211,9 +220,10 @@ extension URLSession
     }
   }
 
-  public func deferredUploadTask(with request: URLRequest, fromData bodyData: Data) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
+  public func deferredUploadTask(qos: DispatchQoS = DispatchQoS.current ?? .utility,
+                                 with request: URLRequest, fromData bodyData: Data) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>()
+    let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>(qos: qos)
 
     let task = self.uploadTask(with: request, from: bodyData, completionHandler: uploadCompletion(tbd))
 
@@ -221,9 +231,10 @@ extension URLSession
     return tbd
   }
 
-  public func deferredUploadTask(with request: URLRequest, fromFile fileURL: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
+  public func deferredUploadTask(qos: DispatchQoS = DispatchQoS.current ?? .utility,
+                                 with request: URLRequest, fromFile fileURL: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>()
+    let tbd = DeferredURLSessionTask<(Data, HTTPURLResponse)>(qos: qos)
 
     let task = self.uploadTask(with: request, fromFile: fileURL, completionHandler: uploadCompletion(tbd))
 
