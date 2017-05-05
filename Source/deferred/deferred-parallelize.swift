@@ -48,7 +48,8 @@ extension Collection where Index == Indices.Iterator.Element
   public func deferredMap<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                  task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-    return deferredMap(queue: DispatchQueue.global(qos: qos.qosClass), task: task)
+    let queue = DispatchQueue(label: "deferred-map", qos: qos, attributes: .concurrent)
+    return deferredMap(queue: queue, task: task)
   }
 
   /// Map a collection to an array of `Deferred` to be computed in parallel, on the desired dispatch queue
