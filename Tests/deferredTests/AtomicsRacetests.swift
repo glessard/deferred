@@ -68,7 +68,7 @@ class AtomicsRaceTests: XCTestCase
         var c = p.load()
         while true
         {
-          if p.loadCAS(current: &c, future: nil, type: .weak, orderSwap: .release, orderLoad: .acquire),
+          if p.loadCAS(current: &c, future: nil, type: .weak, orderSwap: .release, orderLoad: .relaxed),
             let c = c
           {
             c.deallocate(capacity: 1)
