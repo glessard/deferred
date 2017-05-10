@@ -24,3 +24,4 @@ contents.xcworkspacedata
 deferred.xcodeproj
 .build
 Packages
+Package.pins
