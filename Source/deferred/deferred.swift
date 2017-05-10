@@ -178,21 +178,15 @@ open class Deferred<Value>
     p.initialize(to: result)
 
     var current = UnsafeMutablePointer<Result<Value>>(bitPattern: 0x0)
-    while true
-    {
-      if resultp.loadCAS(current: &current, future: p, type: .weak, orderSwap: .release, orderLoad: .relaxed)
-      {
-        break
-      }
-
-      if let o = current
+    repeat {
+      if current != nil
       { // another thread succeeded ahead of this one; clean up
-        assert(p != o)
+        assert(p != current)
         p.deinitialize(count: 1)
         p.deallocate(capacity: 1)
         return false
       }
-    }
+    } while !resultp.loadCAS(current: &current, future: p, type: .weak, orderSwap: .release, orderLoad: .relaxed)
 
     let waitQueue = waiters.swap(Waiter.invalid, order: .acquire)
     notifyWaiters(queue, waitQueue, result)
@@ -229,18 +223,16 @@ open class Deferred<Value>
         waiter.pointee.next = waitQueue
 
         c = resultp.load(order: .acquire)
-        if c == nil
-        {
-          if waiters.loadCAS(current: &waitQueue, future: waiter, type: .weak, orderSwap: .release, orderLoad: .relaxed)
-          { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
-            return
-          }
-        }
-        else
+        if c != nil
         { // this Deferred has become determined; clean up
           waiter.deinitialize(count: 1)
           waiter.deallocate(capacity: 1)
           break
+        }
+
+        if waiters.loadCAS(current: &waitQueue, future: waiter, type: .weak, orderSwap: .release, orderLoad: .relaxed)
+        { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
+          return
         }
       }
     }
