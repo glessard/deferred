@@ -37,7 +37,8 @@ extension Deferred
   }
 }
 
-extension Collection where Index == Indices.Iterator.Element
+#if swift(>=4.0)
+extension Collection
 {
   /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
   ///
@@ -47,6 +48,45 @@ extension Collection where Index == Indices.Iterator.Element
 
   public func deferredMap<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                  task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+  {
+    let queue = DispatchQueue(label: "deferred-map", qos: qos, attributes: .concurrent)
+    return deferredMap(queue: queue, task: task)
+  }
+
+  /// Map a collection to an array of `Deferred` to be computed in parallel, on the desired dispatch queue
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the parallel task should be performed.
+  /// - parameter task: the computation to be performed in parallel
+  /// - returns: an array of `Deferred`
+
+  public func deferredMap<Value>(queue: DispatchQueue, task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+  {
+    let count = Int(extendingOrTruncating: self.count)
+    let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) }
+    let indexList = Array(self.indices)
+
+    queue.async {
+      DispatchQueue.concurrentPerform(iterations: count) {
+        iteration in
+        deferreds[iteration].beginExecution()
+        let result = Result { try task(self[indexList[iteration]]) }
+        deferreds[iteration].determine(result) // an error here means `deferred[index]` has been canceled
+      }
+    }
+    return deferreds
+  }
+}
+#else
+extension Collection where Index == Indices.Iterator.Element
+{
+  /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
+  ///
+  /// - parameter qos: the quality of service class at which the parallel task should be performed
+  /// - parameter task: the computation to be performed in parallel
+  /// - returns: an array of `Deferred`
+
+  public func deferredMap<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                          task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
     let queue = DispatchQueue(label: "deferred-map", qos: qos, attributes: .concurrent)
     return deferredMap(queue: queue, task: task)
@@ -75,3 +115,4 @@ extension Collection where Index == Indices.Iterator.Element
     return deferreds
   }
 }
+#endif
