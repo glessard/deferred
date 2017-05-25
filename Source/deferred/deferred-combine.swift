@@ -128,7 +128,7 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? 
 
 public func combine<T1,T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(T1,T2)>
 {
-  return d1.flatMap { t1 in d2.map { t2 in (t1,t2) } }
+  return d1.flatMap { v1 in d2.map { v2 in (v1,v2) } }
 }
 
 /// Combine three `Deferred` into one.
@@ -143,7 +143,7 @@ public func combine<T1,T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(
 
 public func combine<T1,T2,T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>) -> Deferred<(T1,T2,T3)>
 {
-  return combine(d1,d2).flatMap { (t1,t2) in d3.map { t3 in (t1,t2,t3) } }
+  return combine(d1,d2).flatMap { combined in d3.map { v3 in (combined.0, combined.1, v3) } }
 }
 
 /// Combine four `Deferred` into one.
@@ -159,7 +159,7 @@ public func combine<T1,T2,T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Defe
 
 public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>) -> Deferred<(T1,T2,T3,T4)>
 {
-  return combine(d1,d2,d3).flatMap { (t1,t2,t3) in d4.map { t4 in (t1,t2,t3,t4) } }
+  return combine(d1,d2,d3).flatMap { combined in  d4.map { v4 in (combined.0, combined.1, combined.2, v4) } }
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
