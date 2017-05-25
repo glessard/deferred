@@ -105,7 +105,7 @@ open class Deferred<Value>
     started.store(1)
 
     queue.async(qos: qos) {
-      let result = Result { _ in try task() }
+      let result = Result { try task() }
       self.determine(result) // an error here means this `Deferred` has been canceled.
     }
   }
