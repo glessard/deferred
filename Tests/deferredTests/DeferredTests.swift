@@ -58,7 +58,7 @@ class DeferredTests: XCTestCase
     syncprint("Starting")
 
     let result1 = Deferred(qos: .background) {
-      _ -> Double in
+      () -> Double in
       defer { syncprint("Computing result1") }
       return 10.5
     }.delay(.milliseconds(50))
@@ -100,7 +100,7 @@ class DeferredTests: XCTestCase
   func testExample2()
   {
     let d = Deferred {
-      _ -> Double in
+      () -> Double in
       usleep(50000)
       return 1.0
     }
@@ -134,8 +134,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d4.value == d3.value)
 
     // a longer calculation is not delayed (significantly)
-    let d5 = Deferred {
-      _ -> Date in
+    let d5 = Deferred<Date> {
       Thread.sleep(forTimeInterval:interval)
       return Date()
     }
@@ -177,7 +176,7 @@ class DeferredTests: XCTestCase
     let value = nzRandom()
 
     let s = DispatchSemaphore(value: 0)
-    let busy = Deferred { _ -> UInt32 in
+    let busy = Deferred<UInt32> {
       s.wait()
       return value
     }
@@ -207,7 +206,7 @@ class DeferredTests: XCTestCase
     let value = nzRandom()
 
     let s = DispatchSemaphore(value: 0)
-    let busy = Deferred { _ -> UInt32 in
+    let busy = Deferred<UInt32> {
       s.wait()
       return value
     }
@@ -261,7 +260,7 @@ class DeferredTests: XCTestCase
   func testNotify3()
   {
     let e3 = expectation(description: "Deferred forever")
-    let d3 = Deferred { _ -> Int in
+    let d3 = Deferred<Int> {
       let s3 = DispatchSemaphore(value: 0)
       s3.wait()
       return 42

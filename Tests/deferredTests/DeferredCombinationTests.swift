@@ -228,7 +228,6 @@ class DeferredCombinationTests: XCTestCase
       i -> Deferred<Int> in
       let e = expectation(description: i.description)
       return Deferred {
-        _ in
         usleep(numericCast(i)*10_000)
         e.fulfill()
         return i

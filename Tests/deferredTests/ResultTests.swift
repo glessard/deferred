@@ -66,7 +66,7 @@ class ResultTests: XCTestCase
   func testInitClosureSuccess()
   {
     let val = nzRandom()
-    let res = Result { _ throws -> UInt32 in val }
+    let res = Result { () throws -> UInt32 in val }
 
     do {
       let v = try res.getValue()
@@ -82,7 +82,7 @@ class ResultTests: XCTestCase
   func testInitClosureError()
   {
     let err = TestError(nzRandom())
-    let res = Result { _ throws -> UInt32 in throw err }
+    let res = Result<UInt32> { throw err }
 
     do {
       _ = try res.getValue()
