@@ -161,7 +161,7 @@ class TBDTests: XCTestCase
     let first = TBD<Int>()
 
     let other = first.map { XCTFail(String($0)) }
-    let third = other.map { XCTFail() }
+    let third = other.map { XCTFail(String(describing: $0)) }
 
     usleep(1000)
 
@@ -205,7 +205,7 @@ class TBDTests: XCTestCase
     {
     case .value(let value):
       XCTAssert(value.count == count*count)
-      value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
+      value.enumerated().forEach { XCTAssert($0.0 == $0.1, "\($0.0) should equal \($0.1)") }
     default: XCTFail()
     }
   }

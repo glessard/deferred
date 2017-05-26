@@ -30,15 +30,11 @@ class TBDTimingTests: XCTestCase
     let ref = Date.distantPast
 
     measure {
-      let first = TBD<(Int, Date, Date)>(qos: .userInitiated)
+      let first = TBD<(i: Int, tic: Date, toc: Date)>(qos: .userInitiated)
       var dt: Deferred = first
       for _ in 0...iterations
       {
-        let prev = dt
-        dt = prev.map {
-          (i, tic, toc) in
-          tic == ref ? (0, Date(), ref) : (i+1, tic, Date())
-        }
+        dt = dt.map { $0.tic == ref ? (0, Date(), ref) : ($0.i+1, $0.tic, Date()) }
       }
 
       first.determine( (0, ref, ref) )

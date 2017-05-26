@@ -415,8 +415,13 @@ class DeferredTests: XCTestCase
     let deferred = v1.apply(transform: v2)
     XCTAssert(deferred.value == value1+value2)
 
+  #if swift(>=4.0)
+    // tuples must be explicitly destructured
+    let transform = Deferred(value: { (ft: (Float, Float)) in powf(ft.0, ft.1) })
+  #else
     // a 2-tuple is the same as two parameters
     let transform = Deferred(value: powf)
+  #endif
     let v3 = Deferred(value: 3.0 as Float)
     let v4 = Deferred(value: 4.1 as Float)
 
@@ -442,7 +447,7 @@ class DeferredTests: XCTestCase
       expect.fulfill()
     }
 
-    let g = TBD<Void>()
+    let g = TBD<Int>()
 
     g.notify { _ in
       v1 = Int(nzRandom() & 0x7fff + 10000)
@@ -459,7 +464,7 @@ class DeferredTests: XCTestCase
     XCTAssert(transform.peek() == nil)
     XCTAssert(transform.state == .waiting)
 
-    g.determine()
+    g.determine(0)
     waitForExpectations(timeout: 1.0)
   }
 
