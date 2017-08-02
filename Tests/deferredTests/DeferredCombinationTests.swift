@@ -53,14 +53,14 @@ class DeferredCombinationTests: XCTestCase
   func testReduceCancel()
   {
     let count = 10
-    let e = (0..<count).map { i in expectation(description: String(describing: i)) }
 
-    let d = e.map {
-      e in
-      Deferred<Int> {
+    let d = (0..<count).map {
+      i -> Deferred<Int> in
+      let e = expectation(description: String(describing: i))
+      return Deferred {
         usleep((nzRandom() % 10 + 2) * 10_000)
         e.fulfill()
-        return Int(nzRandom())
+        return i
       }
     }
 
