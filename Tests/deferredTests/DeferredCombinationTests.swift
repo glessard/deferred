@@ -58,7 +58,7 @@ class DeferredCombinationTests: XCTestCase
       i -> Deferred<Int> in
       let e = expectation(description: String(describing: i))
       return Deferred {
-        usleep((nzRandom() % 10 + 2) * 10_000)
+        usleep(numericCast(i+1)*10_000)
         e.fulfill()
         return i
       }
@@ -70,13 +70,11 @@ class DeferredCombinationTests: XCTestCase
     d[cancel2].cancel(String(cancel2))
 
     let c = reduce(d, initial: 0, combine: { a, b in return a+b })
-    let x = expectation(description: "reduced")
-    c.notify { _ in x.fulfill() }
+
+    waitForExpectations(timeout: 1.0)
 
     XCTAssert(c.value == nil)
     XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1, cancel2))))
-
-    waitForExpectations(timeout: 1.0)
   }
 
   func testCombineArray1()
@@ -106,7 +104,7 @@ class DeferredCombinationTests: XCTestCase
 
     let d = Deferred.inParallel(count: count) {
       i -> Int in
-      usleep(numericCast((i+1)*10_000))
+      usleep(numericCast(i+1)*10_000)
       e[i].fulfill()
       return i
     }
@@ -121,13 +119,11 @@ class DeferredCombinationTests: XCTestCase
     d[cancel2].cancel(String(cancel2))
 
     let c = combine(d)
-    let x = expectation(description: "result")
-    c.notify { _ in x.fulfill() }
+
+    waitForExpectations(timeout: 1.0)
 
     XCTAssert(c.value == nil)
     XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1,cancel2))))
-
-    waitForExpectations(timeout: 1.0)
   }
 
   func testCombine2()
@@ -137,8 +133,8 @@ class DeferredCombinationTests: XCTestCase
 
     let d1 = Deferred(value: v1)
     let d2 = Deferred(value: v2)
-    let d3 = d1.delay(.milliseconds(100))
-    let d4 = d2.delay(.milliseconds(200))
+    let d3 = d1.delay(.milliseconds(10))
+    let d4 = d2.delay(.milliseconds(20))
 
     let c = combine(d3,d4).value
     XCTAssert(c?.0 == v1)
@@ -228,7 +224,7 @@ class DeferredCombinationTests: XCTestCase
       i -> Deferred<Int> in
       let e = expectation(description: i.description)
       return Deferred {
-        usleep(numericCast(i)*10_000)
+        usleep(numericCast(i+1)*10_000)
         e.fulfill()
         return i
       }
