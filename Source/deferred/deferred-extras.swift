@@ -56,7 +56,7 @@ extension Deferred
 
 // MARK: maximum time until a `Deferred` becomes determined
 
-let DefaultTimeoutMessage = "Operation timed out"
+@_versioned let DefaultTimeoutMessage = "Operation timed out"
 
 extension Deferred
 {

@@ -28,7 +28,7 @@ extension DispatchTimeInterval
 
 extension DispatchQoS
 {
-  static var current: DispatchQoS?
+  @_versioned static var current: DispatchQoS?
   {
     if let qosClass = DispatchQoS.QoSClass.current
     {
