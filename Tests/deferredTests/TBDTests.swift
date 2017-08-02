@@ -205,7 +205,7 @@ class TBDTests: XCTestCase
     {
     case .value(let value):
       XCTAssert(value.count == count*count)
-      value.enumerated().forEach { XCTAssert($0.0 == $0.1, "\($0.0) should equal \($0.1)") }
+      value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
     default: XCTFail()
     }
   }
