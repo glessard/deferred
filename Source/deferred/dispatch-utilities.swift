@@ -15,6 +15,16 @@ extension DispatchTimeInterval
   var seconds: Double {
     @inline(__always)
     get {
+#if swift(>=3.2)
+      switch self
+      {
+      case .nanoseconds(let ns):  return Double(ns)*1e-9
+      case .microseconds(let µs): return Double(µs)*1e-6
+      case .milliseconds(let ms): return Double(ms)*1e-3
+      case .seconds(let seconds): return Double(seconds)
+      case .never:                return Double.greatestFiniteMagnitude
+      }
+#else
       switch self
       {
       case .nanoseconds(let ns):  return Double(ns)*1e-9
@@ -22,6 +32,7 @@ extension DispatchTimeInterval
       case .milliseconds(let ms): return Double(ms)*1e-3
       case .seconds(let seconds): return Double(seconds)
       }
+#endif
     }
   }
 }
