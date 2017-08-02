@@ -37,7 +37,7 @@ extension Deferred
   }
 }
 
-#if swift(>=4.0)
+#if swift(>=3.2)
 extension Collection
 {
   /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
