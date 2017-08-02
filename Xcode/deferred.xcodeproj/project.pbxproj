@@ -152,6 +152,7 @@
 		03D6A8461DF786F300F4B44B /* module.map */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = module.map; sourceTree = "<group>"; };
 		03D6A8471DF786F300F4B44B /* ClangAtomics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ClangAtomics.c; sourceTree = "<group>"; };
 		03D6A8481DF786F300F4B44B /* ClangAtomics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClangAtomics.h; sourceTree = "<group>"; };
+		03FD35AD1F328D4E00F4B44B /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text; name = .travis.yml; path = ../.travis.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -306,6 +307,7 @@
 			isa = PBXGroup;
 			children = (
 				034857621C11BD5E00F4B44B /* Package.swift */,
+				03FD35AD1F328D4E00F4B44B /* .travis.yml */,
 				03850ABD1C76AB2200F4B44B /* Source */,
 				03850ADC1C76AB7D00F4B44B /* utilities */,
 				03850AEA1C76ABF500F4B44B /* Tests */,
