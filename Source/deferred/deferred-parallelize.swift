@@ -61,7 +61,7 @@ extension Collection
 
   public func deferredMap<Value>(queue: DispatchQueue, task: @escaping (Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-    let count = Int(extendingOrTruncating: self.count)
+    let count: Int = numericCast(self.count)
     let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) }
     let indexList = Array(self.indices)
 
