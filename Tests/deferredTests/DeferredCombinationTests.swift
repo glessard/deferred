@@ -264,10 +264,10 @@ class DeferredCombinationTimedTests: XCTestCase
 
   let loopTestCount = 5_000
 
-#if swift(>=4.0)
-  let metrics = [XCTPerformanceMetric.wallClockTime]
+#if swift(>=4.0) && (os(macOS) || os(iOS) || os(tvOS) || os(watchOS))
+  var metrics: [XCTPerformanceMetric] { return DeferredCombinationTimedTests.defaultPerformanceMetrics }
 #else
-  let metrics = [XCTPerformanceMetric_WallClockTime]
+  var metrics: [String] { return DeferredCombinationTimedTests.defaultPerformanceMetrics() }
 #endif
 
   func testPerformanceReduce()
