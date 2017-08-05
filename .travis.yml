@@ -19,6 +19,10 @@ matrix:
 
     - os: osx
       osx_image: xcode9
+      env: SWIFT_VERSION=3.2
+
+    - os: osx
+      osx_image: xcode9
       env: SWIFT_VERSION=4.0 SNAPSHOT=2017-08-01-a
 
 before_install:
