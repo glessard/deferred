@@ -10,14 +10,14 @@ let package = Package(
     .library(name: "deferred", type: .static, targets: ["deferred"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/glessard/syncprint.git", from: "2.0.0"),
-    .package(url: "https://github.com/glessard/swift-atomics.git", from: "3.0.0"),
+    .package(url: "https://github.com/glessard/syncprint.git", from: "2.2.0"),
+    .package(url: "https://github.com/glessard/swift-atomics.git", from: "3.4.0"),
   ],
   targets: [
-    .target(name: "deferred", dependencies: [ .product(name: "Atomics") ], path: "Source"),
-    .testTarget(name: "deferredTests", dependencies: [ "deferred", .product(name: "syncprint") ]),
+    .target(name: "deferred", dependencies: ["Atomics"], path: "Source"),
+    .testTarget(name: "deferredTests", dependencies: ["deferred", "syncprint"]),
   ],
-  swiftLanguageVersions: [4]
+  swiftLanguageVersions: [3,4]
 )
 
 #else
