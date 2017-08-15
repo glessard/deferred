@@ -73,7 +73,7 @@ open class Deferred<Value>
     p.initialize(to: result)
 
     resultp = AtomicMutablePointer(p)
-    waiters = AtomicMutablePointer(nil)
+    waiters = AtomicMutablePointer(Waiter.invalid)
     started = AtomicInt32(1)
 
     self.queue = queue
