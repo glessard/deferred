@@ -177,21 +177,22 @@ open class Deferred<Value>
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
     p.initialize(to: result)
 
-    var current = UnsafeMutablePointer<Result<Value>>(bitPattern: 0x0)
-    repeat {
+    var current: UnsafeMutablePointer<Result<Value>>? = nil
+    while !resultp.loadCAS(current: &current, future: p, type: .weak, orderSwap: .release, orderLoad: .relaxed)
+    {
       if current != nil
       { // another thread succeeded ahead of this one; clean up
-        assert(p != current)
         p.deinitialize(count: 1)
         p.deallocate(capacity: 1)
         return false
       }
-    } while !resultp.loadCAS(current: &current, future: p, type: .weak, orderSwap: .release, orderLoad: .relaxed)
+    }
 
     let waitQueue = waiters.swap(Waiter.invalid, order: .acquire)
+    // precondition(waitQueue != Waiter.invalid)
     notifyWaiters(queue, waitQueue, result)
 
-    assert(waiters.load() == Waiter.invalid, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
+    // precondition(waiters.load() == Waiter.invalid, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
 
     // The result is now available for the world
     return true
