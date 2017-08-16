@@ -211,35 +211,27 @@ open class Deferred<Value>
 
   open func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
   {
-    var c = resultp.load(order: .acquire)
-    if c == nil
+    var waitQueue = waiters.load(order: .relaxed)
+    if waitQueue != Waiter.invalid
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(qos, task))
 
-      var waitQueue = waiters.load(order: .relaxed)
-      while true
-      {
-        assert(waitQueue != waiter)
+      repeat {
         waiter.pointee.next = waitQueue
-
-        c = resultp.load(order: .acquire)
-        if c != nil
-        { // this Deferred has become determined; clean up
-          waiter.deinitialize(count: 1)
-          waiter.deallocate(capacity: 1)
-          break
-        }
-
         if waiters.loadCAS(current: &waitQueue, future: waiter, type: .weak, orderSwap: .release, orderLoad: .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
           return
         }
-      }
+      } while waitQueue != Waiter.invalid
+
+      // this Deferred has become determined; clean up
+      waiter.deinitialize(count: 1)
+      waiter.deallocate(capacity: 1)
     }
 
     // this Deferred is determined
-    guard let result = c?.pointee else { fatalError("Pointer should be non-null in \(#function)") }
+    let result = resultp.load(order: .acquire)!.pointee
 
     queue.async(qos: qos, execute: { task(result) })
   }
