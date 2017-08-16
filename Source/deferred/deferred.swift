@@ -117,7 +117,7 @@ open class Deferred<Value>
   /// - parameter qos:    the Quality-of-Service class at which the notifications should be performed.
   /// - parameter result: the result of this `Deferred`
 
-  public convenience init(qos: DispatchQoS, result: Result<Value>)
+  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, result: Result<Value>)
   {
     let queue = DispatchQueue.global(qos: qos.qosClass)
     self.init(queue: queue, result: result)
@@ -129,7 +129,7 @@ open class Deferred<Value>
 
   public convenience init(_ result: Result<Value>)
   {
-    self.init(qos: DispatchQoS.current ?? .default, result: result)
+    self.init(result: result)
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -138,7 +138,7 @@ open class Deferred<Value>
 
   public convenience init(value: Value)
   {
-    self.init(Result.value(value))
+    self.init(result: Result.value(value))
   }
 
   /// Initialize to an already determined state, with a queue at the current quality-of-service class.
@@ -147,7 +147,7 @@ open class Deferred<Value>
 
   public convenience init(error: Error)
   {
-    self.init(Result.error(error))
+    self.init(result: Result.error(error))
   }
 
   // MARK: fileprivate methods

@@ -118,7 +118,7 @@ class DeferredTests: XCTestCase
   func testDelay()
   {
     let interval = 0.1
-    let d1 = Deferred(value: Date())
+    let d1 = Deferred(Result.value(Date()))
     let delayed1 = d1.delay(seconds: interval)
     let d2 = delayed1.map { Date().timeIntervalSince($0) }
 
