@@ -142,6 +142,14 @@ class DeferredTests: XCTestCase
     let d6 = delayed3.map { Date().timeIntervalSince($0) }
     let actualDelay = d6.delay(.nanoseconds(100)).value
     XCTAssert(actualDelay! < interval/10)
+
+#if swift(>=3.2)
+    // an unreasonable delay
+    let d7 = d1.delay(.never)
+    XCTAssert(d7.state == .waiting)
+    d7.cancel()
+    XCTAssert(d7.value == nil)
+#endif
   }
 
   func testValue()
@@ -740,6 +748,12 @@ class DeferredTests: XCTestCase
     d5.onValue { _ in XCTFail() }
     d5.onError { _ in e5.fulfill() }
     _ = d5.timeout(.microseconds(1))
+
+#if swift(>=3.2)
+    let d6 = TBD<Double>()
+    let t6 = d6.timeout(.never)
+    XCTAssert(d6 === t6)
+#endif
 
     waitForExpectations(timeout: 1.0)
   }

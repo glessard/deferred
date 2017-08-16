@@ -89,6 +89,10 @@ extension Deferred
 
   public final func timeout(_ deadline: DispatchTimeInterval, reason: String = DefaultTimeoutMessage) -> Deferred
   {
+#if swift(>=3.2)
+    if deadline == .never { return self }
+#endif
+
     return timeout(seconds: deadline.seconds, reason: reason)
   }
 
