@@ -102,6 +102,18 @@ class TBDTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
+  func testState()
+  {
+    let d = TBD<Int>()
+    XCTAssert(d.state == .waiting)
+
+    d.beginExecution()
+    XCTAssert(d.state == .executing)
+
+    d.determine(1)
+    XCTAssert(d.state == .determined)
+  }
+
   func testNotify1()
   {
     let value = nzRandom()
