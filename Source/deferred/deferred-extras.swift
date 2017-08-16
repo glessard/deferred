@@ -39,6 +39,13 @@ extension Deferred
 
   public final func delay(_ delay: DispatchTimeInterval) -> Deferred
   {
+#if swift(>=3.2)
+    if delay == .never
+    {
+      return self.delay(until: .distantFuture)
+    }
+#endif
+
     return self.delay(seconds: delay.seconds)
   }
 
