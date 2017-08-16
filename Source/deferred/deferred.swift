@@ -73,7 +73,7 @@ open class Deferred<Value>
     p.initialize(to: result)
 
     resultp = AtomicMutablePointer(p)
-    waiters = AtomicMutablePointer(nil)
+    waiters = AtomicMutablePointer(Waiter.invalid)
     started = AtomicInt32(1)
 
     self.queue = queue
@@ -177,21 +177,22 @@ open class Deferred<Value>
     let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
     p.initialize(to: result)
 
-    var current = UnsafeMutablePointer<Result<Value>>(bitPattern: 0x0)
-    repeat {
+    var current: UnsafeMutablePointer<Result<Value>>? = nil
+    while !resultp.loadCAS(current: &current, future: p, type: .weak, orderSwap: .release, orderLoad: .relaxed)
+    {
       if current != nil
       { // another thread succeeded ahead of this one; clean up
-        assert(p != current)
         p.deinitialize(count: 1)
         p.deallocate(capacity: 1)
         return false
       }
-    } while !resultp.loadCAS(current: &current, future: p, type: .weak, orderSwap: .release, orderLoad: .relaxed)
+    }
 
     let waitQueue = waiters.swap(Waiter.invalid, order: .acquire)
+    // precondition(waitQueue != Waiter.invalid)
     notifyWaiters(queue, waitQueue, result)
 
-    assert(waiters.load() == Waiter.invalid, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
+    // precondition(waiters.load() == Waiter.invalid, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
 
     // The result is now available for the world
     return true
@@ -210,35 +211,27 @@ open class Deferred<Value>
 
   open func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
   {
-    var c = resultp.load(order: .acquire)
-    if c == nil
+    var waitQueue = waiters.load(order: .relaxed)
+    if waitQueue != Waiter.invalid
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(qos, task))
 
-      var waitQueue = waiters.load(order: .relaxed)
-      while true
-      {
-        assert(waitQueue != waiter)
+      repeat {
         waiter.pointee.next = waitQueue
-
-        c = resultp.load(order: .acquire)
-        if c != nil
-        { // this Deferred has become determined; clean up
-          waiter.deinitialize(count: 1)
-          waiter.deallocate(capacity: 1)
-          break
-        }
-
         if waiters.loadCAS(current: &waitQueue, future: waiter, type: .weak, orderSwap: .release, orderLoad: .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
           return
         }
-      }
+      } while waitQueue != Waiter.invalid
+
+      // this Deferred has become determined; clean up
+      waiter.deinitialize(count: 1)
+      waiter.deallocate(capacity: 1)
     }
 
     // this Deferred is determined
-    guard let result = c?.pointee else { fatalError("Pointer should be non-null in \(#function)") }
+    let result = resultp.load(order: .acquire)!.pointee
 
     queue.async(qos: qos, execute: { task(result) })
   }
@@ -297,18 +290,15 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<Value> {
-    var c = resultp.load(order: .acquire)
-    if c == nil
+    if waiters.load(order: .relaxed) != Waiter.invalid
     {
       let s = DispatchSemaphore(value: 0)
       self.notify(qos: DispatchQoS.current) { _ in s.signal() }
       s.wait()
-
-      c = resultp.load(order: .acquire)
     }
 
-    guard let p = c else { fatalError("Pointer should be non-null in \(#function)") }
-    return p.pointee
+    // this Deferred is determined
+    return resultp.load(order: .acquire)!.pointee
   }
 
   /// Get this `Deferred` value, blocking if necessary until it becomes determined.
