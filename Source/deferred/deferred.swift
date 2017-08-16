@@ -561,7 +561,10 @@ internal final class Delayed<Value>: Deferred<Value>
       if case .value = result, time > DispatchTime.now()
       {
         self.beginExecution()
-        self.queue.asyncAfter(deadline: time) { self.determine(result) }
+        if time != .distantFuture
+        { // enqueue block only if can get executed
+          self.queue.asyncAfter(deadline: time) { self.determine(result) }
+        }
       }
       else
       {
@@ -587,7 +590,11 @@ internal final class Timeout<Value>: Deferred<Value>
   init(source: Deferred<Value>, deadline: DispatchTime, reason: String)
   {
     super.init(queue: source.queue)
-    queue.asyncAfter(deadline: deadline) { source.cancel(reason) }
+
+    if deadline != .distantFuture
+    { // enqueue block only if can get executed
+      queue.asyncAfter(deadline: deadline) { source.cancel(reason) }
+    }
     source.notify { self.determine($0) } // an error here means this `Deferred` was canceled or has timed out.
   }
 }
