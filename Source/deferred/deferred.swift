@@ -290,18 +290,15 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<Value> {
-    var c = resultp.load(order: .acquire)
-    if c == nil
+    if waiters.load(order: .relaxed) != Waiter.invalid
     {
       let s = DispatchSemaphore(value: 0)
       self.notify(qos: DispatchQoS.current) { _ in s.signal() }
       s.wait()
-
-      c = resultp.load(order: .acquire)
     }
 
-    guard let p = c else { fatalError("Pointer should be non-null in \(#function)") }
-    return p.pointee
+    // this Deferred is determined
+    return resultp.load(order: .acquire)!.pointee
   }
 
   /// Get this `Deferred` value, blocking if necessary until it becomes determined.
