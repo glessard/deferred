@@ -22,8 +22,6 @@
 		035D0C1C1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C101D84A8DB00F4B44B /* deferred-parallelize.swift */; };
 		035D0C1D1D84A8DB00F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C111D84A8DB00F4B44B /* deferred.swift */; };
 		035D0C1E1D84A8DB00F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C111D84A8DB00F4B44B /* deferred.swift */; };
-		035D0C1F1D84A8DB00F4B44B /* nsurlsession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C121D84A8DB00F4B44B /* nsurlsession.swift */; };
-		035D0C201D84A8DB00F4B44B /* nsurlsession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C121D84A8DB00F4B44B /* nsurlsession.swift */; };
 		035D0C211D84A8DB00F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C131D84A8DB00F4B44B /* result.swift */; };
 		035D0C221D84A8DB00F4B44B /* result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C131D84A8DB00F4B44B /* result.swift */; };
 		035D0C231D84A8DB00F4B44B /* waiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C141D84A8DB00F4B44B /* waiter.swift */; };
@@ -554,7 +552,6 @@
 				0358964F1DFC8DF200F4B44B /* atomics.swift in Sources */,
 				03D6A8491DF786F300F4B44B /* ClangAtomics.c in Sources */,
 				035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */,
-				035D0C1F1D84A8DB00F4B44B /* nsurlsession.swift in Sources */,
 				035D0C211D84A8DB00F4B44B /* result.swift in Sources */,
 				035D0C1B1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
 				035D0C1D1D84A8DB00F4B44B /* deferred.swift in Sources */,
@@ -589,7 +586,6 @@
 				035896501DFC8DF200F4B44B /* atomics.swift in Sources */,
 				03D6A84A1DF786F300F4B44B /* ClangAtomics.c in Sources */,
 				035D0C181D84A8DB00F4B44B /* deferred-error.swift in Sources */,
-				035D0C201D84A8DB00F4B44B /* nsurlsession.swift in Sources */,
 				035D0C221D84A8DB00F4B44B /* result.swift in Sources */,
 				035D0C1C1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
 				035D0C1E1D84A8DB00F4B44B /* deferred.swift in Sources */,
