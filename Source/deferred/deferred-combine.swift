@@ -172,8 +172,9 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstValue<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
-                              _ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Value>
+public func firstValue<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                             _ deferreds: C, cancelOthers: Bool = false) -> Deferred<Value>
+  where C.Iterator.Element == Deferred<Value>
 {
   return firstDetermined(qos: qos, deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
@@ -195,8 +196,9 @@ public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.curren
 /// - parameter deferreds: an array of `Deferred`
 /// - returns: a new `Deferred`
 
-public func firstDetermined<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
-                                   _ deferreds: [Deferred<Value>], cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
+public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                                  _ deferreds: C, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
+  where C.Iterator.Element == Deferred<Value>
 {
   if deferreds.count == 0
   {
