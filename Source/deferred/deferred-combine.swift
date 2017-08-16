@@ -174,14 +174,14 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 
 public func firstValue<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                              _ deferreds: C, cancelOthers: Bool = false) -> Deferred<Value>
-  where C.Iterator.Element == Deferred<Value>
+  where C.Iterator.Element: Deferred<Value>
 {
   return firstDetermined(qos: qos, deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
 
 public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                            _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
-  where S.Iterator.Element == Deferred<Value>
+  where S.Iterator.Element: Deferred<Value>
 {
   return firstDetermined(qos: qos, deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
@@ -198,7 +198,7 @@ public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.curren
 
 public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                                   _ deferreds: C, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where C.Iterator.Element == Deferred<Value>
+  where C.Iterator.Element: Deferred<Value>
 {
   if deferreds.count == 0
   {
@@ -225,7 +225,7 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS
 
 public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                                 _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where S.Iterator.Element == Deferred<Value>
+  where S.Iterator.Element: Deferred<Value>
 {
   let queue = DispatchQueue(label: "first-sequence", qos: qos, attributes: .concurrent)
   let first = TBD<Deferred<Value>>(queue: queue)
