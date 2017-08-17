@@ -33,9 +33,9 @@ open class Deferred<Value>
 {
   fileprivate let queue: DispatchQueue
 
-  private var resultp: AtomicMutablePointer<Result<Value>>
+  private var resulto: Result<Value>?
   private var waiters: AtomicMutablePointer<Waiter<Value>>
-  private var started: AtomicInt32
+  private var stateid: AtomicInt32
 
   deinit
   {
@@ -43,21 +43,15 @@ open class Deferred<Value>
     {
       deallocateWaiters(w)
     }
-
-    if let p = resultp.load(order: .acquire)
-    {
-      p.deinitialize(count: 1)
-      p.deallocate(capacity: 1)
-    }
   }
 
   // MARK: designated initializers
 
   internal init(queue: DispatchQueue)
   {
-    resultp = AtomicMutablePointer(nil)
+    resulto = nil
     waiters = AtomicMutablePointer(nil)
-    started = AtomicInt32(0)
+    stateid = AtomicInt32(0)
 
     self.queue = queue
   }
@@ -69,12 +63,9 @@ open class Deferred<Value>
 
   public init(queue: DispatchQueue, result: Result<Value>)
   {
-    let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
-    p.initialize(to: result)
-
-    resultp = AtomicMutablePointer(p)
+    resulto = result
     waiters = AtomicMutablePointer(Waiter.invalid)
-    started = AtomicInt32(1)
+    stateid = AtomicInt32(2)
 
     self.queue = queue
   }
@@ -102,7 +93,7 @@ open class Deferred<Value>
   {
     self.init(queue: queue)
 
-    started.store(1)
+    stateid.store(1)
 
     queue.async(qos: qos) {
       let result = Result { try task() }
@@ -156,7 +147,7 @@ open class Deferred<Value>
 
   fileprivate func beginExecution()
   {
-    if started.load() == 0 { started.store(1) }
+    if stateid.load() == 0 { stateid.store(1) }
   }
 
   /// Set the `Result` of this `Deferred`, change its state to `DeferredState.determined`,
@@ -170,25 +161,18 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
-    guard resultp.load(order: .relaxed) == nil
-    else { return false } // this Deferred is already determined
-
-    // optimistically allocate storage for result
-    let p = UnsafeMutablePointer<Result<Value>>.allocate(capacity: 1)
-    p.initialize(to: result)
-
-    var current: UnsafeMutablePointer<Result<Value>>? = nil
-    while !resultp.loadCAS(current: &current, future: p, type: .weak, orderSwap: .release, orderLoad: .relaxed)
-    {
-      if current != nil
-      { // another thread succeeded ahead of this one; clean up
-        p.deinitialize(count: 1)
-        p.deallocate(capacity: 1)
+    var current: Int32 = 0
+    while !stateid.loadCAS(current: &current, future: 2, orderSwap: .relaxed, orderLoad: .relaxed)
+    { // keep trying if another thread hasn't succeeded yet
+      if current == 2
+      { // another thread succeeded ahead of this one
         return false
       }
     }
 
-    let waitQueue = waiters.swap(Waiter.invalid, order: .acquire)
+    resulto = result
+
+    let waitQueue = waiters.swap(Waiter.invalid, order: .acqrel)
     // precondition(waitQueue != Waiter.invalid)
     notifyWaiters(queue, waitQueue, result)
 
@@ -211,7 +195,7 @@ open class Deferred<Value>
 
   open func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
   {
-    var waitQueue = waiters.load(order: .relaxed)
+    var waitQueue = waiters.load(order: .acquire)
     if waitQueue != Waiter.invalid
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
@@ -219,7 +203,7 @@ open class Deferred<Value>
 
       repeat {
         waiter.pointee.next = waitQueue
-        if waiters.loadCAS(current: &waitQueue, future: waiter, type: .weak, orderSwap: .release, orderLoad: .relaxed)
+        if waiters.loadCAS(current: &waitQueue, future: waiter, type: .weak, orderSwap: .acqrel, orderLoad: .acquire)
         { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
           return
         }
@@ -231,7 +215,7 @@ open class Deferred<Value>
     }
 
     // this Deferred is determined
-    let result = resultp.load(order: .acquire)!.pointee
+    let result = resulto!
 
     queue.async(qos: qos, execute: { task(result) })
   }
@@ -241,11 +225,9 @@ open class Deferred<Value>
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
   public var state: DeferredState {
-    if resultp.load(order: .relaxed) == nil
-    {
-      return (started.load() == 0) ? .waiting : .executing
-    }
-    return .determined
+    if stateid.load() == 0 { return .waiting }
+    if waiters.load(order: .relaxed) == Waiter.invalid  { return .determined }
+    return .executing
   }
 
   /// Query whether this `Deferred` has been determined.
@@ -253,7 +235,7 @@ open class Deferred<Value>
   /// - returns: wheither this `Deferred` has been determined.
 
   public var isDetermined: Bool {
-    return resultp.load(order: .relaxed) != nil
+    return waiters.load(order: .relaxed) == Waiter.invalid
   }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
@@ -278,9 +260,9 @@ open class Deferred<Value>
 
   public func peek() -> Result<Value>?
   {
-    if let p = resultp.load(order: .acquire)
+    if waiters.load(order: .acquire) == Waiter.invalid
     {
-      return p.pointee
+      return resulto
     }
     return nil
   }
@@ -290,7 +272,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<Value> {
-    if waiters.load(order: .relaxed) != Waiter.invalid
+    if waiters.load(order: .acquire) != Waiter.invalid
     {
       let s = DispatchSemaphore(value: 0)
       self.notify(qos: DispatchQoS.current) { _ in s.signal() }
@@ -298,7 +280,7 @@ open class Deferred<Value>
     }
 
     // this Deferred is determined
-    return resultp.load(order: .acquire)!.pointee
+    return resulto!
   }
 
   /// Get this `Deferred` value, blocking if necessary until it becomes determined.
@@ -334,9 +316,9 @@ open class Deferred<Value>
 
   public func notifying(on queue: DispatchQueue) -> Deferred
   {
-    if let p = resultp.load(order: .acquire)
+    if waiters.load(order: .acquire) == Waiter.invalid
     {
-      return Deferred(queue: queue, result: p.pointee)
+      return Deferred(queue: queue, result: resulto!)
     }
 
     let deferred = Deferred(queue: queue)
