@@ -13,19 +13,17 @@ import deferred
 
 class DeferredCombinationTests: XCTestCase
 {
-  static var allTests: [(String, (DeferredCombinationTests) -> () throws -> Void)] {
-    return [
-      ("testReduce", testReduce),
-      ("testReduceCancel", testReduceCancel),
-      ("testCombineArray1", testCombineArray1),
-      ("testCombineArray2", testCombineArray2),
-      ("testCombine2", testCombine2),
-      ("testCombine3", testCombine3),
-      ("testCombine4", testCombine4),
-      ("testFirstValue", testFirstValue),
-      ("testFirstDetermined", testFirstDetermined),
-    ]
-  }
+  static var allTests = [
+    ("testReduce", testReduce),
+    ("testReduceCancel", testReduceCancel),
+    ("testCombineArray1", testCombineArray1),
+    ("testCombineArray2", testCombineArray2),
+    ("testCombine2", testCombine2),
+    ("testCombine3", testCombine3),
+    ("testCombine4", testCombine4),
+    ("testFirstValue", testFirstValue),
+    ("testFirstDetermined", testFirstDetermined),
+  ]
 
   func testReduce()
   {

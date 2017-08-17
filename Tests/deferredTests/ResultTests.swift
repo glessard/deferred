@@ -13,23 +13,21 @@ import deferred
 
 class ResultTests: XCTestCase
 {
-  static var allTests: [(String, (ResultTests) -> () throws -> Void)] {
-    return [
-      ("testInitValue", testInitValue),
-      ("testInitError", testInitError),
-      ("testInitClosureSuccess", testInitClosureSuccess),
-      ("testInitClosureError", testInitClosureError),
-      ("testAccessors", testAccessors),
-      ("testMap", testMap),
-      ("testFlatMap", testFlatMap),
-      ("testRecover", testRecover),
-      ("testApplyA", testApplyA),
-      ("testApplyB", testApplyB),
-      ("testQuestionMarkQuestionMarkOperator", testQuestionMarkQuestionMarkOperator),
-      ("testEquals", testEquals),
-      ("testEquals2", testEquals2),
-    ]
-  }
+  static var allTests = [
+    ("testInitValue", testInitValue),
+    ("testInitError", testInitError),
+    ("testInitClosureSuccess", testInitClosureSuccess),
+    ("testInitClosureError", testInitClosureError),
+    ("testAccessors", testAccessors),
+    ("testMap", testMap),
+    ("testFlatMap", testFlatMap),
+    ("testRecover", testRecover),
+    ("testApplyA", testApplyA),
+    ("testApplyB", testApplyB),
+    ("testQuestionMarkQuestionMarkOperator", testQuestionMarkQuestionMarkOperator),
+    ("testEquals", testEquals),
+    ("testEquals2", testEquals2),
+  ]
 
   func testInitValue()
   {

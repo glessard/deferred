@@ -17,12 +17,10 @@ struct Point { var x = 0.0, y = 0.0, z = 0.0 }
 
 class AtomicsRaceTests: XCTestCase
 {
-  static var raceTests: [(String, (AtomicsRaceTests) -> () throws -> Void)] {
-    return [
-      ("testRaceCrash", testRaceCrash),
-      ("testRacePointerCAS", testRacePointerLoadCAS),
-    ]
-  }
+  static var raceTests = [
+    ("testRaceCrash", testRaceCrash),
+    ("testRacePointerCAS", testRacePointerLoadCAS),
+  ]
 
   func testRaceCrash()
   { // this version is guaranteed to crash with a double-free

@@ -15,12 +15,10 @@ import deferred
 
 class TBDTimingTests: XCTestCase
 {
-  static var allTests: [(String, (TBDTimingTests) -> () throws -> Void)] {
-    return [
-      ("testPerformancePropagationTime", testPerformancePropagationTime),
-      ("testPerformanceNotificationTime", testPerformanceNotificationTime),
-    ]
-  }
+  static var allTests = [
+    ("testPerformancePropagationTime", testPerformancePropagationTime),
+    ("testPerformanceNotificationTime", testPerformanceNotificationTime),
+  ]
 
   let propagationTestCount = 10_000
 

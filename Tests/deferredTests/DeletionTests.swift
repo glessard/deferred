@@ -14,14 +14,12 @@ import Dispatch
 
 class DeletionTests: XCTestCase
 {
-  static var allTests: [(String, (DeletionTests) -> () throws -> Void)] {
-    return [
-      ("testDeallocDeferred1", testDeallocDeferred1),
-      ("testDeallocDeferred2", testDeallocDeferred2),
-      ("testDeallocTBD1", testDeallocTBD1),
-      ("testDeallocTBD2", testDeallocTBD2),
-    ]
-  }
+  static var allTests = [
+    ("testDeallocDeferred1", testDeallocDeferred1),
+    ("testDeallocDeferred2", testDeallocDeferred2),
+    ("testDeallocTBD1", testDeallocTBD1),
+    ("testDeallocTBD2", testDeallocTBD2),
+  ]
 
   class Dealloc: Deferred<Void>
   {

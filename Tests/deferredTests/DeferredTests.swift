@@ -20,38 +20,36 @@ import deferred
 
 class DeferredTests: XCTestCase
 {
-  static var allTests: [(String, (DeferredTests) -> () throws -> Void)] {
-    return [
-      ("testExample", testExample),
-      ("testExample2", testExample2),
-      ("testExample3", testExample3),
-      ("testDelay", testDelay),
-      ("testValue", testValue),
-      ("testPeek", testPeek),
-      ("testValueBlocks", testValueBlocks),
-      ("testValueUnblocks", testValueUnblocks),
-      ("testNotify1", testNotify1),
-      ("testNotify2", testNotify2),
-      ("testNotify3", testNotify3),
-      ("testNotify4", testNotify4),
-      ("testMap", testMap),
-      ("testMap2", testMap2),
-      ("testRecover", testRecover),
-      ("testFlatMap", testFlatMap),
-      ("testApply", testApply),
-      ("testApply1", testApply1),
-      ("testApply2", testApply2),
-      ("testApply3", testApply3),
-      ("testQoS", testQoS),
-      ("testCancel", testCancel),
-      ("testCancelAndNotify", testCancelAndNotify),
-      ("testCancelMap", testCancelMap),
-      ("testCancelDelay", testCancelDelay),
-      ("testCancelBind", testCancelBind),
-      ("testCancelApply", testCancelApply),
-      ("testTimeout", testTimeout),
-    ]
-  }
+  static var allTests = [
+    ("testExample", testExample),
+    ("testExample2", testExample2),
+    ("testExample3", testExample3),
+    ("testDelay", testDelay),
+    ("testValue", testValue),
+    ("testPeek", testPeek),
+    ("testValueBlocks", testValueBlocks),
+    ("testValueUnblocks", testValueUnblocks),
+    ("testNotify1", testNotify1),
+    ("testNotify2", testNotify2),
+    ("testNotify3", testNotify3),
+    ("testNotify4", testNotify4),
+    ("testMap", testMap),
+    ("testMap2", testMap2),
+    ("testRecover", testRecover),
+    ("testFlatMap", testFlatMap),
+    ("testApply", testApply),
+    ("testApply1", testApply1),
+    ("testApply2", testApply2),
+    ("testApply3", testApply3),
+    ("testQoS", testQoS),
+    ("testCancel", testCancel),
+    ("testCancelAndNotify", testCancelAndNotify),
+    ("testCancelMap", testCancelMap),
+    ("testCancelDelay", testCancelDelay),
+    ("testCancelBind", testCancelBind),
+    ("testCancelApply", testCancelApply),
+    ("testTimeout", testTimeout),
+  ]
 
   func testExample()
   {
