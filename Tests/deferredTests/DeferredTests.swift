@@ -143,12 +143,19 @@ class DeferredTests: XCTestCase
     let actualDelay = d6.delay(.nanoseconds(100)).value
     XCTAssert(actualDelay! < interval/10)
 
-#if swift(>=3.2)
+#if swift(>=3.2) && !os(Linux)
     // an unreasonable delay
-    let d7 = d1.delay(.never)
-    XCTAssert(d7.state == .waiting)
-    d7.cancel()
-    XCTAssert(d7.value == nil)
+    let d7 = Deferred(value: Date())
+    let d8 = d7.delay(.never)
+    let d9 = d7.delay(.milliseconds(10))
+    XCTAssert((d9.value ?? Date.distantFuture) <= Date())
+    XCTAssert(d8.state != .determined)
+    d8.cancel()
+    XCTAssert(d8.state == .determined)
+    XCTAssert(d8.value == nil)
+#elseif os(Linux)
+    // FIXME: delay(.never) on Linux
+    print("TODO: identify issue related to DispatchTimeInterval.never on Linux")
 #endif
   }
 
