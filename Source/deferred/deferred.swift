@@ -556,31 +556,6 @@ internal final class Delayed<Value>: Deferred<Value>
   }
 }
 
-/// A `Deferred` which can time out
-
-internal final class Timeout<Value>: Deferred<Value>
-{
-  /// Initialized with a `Deferred` source and the maximum number of nanoseconds we should wait for its result.
-  /// If `source` does not become determined before the timeout expires, the new `Deferred` will be canceled.
-  /// The new `Deferred` will use the same queue as the source.
-  /// This constructor is used by `timeout`
-  ///
-  /// - parameter source: the `Deferred` whose value should be subjected to a timeout.
-  /// - parameter timeout: maximum number of nanoseconds before timeout.
-  /// - parameter reason: the reason for the cancelation if the operation times out.
-
-  init(source: Deferred<Value>, deadline: DispatchTime, reason: String)
-  {
-    super.init(queue: source.queue)
-
-    if deadline != .distantFuture
-    { // enqueue block only if can get executed
-      queue.asyncAfter(deadline: deadline) { source.cancel(reason) }
-    }
-    source.notify { self.determine($0) } // an error here means this `Deferred` was canceled or has timed out.
-  }
-}
-
 /// A `Deferred` to be determined (`TBD`) manually.
 
 open class TBD<Value>: Deferred<Value>
