@@ -22,13 +22,9 @@ extension Deferred
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public final func delay(seconds s: Double) -> Deferred
+  public final func delay(seconds delay: Double) -> Deferred
   {
-    if s > 0
-    {
-      return self.delay(until: .now() + s)
-    }
-    return self
+    return self.delay(until: .now() + delay)
   }
 
   /// Return a `Deferred` whose determination will occur at the earliest`delay` from the time of evaluation.
@@ -39,14 +35,7 @@ extension Deferred
 
   public final func delay(_ delay: DispatchTimeInterval) -> Deferred
   {
-#if swift(>=3.2)
-    if delay == .never
-    {
-      return self.delay(until: .distantFuture)
-    }
-#endif
-
-    return self.delay(seconds: delay.seconds)
+    return self.delay(until: .now() + delay)
   }
 
   /// Return a `Deferred` whose determination will occur after a given timestamp.
@@ -57,6 +46,8 @@ extension Deferred
 
   public final func delay(until time: DispatchTime) -> Deferred
   {
+    guard time > .now() else { return self }
+
     return Delayed(source: self, until: time)
   }
 }
