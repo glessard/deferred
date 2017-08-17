@@ -115,46 +115,44 @@ class DeferredTests: XCTestCase
 
   func testDelay()
   {
-    let interval = 0.1
-    let d1 = Deferred(Result.value(Date()))
-    let delayed1 = d1.delay(seconds: interval)
-    let d2 = delayed1.map { Date().timeIntervalSince($0) }
+    let d = Deferred(Result.value(Date()))
 
-    XCTAssert(d2.value! >= interval)
-    XCTAssert(d2.value! < 2.0*interval)
+    let t1 = 0.05
+    let d1 = d.delay(seconds: t1).map { Date().timeIntervalSince($0) }
+    let e1 = expectation(description: "delay test 1")
+    d1.onValue { if $0 >= t1 { e1.fulfill() } }
+
+    let t2 = 0.01
+    let s2 = d.delay(seconds: 0.05)
+    let d2 = s2.delay(seconds: t2)
+    let e2 = expectation(description: "long delay with source error")
+    d2.onError { _ in e2.fulfill() }
+    s2.cancel()
 
     // a negative delay returns the same reference
-    let d3 = d1.delay(seconds: -0.001)
-    XCTAssert(d3 === d1)
+    let d3 = d.delay(.milliseconds(-1))
+    XCTAssert(d3 === d)
 
-    let delayed2 = d1.delay(.microseconds(-1))
-    let d4 = delayed2.map { $0 }
-    XCTAssert(d4.value == d3.value)
+    // a longer calculation is not (significantly) delayed
+    let t4 = 0.1
+    let d4 = Deferred(value: Date()).delay(seconds: t4).map(transform: { ($0, Date()) })
+    let d5 = d4.delay(seconds: t4/10).map { (Date().timeIntervalSince($0), Date().timeIntervalSince($1)) }
+    let e5 = expectation(description: "delay of long calculation")
+    d5.onValue { if $0 > t4 && $1 < t4/10 { e5.fulfill() } }
 
-    // a longer calculation is not delayed (significantly)
-    let d5 = Deferred<Date> {
-      Thread.sleep(forTimeInterval:interval)
-      return Date()
-    }
-    let delayed3 = d5.delay(seconds: interval/10)
-    let d6 = delayed3.map { Date().timeIntervalSince($0) }
-    let actualDelay = d6.delay(.nanoseconds(100)).value
-    XCTAssert(actualDelay! < interval/10)
+    let t6 = TBD<Void>()
+    let d6 = t6.delay(until: .distantFuture)
+    let e6 = expectation(description: "cancel during delay, before source notifies")
+    d6.cancel()
+    t6.onError { _ in if d6.value == nil { e6.fulfill() } }
+    t6.cancel()
 
-#if swift(>=3.2) && !os(Linux)
-    // an unreasonable delay
-    let d7 = Deferred(value: Date())
-    let d8 = d7.delay(.never)
-    let d9 = d7.delay(.milliseconds(10))
-    XCTAssert((d9.value ?? Date.distantFuture) <= Date())
-    XCTAssert(d8.state != .determined)
-    d8.cancel()
-    XCTAssert(d8.state == .determined)
-    XCTAssert(d8.value == nil)
-#elseif os(Linux)
-    // FIXME: delay(.never) on Linux
-    print("TODO: identify issue related to DispatchTimeInterval.never on Linux")
-#endif
+    let d7 = d.delay(until: .distantFuture)
+    let e7 = expectation(description: "indefinite delay (with cancellation)")
+    d7.onError(task: { _ in e7.fulfill() })
+    d7.cancel()
+
+    waitForExpectations(timeout: 1.0, handler: nil)
   }
 
   func testValue()
