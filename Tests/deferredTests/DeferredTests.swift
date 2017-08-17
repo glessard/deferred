@@ -727,38 +727,35 @@ class DeferredTests: XCTestCase
 
   func testTimeout()
   {
-    let value = nzRandom()
-    let d = Deferred(value: value)
+    let start = DispatchTime.now()
+    let d = Deferred(value: start)
 
-    let d1 = d.timeout(.milliseconds(5))
-    XCTAssert(d1.value == value)
+    let d1 = d.delay(.milliseconds(100))
+    let e1 = expectation(description: "Timeout test 1: instant timeout")
+    d1.onValue { _ in XCTFail() }
+    d1.onError { _ in e1.fulfill() }
+    d1.timeout(.seconds(-1))
 
-    let d2 = d.delay(.seconds(5)).timeout(.milliseconds(2))
-    let e2 = expectation(description: "Timeout test")
+    let t2 = 0.15
+    let d2 = d.delay(.seconds(5))
+    let e2 = expectation(description: "Timeout test 2: times out")
     d2.onValue { _ in XCTFail() }
-    d2.onError { _ in e2.fulfill() }
+    d2.onError { _ in if start + t2 <= .now() { e2.fulfill() } }
+    d2.timeout(seconds: t2)
 
-    let d3 = d.delay(.milliseconds(100)).timeout(.seconds(-1))
-    let e3 = expectation(description: "Unreasonable timeout test")
-    d3.onValue { _ in XCTFail() }
-    d3.onError { _ in e3.fulfill() }
+    let t3 = 0.05
+    let d3 = d.delay(seconds: t3)
+    let e3 = expectation(description: "Timeout test 3: determine before timeout")
+    d3.onValue { time in if time + t3 <= .now() { e3.fulfill() } }
+    d3.onError { _ in XCTFail() }
+    d3.timeout(seconds: 2*t3)
 
-    let d4 = d.delay(.milliseconds(50)).timeout(seconds: 0.5)
-    let e4 = expectation(description: "Timeout test 4")
-    d4.onValue { _ in e4.fulfill() }
+    let t4 = 0.2
+    let d4 = d.delay(seconds: t4)
+    let e4 = expectation(description: "Timeout test 4: never timeout")
+    d4.onValue { time in if time + t4 <= .now() { e4.fulfill() } }
     d4.onError { _ in XCTFail() }
-
-    let d5 = TBD<Double>()
-    let e5 = expectation(description: "Timeout test 5")
-    d5.onValue { _ in XCTFail() }
-    d5.onError { _ in e5.fulfill() }
-    _ = d5.timeout(.microseconds(1))
-
-#if swift(>=3.2)
-    let d6 = TBD<Double>()
-    let t6 = d6.timeout(.never)
-    XCTAssert(d6 === t6)
-#endif
+    d4.timeout(after: .distantFuture)
 
     waitForExpectations(timeout: 1.0)
   }
