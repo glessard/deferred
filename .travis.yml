@@ -6,7 +6,7 @@ matrix:
       dist: trusty
       language: generic
       sudo: required
-      env: SWIFT_VERSION=3.0.2 CLANG_VERSION=3.6
+      env: SWIFT_VERSION=3.1 CLANG_VERSION=3.6
 
     - os: linux
       dist: trusty
