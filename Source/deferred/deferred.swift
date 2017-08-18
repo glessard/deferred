@@ -540,17 +540,22 @@ internal final class Delayed<Value>: Deferred<Value>
       result in
       if self.isDetermined { return }
 
-      if case .value = result, time > DispatchTime.now()
+      if case .error = result
       {
-        self.beginExecution()
-        if time != .distantFuture
-        { // enqueue block only if can get executed
-          self.queue.asyncAfter(deadline: time) { self.determine(result) }
-        }
+        self.determine(result)
+        return
+      }
+
+      self.beginExecution()
+      if time == .distantFuture { return }
+      // enqueue block only if can get executed
+      if time > .now()
+      {
+        self.queue.asyncAfter(deadline: time) { self.determine(result) }
       }
       else
       {
-        self.determine(result) // an error here means this `Deferred` has been canceled.
+        self.determine(result)
       }
     }
   }

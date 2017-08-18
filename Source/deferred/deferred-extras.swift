@@ -46,7 +46,7 @@ extension Deferred
 
   public final func delay(until time: DispatchTime) -> Deferred
   {
-    guard time > .now() else { return self }
+    guard time > .now() || time == .distantFuture else { return self }
 
     return Delayed(source: self, until: time)
   }
