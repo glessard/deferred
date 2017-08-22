@@ -45,7 +45,7 @@ extension Deferred
   /// - returns: a `Deferred` reference
 
   public final func delay(until time: DispatchTime) -> Deferred
-  {
+  { // FIXME: don't special-case .distantFuture (https://bugs.swift.org/browse/SR-5706)
     guard time > .now() || time == .distantFuture else { return self }
 
     return Delayed(source: self, until: time)
@@ -93,7 +93,7 @@ extension Deferred
 
   @discardableResult
   public final func timeout(after deadline: DispatchTime, reason: String = DefaultTimeoutMessage) -> Deferred
-  {
+  { // FIXME: don't special-case .distantFuture (https://bugs.swift.org/browse/SR-5706)
     if deadline == .distantFuture || isDetermined
     {
       return self
