@@ -21,7 +21,7 @@ then
 
     # install swift
     cd ..
-    wget --no-verbose ${URLBASE}/${PLATFORM}/${VERSION}/${BASENAME}.tar.gz
+    curl -s -O ${URLBASE}/${PLATFORM}/${VERSION}/${BASENAME}.tar.gz
     tar xzf ${BASENAME}.tar.gz
     export PATH="${PWD}/${BASENAME}/usr/bin:${PATH}"
     cd "${TRAVIS_BUILD_DIR}"
