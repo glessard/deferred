@@ -228,3 +228,23 @@ extension Deferred
     return Applicator<Other>(qos: qos, source: self, transform: retransform)
   }
 }
+
+extension Deferred
+{
+  /// Insert a validation step in a chain of Deferred.
+  /// Pass `Value` if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
+  ///
+  /// - parameter qos: the QOS class at which to execute the predicate; defaults to the QOS class of this Deferred's queue.
+  /// - parameter predicate: a predicate that validates the passed-in `Value`.
+  /// - returns: a `Deferred` reference holding a validated `Value`
+
+  public final func validate(qos: DispatchQoS? = nil, predicate: @escaping (Value) -> Bool, message: String = "") -> Deferred<Value>
+  {
+    return self.map(qos: qos) {
+      value in
+      guard predicate(value)
+      else { throw DeferredError.invalid(message) }
+      return value
+    }
+  }
+}

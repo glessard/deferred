@@ -13,6 +13,7 @@
 public enum DeferredError: Error
 {
   case canceled(String)
+  case invalid(String)
 }
 
 extension DeferredError: CustomStringConvertible
@@ -24,6 +25,10 @@ extension DeferredError: CustomStringConvertible
       return message.isEmpty ?
         "Deferred was canceled before a result became available" :
         "Deferred canceled: \(message)"
+    case .invalid(let message):
+      return message.isEmpty ?
+        "Deferred failed validation" :
+        "Deferred invalid: \(message)"
     }
   }
 }
@@ -35,5 +40,7 @@ public func == (a: DeferredError, b: DeferredError) -> Bool
   switch (a,b)
   {
   case (.canceled(let ma), .canceled(let mb)): return ma == mb
+  case (.invalid(let ma), .invalid(let mb)):   return ma == mb
+  default:                                     return false
   }
 }
