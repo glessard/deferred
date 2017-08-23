@@ -723,6 +723,18 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
+  func testValidate()
+  {
+    let d = (0..<10).map(Deferred.init(value:))
+    let v = d.map({ $0.validate(predicate: { $0%2 == 0 })})
+    let e = v.filter({$0.error == nil})
+    XCTAssert(e.count == d.count/2)
+    if let invalid = v.filter({ $0.value == nil}).first?.error as? DeferredError
+    {
+      XCTAssert(invalid == DeferredError.invalid(""))
+    }
+  }
+
   func testDeferredError()
   {
     let customMessage = "Custom Message"
