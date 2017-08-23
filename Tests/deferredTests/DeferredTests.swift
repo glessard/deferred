@@ -723,6 +723,29 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
+  func testDeferredError()
+  {
+    let customMessage = "Custom Message"
+
+    let errors = [
+      DeferredError.canceled(""),
+      DeferredError.canceled(customMessage),
+      DeferredError.invalid(""),
+      DeferredError.invalid(customMessage),
+    ]
+
+    let strings = errors.map(String.init(describing: ))
+    print(strings)
+
+    for (i,e) in errors.enumerated()
+    {
+      errors.enumerated().forEach {
+        index, error in
+        XCTAssert((error == e) == (index == i))
+      }
+    }
+  }
+
   func testTimeout()
   {
     let start = DispatchTime.now()
