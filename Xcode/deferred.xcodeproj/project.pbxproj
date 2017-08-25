@@ -8,10 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
-		035896491DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035896461DFC498F00F4B44B /* AtomicsRacetests.swift */; };
-		0358964A1DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035896461DFC498F00F4B44B /* AtomicsRacetests.swift */; };
-		0358964F1DFC8DF200F4B44B /* atomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0358964E1DFC8DF200F4B44B /* atomics.swift */; };
-		035896501DFC8DF200F4B44B /* atomics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0358964E1DFC8DF200F4B44B /* atomics.swift */; };
 		035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
 		035D0C161D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
 		035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0E1D84A8DB00F4B44B /* deferred-error.swift */; };
@@ -55,10 +51,10 @@
 		03D387A41B7C713500F4B44B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 03D387A21B7C713500F4B44B /* LaunchScreen.storyboard */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
 		03D5D78B1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
-		03D6A8491DF786F300F4B44B /* ClangAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A8471DF786F300F4B44B /* ClangAtomics.c */; };
-		03D6A84A1DF786F300F4B44B /* ClangAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03D6A8471DF786F300F4B44B /* ClangAtomics.c */; };
-		03D6A84B1DF786F300F4B44B /* ClangAtomics.h in Headers */ = {isa = PBXBuildFile; fileRef = 03D6A8481DF786F300F4B44B /* ClangAtomics.h */; };
-		03D6A84C1DF786F300F4B44B /* ClangAtomics.h in Headers */ = {isa = PBXBuildFile; fileRef = 03D6A8481DF786F300F4B44B /* ClangAtomics.h */; };
+		03E79C671F506EAF00F4B44B /* CAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E79C641F506E9D00F4B44B /* CAtomics.c */; };
+		03E79C681F506EB000F4B44B /* CAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E79C641F506E9D00F4B44B /* CAtomics.c */; };
+		03E79C6D1F50704D00F4B44B /* CAtomics.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E79C6C1F506FE500F4B44B /* CAtomics.h */; };
+		03E79C6E1F50704E00F4B44B /* CAtomics.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E79C6C1F506FE500F4B44B /* CAtomics.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,8 +104,6 @@
 
 /* Begin PBXFileReference section */
 		034857621C11BD5E00F4B44B /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
-		035896461DFC498F00F4B44B /* AtomicsRacetests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AtomicsRacetests.swift; path = DeferredTests/AtomicsRacetests.swift; sourceTree = "<group>"; };
-		0358964E1DFC8DF200F4B44B /* atomics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = atomics.swift; sourceTree = "<group>"; };
 		035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-combine.swift"; path = "deferred/deferred-combine.swift"; sourceTree = "<group>"; };
 		035D0C0E1D84A8DB00F4B44B /* deferred-error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-error.swift"; path = "deferred/deferred-error.swift"; sourceTree = "<group>"; };
 		035D0C0F1D84A8DB00F4B44B /* deferred-extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-extras.swift"; path = "deferred/deferred-extras.swift"; sourceTree = "<group>"; };
@@ -147,9 +141,9 @@
 		03D387A31B7C713500F4B44B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		03D387A51B7C713500F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "dispatch-utilities.swift"; path = "deferred/dispatch-utilities.swift"; sourceTree = "<group>"; };
-		03D6A8461DF786F300F4B44B /* module.map */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = module.map; sourceTree = "<group>"; };
-		03D6A8471DF786F300F4B44B /* ClangAtomics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ClangAtomics.c; sourceTree = "<group>"; };
-		03D6A8481DF786F300F4B44B /* ClangAtomics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClangAtomics.h; sourceTree = "<group>"; };
+		03E79C641F506E9D00F4B44B /* CAtomics.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CAtomics.c; sourceTree = "<group>"; };
+		03E79C691F506ECE00F4B44B /* module.map */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.map; sourceTree = "<group>"; };
+		03E79C6C1F506FE500F4B44B /* CAtomics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CAtomics.h; sourceTree = "<group>"; };
 		03FD35AD1F328D4E00F4B44B /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text; name = .travis.yml; path = ../.travis.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -215,8 +209,7 @@
 		03850ADC1C76AB7D00F4B44B /* utilities */ = {
 			isa = PBXGroup;
 			children = (
-				0358964E1DFC8DF200F4B44B /* atomics.swift */,
-				03D6A8451DF786BA00F4B44B /* atomics */,
+				03E79C631F506E9D00F4B44B /* CAtomics */,
 				03850ADF1C76AB7D00F4B44B /* syncprint.swift */,
 			);
 			path = utilities;
@@ -233,7 +226,6 @@
 				0366AE521DF0FEC400F4B44B /* TBDTests.swift */,
 				0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */,
 				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
-				035896461DFC498F00F4B44B /* AtomicsRacetests.swift */,
 				0366AE541DF0FEC400F4B44B /* TestError.swift */,
 				0374DFB01DFF5BD800F4B44B /* nzRandom.swift */,
 			);
@@ -290,17 +282,6 @@
 			path = "async-test";
 			sourceTree = "<group>";
 		};
-		03D6A8451DF786BA00F4B44B /* atomics */ = {
-			isa = PBXGroup;
-			children = (
-				03D6A8461DF786F300F4B44B /* module.map */,
-				03D6A8481DF786F300F4B44B /* ClangAtomics.h */,
-				03D6A8471DF786F300F4B44B /* ClangAtomics.c */,
-			);
-			name = atomics;
-			path = ClangAtomics;
-			sourceTree = "<group>";
-		};
 		03E60E221AAA571100F4B44B = {
 			isa = PBXGroup;
 			children = (
@@ -330,6 +311,16 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		03E79C631F506E9D00F4B44B /* CAtomics */ = {
+			isa = PBXGroup;
+			children = (
+				03E79C691F506ECE00F4B44B /* module.map */,
+				03E79C641F506E9D00F4B44B /* CAtomics.c */,
+				03E79C6C1F506FE500F4B44B /* CAtomics.h */,
+			);
+			path = CAtomics;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -337,7 +328,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03D6A84B1DF786F300F4B44B /* ClangAtomics.h in Headers */,
+				03E79C6D1F50704D00F4B44B /* CAtomics.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -346,7 +337,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03B4E09C1C1403C300F4B44B /* deferred-ios.h in Headers */,
-				03D6A84C1DF786F300F4B44B /* ClangAtomics.h in Headers */,
+				03E79C6E1F50704E00F4B44B /* CAtomics.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -549,11 +540,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0358964F1DFC8DF200F4B44B /* atomics.swift in Sources */,
-				03D6A8491DF786F300F4B44B /* ClangAtomics.c in Sources */,
 				035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				035D0C211D84A8DB00F4B44B /* result.swift in Sources */,
 				035D0C1B1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
+				03E79C671F506EAF00F4B44B /* CAtomics.c in Sources */,
 				035D0C1D1D84A8DB00F4B44B /* deferred.swift in Sources */,
 				03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */,
 				035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */,
@@ -575,7 +565,6 @@
 				0366AE5A1DF0FEC400F4B44B /* TBDTests.swift in Sources */,
 				032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */,
 				0366AE581DF0FEC400F4B44B /* ResultTests.swift in Sources */,
-				035896491DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -583,11 +572,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				035896501DFC8DF200F4B44B /* atomics.swift in Sources */,
-				03D6A84A1DF786F300F4B44B /* ClangAtomics.c in Sources */,
 				035D0C181D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				035D0C221D84A8DB00F4B44B /* result.swift in Sources */,
 				035D0C1C1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
+				03E79C681F506EB000F4B44B /* CAtomics.c in Sources */,
 				035D0C1E1D84A8DB00F4B44B /* deferred.swift in Sources */,
 				03D5D78B1E52339C00F4B44B /* dispatch-utilities.swift in Sources */,
 				035D0C161D84A8DB00F4B44B /* deferred-combine.swift in Sources */,
@@ -609,7 +597,6 @@
 				0366AE5B1DF0FEC400F4B44B /* TBDTests.swift in Sources */,
 				0381475B1E4138BA00F4B44B /* DeletionTests.swift in Sources */,
 				0366AE591DF0FEC400F4B44B /* ResultTests.swift in Sources */,
-				0358964A1DFC49BD00F4B44B /* AtomicsRacetests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -687,7 +674,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferred;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/ClangAtomics;
+				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/CAtomics;
 			};
 			name = Debug;
 		};
@@ -710,7 +697,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferred;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/ClangAtomics;
+				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/CAtomics;
 			};
 			name = Release;
 		};
@@ -766,7 +753,7 @@
 				PRODUCT_NAME = deferred;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
-				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/ClangAtomics;
+				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/CAtomics;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -791,7 +778,7 @@
 				PRODUCT_NAME = deferred;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
-				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/ClangAtomics;
+				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/CAtomics;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};

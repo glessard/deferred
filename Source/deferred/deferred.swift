@@ -8,15 +8,18 @@
 
 import Dispatch
 
-#if SWIFT_PACKAGE
-  import Atomics
-#endif
+import CAtomics
 
 /// The possible states of a `Deferred`.
 ///
 /// Must be a top-level type because Deferred is generic.
 
 public enum DeferredState { case waiting, executing, determined }
+
+extension UnsafeMutableRawPointer
+{
+  fileprivate static let determined = UnsafeMutableRawPointer(bitPattern: 0x7)!
+}
 
 /// An asynchronous computation.
 ///
@@ -34,14 +37,14 @@ open class Deferred<Value>
   fileprivate let queue: DispatchQueue
 
   private var resulto: Result<Value>?
-  private var waiters: AtomicMutablePointer<Waiter<Value>>
-  private var stateid: AtomicInt32
+  private var waiters = CAtomicsMutablePointer()
+  private var stateid = CAtomicsInt32()
 
   deinit
   {
-    if let w = waiters.load(order: .acquire), w != Waiter.invalid
+    if let w = CAtomicsMutablePointerLoad(&waiters, .acquire), w != .determined
     {
-      deallocateWaiters(w)
+      deallocateWaiters(w.assumingMemoryBound(to: Waiter<Value>.self))
     }
   }
 
@@ -50,8 +53,8 @@ open class Deferred<Value>
   internal init(queue: DispatchQueue)
   {
     resulto = nil
-    waiters = AtomicMutablePointer(nil)
-    stateid = AtomicInt32(0)
+    CAtomicsMutablePointerInit(nil, &waiters)
+    CAtomicsInt32Init(0, &stateid)
 
     self.queue = queue
   }
@@ -64,8 +67,8 @@ open class Deferred<Value>
   public init(queue: DispatchQueue, result: Result<Value>)
   {
     resulto = result
-    waiters = AtomicMutablePointer(Waiter.invalid)
-    stateid = AtomicInt32(2)
+    CAtomicsMutablePointerInit(.determined, &waiters)
+    CAtomicsInt32Init(2, &stateid)
 
     self.queue = queue
   }
@@ -93,7 +96,7 @@ open class Deferred<Value>
   {
     self.init(queue: queue)
 
-    stateid.store(1)
+    CAtomicsInt32Store(1, &stateid, .relaxed)
 
     queue.async(qos: qos) {
       let result = Result { try task() }
@@ -147,7 +150,10 @@ open class Deferred<Value>
 
   fileprivate func beginExecution()
   {
-    if stateid.load() == 0 { stateid.store(1) }
+    if CAtomicsInt32Load(&stateid, .relaxed) == 0
+    {
+      CAtomicsInt32Store(1, &stateid, .relaxed)
+    }
   }
 
   /// Set the `Result` of this `Deferred`, change its state to `DeferredState.determined`,
@@ -161,8 +167,8 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
-    var current: Int32 = 0
-    while !stateid.loadCAS(current: &current, future: 2, orderSwap: .relaxed, orderLoad: .relaxed)
+    var current: Int32 = 1
+    while !CAtomicsInt32WeakCAS(&current, 2, &stateid, .relaxed, .relaxed)
     { // keep trying if another thread hasn't succeeded yet
       if current == 2
       { // another thread succeeded ahead of this one
@@ -172,11 +178,11 @@ open class Deferred<Value>
 
     resulto = result
 
-    let waitQueue = waiters.swap(Waiter.invalid, order: .acqrel)
-    // precondition(waitQueue != Waiter.invalid)
+    let waitQueue = CAtomicsMutablePointerSwap(.determined, &waiters, .acqrel)?.assumingMemoryBound(to: Waiter<Value>.self)
+    // precondition(waitQueue != .determined)
     notifyWaiters(queue, waitQueue, result)
 
-    // precondition(waiters.load() == Waiter.invalid, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
+    // precondition(waiters.load() == .determined, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
 
     // The result is now available for the world
     return true
@@ -195,19 +201,19 @@ open class Deferred<Value>
 
   open func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
   {
-    var waitQueue = waiters.load(order: .acquire)
-    if waitQueue != Waiter.invalid
+    var waitQueue = CAtomicsMutablePointerLoad(&waiters, .acquire)
+    if waitQueue != .determined
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(qos, task))
 
       repeat {
-        waiter.pointee.next = waitQueue
-        if waiters.loadCAS(current: &waitQueue, future: waiter, type: .weak, orderSwap: .acqrel, orderLoad: .acquire)
+        waiter.pointee.next = waitQueue?.assumingMemoryBound(to: Waiter<Value>.self)
+        if CAtomicsMutablePointerWeakCAS(&waitQueue, UnsafeMutableRawPointer(waiter), &waiters, .acqrel, .acquire)
         { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
           return
         }
-      } while waitQueue != Waiter.invalid
+      } while waitQueue != .determined
 
       // this Deferred has become determined; clean up
       waiter.deinitialize(count: 1)
@@ -225,9 +231,8 @@ open class Deferred<Value>
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
   public var state: DeferredState {
-    if stateid.load() == 0 { return .waiting }
-    if waiters.load(order: .relaxed) == Waiter.invalid  { return .determined }
-    return .executing
+    if CAtomicsMutablePointerLoad(&waiters, .relaxed) == .determined  { return .determined }
+    return (CAtomicsInt32Load(&stateid, .relaxed) == 0) ? .waiting : .executing
   }
 
   /// Query whether this `Deferred` has been determined.
@@ -235,7 +240,7 @@ open class Deferred<Value>
   /// - returns: wheither this `Deferred` has been determined.
 
   public var isDetermined: Bool {
-    return waiters.load(order: .relaxed) == Waiter.invalid
+    return CAtomicsMutablePointerLoad(&waiters, .relaxed) == .determined
   }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
@@ -260,7 +265,7 @@ open class Deferred<Value>
 
   public func peek() -> Result<Value>?
   {
-    if waiters.load(order: .acquire) == Waiter.invalid
+    if CAtomicsMutablePointerLoad(&waiters, .acquire) == .determined
     {
       return resulto
     }
@@ -272,7 +277,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined result
 
   public var result: Result<Value> {
-    if waiters.load(order: .acquire) != Waiter.invalid
+    if CAtomicsMutablePointerLoad(&waiters, .acquire) != .determined
     {
       let s = DispatchSemaphore(value: 0)
       self.notify(qos: DispatchQoS.current) { _ in s.signal() }
@@ -316,7 +321,7 @@ open class Deferred<Value>
 
   public func notifying(on queue: DispatchQueue) -> Deferred
   {
-    if waiters.load(order: .acquire) == Waiter.invalid
+    if CAtomicsMutablePointerLoad(&waiters, .acquire) == .determined
     {
       return Deferred(queue: queue, result: resulto!)
     }

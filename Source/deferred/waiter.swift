@@ -24,10 +24,6 @@ struct Waiter<T>
   {
     queue.async(qos: qos) { [ handler = self.handler ] in handler(result) }
   }
-
-  static var invalid: UnsafeMutablePointer<Waiter<T>>? {
-    return UnsafeMutablePointer(bitPattern: 0x7)
-  }
 }
 
 func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ result: Result<T>)

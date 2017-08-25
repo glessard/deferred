@@ -3,7 +3,6 @@ import XCTest
 
 XCTMain([
   testCase(ResultTests.allTests),
-  testCase(AtomicsRaceTests.raceTests),
   testCase(DeferredTests.allTests),
   testCase(DeferredCombinationTests.allTests),
   testCase(DeferredCombinationTimedTests.allTests),

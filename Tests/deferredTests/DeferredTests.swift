@@ -12,7 +12,6 @@ import Dispatch
 
 #if SWIFT_PACKAGE
   import syncprint
-  import Atomics
 #endif
 
 import deferred
