@@ -29,7 +29,7 @@ let package = Package(
   ],
   dependencies: [
     .Package(url: "https://github.com/glessard/syncprint.git", majorVersion: 2),
-    .Package(url: "https://github.com/glessard/swift-atomics.git", majorVersion: 3),
+    .Package(url: "https://github.com/glessard/swift-atomics.git", majorVersion: 3, minor: 5),
   ]
 )
 
