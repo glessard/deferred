@@ -248,3 +248,28 @@ extension Deferred
     }
   }
 }
+
+extension Optional
+{
+  /// Create a `Deferred` from this `Optional`.
+  /// If `optional` is `nil` then `Deferred` will be determined with the error `DeferredError.invalid`
+  ///
+  /// - parameter queue: the dispatch queue upon which to execute notifications for the new `Deferred`
+
+  public func deferred(queue: DispatchQueue) -> Deferred<Wrapped>
+  {
+    let result = Result(self, or: DeferredError.invalid("Deferred initialized from a nil Optional"))
+    return Deferred(result)
+  }
+
+  /// Create a `Deferred` from this `Optional`.
+  /// If `optional` is `nil` then `Deferred` will be determined with the error `DeferredError.invalid`
+  ///
+  /// - parameter qos: the Quality-of-Service class at which to perform notifications for the new `Deferred`
+
+  public func deferred(qos: DispatchQoS = DispatchQoS.current ?? .default) -> Deferred<Wrapped>
+  {
+    let queue = DispatchQueue.global(qos: qos.qosClass)
+    return self.deferred(queue: queue)
+  }
+}

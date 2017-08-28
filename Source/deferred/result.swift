@@ -29,6 +29,15 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
+  public init(_ optional: Value?, or error: Error)
+  {
+    switch optional
+    {
+    case .some(let value): self = .value(value)
+    case .none:            self = .error(error)
+    }
+  }
+
   public var value: Value? {
     switch self
     {

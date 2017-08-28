@@ -735,6 +735,13 @@ class DeferredTests: XCTestCase
     }
   }
 
+  func testOptional()
+  {
+    let rnd = nzRandom()
+    let d = Optional(rnd).deferred()
+    XCTAssert(d.value == rnd)
+  }
+
   func testDeferredError()
   {
     let customMessage = "Custom Message"

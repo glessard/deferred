@@ -61,6 +61,22 @@ class ResultTests: XCTestCase
     XCTAssert(res.description.hasSuffix("\(err)"))
   }
 
+  func testInitOptional()
+  {
+    let err = TestError(nzRandom())
+    let val = nzRandom()
+    var opt = Optional(val)
+
+    let optsome = Result(opt, or: err)
+    XCTAssert(optsome.value == val)
+    XCTAssert(optsome.error == nil)
+
+    opt = nil
+    let optnone = Result(opt, or: err)
+    XCTAssert(optnone.value == nil)
+    XCTAssert(optnone.error as? TestError == err)
+  }
+
   func testInitClosureSuccess()
   {
     let val = nzRandom()
