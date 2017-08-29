@@ -14,7 +14,7 @@ let package = Package(
     .package(url: "https://github.com/glessard/swift-atomics.git", from: "3.5.0"),
   ],
   targets: [
-    .target(name: "deferred", dependencies: ["CAtomics"], path: "Source"),
+    .target(name: "deferred", dependencies: ["CAtomics"]),
     .testTarget(name: "deferredTests", dependencies: ["deferred", "syncprint"]),
   ],
   swiftLanguageVersions: [3,4]
