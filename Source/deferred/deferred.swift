@@ -312,27 +312,37 @@ open class Deferred<Value>
     return resulto!
   }
 
-  /// Get this `Deferred` value, blocking if necessary until it becomes determined.
-  /// If the `Deferred` is determined by a `Result` in the `.error` state, return nil.
+  /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
+  /// If the `Deferred` is determined with an `Error`, throw it.
+  /// When called on a `Deferred` that is already determined, this call is non-blocking.
+  /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
+  ///
+  /// - returns: this `Deferred`'s determined value, or `nil`
+
+  public func get() throws -> Value
+  {
+    switch result
+    {
+    case .value(let value): return value
+    case .error(let error): throw error
+    }
+  }
+
+  /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
+  /// If the `Deferred` is determined with an `Error`, return nil.
   /// In either case, this property will block until `Deferred` is determined.
   ///
   /// - returns: this `Deferred`'s determined value, or `nil`
 
-  public var value: Value? {
-    if case let .value(v) = result { return v }
-    return nil
-  }
+  public var value: Value? { return result.value }
 
-  /// Get this `Deferred` value, blocking if necessary until it becomes determined.
-  /// If the `Deferred` is determined by a `Result` in the `.error` state, return nil.
+  /// Get this `Deferred`'s error, blocking if necessary until it becomes determined.
+  /// If the `Deferred` is determined with a `Value`, return nil.
   /// In either case, this property will block until `Deferred` is determined.
   ///
   /// - returns: this `Deferred`'s determined value, or `nil`
 
-  public var error: Error? {
-    if case let .error(e) = result { return e }
-    return nil
-  }
+  public var error: Error? { return result.error }
 
   /// Get the quality-of-service class of this `Deferred`'s queue
   /// - returns: the quality-of-service class of this `Deferred`'s queue
