@@ -23,11 +23,13 @@ class DeferredTests: XCTestCase
     ("testExample", testExample),
     ("testExample2", testExample2),
     ("testExample3", testExample3),
+    ("testDeferredError", testDeferredError),
     ("testDelay", testDelay),
     ("testValue", testValue),
     ("testPeek", testPeek),
     ("testValueBlocks", testValueBlocks),
     ("testValueUnblocks", testValueUnblocks),
+    ("testOptional", testOptional),
     ("testNotify1", testNotify1),
     ("testNotify2", testNotify2),
     ("testNotify3", testNotify3),
@@ -48,7 +50,8 @@ class DeferredTests: XCTestCase
     ("testCancelBind", testCancelBind),
     ("testCancelApply", testCancelApply),
     ("testTimeout", testTimeout),
-  ]
+    ("testValidate", testValidate),
+  ].sorted(by: {$0.0 < $1.0})
 
   func testExample()
   {

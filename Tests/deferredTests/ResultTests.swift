@@ -18,6 +18,7 @@ class ResultTests: XCTestCase
     ("testInitError", testInitError),
     ("testInitClosureSuccess", testInitClosureSuccess),
     ("testInitClosureError", testInitClosureError),
+    ("testInitOptional", testInitOptional),
     ("testAccessors", testAccessors),
     ("testMap", testMap),
     ("testFlatMap", testFlatMap),
