@@ -89,6 +89,39 @@ extension Deferred
   }
 }
 
+extension Deferred
+{
+  public static func RetryingTask(_ attempts: Int, qos: DispatchQoS = DispatchQoS.current ?? .default,
+                              task: @escaping () throws -> Value) -> Deferred
+  {
+    let queue = DispatchQueue.global(qos: qos.qosClass)
+    return Deferred.Retrying(attempts, queue: queue, task: { Deferred(queue: queue, task: task) })
+  }
+
+  public static func Retrying(_ attempts: Int, qos: DispatchQoS = DispatchQoS.current ?? .default,
+                              task: @escaping () -> Deferred) -> Deferred
+  {
+    let queue = DispatchQueue.global(qos: qos.qosClass)
+    return Deferred.Retrying(attempts, queue: queue, task: task)
+  }
+
+  public static func Retrying(_ attempts: Int, queue: DispatchQueue,
+                              task: @escaping () -> Deferred) -> Deferred
+  {
+    guard attempts > 0 else
+    {
+      let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
+      return Deferred<Value>(queue: queue, result: Result.error(error))
+    }
+
+    let initial = Deferred<Void>(queue: queue, result: Result.value(())).flatMap(transform: task)
+    return (1..<attempts).reduce(initial) {
+      (deferred, _) in
+      deferred.recover(transform: { _ in task() })
+    }
+  }
+}
+
 // MARK: apply: asynchronously transform a `Deferred` into another
 
 extension Deferred

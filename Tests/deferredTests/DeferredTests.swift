@@ -37,6 +37,7 @@ class DeferredTests: XCTestCase
     ("testMap", testMap),
     ("testMap2", testMap2),
     ("testRecover", testRecover),
+    ("testRetry", testRetry),
     ("testFlatMap", testFlatMap),
     ("testApply", testApply),
     ("testApply1", testApply1),
@@ -390,6 +391,44 @@ class DeferredTests: XCTestCase
     }
     catch DeferredError.canceled(let message) { XCTAssert(message == reason) }
     catch { XCTFail() }
+  }
+
+  func testRetry()
+  {
+    let retries = 5
+
+    var counter = 0
+    let r1 = Deferred.RetryingTask(retries) {
+      () in
+      counter += 1
+      throw TestError(counter)
+    }
+    XCTAssert(r1.value == nil)
+    XCTAssert(counter == retries)
+
+    let r2 = Deferred.Retrying(0) { Deferred(task: {XCTFail()}) }
+    if let e = r2.error as? DeferredError,
+       case .invalid(let s) = e
+    { _ = s } // print(s) }
+    else { XCTFail() }
+
+    counter = 0
+    let r3 = Deferred.Retrying(retries) {
+      () -> Deferred<Int> in
+      counter += 1
+      if counter < retries { return Deferred(error: TestError(counter)) }
+      return Deferred(value: counter)
+    }
+    XCTAssert(r3.value == retries)
+
+    counter = 0
+    let r4 = Deferred.RetryingTask(retries) {
+      () throws -> Int in
+      counter += 1
+      guard counter < retries else { throw TestError(counter) }
+      return counter
+    }
+    XCTAssert(r4.value == 1)
   }
 
   func testFlatMap()
