@@ -57,11 +57,11 @@ class DeferredTests: XCTestCase
   {
     syncprint("Starting")
 
-    let result1 = Deferred(qos: .background) {
+    let result1 = Deferred(task: {
       () -> Double in
       defer { syncprint("Computing result1") }
       return 10.5
-    }.delay(.milliseconds(50))
+    }).delay(.milliseconds(50))
 
     let result2 = result1.map {
       (d: Double) -> Int in
@@ -587,11 +587,11 @@ class DeferredTests: XCTestCase
 
   func testCancel()
   {
-    let d1 = Deferred(qos: .utility) {
+    let d1 = Deferred(qos: .utility, task: {
       () -> Int in
       usleep(100_000)
       return nzRandom()
-    }
+    })
 
     XCTAssert(d1.cancel() == true)
     XCTAssert(d1.value == nil)
@@ -727,7 +727,7 @@ class DeferredTests: XCTestCase
 
   func testValidate()
   {
-    let d = (0..<10).map(Deferred.init(value:))
+    let d = (0..<10).map({Deferred.init(value:$0)})
     let v = d.map({ $0.validate(predicate: { $0%2 == 0 })})
     let e = v.filter({$0.error == nil})
     XCTAssert(e.count == d.count/2)

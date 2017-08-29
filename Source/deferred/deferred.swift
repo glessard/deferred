@@ -126,22 +126,46 @@ open class Deferred<Value>
     self.init(result: result)
   }
 
-  /// Initialize to an already determined state, with a queue at the current quality-of-service class.
+  /// Initialize to an already determined state
   ///
-  /// - parameter value: the value of this `Deferred`'s `Result`
+  /// - parameter qos: the Quality-of-Service class at which the notifications should be performed.
+  /// - parameter value: the value of this `Deferred`
 
-  public convenience init(value: Value)
+  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, value: Value)
   {
-    self.init(result: Result.value(value))
+    let queue = DispatchQueue.global(qos: qos.qosClass)
+    self.init(queue: queue, value: value)
   }
 
-  /// Initialize to an already determined state, with a queue at the current quality-of-service class.
+  /// Initialize to an already determined state
   ///
-  /// - parameter error: the error state of this `Deferred`'s `Result`
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+  /// - parameter value: the value of this `Deferred`
 
-  public convenience init(error: Error)
+  public convenience init(queue: DispatchQueue, value: Value)
   {
-    self.init(result: Result.error(error))
+    self.init(queue: queue, result: Result.value(value))
+  }
+
+  /// Initialize with an Error
+  ///
+  /// - parameter qos: the Quality-of-Service class at which the notifications should be performed.
+  /// - parameter error: the error state of this `Deferred`
+
+  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, error: Error)
+  {
+    let queue = DispatchQueue.global(qos: qos.qosClass)
+    self.init(queue: queue, error: error)
+  }
+
+  /// Initialize with an Error
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+  /// - parameter error: the error state of this `Deferred`
+
+  public convenience init(queue: DispatchQueue, error: Error)
+  {
+    self.init(queue: queue, result: Result.error(error))
   }
 
   // MARK: fileprivate methods
