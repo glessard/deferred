@@ -189,7 +189,7 @@ class DeferredTests: XCTestCase
     let value = nzRandom()
 
     let s = DispatchSemaphore(value: 0)
-    let busy = Deferred<UInt32> {
+    let busy = Deferred<Int> {
       s.wait()
       return value
     }
@@ -219,7 +219,7 @@ class DeferredTests: XCTestCase
     let value = nzRandom()
 
     let s = DispatchSemaphore(value: 0)
-    let busy = Deferred<UInt32> {
+    let busy = Deferred<Int> {
       s.wait()
       return value
     }
@@ -588,7 +588,7 @@ class DeferredTests: XCTestCase
   func testCancel()
   {
     let d1 = Deferred(qos: .utility) {
-      () -> UInt32 in
+      () -> Int in
       usleep(100_000)
       return nzRandom()
     }

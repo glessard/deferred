@@ -81,7 +81,7 @@ class ResultTests: XCTestCase
   func testInitClosureSuccess()
   {
     let val = nzRandom()
-    let res = Result { () throws -> UInt32 in val }
+    let res = Result { () throws -> Int in val }
 
     do {
       let v = try res.getValue()
@@ -131,11 +131,11 @@ class ResultTests: XCTestCase
     let goodres = Result.value(value)
 
     // Good operand, good transform
-    let r1 = goodres.map { Int($0)*2 }
-    XCTAssert(r1 == Result.value(Int(value)*2))
+    let r1 = goodres.map { $0*2 }
+    XCTAssert(r1 == Result.value(value*2))
 
     // Good operand, transform throws
-    let r2 = goodres.map { (i:UInt32) throws -> Double in throw TestError(i) }
+    let r2 = goodres.map { i throws -> Double in throw TestError(i) }
     XCTAssert(TestError(value).matches(r2))
 
     // Bad operand, transform not used

@@ -31,7 +31,7 @@ class TBDTests: XCTestCase
 
   func testDetermine1()
   {
-    let tbd = TBD<UInt32>()
+    let tbd = TBD<Int>()
     tbd.beginExecution()
     let value = nzRandom()
     XCTAssert(tbd.determine(value))
@@ -49,7 +49,7 @@ class TBDTests: XCTestCase
 
   func testDetermine2()
   {
-    let tbd = TBD<UInt32>()
+    let tbd = TBD<Int>()
     tbd.beginExecution()
     var value = nzRandom()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.01) {
@@ -85,7 +85,7 @@ class TBDTests: XCTestCase
     }
 
     let e = expectation(description: "Cancel before setting")
-    let tbd3 = TBD<UInt32>()
+    let tbd3 = TBD<Int>()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) { XCTAssert(tbd3.cancel() == true) }
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
       if tbd3.determine(nzRandom())
@@ -117,7 +117,7 @@ class TBDTests: XCTestCase
   {
     let value = nzRandom()
     let e1 = expectation(description: "TBD notification after determination")
-    let tbd = TBD<UInt32>()
+    let tbd = TBD<Int>()
     tbd.determine(value)
 
     tbd.notify {
@@ -130,7 +130,7 @@ class TBDTests: XCTestCase
   func testNotify2()
   {
     let e2 = expectation(description: "TBD notification after delay")
-    let tbd = TBD<UInt32>()
+    let tbd = TBD<Int>()
 
     var value = nzRandom()
     tbd.notify {

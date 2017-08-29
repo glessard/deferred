@@ -10,8 +10,8 @@ import enum deferred.Result
 
 struct TestError: Error, Equatable
 {
-  let error: UInt32
-  init(_ e: UInt32 = 0) { error = e }
+  let error: Int
+  init(_ e: Int = 0) { error = e }
 
   func matches<T>(_ result: Result<T>) -> Bool
   {

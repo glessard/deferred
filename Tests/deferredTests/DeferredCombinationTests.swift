@@ -32,7 +32,7 @@ class DeferredCombinationTests: XCTestCase
 
     let e = expectation(description: "reduce")
     let c = reduce(AnySequence(inputs), initial: 0) {
-      a, i throws -> UInt32 in
+      a, i throws -> Int in
       if i > 0 { return a+i }
       throw TestError(a)
     }

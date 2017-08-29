@@ -12,14 +12,14 @@
   import func Glibc.random
 #endif
 
-func nzRandom() -> UInt32
+func nzRandom() -> Int
 {
-  var r: UInt32
+  var r: Int
   repeat {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    r = arc4random() & 0x3fff_ffff
+    r = Int(arc4random() & 0x1fff_ffff)
 #else
-    r = UInt32(random() & 0x3fff_ffff)
+    r = random() & 0x1fff_ffff
 #endif
   } while (r == 0)
 
