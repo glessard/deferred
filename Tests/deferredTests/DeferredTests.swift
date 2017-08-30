@@ -34,14 +34,12 @@ class DeferredTests: XCTestCase
     ("testNotify3", testNotify3),
     ("testNotify4", testNotify4),
     ("testMap", testMap),
-    ("testMap2", testMap2),
     ("testRecover", testRecover),
     ("testRetry", testRetry),
     ("testFlatMap", testFlatMap),
     ("testApply", testApply),
     ("testApply1", testApply1),
     ("testApply2", testApply2),
-    ("testApply3", testApply3),
     ("testQoS", testQoS),
     ("testCancel", testCancel),
     ("testCancelAndNotify", testCancelAndNotify),
@@ -82,11 +80,11 @@ class DeferredTests: XCTestCase
     let result5 = result2.map(transform: Double.init).timeout(.milliseconds(50))
 
     syncprint("Waiting")
-    syncprint("Result 1: \(result1.result)")
-    syncprint("Result 2: \(result2.result)")
-    syncprint("Result 3: \(result3.result)")
-    syncprint("Result 4: \(result4.result)")
-    syncprint("Result 5: \(result5.result)")
+    syncprint("Result 1: \(result1.value!)")
+    syncprint("Result 2: \(result2.value!)")
+    syncprint("Result 3: \(result3.value!)")
+    syncprint("Result 4: \(result4.value!)")
+    syncprint("Result 5: \(result5.error!)")
     syncprint("Done")
     syncprintwait()
 
@@ -117,7 +115,7 @@ class DeferredTests: XCTestCase
 
   func testDelay()
   {
-    let d = Deferred(Result.value(Date()))
+    let d = Deferred(value: Date())
 
     let t1 = 0.05
     let d1 = d.delay(seconds: t1).map { Date().timeIntervalSince($0) }
@@ -317,29 +315,6 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.error as? TestError == TestError(error))
   }
 
-  func testMap2()
-  {
-    let value = nzRandom()
-    let error = nzRandom()
-    let goodOperand = Deferred(value: value)
-    let badOperand  = Deferred<Double>(error: TestError(error))
-
-    // good operand, good transform
-    let d1 = goodOperand.map { Result.value(Int($0)*2) }
-    XCTAssert(d1.value == Int(value)*2)
-    XCTAssert(d1.error == nil)
-
-    // good operand, transform errors
-    let d2 = goodOperand.map { Result<Void>.error(TestError($0)) }
-    XCTAssert(d2.value == nil)
-    XCTAssert(d2.error as? TestError == TestError(value))
-
-    // bad operand, transform short-circuited
-    let d3 = badOperand.map { _ in Result<Void> { XCTFail() } }
-    XCTAssert(d3.value == nil)
-    XCTAssert(d3.error as? TestError == TestError(error))
-  }
-
   func testRecover()
   {
     let value = nzRandom()
@@ -367,12 +342,11 @@ class DeferredTests: XCTestCase
     let d4 = goodOperand.delay(.milliseconds(50))
     let r4 = d4.recover { e in Deferred(value: value) }
     XCTAssert(r4.cancel(reason))
-    do {
-      _ = try r4.result.getValue()
-      XCTFail()
-    }
-    catch DeferredError.canceled(let message) { XCTAssert(message == reason) }
-    catch { XCTFail() }
+    XCTAssert(r4.value == nil)
+    if let e = r4.error as? DeferredError,
+       case .canceled(let message) = e
+    { XCTAssert(message == reason) }
+    else { XCTFail() }
   }
 
   func testRetry()
@@ -488,9 +462,9 @@ class DeferredTests: XCTestCase
       operand.determine(v2)
     }
 
-    XCTAssert(operand.peek() == nil)
+    XCTAssertFalse(operand.isDetermined)
     XCTAssert(operand.state == .waiting)
-    XCTAssert(transform.peek() == nil)
+    XCTAssertFalse(transform.isDetermined)
     XCTAssert(transform.state == .waiting)
 
     g.determine(0)
@@ -525,32 +499,6 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testApply3()
-  {
-    let value = Int(nzRandom() & 0x7fff + 10000)
-    let error = nzRandom()
-
-    // good operand, good transform
-    let o1 = Deferred(value: value)
-    let t1 = Deferred { i in Result.value(Double(value*i)) }
-    let e1 = expectation(description: "r1")
-    let r1 = o1.apply(transform: t1)
-    r1.notify { _ in e1.fulfill() }
-    XCTAssert(r1.value == Double(value*value))
-    XCTAssert(r1.error == nil)
-
-    // bad operand, transform not applied
-    let o2 = Deferred<Int> { throw TestError(error) }
-    let t2 = Deferred { (i:Int) in Result<Float> { XCTFail(); return Float(i) } }
-    let e2 = expectation(description: "r2")
-    let r2 = o2.apply(transform: t2)
-    r2.notify { _ in e2.fulfill() }
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(error))
-
-    waitForExpectations(timeout: 1.0)
-  }
-
   func testQoS()
   {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
@@ -561,7 +509,7 @@ class DeferredTests: XCTestCase
     XCTAssert(qb.qos == DispatchQoS.background)
 
     let e1 = expectation(description: "e1")
-    let q1 = Deferred(qos: .background, result: Result.value(qos_class_self()))
+    let q1 = Deferred(qos: .background, value: qos_class_self())
     q1.onValue {
       qosv in
       // Verify that the QOS has been adjusted
@@ -669,7 +617,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectation(description: "cancellation of Deferred.map(_: U -> Result<T>)")
-    let d2 = tbd.map { u in Result.value(XCTFail(String(u))) }
+    let d2 = tbd.map { u in XCTFail(String(u)) }
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
@@ -729,7 +677,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d2.cancel() == true)
 
     let e3 = expectation(description: "cancellation of Deferred.apply, part 3")
-    let t3 = Deferred { (i: Int) in Result.value(Double(i)) }
+    let t3 = Deferred { (i: Int) in Double(i) }
     let d3 = tbd.apply(transform: t3)
     d3.onError { e in e3.fulfill() }
     XCTAssert(d3.cancel() == true)

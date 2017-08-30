@@ -38,9 +38,9 @@ class DeferredCombinationTests: XCTestCase
     }
     c.notify { _ in e.fulfill() }
 
-    XCTAssert(c.result.isValue == false)
-    XCTAssert(c.result.isError)
-    if let error = c.result.error as? TestError
+    XCTAssert(c.value == nil)
+    XCTAssert(c.error != nil)
+    if let error = c.error as? TestError
     {
       XCTAssert(error.error >= 9)
     }
