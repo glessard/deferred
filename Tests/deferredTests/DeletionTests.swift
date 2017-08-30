@@ -17,9 +17,11 @@ class DeletionTests: XCTestCase
   static var allTests = [
     ("testDeallocDeferred1", testDeallocDeferred1),
     ("testDeallocDeferred2", testDeallocDeferred2),
+    ("testDeallocDeferred3", testDeallocDeferred3),
     ("testDelayedDeallocDeferred", testDelayedDeallocDeferred),
     ("testDeallocTBD1", testDeallocTBD1),
     ("testDeallocTBD2", testDeallocTBD2),
+    ("testDeallocTBD3", testDeallocTBD3),
   ]
 
   class Dealloc: Deferred<Void>

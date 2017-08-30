@@ -13,12 +13,12 @@ import class Foundation.NSError
 /// The error case does not encode type beyond the Error protocol.
 /// This way there is no need to ever map between error types, which mostly cannot make sense.
 
-public enum Result<Value>: CustomStringConvertible
+enum Result<Value>: CustomStringConvertible
 {
   case value(Value)
   case error(Error)
 
-  public init(task: () throws -> Value)
+  init(task: () throws -> Value)
   {
     do {
       let value = try task()
@@ -29,7 +29,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public init(_ optional: Value?, or error: Error)
+  init(_ optional: Value?, or error: Error)
   {
     switch optional
     {
@@ -38,7 +38,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public var value: Value? {
+  var value: Value? {
     switch self
     {
     case .value(let value): return value
@@ -46,7 +46,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public var isValue: Bool {
+  var isValue: Bool {
     switch self
     {
     case .value: return true
@@ -54,7 +54,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public var error: Error? {
+  var error: Error? {
     switch self
     {
     case .value:            return nil
@@ -62,7 +62,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public var isError: Bool {
+  var isError: Bool {
     switch self
     {
     case .value: return false
@@ -70,7 +70,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func getValue() throws -> Value
+  func getValue() throws -> Value
   {
     switch self
     {
@@ -80,7 +80,7 @@ public enum Result<Value>: CustomStringConvertible
   }
 
 
-  public var description: String {
+  var description: String {
     switch self
     {
     case .value(let value): return String(describing: value)
@@ -89,7 +89,7 @@ public enum Result<Value>: CustomStringConvertible
   }
 
 
-  public func map<Other>(_ transform: (Value) throws -> Other) -> Result<Other>
+  func map<Other>(_ transform: (Value) throws -> Other) -> Result<Other>
   {
     switch self
     {
@@ -98,7 +98,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func flatMap<Other>(_ transform: (Value) -> Result<Other>) -> Result<Other>
+  func flatMap<Other>(_ transform: (Value) -> Result<Other>) -> Result<Other>
   {
     switch self
     {
@@ -107,7 +107,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func apply<Other>(_ transform: Result<(Value) throws -> Other>) -> Result<Other>
+  func apply<Other>(_ transform: Result<(Value) throws -> Other>) -> Result<Other>
   {
     switch self
     {
@@ -122,7 +122,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func apply<Other>(_ transform: Result<(Value) -> Result<Other>>) -> Result<Other>
+  func apply<Other>(_ transform: Result<(Value) -> Result<Other>>) -> Result<Other>
   {
     switch self
     {
@@ -137,7 +137,7 @@ public enum Result<Value>: CustomStringConvertible
     }
   }
 
-  public func recover(_ transform: (Error) -> Result<Value>) -> Result<Value>
+  func recover(_ transform: (Error) -> Result<Value>) -> Result<Value>
   {
     switch self
     {
@@ -147,7 +147,7 @@ public enum Result<Value>: CustomStringConvertible
   }
 }
 
-public func ?? <Value> (possible: Result<Value>, alternate: @autoclosure () -> Value) -> Value
+func ?? <Value> (possible: Result<Value>, alternate: @autoclosure () -> Value) -> Value
 {
   switch possible
   {
@@ -156,7 +156,7 @@ public func ?? <Value> (possible: Result<Value>, alternate: @autoclosure () -> V
   }
 }
 
-public func == <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bool
+func == <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bool
 {
   switch (lhr, rhr)
   {
@@ -171,12 +171,12 @@ public func == <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bo
   }
 }
 
-public func != <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bool
+func != <Value: Equatable> (lhr: Result<Value>, rhr: Result<Value>) -> Bool
 {
   return !(lhr == rhr)
 }
 
-public func == <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
+func == <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
   where C.Iterator.Element == Result<Value>
 {
   guard lha.count == rha.count else { return false }
@@ -189,7 +189,7 @@ public func == <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
   return true
 }
 
-public func != <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
+func != <C: Collection, Value: Equatable> (lha: C, rha: C) -> Bool
   where C.Iterator.Element == Result<Value>
 {
   return !(lha == rha)
