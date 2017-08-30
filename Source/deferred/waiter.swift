@@ -11,29 +11,29 @@ import Dispatch
 struct Waiter<T>
 {
   private let qos: DispatchQoS?
-  private let handler: (Result<T>) -> Void
+  private let handler: () -> Void
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
-  init(_ qos: DispatchQoS? = nil, _ handler: @escaping (Result<T>) -> Void)
+  init(_ qos: DispatchQoS? = nil, _ handler: @escaping () -> Void)
   {
     self.qos = qos
     self.handler = handler
   }
 
-  fileprivate func notify(_ queue: DispatchQueue, _ result: Result<T>)
+  fileprivate func notify(_ queue: DispatchQueue)
   {
-    queue.async(qos: qos) { [ handler = self.handler ] in handler(result) }
+    queue.async(qos: qos) { [ handler = self.handler ] in handler() }
   }
 }
 
-func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ result: Result<T>)
+func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?)
 {
   var head = reverseList(tail)
   while let current = head
   {
     head = current.pointee.next
 
-    current.pointee.notify(queue, result)
+    current.pointee.notify(queue)
 
     current.deinitialize(count: 1)
     current.deallocate(capacity: 1)

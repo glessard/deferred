@@ -204,7 +204,7 @@ open class Deferred<Value>
 
     let waitQueue = CAtomicsMutablePointerSwap(.determined, &waiters, .acqrel)?.assumingMemoryBound(to: Waiter<Value>.self)
     // precondition(waitQueue != .determined)
-    notifyWaiters(queue, waitQueue, result)
+    notifyWaiters(queue, waitQueue)
 
     // precondition(waiters.load() == .determined, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
 
@@ -223,13 +223,13 @@ open class Deferred<Value>
   /// - parameter qos:  the Quality-of-Service class at which this notification should execute; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter task: the closure to be executed as a notification
 
-  open func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
+  open func notify(qos: DispatchQoS? = nil, task: @escaping (Deferred) -> Void)
   {
     var waitQueue = CAtomicsMutablePointerLoad(&waiters, .acquire)
     if waitQueue != .determined
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
-      waiter.initialize(to: Waiter(qos, task))
+      waiter.initialize(to: Waiter(qos, { task(self) }))
 
       repeat {
         waiter.pointee.next = waitQueue?.assumingMemoryBound(to: Waiter<Value>.self)
@@ -245,9 +245,7 @@ open class Deferred<Value>
     }
 
     // this Deferred is determined
-    let result = resulto!
-
-    queue.async(qos: qos, execute: { task(result) })
+    queue.async(qos: qos, execute: { task(self) })
   }
 
   /// Query the current state of this `Deferred`
@@ -351,7 +349,7 @@ open class Deferred<Value>
     }
 
     let deferred = Deferred(queue: queue)
-    self.notify(qos: queue.qos, task: { deferred.determine($0) })
+    self.notify(qos: queue.qos, task: { deferred.determine($0.result) })
     return deferred
   }
 
@@ -385,11 +383,12 @@ internal final class Mapped<Value>: Deferred<Value>
     super.init(queue: source.queue)
 
     source.notify(qos: qos) {
-      result in
-      if self.isDetermined { return }
-      self.beginExecution()
-      let transformed = result.map(transform)
-      self.determine(transformed) // an error here means this `Deferred` has been canceled.
+      [weak self] deferred in
+      guard let this = self else { return }
+      if this.isDetermined { return }
+      this.beginExecution()
+      let transformed = deferred.result.map(transform)
+      this.determine(transformed) // an error here means this `Deferred` has been canceled.
     }
   }
 
@@ -406,11 +405,12 @@ internal final class Mapped<Value>: Deferred<Value>
     super.init(queue: source.queue)
 
     source.notify(qos: qos) {
-      result in
-      if self.isDetermined { return }
-      self.beginExecution()
-      let transformed = result.flatMap(transform)
-      self.determine(transformed) // an error here means this `Deferred` has been canceled.
+      [weak self] deferred in
+      guard let this = self else { return }
+      if this.isDetermined { return }
+      this.beginExecution()
+      let transformed = deferred.result.flatMap(transform)
+      this.determine(transformed) // an error here means this `Deferred` has been canceled.
     }
   }
 }
@@ -430,19 +430,20 @@ internal final class Bind<Value>: Deferred<Value>
     super.init(queue: source.queue)
 
     source.notify(qos: qos) {
-      result in
-      if self.isDetermined { return }
-      self.beginExecution()
-      switch result
+      [weak self] deferred in
+      guard let this = self else { return }
+      if this.isDetermined { return }
+      this.beginExecution()
+      switch deferred.result
       {
       case .value(let value):
         transform(value).notify(qos: qos) {
           transformed in
-          self.determine(transformed) // an error here means this `Deferred` has been canceled.
+          this.determine(transformed.result) // an error here means this `Deferred` has been canceled.
         }
 
       case .error(let error):
-        self.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
+        this.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
       }
     }
   }
@@ -460,18 +461,20 @@ internal final class Bind<Value>: Deferred<Value>
     super.init(queue: source.queue)
 
     source.notify(qos: qos) {
-      result in
-      if self.isDetermined { return }
-      self.beginExecution()
+      [weak self] deferred in
+      guard let this = self else { return }
+      if this.isDetermined { return }
+      this.beginExecution()
+      let result = deferred.result
       switch result
       {
       case .value:
-        self.determine(result)
+        this.determine(result)
 
       case .error(let error):
         transform(error).notify(qos: qos) {
           transformed in
-          self.determine(transformed)
+          this.determine(transformed.result)
         }
       }
     }
@@ -495,22 +498,24 @@ internal final class Applicator<Value>: Deferred<Value>
     super.init(queue: source.queue)
 
     source.notify(qos: qos) {
-      result in
-      if self.isDetermined { return }
+      [weak self] deferred in
+      guard let this = self else { return }
+      if this.isDetermined { return }
+      let result = deferred.result
       switch result
       {
       case .value:
-        transform.notifying(on: self.queue).notify(qos: qos) {
-          transform in
-          if self.isDetermined { return }
-          self.beginExecution()
-          let transformed = result.apply(transform)
-          self.determine(transformed) // an error here means this `Deferred` has been canceled.
+        transform.notifying(on: this.queue).notify(qos: qos) {
+          [weak self] transform in
+          guard let this = self else { return }
+          if this.isDetermined { return }
+          this.beginExecution()
+          let transformed = result.apply(transform.result)
+          this.determine(transformed) // an error here means this `Deferred` has been canceled.
         }
 
       case .error(let error):
-        self.beginExecution()
-        self.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
+        this.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
       }
     }
   }
@@ -528,22 +533,24 @@ internal final class Applicator<Value>: Deferred<Value>
     super.init(queue: source.queue)
 
     source.notify(qos: qos) {
-      result in
-      if self.isDetermined { return }
+      [weak self] deferred in
+      guard let this = self else { return }
+      if this.isDetermined { return }
+      let result = deferred.result
       switch result
       {
       case .value:
-        transform.notifying(on: self.queue).notify(qos: qos) {
-          transform in
-          if self.isDetermined { return }
-          self.beginExecution()
-          let transformed = result.apply(transform)
-          self.determine(transformed) // an error here means this `Deferred` has been canceled.
+        transform.notifying(on: this.queue).notify(qos: qos) {
+          [weak self] transform in
+          guard let this = self else { return }
+          if this.isDetermined { return }
+          this.beginExecution()
+          let transformed = result.apply(transform.result)
+          this.determine(transformed) // an error here means this `Deferred` has been canceled.
         }
 
       case .error(let error):
-        self.beginExecution()
-        self.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
+        this.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
       }
     }
   }
@@ -566,25 +573,28 @@ internal final class Delayed<Value>: Deferred<Value>
     super.init(queue: source.queue)
 
     source.notify {
-      result in
-      if self.isDetermined { return }
+      [weak self] deferred in
+      guard let this = self else { return }
+      if this.isDetermined { return }
+
+      let result = deferred.result
 
       if case .error = result
       {
-        self.determine(result)
+        this.determine(result)
         return
       }
 
-      self.beginExecution()
+      this.beginExecution()
       if time == .distantFuture { return }
       // enqueue block only if can get executed
       if time > .now()
       {
-        self.queue.asyncAfter(deadline: time) { self.determine(result) }
+        this.queue.asyncAfter(deadline: time) { this.determine(result) }
       }
       else
       {
-        self.determine(result)
+        this.determine(result)
       }
     }
   }

@@ -23,7 +23,7 @@ extension Deferred
 
   public func onValue(qos: DispatchQoS? = nil, task: @escaping (Value) -> Void)
   {
-    notify(qos: qos) { if case let .value(v) = $0 { task(v) } }
+    notify(qos: qos) { if let v = $0.value { task(v) } }
   }
 
   // MARK: onError: execute a task when (and only when) a computation fails
@@ -35,7 +35,7 @@ extension Deferred
 
   public func onError(qos: DispatchQoS? = nil, task: @escaping (Error) -> Void)
   {
-    notify(qos: qos) { if case let .error(e) = $0 { task(e) } }
+    notify(qos: qos) { if let e = $0.error { task(e) } }
   }
 }
 
