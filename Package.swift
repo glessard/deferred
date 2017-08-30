@@ -11,7 +11,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/glessard/syncprint.git", from: "2.2.0"),
-    .package(url: "https://github.com/glessard/swift-atomics.git", from: "3.5.0"),
+    .package(url: "https://github.com/glessard/swift-atomics.git", from: "3.6.0"),
   ],
   targets: [
     .target(name: "deferred", dependencies: ["CAtomics"]),
@@ -29,7 +29,7 @@ let package = Package(
   ],
   dependencies: [
     .Package(url: "https://github.com/glessard/syncprint.git", majorVersion: 2),
-    .Package(url: "https://github.com/glessard/swift-atomics.git", majorVersion: 3, minor: 5),
+    .Package(url: "https://github.com/glessard/swift-atomics.git", majorVersion: 3, minor: 6),
   ]
 )
 

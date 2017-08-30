@@ -192,7 +192,7 @@ open class Deferred<Value>
   fileprivate func determine(_ result: Result<Value>) -> Bool
   {
     var current: Int32 = 1
-    while !CAtomicsInt32WeakCAS(&current, 2, &stateid, .relaxed, .relaxed)
+    while !CAtomicsInt32CAS(&current, 2, &stateid, .weak, .relaxed, .relaxed)
     { // keep trying if another thread hasn't succeeded yet
       if current == 2
       { // another thread succeeded ahead of this one
@@ -233,7 +233,7 @@ open class Deferred<Value>
 
       repeat {
         waiter.pointee.next = waitQueue?.assumingMemoryBound(to: Waiter<Value>.self)
-        if CAtomicsMutablePointerWeakCAS(&waitQueue, UnsafeMutableRawPointer(waiter), &waiters, .acqrel, .acquire)
+        if CAtomicsMutablePointerCAS(&waitQueue, UnsafeMutableRawPointer(waiter), &waiters, .weak, .acqrel, .acquire)
         { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
           return
         }
