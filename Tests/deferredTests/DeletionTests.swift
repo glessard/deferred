@@ -39,8 +39,7 @@ class DeletionTests: XCTestCase
   func testDeallocDeferred1()
   {
     do {
-      let deferred = Dealloc(expectation: expectation(description: "will dealloc deferred 1"))
-      do { deferred.notify { _ in XCTFail("Unexpected notification") } }
+      _ = Dealloc(expectation: expectation(description: "will dealloc deferred 1"))
     }
 
     waitForExpectations(timeout: 0.1)
@@ -49,7 +48,18 @@ class DeletionTests: XCTestCase
   func testDeallocDeferred2()
   {
     do {
-      Dealloc(expectation: expectation(description: "will dealloc deferred 2")).cancel()
+      let deferred = Dealloc(expectation: expectation(description: "will dealloc deferred 2"))
+      do { _ = deferred.map { _ in XCTFail("Unexpected notification") } }
+      deferred.cancel()
+    }
+
+    waitForExpectations(timeout: 0.1)
+  }
+
+  func testDeallocDeferred3()
+  {
+    do {
+      Dealloc(expectation: expectation(description: "will dealloc deferred 3")).cancel()
     }
 
     waitForExpectations(timeout: 0.1)
@@ -87,8 +97,7 @@ class DeletionTests: XCTestCase
   func testDeallocTBD1()
   {
     do {
-      let tbd = DeallocTBD(expectation: expectation(description: "will dealloc tbd 1"))
-      do { tbd.notify { _ in XCTFail("Unexpected notification") } }
+      _ = DeallocTBD(expectation: expectation(description: "will dealloc tbd 1"))
     }
 
     waitForExpectations(timeout: 0.1)
@@ -97,7 +106,18 @@ class DeletionTests: XCTestCase
   func testDeallocTBD2()
   {
     do {
-      DeallocTBD(expectation: expectation(description: "will dealloc tbd 2")).cancel()
+      let tbd = DeallocTBD(expectation: expectation(description: "will dealloc tbd 2"))
+      do { _ = tbd.map { _ in XCTFail("Unexpected notification") } }
+      tbd.cancel()
+    }
+
+    waitForExpectations(timeout: 0.1)
+  }
+
+  func testDeallocTBD3()
+  {
+    do {
+      DeallocTBD(expectation: expectation(description: "will dealloc tbd 3")).cancel()
     }
 
     waitForExpectations(timeout: 0.1)

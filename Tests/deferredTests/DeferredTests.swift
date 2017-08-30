@@ -250,7 +250,7 @@ class DeferredTests: XCTestCase
     let e1 = expectation(description: "Pre-set Deferred")
     let d1 = Deferred(value: value)
     d1.notify {
-      XCTAssert( $0 == Result.value(value) )
+      XCTAssert( $0.value == value )
       e1.fulfill()
     }
     waitForExpectations(timeout: 1.0)
@@ -265,7 +265,7 @@ class DeferredTests: XCTestCase
     let q3 = DispatchQueue(label: "Test", qos: .background)
     let d3 = d2.notifying(on: q3)
     d3.notify(qos: .utility) {
-      XCTAssert( $0 == Result.value(value) )
+      XCTAssert( $0.value == value )
       e2.fulfill()
     }
     waitForExpectations(timeout: 1.0)
@@ -280,8 +280,8 @@ class DeferredTests: XCTestCase
       return 42
     }
     d3.notify {
-      result in
-      guard case let .error(e) = result,
+      deferred in
+      guard let e = deferred.error,
             let deferredErr = e as? DeferredError,
             case .canceled = deferredErr
       else
@@ -488,9 +488,9 @@ class DeferredTests: XCTestCase
     var v1 = 0
     var v2 = 0
     result.notify {
-      result in
+      deferred in
       print("\(v1), \(v2), \(result)")
-      XCTAssert(result == Result.value(Double(v1*v2)))
+      XCTAssert(deferred.value == Double(v1*v2))
       expect.fulfill()
     }
 
