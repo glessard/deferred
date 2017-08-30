@@ -193,7 +193,7 @@ extension Optional
   public func deferred(queue: DispatchQueue) -> Deferred<Wrapped>
   {
     let result = Result(self, or: DeferredError.invalid("Deferred initialized from a nil Optional"))
-    return Deferred(result)
+    return Deferred(queue: queue, result: result)
   }
 
   /// Create a `Deferred` from this `Optional`.
