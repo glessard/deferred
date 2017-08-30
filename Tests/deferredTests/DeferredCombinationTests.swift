@@ -191,20 +191,17 @@ class DeferredCombinationTests: XCTestCase
 
     deferreds.forEach {
       d in
-      switch d.result
-      {
-      case .value(let value):
+      do {
+        let value = try d.await()
         XCTAssert(value == lucky)
-      case .error(let error as DeferredError):
-        XCTAssert(error == DeferredError.canceled(""))
-      case .error(let error):
-        XCTFail("Wrong error: \(error)")
       }
+      catch DeferredError.canceled(let s) { XCTAssert(s == "") }
+      catch { XCTFail("Wrong error: \(error)") }
     }
 
     let never = firstValue(EmptyIterator<Deferred<Any>>())
     do {
-      _ = try never.result.getValue()
+      _ = try never.await()
       XCTFail()
     }
     catch DeferredError.canceled(let s) { XCTAssert(s != "") }
@@ -276,13 +273,11 @@ class DeferredCombinationTimedTests: XCTestCase
       let inputs = (1...iterations).map { Deferred(value: $0) }
       self.startMeasuring()
       let c = reduce(inputs, initial: 0, combine: +)
-      switch c.result
-      {
-      case .value(let v):
+      do {
+        let v = try c.await()
         XCTAssert(v == (iterations*(iterations+1)/2))
-      default:
-        XCTFail()
       }
+      catch { XCTFail() }
       self.stopMeasuring()
     }
   }
@@ -301,13 +296,11 @@ class DeferredCombinationTimedTests: XCTestCase
           u in deferred.map { t in u+t }
         }
       }
-      switch c.result
-      {
-      case .value(let v):
+      do {
+        let v = try c.await()
         XCTAssert(v == (iterations*(iterations+1)/2))
-      default:
-        XCTFail()
       }
+      catch { XCTFail() }
       self.stopMeasuring()
     }
   }
@@ -320,13 +313,11 @@ class DeferredCombinationTimedTests: XCTestCase
       let inputs = (1...iterations).map { Deferred(value: $0) }
       self.startMeasuring()
       let c = combine(inputs)
-      switch c.result
-      {
-      case .value(let v):
+      do {
+        let v = try c.await()
         XCTAssert(v.count == iterations)
-      default:
-        XCTFail()
       }
+      catch { XCTFail() }
       self.stopMeasuring()
     }
   }
