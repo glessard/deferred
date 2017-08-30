@@ -52,16 +52,6 @@ extension Deferred
   {
     return Mapped<Other>(qos: qos, source: self, transform: transform)
   }
-
-  /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
-  /// - parameter qos: the QOS class at which to execute the transform; defaults to the queue's QOS class.
-  /// - parameter transform: the transform to be performed
-  /// - returns: a `Deferred` reference representing the return value of the transform
-
-  public func map<Other>(qos: DispatchQoS? = nil, transform: @escaping (Value) -> Result<Other>) -> Deferred<Other>
-  {
-    return Mapped<Other>(qos: qos, source: self, transform: transform)
-  }
 }
 
 // MARK: flatMap: asynchronously transform a `Deferred` into another
@@ -126,16 +116,6 @@ extension Deferred
 
 extension Deferred
 {
-  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
-  /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
-  /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
-  /// - returns: a `Deferred` reference representing the return value of the transform
-
-  public func apply<Other>(qos: DispatchQoS? = nil, transform: Deferred<(Value) -> Result<Other>>) -> Deferred<Other>
-  {
-    return Applicator<Other>(qos: qos, source: self, transform: transform)
-  }
-
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`

@@ -50,7 +50,7 @@ open class Deferred<Value>
 
   // MARK: designated initializers
 
-  internal init(queue: DispatchQueue)
+  init(queue: DispatchQueue)
   {
     resulto = nil
     CAtomicsMutablePointerInit(nil, &waiters)
@@ -64,7 +64,7 @@ open class Deferred<Value>
   /// - parameter queue:  the dispatch queue upon which to execute future notifications for this `Deferred`
   /// - parameter result: the result of this `Deferred`
 
-  public init(queue: DispatchQueue, result: Result<Value>)
+  init(queue: DispatchQueue, result: Result<Value>)
   {
     resulto = result
     CAtomicsMutablePointerInit(.determined, &waiters)
@@ -92,11 +92,13 @@ open class Deferred<Value>
   /// - parameter qos:   the Quality-of-Service class at which the computation should be performed; defaults to the QOS class of `queue`
   /// - parameter task:  the computation to be performed
 
-  public convenience init(queue: DispatchQueue, qos: DispatchQoS? = nil, task: @escaping () throws -> Value)
+  public init(queue: DispatchQueue, qos: DispatchQoS? = nil, task: @escaping () throws -> Value)
   {
-    self.init(queue: queue)
+    resulto = nil
+    CAtomicsMutablePointerInit(nil, &waiters)
+    CAtomicsInt32Init(1, &stateid)
 
-    CAtomicsInt32Store(1, &stateid, .relaxed)
+    self.queue = queue
 
     queue.async(qos: qos) {
       let result = Result { try task() }
@@ -111,19 +113,10 @@ open class Deferred<Value>
   /// - parameter qos:    the Quality-of-Service class at which the notifications should be performed.
   /// - parameter result: the result of this `Deferred`
 
-  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, result: Result<Value>)
+  convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, result: Result<Value>)
   {
     let queue = DispatchQueue.global(qos: qos.qosClass)
     self.init(queue: queue, result: result)
-  }
-
-  /// Initialize to an already determined state, with a queue at the current quality-of-service class.
-  ///
-  /// - parameter result: the result of this `Deferred`
-
-  public convenience init(_ result: Result<Value>)
-  {
-    self.init(result: result)
   }
 
   /// Initialize to an already determined state
@@ -223,7 +216,7 @@ open class Deferred<Value>
   /// - parameter qos:  the Quality-of-Service class at which this notification should execute; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter task: the closure to be executed as a notification
 
-  open func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
+  func notify(qos: DispatchQoS? = nil, task: @escaping (Result<Value>) -> Void)
   {
     var waitQueue = CAtomicsMutablePointerLoad(&waiters, .acquire)
     if waitQueue != .determined
@@ -287,11 +280,11 @@ open class Deferred<Value>
   ///
   /// - returns: this `Deferred`'s value, or `nil`
 
-  public func peek() -> Result<Value>?
+  public func peek() throws -> Value?
   {
     if CAtomicsMutablePointerLoad(&waiters, .acquire) == .determined
     {
-      return resulto
+      return try resulto?.getValue()
     }
     return nil
   }
@@ -300,7 +293,7 @@ open class Deferred<Value>
   ///
   /// - returns: this `Deferred`'s determined result
 
-  public var result: Result<Value> {
+  fileprivate var result: Result<Value> {
     if CAtomicsMutablePointerLoad(&waiters, .acquire) != .determined
     {
       let s = DispatchSemaphore(value: 0)
@@ -392,27 +385,6 @@ internal final class Mapped<Value>: Deferred<Value>
       self.determine(transformed) // an error here means this `Deferred` has been canceled.
     }
   }
-
-  /// Initialize with a `Deferred` source and a transform to be computed in the background
-  /// This constructor is used by the version of `map` that uses a transform to a `Result`.
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
-  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
-
-  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: @escaping (U) -> Result<Value>)
-  {
-    super.init(queue: source.queue)
-
-    source.notify(qos: qos) {
-      result in
-      if self.isDetermined { return }
-      self.beginExecution()
-      let transformed = result.flatMap(transform)
-      self.determine(transformed) // an error here means this `Deferred` has been canceled.
-    }
-  }
 }
 
 internal final class Bind<Value>: Deferred<Value>
@@ -482,39 +454,6 @@ internal final class Bind<Value>: Deferred<Value>
 
 internal final class Applicator<Value>: Deferred<Value>
 {
-  /// Initialize with a `Deferred` source and a transform to be computed in the background
-  /// This constructor is used by `apply`
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
-  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
-
-  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: Deferred<(U) -> Result<Value>>)
-  {
-    super.init(queue: source.queue)
-
-    source.notify(qos: qos) {
-      result in
-      if self.isDetermined { return }
-      switch result
-      {
-      case .value:
-        transform.notifying(on: self.queue).notify(qos: qos) {
-          transform in
-          if self.isDetermined { return }
-          self.beginExecution()
-          let transformed = result.apply(transform)
-          self.determine(transformed) // an error here means this `Deferred` has been canceled.
-        }
-
-      case .error(let error):
-        self.beginExecution()
-        self.determine(Result.error(error)) // an error here means this `Deferred` has been canceled.
-      }
-    }
-  }
-
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `apply`
   ///
@@ -644,7 +583,7 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  public override func determine(_ result: Result<Value>) -> Bool
+  override func determine(_ result: Result<Value>) -> Bool
   {
     return super.determine(result)
   }
