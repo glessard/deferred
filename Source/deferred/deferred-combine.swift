@@ -211,12 +211,7 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS
 
   deferreds.forEach {
     deferred in
-    deferred.notify {
-      _ in
-      // an error here just means `deferred` wasn't the first to become determined
-      first.determine(deferred)
-    }
-
+    deferred.notify { _ in first.determine(deferred) }
     if cancelOthers { first.notify { _ in deferred.cancel() } }
   }
 
@@ -236,12 +231,7 @@ public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.c
     deferreds.forEach {
       deferred in
       subscribed = true
-      deferred.notify {
-        _ in
-        // an error here just means `deferred` wasn't the first to become determined
-        first.determine(deferred)
-      }
-
+      deferred.notify { _ in first.determine(deferred) }
       if cancelOthers { first.notify { _ in deferred.cancel() } }
     }
 

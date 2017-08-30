@@ -121,7 +121,7 @@ class TBDTests: XCTestCase
     tbd.determine(value)
 
     tbd.notify {
-      XCTAssert( $0 == Result.value(value) )
+      XCTAssert( $0.value == value )
       e1.fulfill()
     }
     waitForExpectations(timeout: 1.0)
@@ -134,7 +134,7 @@ class TBDTests: XCTestCase
 
     var value = nzRandom()
     tbd.notify {
-      XCTAssert( $0 == Result.value(value) )
+      XCTAssert( $0.value == value )
       e2.fulfill()
     }
 
@@ -151,9 +151,9 @@ class TBDTests: XCTestCase
     let e3 = expectation(description: "TBD never determined")
     let d3 = TBD<Int>()
     d3.notify {
-      result in
+      determined in
       do {
-        _ = try result.getValue()
+        _ = try determined.get()
         XCTFail()
       }
       catch DeferredError.canceled {}
@@ -232,14 +232,13 @@ class TBDTests: XCTestCase
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
     let c = combine(d)
     c.notify {
-      r in
-      switch r
-      {
-      case .value(let value):
+      determined in
+      do {
+        let value = try determined.get()
         XCTAssert(value.count == count)
         e.fulfill()
-      default: XCTFail()
       }
+      catch { XCTFail() }
     }
 
     waitForExpectations(timeout: 1.0)
