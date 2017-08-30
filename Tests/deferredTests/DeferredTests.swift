@@ -29,6 +29,7 @@ class DeferredTests: XCTestCase
     ("testPeek", testPeek),
     ("testValueBlocks", testValueBlocks),
     ("testValueUnblocks", testValueUnblocks),
+    ("testAwait", testAwait),
     ("testOptional", testOptional),
     ("testNotify1", testNotify1),
     ("testNotify2", testNotify2),
@@ -240,6 +241,23 @@ class DeferredTests: XCTestCase
     }
 
     waitForExpectations(timeout: 2.0)
+  }
+
+  func testAwait()
+  {
+    let e = TestError(1)
+    let d1 = Deferred(value: 1.0)
+    let d2 = d1.map(transform: { _  throws -> Double in throw e})
+    var double = Optional<Double>.none
+    do {
+      double = try d1.await()
+      double = try d2.await()
+      XCTFail()
+    } catch let error as TestError {
+      XCTAssert(error == e)
+    } catch { XCTFail() }
+
+    XCTAssert(double == 1.0)
   }
 
   func testNotify1()
