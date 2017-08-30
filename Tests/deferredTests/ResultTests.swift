@@ -8,7 +8,7 @@
 
 import XCTest
 
-import deferred
+@testable import deferred
 
 
 class ResultTests: XCTestCase
@@ -136,13 +136,13 @@ class ResultTests: XCTestCase
 
     // Good operand, transform throws
     let r2 = goodres.map { i throws -> Double in throw TestError(i) }
-    XCTAssert(TestError(value).matches(r2))
+    XCTAssert(r2.error as? TestError == TestError(value))
 
     // Bad operand, transform not used
     value = nzRandom()
     let badres = Result<Double>.error(TestError(value))
     let r3 = badres.map { (d: Double) throws -> Int in XCTFail(); return 0 }
-    XCTAssert(TestError(value).matches(r3))
+    XCTAssert(r3.error as? TestError == TestError(value))
   }
 
   func testFlatMap()
@@ -156,13 +156,13 @@ class ResultTests: XCTestCase
 
     // Good operand, transform errors
     let r2 = goodres.flatMap { Result<Double>.error(TestError($0)) }
-    XCTAssert(TestError(value).matches(r2))
+    XCTAssert(r2.error as? TestError == TestError(value))
 
     // Bad operand, transform not used
     value = nzRandom()
     let badres = Result<Double>.error(TestError(value))
     let r3 = badres.flatMap { _ in Result<String> { XCTFail(); return "" } }
-    XCTAssert(TestError(value).matches(r3))
+    XCTAssert(r3.error as? TestError == TestError(value))
   }
 
   func testRecover()
@@ -178,7 +178,7 @@ class ResultTests: XCTestCase
 
     // Bad operand, transform throws
     let r2 = badres.recover { e in Result.error(TestError(value)) }
-    XCTAssert(TestError(value).matches(r2))
+    XCTAssert(r2.error as? TestError == TestError(value))
 
     // Bad operand, transform executes
     value = nzRandom()
@@ -201,14 +201,14 @@ class ResultTests: XCTestCase
     let o2 = Result<Int>.error(TestError(error))
     let t2 = Result.value({ (i:Int) throws -> Double in XCTFail(); return 0.0 })
     let r2 = o2.apply(t2)
-    XCTAssert(TestError(error).matches(r2))
+    XCTAssert(r2.error as? TestError == TestError(error))
 
     // Good operand, transform Result carries error
     error = nzRandom()
     let o4 = Result.value(value)
     let t4 = Result.error(TestError(error)) as Result<(Int) throws -> UnsafeMutablePointer<AnyObject>>
     let r4 = o4.apply(t4)
-    XCTAssert(TestError(error).matches(r4))
+    XCTAssert(r4.error as? TestError == TestError(error))
   }
 
   func testApplyB()
@@ -226,14 +226,14 @@ class ResultTests: XCTestCase
     let o2 = Result<Int>.error(TestError(error))
     let t2 = Result.value { (i:Int) in Result<Double> { XCTFail(); return 0.0 } }
     let r2 = o2.apply(t2)
-    XCTAssert(TestError(error).matches(r2))
+    XCTAssert(r2.error as? TestError == TestError(error))
 
     // Good operand, transform Result carries error
     error = nzRandom()
     let o4 = Result.value(value)
     let t4 = Result.error(TestError(error)) as Result<(Int) -> Result<UnsafeRawPointer>>
     let r4 = o4.apply(t4)
-    XCTAssert(TestError(error).matches(r4))
+    XCTAssert(r4.error as? TestError == TestError(error))
   }
 
   func testQuestionMarkQuestionMarkOperator()
@@ -253,11 +253,13 @@ class ResultTests: XCTestCase
     XCTAssert(r1 == Result.value(1))
 
     let r2 = Result<Int> { throw TestError() }
+    XCTAssert(r2.error as? TestError == TestError())
+
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     XCTAssert(r2 == Result.error(TestError()))
 #else
-    // a poor substitute
-    XCTAssert(TestError().matches(r2))
+    // equality testing of Results that hold errors
+    // does not work on Linux.
     XCTAssert(r2 != Result.error(TestError()))
 #endif
 
