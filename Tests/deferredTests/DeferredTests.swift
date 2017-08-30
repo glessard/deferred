@@ -26,7 +26,6 @@ class DeferredTests: XCTestCase
     ("testDeferredError", testDeferredError),
     ("testDelay", testDelay),
     ("testValue", testValue),
-    ("testPeek", testPeek),
     ("testValueBlocks", testValueBlocks),
     ("testValueUnblocks", testValueUnblocks),
     ("testOptional", testOptional),
@@ -164,23 +163,6 @@ class DeferredTests: XCTestCase
     let d = Deferred(value: value)
     XCTAssert(d.value == value)
     XCTAssert(d.isDetermined)
-  }
-
-  func testPeek()
-  {
-    let value = 1
-    let d1 = Deferred(value: value)
-    XCTAssert(d1.peek()! == Result.value(value))
-
-    let d2 = d1.delay(.microseconds(10_000))
-    XCTAssert(d2.peek() == nil)
-    XCTAssert(d2.isDetermined == false)
-
-    _ = d2.value // Wait for delay
-
-    XCTAssert(d2.peek() != nil)
-    XCTAssert(d2.peek()! == Result.value(value))
-    XCTAssert(d2.isDetermined)
   }
 
   func testValueBlocks()
