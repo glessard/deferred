@@ -75,7 +75,7 @@ public func reduce<T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ d
   let reduced = deferreds.reduce(accumulator) {
     (accumulator, deferred) in
     accumulator.flatMap {
-      u in deferred.notifying(on: queue).map { t in try combine(u,t) }
+      u in deferred.enqueuing(on: queue).map { t in try combine(u,t) }
     }
   }
 
@@ -109,7 +109,7 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? 
     deferreds.reduce(accumulator) {
       (accumulator, deferred) in
       accumulator.flatMap {
-        u in deferred.notifying(on: queue).map { t in try combine(u,t) }
+        u in deferred.enqueuing(on: queue).map { t in try combine(u,t) }
       }
     }
   }

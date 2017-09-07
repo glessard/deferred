@@ -398,7 +398,7 @@ open class Deferred<Value>
   /// - parameter queue: the queue to be used by the returned `Deferred`
   /// - returns: a new `Deferred` whose notifications will execute on `queue`
 
-  public func notifying(on queue: DispatchQueue) -> Deferred
+  public func enqueuing(on queue: DispatchQueue) -> Deferred
   {
     if CAtomicsMutablePointerLoad(&waiters, .acquire) == .determined
     {
@@ -410,16 +410,22 @@ open class Deferred<Value>
     return deferred
   }
 
+  @available(*, unavailable, renamed: "enqueuing")
+  public func notifying(on queue: DispatchQueue) -> Deferred { return enqueuing(on: queue) }
+
   /// Set the quality-of-service to use for future notifications.
   /// The returned `Deferred` will issue notifications on a concurrent queue at the specified quality-of-service class.
   /// - parameter qos: the quality-of-service class to be used by the returned `Deferred`
   /// - returns: a new `Deferred` whose notifications will run at quality-of-service `qos`
 
-  public func notifying(at qos: DispatchQoS, serially: Bool = false) -> Deferred
+  public func enqueuing(at qos: DispatchQoS, serially: Bool = false) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos, attributes: serially ? [] : .concurrent)
-    return notifying(on: queue)
+    return enqueuing(on: queue)
   }
+
+  @available(*, unavailable, renamed: "enqueuing")
+  public func notifying(at qos: DispatchQoS, serially: Bool = false) -> Deferred { return enqueuing(at: qos, serially: serially) }
 }
 
 

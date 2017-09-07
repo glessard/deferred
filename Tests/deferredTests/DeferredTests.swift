@@ -261,7 +261,7 @@ class DeferredTests: XCTestCase
     let d1 = Deferred(value: value)
     let d2 = d1.delay(.milliseconds(100))
     let q3 = DispatchQueue(label: "Test", qos: .background)
-    let d3 = d2.notifying(on: q3)
+    let d3 = d2.enqueuing(on: q3)
     d3.notify(qos: .utility) {
       XCTAssert( $0.value == value )
       e2.fulfill()
@@ -522,7 +522,7 @@ class DeferredTests: XCTestCase
   {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     let q = DispatchQueue.global(qos: .utility)
-    let qb = Deferred(queue: q, task: { qos_class_self() }).notifying(at: .background)
+    let qb = Deferred(queue: q, task: { qos_class_self() }).enqueuing(at: .background)
     // Verify that the block's QOS was adjusted and is different from the queue's
     XCTAssert(qb.value == QOS_CLASS_UTILITY)
     XCTAssert(qb.qos == DispatchQoS.background)
@@ -538,7 +538,7 @@ class DeferredTests: XCTestCase
     }
 
     let e2 = expectation(description: "e2")
-    let q2 = qb.notifying(at: .background, serially: true)
+    let q2 = qb.enqueuing(at: .background, serially: true)
     q2.notify { _ in e2.fulfill() }
 
     let e3 = expectation(description: "e3")
@@ -554,7 +554,7 @@ class DeferredTests: XCTestCase
     }
 
     let e4 = expectation(description: "e4")
-    let q4 = q3.notifying(at: .userInteractive)
+    let q4 = q3.enqueuing(at: .userInteractive)
     q4.onValue {
       qosv in
       // Last block was in fact executing at QOS_CLASS_USER_INITIATED
