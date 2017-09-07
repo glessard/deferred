@@ -364,6 +364,9 @@ open class Deferred<Value>
     }
   }
 
+  @available(*, unavailable, message: "the isDetermined property provides a non-blocking check that can replace peek()")
+  public func peek() -> Value? { return nil }
+
   /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
   /// If the `Deferred` is determined with an `Error`, return nil.
   /// In either case, this property will block until `Deferred` is determined.
