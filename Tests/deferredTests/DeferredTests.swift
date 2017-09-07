@@ -372,15 +372,16 @@ class DeferredTests: XCTestCase
     let retries = 5
 
     var counter = 0
-    let r1 = Deferred.RetryingTask(retries) {
+    let r1 = Deferred.RetryTask(retries) {
       () in
       counter += 1
       throw TestError(counter)
     }
     XCTAssert(r1.value == nil)
+    XCTAssert(r1.error as? TestError == TestError(retries))
     XCTAssert(counter == retries)
 
-    let r2 = Deferred.Retrying(0) { Deferred(task: {XCTFail()}) }
+    let r2 = Deferred.Retrying(0, task: { Deferred<Void>(task: {XCTFail()}) })
     if let e = r2.error as? DeferredError,
        case .invalid(let s) = e
     { _ = s } // print(s) }
@@ -396,7 +397,7 @@ class DeferredTests: XCTestCase
     XCTAssert(r3.value == retries)
 
     counter = 0
-    let r4 = Deferred.RetryingTask(retries) {
+    let r4 = Deferred.RetryTask(retries) {
       () throws -> Int in
       counter += 1
       guard counter < retries else { throw TestError(counter) }
