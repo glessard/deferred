@@ -201,10 +201,10 @@ class DeferredCombinationTests: XCTestCase
 
     let never = firstValue(EmptyIterator<Deferred<Any>>())
     do {
-      _ = try never.get()
-      XCTFail()
+      let value = try never.get()
+      XCTFail("never.value should be nil, was \(value)")
     }
-    catch DeferredError.canceled(let s) { XCTAssert(s != "") }
+    catch DeferredError.invalid(let m) { XCTAssert(m != "") }
     catch { XCTFail("Wrong error: \(error)") }
 
     let one = firstValue([Deferred(value: ())])
@@ -237,8 +237,12 @@ class DeferredCombinationTests: XCTestCase
 
       if deferreds.count == 0
       {
-        XCTAssert(first.value == nil)
-        XCTAssert(first.error is DeferredError)
+        do {
+          let value = try first.get()
+          XCTFail("first.value should be nil, was \(value)")
+        }
+        catch DeferredError.invalid(let m) { XCTAssert(m != "") }
+        catch { XCTFail("Wrong error: \(error)") }
       }
     }
 

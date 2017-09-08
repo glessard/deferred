@@ -202,7 +202,7 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS
 {
   if deferreds.count == 0
   {
-    let error = DeferredError.canceled("cannot find first determined from an empty set in \(#function)")
+    let error = DeferredError.invalid("cannot find first determined from an empty set in \(#function)")
     return Deferred(qos: qos, error: error)
   }
 
@@ -237,7 +237,8 @@ public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.c
 
     if !subscribed
     {
-      first.cancel("cannot find first determined from an empty set in \(#function)")
+      let error = DeferredError.invalid("cannot find first determined from an empty set in \(#function)")
+      first.determine(error)
     }
   }
 
