@@ -14,7 +14,11 @@ import CAtomics
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredState { case waiting, executing, determined }
+public enum DeferredState
+{
+  case waiting, executing, succeeded, errored
+  public var isDetermined: Bool { return self == .succeeded || self == .errored }
+}
 
 extension UnsafeMutableRawPointer
 {
@@ -298,8 +302,9 @@ open class Deferred<Value>
   /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
 
   public var state: DeferredState {
-    if waiters.load(.relaxed) == .determined  { return .determined }
-    return (stateid.load(.relaxed) == 0) ? .waiting : .executing
+    return (waiters.load(.acquire) != .determined) ?
+      (stateid.load(.relaxed) == 0 ? .waiting : .executing ) :
+      (determination!.isValue ? .succeeded : .errored)
   }
 
   /// Query whether this `Deferred` has been determined.

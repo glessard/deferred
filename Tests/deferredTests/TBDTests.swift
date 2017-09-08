@@ -102,12 +102,17 @@ class TBDTests: XCTestCase
   {
     let d = TBD<Int>()
     XCTAssert(d.state == .waiting)
+    XCTAssertFalse(d.state.isDetermined)
 
     d.beginExecution()
     XCTAssert(d.state == .executing)
 
     d.determine(1)
-    XCTAssert(d.state == .determined)
+    XCTAssert(d.state == .succeeded)
+
+    let e = Deferred<Void>(error: TestError())
+    XCTAssert(e.state == .errored)
+    XCTAssert(e.state.isDetermined)
   }
 
   func testNotify1()

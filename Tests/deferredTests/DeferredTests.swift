@@ -489,7 +489,7 @@ class DeferredTests: XCTestCase
     g.determine(0)
     waitForExpectations(timeout: 1.0)
 
-    XCTAssert(transform.state == .determined)
+    XCTAssert(transform.state == .succeeded)
   }
 
   func testApply2()
