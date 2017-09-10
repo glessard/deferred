@@ -97,7 +97,7 @@ open class Deferred<Value>
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Value)
   {
-    let queue = DispatchQueue.global(qos: qos.qosClass)
+    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
     self.init(queue: queue, task: task)
   }
 
@@ -135,7 +135,7 @@ open class Deferred<Value>
 
   public convenience init(qos: DispatchQoS = .current, value: Value)
   {
-    let queue = DispatchQueue.global(qos: qos.qosClass)
+    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
     self.init(queue: queue, value: value)
   }
 
@@ -156,7 +156,7 @@ open class Deferred<Value>
 
   public convenience init(qos: DispatchQoS = .current, error: Error)
   {
-    let queue = DispatchQueue.global(qos: qos.qosClass)
+    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
     self.init(queue: queue, error: error)
   }
 
@@ -640,7 +640,7 @@ open class TBD<Value>: Deferred<Value>
 
   public convenience init(qos: DispatchQoS = .current)
   {
-    let queue = DispatchQueue.global(qos: qos.qosClass)
+    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
     self.init(queue: queue)
   }
 
