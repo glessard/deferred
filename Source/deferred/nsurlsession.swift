@@ -61,14 +61,14 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     }
   }
 
-  public override func enqueue(qos: DispatchQoS? = nil, task: @escaping (Determined<Value>) -> Void)
+  public override func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (Determined<Value>) -> Void)
   {
     if state == .waiting
     {
       urlSessionTask?.resume()
       beginExecution()
     }
-    super.enqueue(qos: qos, task: task)
+    super.enqueue(queue: queue, boostQoS: boostQoS, task: task)
   }
 }
 

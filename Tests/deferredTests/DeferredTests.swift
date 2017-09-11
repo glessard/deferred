@@ -285,11 +285,9 @@ class DeferredTests: XCTestCase
   {
     let value = nzRandom()
     let e2 = expectation(description: "Properly Deferred")
-    let d1 = Deferred(value: value)
+    let d1 = Deferred(qos: .background, value: value)
     let d2 = d1.delay(.milliseconds(100))
-    let q3 = DispatchQueue(label: "Test", qos: .background)
-    let d3 = d2.enqueuing(on: q3)
-    d3.notify(qos: .utility) {
+    d2.notify(queue: DispatchQueue(label: "Test", qos: .utility)) {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }
@@ -441,7 +439,7 @@ class DeferredTests: XCTestCase
     let badOperand  = Deferred<Double>(error: TestError(error))
 
     // good operand, good transform
-    let d1 = goodOperand.flatMap { Deferred(value: Int($0)*2) }
+    let d1 = goodOperand.flatMap(qos: .utility, transform: { Deferred(value: Int($0)*2) })
     XCTAssert(d1.value == Int(value)*2)
     XCTAssert(d1.error == nil)
 

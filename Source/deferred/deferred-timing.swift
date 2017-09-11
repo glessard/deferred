@@ -22,9 +22,9 @@ extension Deferred
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public final func delay(seconds delay: Double) -> Deferred
+  public final func delay(queue: DispatchQueue? = nil, seconds delay: Double) -> Deferred
   {
-    return self.delay(until: .now() + delay)
+    return self.delay(queue: queue, until: .now() + delay)
   }
 
   /// Return a `Deferred` whose determination will occur at the earliest`delay` from the time of evaluation.
@@ -33,9 +33,9 @@ extension Deferred
   /// - parameter delay: a time interval, as `DispatchTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public final func delay(_ delay: DispatchTimeInterval) -> Deferred
+  public final func delay(queue: DispatchQueue? = nil, _ delay: DispatchTimeInterval) -> Deferred
   {
-    return self.delay(until: .now() + delay)
+    return self.delay(queue: queue, until: .now() + delay)
   }
 
   /// Return a `Deferred` whose determination will occur after a given timestamp.
@@ -44,11 +44,10 @@ extension Deferred
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public final func delay(until time: DispatchTime) -> Deferred
+  public final func delay(queue: DispatchQueue? = nil, until time: DispatchTime) -> Deferred
   { // FIXME: don't special-case .distantFuture (https://bugs.swift.org/browse/SR-5706)
     guard time > .now() || time == .distantFuture else { return self }
-
-    return Delayed(source: self, until: time)
+    return Delayed(queue: queue, source: self, until: time)
   }
 }
 
