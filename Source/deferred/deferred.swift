@@ -56,13 +56,13 @@ open class Deferred<Value>
 
   // MARK: designated initializers
 
-  fileprivate init<Other>(queue: DispatchQueue? = nil, source: Deferred<Other>)
+  fileprivate init<Other>(queue: DispatchQueue? = nil, source: Deferred<Other>, beginExecution: Bool = false)
   {
     self.queue = queue ?? source.queue
     self.source = source
     determination = nil
     waiters.initialize(nil)
-    stateid.initialize(0)
+    stateid.initialize(beginExecution ? 1:0)
   }
 
   internal init(queue: DispatchQueue)
@@ -398,7 +398,8 @@ open class Deferred<Value>
       return Deferred(queue: queue, result: determination!)
     }
 
-    let deferred = Deferred(queue: queue, source: self)
+    let beginExecution = stateid.load(.relaxed) != 0
+    let deferred = Deferred(queue: queue, source: self, beginExecution: beginExecution)
     self.enqueue(qos: queue.qos, task: { [weak deferred] in deferred?.determine($0) })
     return deferred
   }
