@@ -65,7 +65,7 @@ open class Deferred<Value>
     stateid.initialize(beginExecution ? 1:0)
   }
 
-  internal init(queue: DispatchQueue)
+  fileprivate init(queue: DispatchQueue)
   {
     self.queue = queue
     source = nil

@@ -10,74 +10,17 @@ import XCTest
 import Foundation
 import Dispatch
 
-@testable import deferred
+import deferred
 
 class DeletionTests: XCTestCase
 {
   static var allTests = [
-    ("testDeallocDeferred1", testDeallocDeferred1),
-    ("testDeallocDeferred2", testDeallocDeferred2),
-    ("testDeallocDeferred3", testDeallocDeferred3),
-    ("testDeallocDeferred4", testDeallocDeferred4),
     ("testDelayedDeallocDeferred", testDelayedDeallocDeferred),
     ("testDeallocTBD1", testDeallocTBD1),
     ("testDeallocTBD2", testDeallocTBD2),
     ("testDeallocTBD3", testDeallocTBD3),
+    ("testDeallocTBD4", testDeallocTBD4),
   ]
-
-  class Dealloc: Deferred<Void>
-  {
-    let e: XCTestExpectation
-    init(expectation: XCTestExpectation)
-    {
-      e = expectation
-      super.init(queue: DispatchQueue.global())
-    }
-    deinit
-    {
-      e.fulfill()
-    }
-  }
-
-  func testDeallocDeferred1()
-  {
-    do {
-      _ = Dealloc(expectation: expectation(description: "will dealloc deferred 1"))
-    }
-
-    waitForExpectations(timeout: 0.1)
-  }
-
-  func testDeallocDeferred2()
-  {
-    do {
-      let deferred = Dealloc(expectation: expectation(description: "will dealloc deferred 2"))
-      do { _ = deferred.map { _ in XCTFail("Unexpected notification") } }
-      deferred.cancel()
-    }
-
-    waitForExpectations(timeout: 0.1)
-  }
-
-  func testDeallocDeferred3()
-  {
-    do {
-      Dealloc(expectation: expectation(description: "will dealloc deferred 3")).cancel()
-    }
-
-    waitForExpectations(timeout: 0.1)
-  }
-
-  func testDeallocDeferred4()
-  {
-    let mapped: Deferred<Void> = {
-      let deferred = Dealloc(expectation: expectation(description: "will dealloc deferred 4"))
-      return deferred.map { _ in XCTFail("Unexpected notification") }
-    }()
-    mapped.cancel()
-
-    waitForExpectations(timeout: 0.1)
-  }
 
   func testDelayedDeallocDeferred()
   {
@@ -133,6 +76,17 @@ class DeletionTests: XCTestCase
     do {
       DeallocTBD(expectation: expectation(description: "will dealloc tbd 3")).cancel()
     }
+
+    waitForExpectations(timeout: 0.1)
+  }
+
+  func testDeallocTBD4()
+  {
+    let mapped: Deferred<Void> = {
+      let deferred = DeallocTBD(expectation: expectation(description: "will dealloc tbd 4"))
+      return deferred.map { _ in XCTFail("Unexpected notification") }
+    }()
+    mapped.cancel()
 
     waitForExpectations(timeout: 0.1)
   }
