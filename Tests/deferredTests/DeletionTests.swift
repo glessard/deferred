@@ -90,4 +90,42 @@ class DeletionTests: XCTestCase
 
     waitForExpectations(timeout: 0.1)
   }
+
+  func testLongTaskCancellation()
+  {
+    class ProofOfLife {}
+
+    let deferred: Deferred<Void> = {
+      let proof = ProofOfLife()
+
+      let longTask = Deferred<Void> {
+        [weak proof] in
+        while proof != nil
+        {
+          Thread.sleep(until: Date() + 0.01)
+          print(".", terminator: "")
+        }
+        print()
+        throw TestError()
+      }
+      let e = expectation(description: "cooperative cancellation")
+      longTask.onError { _ in e.fulfill() }
+
+      return longTask.map(transform: { $0 }).validate(predicate: { withExtendedLifetime(proof){ true } })
+    }()
+
+    let e = expectation(description: "observed cancellation")
+    deferred.notify {
+      d in
+      do {
+        _ = try d.get()
+      }
+      catch {
+        if let de = error as? DeferredError, case .canceled = de { e.fulfill() }
+      }
+    }
+
+    deferred.timeout(seconds: 0.1)
+    waitForExpectations(timeout: 1.0)
+  }
 }
