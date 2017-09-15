@@ -278,9 +278,9 @@ open class Deferred<Value>
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(queue, task))
 
-      if boostQoS, let qos = queue?.qos, qos != self.queue.qos
+      if boostQoS, let qos = queue?.qos, qos > self.queue.qos
       { // try to raise `self.queue`'s QoS if the notification needs to execute at a higher QoS
-        self.queue.async(qos: qos, flags: .enforceQoS, execute: {})
+        self.queue.async(qos: qos, flags: [.enforceQoS, .barrier], execute: {})
       }
 
       repeat {
@@ -359,12 +359,13 @@ open class Deferred<Value>
   private var determined: Determined<Value> {
     if waiters.load(.acquire) != .determined
     {
-      let s = DispatchSemaphore(value: 0)
-      if .current != queue.qos
-      { // try to boost the QoS of the running task if it is lower than the current QoS
-        queue.async(qos: qos, flags: .enforceQoS, execute: {})
+      if let current = DispatchQoS.QoSClass.current, current > queue.qos.qosClass
+      { // try to boost the QoS class of the running task if it is lower than the current thread's QoS
+        queue.async(qos: DispatchQoS(qosClass: current, relativePriority: 0),
+                    flags: [.enforceQoS, .barrier], execute: {})
       }
-      self.enqueue { _ in s.signal() }
+      let s = DispatchSemaphore(value: 0)
+      self.enqueue(boostQoS: false, task: { _ in s.signal() })
       s.wait()
       _ = waiters.load(.acquire)
     }
