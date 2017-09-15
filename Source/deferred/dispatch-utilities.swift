@@ -34,17 +34,3 @@ extension DispatchQoS.QoSClass
   }
 }
 
-extension DispatchQueue
-{
-  func async(qos: DispatchQoS?, execute closure: @escaping () -> Void)
-  {
-    if let qos = qos
-    {
-      self.async(qos: qos, flags: [.enforceQoS], execute: closure)
-    }
-    else
-    {
-      self.async(execute: closure)
-    }
-  }
-}
