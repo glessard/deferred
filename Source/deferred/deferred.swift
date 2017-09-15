@@ -95,7 +95,7 @@ open class Deferred<Value>
   /// - parameter qos:  the Quality-of-Service class at which the computation (and notifications) should be performed; defaults to the current QoS.
   /// - parameter task: the computation to be performed
 
-  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, task: @escaping () throws -> Value)
+  public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Value)
   {
     let queue = DispatchQueue.global(qos: qos.qosClass)
     self.init(queue: queue, task: task)
@@ -133,7 +133,7 @@ open class Deferred<Value>
   /// - parameter qos: the Quality-of-Service class at which the notifications should be performed.
   /// - parameter value: the value of this `Deferred`
 
-  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, value: Value)
+  public convenience init(qos: DispatchQoS = .current, value: Value)
   {
     let queue = DispatchQueue.global(qos: qos.qosClass)
     self.init(queue: queue, value: value)
@@ -154,7 +154,7 @@ open class Deferred<Value>
   /// - parameter qos: the Quality-of-Service class at which the notifications should be performed.
   /// - parameter error: the error state of this `Deferred`
 
-  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default, error: Error)
+  public convenience init(qos: DispatchQoS = .current, error: Error)
   {
     let queue = DispatchQueue.global(qos: qos.qosClass)
     self.init(queue: queue, error: error)
@@ -632,7 +632,7 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the Quality-of-Service class at which the notifications should be performed; defaults to the current quality-of-service class.
 
-  public convenience init(qos: DispatchQoS = DispatchQoS.current ?? .default)
+  public convenience init(qos: DispatchQoS = .current)
   {
     let queue = DispatchQueue.global(qos: qos.qosClass)
     self.init(queue: queue)

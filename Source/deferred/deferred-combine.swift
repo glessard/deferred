@@ -20,7 +20,7 @@ import Dispatch
 /// - parameter deferreds: a `Collection` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+public func combine<Value, C: Collection>(qos: DispatchQoS = .current,
                                           _ deferreds: C) -> Deferred<[Value]>
   where C.Iterator.Element == Deferred<Value>
 {
@@ -41,7 +41,7 @@ public func combine<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+public func combine<Value, S: Sequence>(qos: DispatchQoS = .current,
                                         _ deferreds: S) -> Deferred<[Value]>
   where S.Iterator.Element == Deferred<Value>
 {
@@ -69,7 +69,7 @@ public func combine<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<C: Collection, T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+public func reduce<C: Collection, T, U>(qos: DispatchQoS = .current,
                                         _ deferreds: C, initial: U,
                                         combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
   where C.Iterator.Element == Deferred<T>
@@ -109,7 +109,7 @@ public func reduce<C: Collection, T, U>(qos: DispatchQoS = DispatchQoS.current ?
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+public func reduce<S: Sequence, T, U>(qos: DispatchQoS = .current,
                                       _ deferreds: S, initial: U,
                                       combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
   where S.Iterator.Element == Deferred<T>
@@ -187,7 +187,7 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstValue<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+public func firstValue<Value, C: Collection>(qos: DispatchQoS = .current,
                                              _ deferreds: C, cancelOthers: Bool = false) -> Deferred<Value>
   where C.Iterator.Element: Deferred<Value>
 {
@@ -205,7 +205,7 @@ public func firstValue<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.curr
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+public func firstValue<Value, S: Sequence>(qos: DispatchQoS = .current,
                                            _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
   where S.Iterator.Element: Deferred<Value>
 {
@@ -224,7 +224,7 @@ public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.curren
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = .current,
                                                   _ deferreds: C, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
   where C.Iterator.Element: Deferred<Value>
 {
@@ -257,7 +257,7 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = .current,
                                                 _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
   where S.Iterator.Element: Deferred<Value>
 {

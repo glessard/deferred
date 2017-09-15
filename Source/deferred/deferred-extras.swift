@@ -87,7 +87,7 @@ extension Deferred
   /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS.
   /// - parameter task: the computation to be performed
 
-  public static func RetryTask(_ attempts: Int, qos: DispatchQoS = DispatchQoS.current ?? .default,
+  public static func RetryTask(_ attempts: Int, qos: DispatchQoS = .current,
                                task: @escaping () throws -> Value) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
@@ -112,7 +112,7 @@ extension Deferred
   /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS.
   /// - parameter task: the computation to be performed
 
-  public static func Retrying(_ attempts: Int, qos: DispatchQoS = DispatchQoS.current ?? .default,
+  public static func Retrying(_ attempts: Int, qos: DispatchQoS = .current,
                               task: @escaping () -> Deferred) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
@@ -233,7 +233,7 @@ extension Optional
   ///
   /// - parameter qos: the Quality-of-Service class at which to perform notifications for the new `Deferred`
 
-  public func deferred(qos: DispatchQoS = DispatchQoS.current ?? .default) -> Deferred<Wrapped>
+  public func deferred(qos: DispatchQoS = .current) -> Deferred<Wrapped>
   {
     let queue = DispatchQueue.global(qos: qos.qosClass)
     return self.deferred(queue: queue)

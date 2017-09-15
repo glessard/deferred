@@ -12,13 +12,13 @@ import Dispatch
 
 extension DispatchQoS
 {
-  @_versioned static var current: DispatchQoS?
+  @_versioned static var current: DispatchQoS
   {
     if let qosClass = DispatchQoS.QoSClass.current
     {
       return DispatchQoS(qosClass: qosClass, relativePriority: 0)
     }
-    return nil
+    return .default
   }
 }
 
