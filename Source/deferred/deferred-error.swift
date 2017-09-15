@@ -14,6 +14,7 @@ public enum DeferredError: Error
 {
   case canceled(String)
   case invalid(String)
+  case timedOut(String)
 }
 
 extension DeferredError: CustomStringConvertible
@@ -29,6 +30,10 @@ extension DeferredError: CustomStringConvertible
       return message.isEmpty ?
         "Deferred failed validation" :
         "Deferred invalid: \(message)"
+    case .timedOut(let message):
+      return message.isEmpty ?
+        "Deferred operation timed out before a result became available" :
+        "Deferred operation timed out: \(message)"
     }
   }
 }
@@ -41,6 +46,7 @@ public func == (a: DeferredError, b: DeferredError) -> Bool
   {
   case (.canceled(let ma), .canceled(let mb)): return ma == mb
   case (.invalid(let ma), .invalid(let mb)):   return ma == mb
+  case (.timedOut(let ma), .timedOut(let mb)): return ma == mb
   default:                                     return false
   }
 }

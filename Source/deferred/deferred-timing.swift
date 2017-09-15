@@ -54,19 +54,17 @@ extension Deferred
 
 // MARK: maximum time until a `Deferred` becomes determined
 
-@_versioned let DefaultTimeoutMessage = "Operation timed out"
-
 extension Deferred
 {
   /// Ensure this `Deferred` will be determined by the given deadline.
   /// If `self` has not become determined before the timeout expires, `self` will be canceled.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
-  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
+  /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
   @discardableResult
-  public final func timeout(seconds: Double, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(seconds: Double, reason: String = "") -> Deferred
   {
     return self.timeout(after: .now() + seconds, reason: reason)
   }
@@ -75,11 +73,11 @@ extension Deferred
   /// If `self` has not become determined before the timeout expires, `self` will be canceled.
   ///
   /// - parameter timeout: a time interval
-  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
+  /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
   @discardableResult
-  public final func timeout(_ timeout: DispatchTimeInterval, reason: String = DefaultTimeoutMessage) -> Deferred
+  public final func timeout(_ timeout: DispatchTimeInterval, reason: String = "") -> Deferred
   {
     return self.timeout(after: .now() + timeout, reason: reason)
   }
@@ -88,25 +86,23 @@ extension Deferred
   /// If `self` has not become determined before the timeout expires, `self` will be canceled.
   ///
   /// - parameter deadline: a timestamp used as a deadline
-  /// - parameter reason: the reason for the cancelation if the operation times out. Defaults to "Operation timed out".
+  /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
   @discardableResult
-  public final func timeout(after deadline: DispatchTime, reason: String = DefaultTimeoutMessage) -> Deferred
-  { // FIXME: don't special-case .distantFuture (https://bugs.swift.org/browse/SR-5706)
-    if deadline == .distantFuture || isDetermined
-    {
-      return self
-    }
+  public final func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred
+  {
+    if isDetermined { return self }
 
-    guard deadline > .now() else
+    if deadline < .now()
     {
-      self.cancel(reason)
-      return self
+      cancel(.timedOut(reason))
     }
-
-    let queue = DispatchQueue.global(qos: self.qos.qosClass)
-    queue.asyncAfter(deadline: deadline) { self.cancel(reason) }
+    else if deadline != .distantFuture
+    {
+      let queue = DispatchQueue(label: "timeout", qos: qos)
+      queue.asyncAfter(deadline: deadline) { self.cancel(.timedOut(reason)) }
+    }
     return self
   }
 }

@@ -327,7 +327,13 @@ open class Deferred<Value>
   @discardableResult
   open func cancel(_ reason: String = "") -> Bool
   {
-    return determine(DeferredError.canceled(reason))
+    return cancel(.canceled(reason))
+  }
+
+  @discardableResult
+  open func cancel(_ error: DeferredError) -> Bool
+  {
+    return determine(error)
   }
 
   /// Get this `Deferred`'s `Determined` result, blocking if necessary until it exists.

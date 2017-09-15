@@ -804,11 +804,13 @@ class DeferredTests: XCTestCase
   {
     let customMessage = "Custom Message"
 
-    let errors = [
-      DeferredError.canceled(""),
-      DeferredError.canceled(customMessage),
-      DeferredError.invalid(""),
-      DeferredError.invalid(customMessage),
+    let errors: [DeferredError] = [
+      .canceled(""),
+      .canceled(customMessage),
+      .invalid(""),
+      .invalid(customMessage),
+      .timedOut(""),
+      .timedOut(customMessage),
     ]
 
     let strings = errors.map(String.init(describing: ))
@@ -833,11 +835,16 @@ class DeferredTests: XCTestCase
 
     let s2 = DispatchTime.now()
     let t2 = 0.15
+    let m2 = String(nzRandom())
     let d2 = Deferred(value: 1).delay(.seconds(5))
     let e2 = expectation(description: "Timeout test 2: times out")
     d2.onValue { _ in XCTFail() }
-    d2.onError { _ in if s2 + t2 <= .now() { e2.fulfill() } }
-    d2.timeout(seconds: t2)
+    d2.onError {
+      error in
+      XCTAssert(s2 + t2 <= .now())
+      if error as? DeferredError == DeferredError.timedOut(m2) { e2.fulfill() }
+    }
+    d2.timeout(seconds: t2, reason: m2)
 
     let t3 = 0.05
     let d3 = Deferred(value: DispatchTime.now()).delay(seconds: t3)
@@ -854,5 +861,7 @@ class DeferredTests: XCTestCase
     d4.timeout(after: .distantFuture)
 
     waitForExpectations(timeout: 1.0)
+
+    d4.timeout(after: .distantFuture)
   }
 }

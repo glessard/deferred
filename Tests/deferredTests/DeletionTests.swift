@@ -121,7 +121,7 @@ class DeletionTests: XCTestCase
         _ = try d.get()
       }
       catch {
-        if let de = error as? DeferredError, case .canceled = de { e.fulfill() }
+        if error as? DeferredError == DeferredError.timedOut("") { e.fulfill() }
       }
     }
 
