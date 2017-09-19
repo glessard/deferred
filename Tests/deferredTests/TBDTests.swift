@@ -27,7 +27,7 @@ class TBDTests: XCTestCase
     ("testParallel1", testParallel1),
     ("testParallel2", testParallel2),
     ("testParallel3", testParallel3),
-    ("testState", testState),
+    ("testParallel4", testParallel4),
   ]
 
   func testDetermine1()
@@ -96,23 +96,6 @@ class TBDTests: XCTestCase
     }
 
     waitForExpectations(timeout: 1.0)
-  }
-
-  func testState()
-  {
-    let d = TBD<Int>()
-    XCTAssert(d.state == .waiting)
-    XCTAssertFalse(d.state.isDetermined)
-
-    d.beginExecution()
-    XCTAssert(d.state == .executing)
-
-    d.determine(1)
-    XCTAssert(d.state == .succeeded)
-
-    let e = Deferred<Void>(error: TestError())
-    XCTAssert(e.state == .errored)
-    XCTAssert(e.state.isDetermined)
   }
 
   func testNotify1()
@@ -262,5 +245,17 @@ class TBDTests: XCTestCase
     }
 
     waitForExpectations(timeout: 1.0)
+  }
+
+  func testParallel4()
+  {
+    let range = 0..<10
+    let deferreds = range.deferredMap(task: {
+      i throws -> Int in
+      guard (i%2 == 0) else { throw DeferredError.invalid("") }
+      return i
+    })
+    let c = deferreds.flatMap({ $0.error }).count
+    XCTAssert(c == 5)
   }
 }

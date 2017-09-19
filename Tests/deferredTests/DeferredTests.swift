@@ -28,6 +28,7 @@ class DeferredTests: XCTestCase
     ("testValue", testValue),
     ("testValueBlocks", testValueBlocks),
     ("testValueUnblocks", testValueUnblocks),
+    ("testState", testState),
     ("testGet", testGet),
     ("testOptional", testOptional),
     ("testNotify1", testNotify1),
@@ -41,6 +42,7 @@ class DeferredTests: XCTestCase
     ("testApply", testApply),
     ("testApply1", testApply1),
     ("testApply2", testApply2),
+    ("testApply3", testApply3),
     ("testQoS", testQoS),
     ("testCancel", testCancel),
     ("testCancelAndNotify", testCancelAndNotify),
@@ -241,6 +243,30 @@ class DeferredTests: XCTestCase
 
     XCTAssert(double == 1.0)
   }
+
+  func testState()
+  {
+    let s = DispatchSemaphore(value: 0)
+    let e = expectation(description: "state")
+
+    let d = Deferred(task: { s.wait(timeout: .now() + 1.0) })
+    let m = d.map(transform: { r throws -> Void in if r == .success { throw DeferredError.invalid("") } })
+    m.notify { _ in e.fulfill() }
+
+    XCTAssert(d.state == .executing)
+    XCTAssert(m.state == .waiting)
+    XCTAssertFalse(d.state.isDetermined)
+    XCTAssertFalse(m.state.isDetermined)
+
+    s.signal()
+    waitForExpectations(timeout: 0.1)
+
+    XCTAssert(d.state == .succeeded)
+    XCTAssert(d.state.isDetermined)
+    XCTAssert(m.state == .errored)
+    XCTAssert(m.state.isDetermined)
+  }
+
 
   func testNotify1()
   {
@@ -457,7 +483,7 @@ class DeferredTests: XCTestCase
   {
     let transform = TBD<(Int) -> Double>()
     let operand = TBD<Int>()
-    let result = operand.apply(transform: transform)
+    let result = operand.apply(qos: .background, transform: transform)
     let expect = expectation(description: "Applying a deferred transform to a deferred operand")
 
     var v1 = 0
@@ -494,14 +520,14 @@ class DeferredTests: XCTestCase
 
   func testApply2()
   {
-    let value = Int(nzRandom() & 0x7fff + 10000)
+    let value = nzRandom() & 0x7fff
     let error = nzRandom()
 
     // good operand, good transform
     let o1 = Deferred(value: value)
     let t1 = Deferred { i throws in Double(value*i) }
     let e1 = expectation(description: "r1")
-    let r1 = o1.apply(transform: t1)
+    let r1 = o1.apply(qos: .utility, transform: t1)
     r1.notify { _ in e1.fulfill() }
     XCTAssert(r1.value == Double(value*value))
     XCTAssert(r1.error == nil)
@@ -514,6 +540,43 @@ class DeferredTests: XCTestCase
     r2.notify { _ in e2.fulfill() }
     XCTAssert(r2.value == nil)
     XCTAssert(r2.error as? TestError == TestError(error))
+
+    waitForExpectations(timeout: 1.0)
+  }
+
+  func testApply3()
+  {
+    let value = nzRandom() & 0x7fff
+    let error = nzRandom()
+
+    // good operand, bad transform
+    let o3 = Deferred(value: value)
+    let t3 = Deferred<(Int) throws -> Float>(error: TestError(error))
+    let e3 = expectation(description: "r3")
+    let r3 = o3.apply(transform: t3)
+    r3.notify { _ in e3.fulfill() }
+    XCTAssert(r3.value == nil)
+    XCTAssert(r3.error as? TestError == TestError(error))
+
+    // good operand, transform throws
+    let o4 = Deferred(value: value)
+    let t4 = Deferred { (i:Int) throws -> Float in throw TestError(error) }
+    let e4 = expectation(description: "r4")
+    let r4 = o4.apply(transform: t4)
+    r4.notify { _ in e4.fulfill() }
+    XCTAssert(r4.value == nil)
+    XCTAssert(r4.error as? TestError == TestError(error))
+
+    // result canceled before transform is determined
+    let o5 = Deferred(value: value)
+    let t5 = TBD<(Int) throws -> Float>()
+    let e5 = expectation(description: "r5")
+    let r5 = o5.apply(transform: t5)
+    combine(t5,r5).notify { _ in e5.fulfill() }
+    r5.cancel()
+    t5.determine({ Float($0) })
+    XCTAssert(r5.value == nil)
+    XCTAssert(r5.error as? DeferredError == DeferredError.canceled(""))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -722,8 +785,19 @@ class DeferredTests: XCTestCase
   func testOptional()
   {
     let rnd = nzRandom()
-    let d = Optional(rnd).deferred()
-    XCTAssert(d.value == rnd)
+
+    var opt = rnd as Optional
+    let d1 = opt.deferred()
+    XCTAssert(d1.value == rnd)
+
+    opt = nil
+    let d2 = opt.deferred()
+    do {
+      _ = try d2.get()
+      XCTFail()
+    }
+    catch DeferredError.invalid {}
+    catch { XCTFail() }
   }
 
   func testDeferredError()
