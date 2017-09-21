@@ -260,8 +260,9 @@ open class Deferred<Value>
   ///
   /// - parameter qos:  the Quality-of-Service class at which this notification should execute; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter task: a closure to be executed after `self` becomes determined.
+  /// - parameter result: the determined result of `self`
 
-  open func enqueue(qos: DispatchQoS? = nil, task: @escaping (Determined<Value>) -> Void)
+  open func enqueue(qos: DispatchQoS? = nil, task: @escaping (_ result: Determined<Value>) -> Void)
   {
     var waitQueue = waiters.load(.acquire)
     if waitQueue != .determined
@@ -291,8 +292,9 @@ open class Deferred<Value>
   ///
   /// - parameter qos:  the Quality-of-Service class at which this notification should execute; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter task: a closure to be executed as a notification
+  /// - parameter result: the determined result of `self`
 
-  public func notify(qos: DispatchQoS? = nil, task: @escaping (Determined<Value>) -> Void)
+  public func notify(qos: DispatchQoS? = nil, task: @escaping (_ result: Determined<Value>) -> Void)
   {
     enqueue(qos: qos, task: { value in withExtendedLifetime(self) { task(value) } })
   }
@@ -440,8 +442,9 @@ internal final class Mapped<Value>: Deferred<Value>
   /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+  /// - parameter value:     the value to be transformed for a new `Deferred`
 
-  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: @escaping (U) throws -> Value)
+  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Value)
   {
     super.init(source: source)
 
@@ -471,8 +474,9 @@ internal final class Bind<Value>: Deferred<Value>
   /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+  /// - parameter value:     the value to be transformed for a new `Deferred`
 
-  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: @escaping (U) -> Deferred<Value>)
+  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: @escaping (_ value: U) -> Deferred<Value>)
   {
     super.init(source: source)
 
@@ -499,10 +503,11 @@ internal final class Bind<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
   /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
-  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+  /// - parameter source:    the `Deferred` whose error should be used as the input for the transform
+  /// - parameter transform: the transform to be applied to `source.error` and whose result is represented by this `Deferred`
+  /// - parameter error:     the Error to be transformed for a new `Deferred`
 
-  init(qos: DispatchQoS?, source: Deferred<Value>, transform: @escaping (Error) -> Deferred<Value>)
+  init(qos: DispatchQoS?, source: Deferred<Value>, transform: @escaping (_ error: Error) -> Deferred<Value>)
   {
     super.init(source: source)
 
@@ -537,8 +542,9 @@ internal final class Applicator<Value>: Deferred<Value>
   /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+  /// - parameter value:     the value to be transformed for a new `Deferred`
 
-  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: Deferred<(U) throws -> Value>)
+  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: Deferred<(_ value: U) throws -> Value>)
   {
     super.init(source: source)
 

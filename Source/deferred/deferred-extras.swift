@@ -20,8 +20,9 @@ extension Deferred
   /// The closure will be enqueued on the global queue with the requested quality of service.
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter task: the closure to be enqueued
+  /// - parameter value: the value of the just-determined `Deferred`
 
-  public func onValue(qos: DispatchQoS? = nil, task: @escaping (Value) -> Void)
+  public func onValue(qos: DispatchQoS? = nil, task: @escaping (_ value: Value) -> Void)
   {
     notify(qos: qos) { $0.value.map(task) }
   }
@@ -32,8 +33,9 @@ extension Deferred
   /// The closure will be enqueued on the global queue with the requested quality of service.
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter task: the closure to be enqueued
+  /// - parameter error: the error from the just-determined `Deferred`
 
-  public func onError(qos: DispatchQoS? = nil, task: @escaping (Error) -> Void)
+  public func onError(qos: DispatchQoS? = nil, task: @escaping (_ error: Error) -> Void)
   {
     notify(qos: qos) { $0.error.map(task) }
   }
@@ -47,8 +49,9 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter value: the value to be transformed for a new `Deferred`
 
-  public func map<Other>(qos: DispatchQoS? = nil, transform: @escaping (Value) throws -> Other) -> Deferred<Other>
+  public func map<Other>(qos: DispatchQoS? = nil, transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
   {
     return Mapped<Other>(qos: qos, source: self, transform: transform)
   }
@@ -62,8 +65,9 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter value: the value to be transformed for a new `Deferred`
 
-  public func flatMap<Other>(qos: DispatchQoS? = nil, transform: @escaping (Value) -> Deferred<Other>) -> Deferred<Other>
+  public func flatMap<Other>(qos: DispatchQoS? = nil, transform: @escaping (_ value: Value) -> Deferred<Other>) -> Deferred<Other>
   {
     return Bind<Other>(qos: qos, source: self, transform: transform)
   }
@@ -72,8 +76,9 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter error: the Error to be transformed for a new `Deferred`
 
-  public func recover(qos: DispatchQoS? = nil, transform: @escaping (Error) -> Deferred<Value>) -> Deferred<Value>
+  public func recover(qos: DispatchQoS? = nil, transform: @escaping (_ error: Error) -> Deferred<Value>) -> Deferred<Value>
   {
     return Bind(qos: qos, source: self, transform: transform)
   }
@@ -84,7 +89,8 @@ extension Deferred
   /// Initialize a `Deferred` with a computation task to be performed in the background
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///
-  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS.
+  /// - parameter attempts: a maximum number of times to attempt `task`
+  /// - parameter qos: the QoS at which the computation (and notifications) should be performed; defaults to the current QoS.
   /// - parameter task: the computation to be performed
 
   public static func RetryTask(_ attempts: Int, qos: DispatchQoS = .current,
@@ -97,6 +103,7 @@ extension Deferred
   /// Initialize a `Deferred` with a computation task to be performed in the background
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///
+  /// - parameter attempts: a maximum number of times to attempt `task`
   /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
   /// - parameter task: the computation to be performed
 
@@ -109,7 +116,8 @@ extension Deferred
   /// Initialize a `Deferred` with a computation task to be performed in the background
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///
-  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS.
+  /// - parameter attempts: a maximum number of times to attempt `task`
+  /// - parameter qos: the QoS at which the computation (and notifications) should be performed; defaults to the current QoS.
   /// - parameter task: the computation to be performed
 
   public static func Retrying(_ attempts: Int, qos: DispatchQoS = .current,
@@ -122,6 +130,7 @@ extension Deferred
   /// Initialize a `Deferred` with a computation task to be performed in the background
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///
+  /// - parameter attempts: a maximum number of times to attempt `task`
   /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
   /// - parameter task: the computation to be performed
 
@@ -149,23 +158,25 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter value: the value to be transformed for a new `Deferred`
 
-  public func apply<Other>(qos: DispatchQoS? = nil, transform: Deferred<(Value) throws -> Other>) -> Deferred<Other>
+  public func apply<Other>(qos: DispatchQoS? = nil, transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
   {
     return Applicator<Other>(qos: qos, source: self, transform: transform)
   }
 
+  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
+  ///
   /// Adaptor made desirable by insufficient covariance from throwing to non-throwing closure types. (radar 22013315)
   /// (i.e. if the difference between the type signature of two closures is whether they throw,
   /// the non-throwing one should be usable anywhere the throwing one can.)
   /// Can hopefully be removed later.
-  ///
-  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
   /// - parameter qos: the QOS class at which to execute the transform; defaults to the QOS class of this Deferred's queue.
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter value: the value to be transformed for a new `Deferred`
 
-  public final func apply<Other>(qos: DispatchQoS? = nil, transform: Deferred<(Value) -> Other>) -> Deferred<Other>
+  public final func apply<Other>(qos: DispatchQoS? = nil, transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
   {
     let retransform = transform.map(qos: qos) { transform in { v throws in transform(v) } }
     return Applicator<Other>(qos: qos, source: self, transform: retransform)
@@ -180,9 +191,10 @@ extension Deferred
   /// - parameter qos: the QOS class at which to execute the predicate; defaults to the QOS class of this Deferred's queue.
   /// - parameter predicate: a predicate that validates the passed-in `Value`.
   /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - parameter value: the value to be validated
 
   public final func validate(qos: DispatchQoS? = nil,
-                             predicate: @escaping (Value) -> Bool, message: String = "") -> Deferred<Value>
+                             predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
   {
     return self.map(qos: qos) {
       value in
@@ -198,9 +210,10 @@ extension Deferred
   /// - parameter qos: the QoS class at which to execute the transform and the new `Deferred`'s notifications
   /// - parameter predicate: a closure that validates the passed-in `Value` by either returning normally or throwing
   /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - parameter value: the value to be validated
 
   public final func validate(qos: DispatchQoS? = nil,
-                             predicate: @escaping (Value) throws -> Void) -> Deferred
+                             predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
   {
     return self.map(qos: qos) {
       value in
