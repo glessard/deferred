@@ -17,7 +17,7 @@ import Dispatch
 extension Deferred
 {
   /// Return a `Deferred` whose determination will occur at least a number of seconds from the time of evaluation.
-  /// Note that a cancelation or error will result in early determination.
+  /// Note that a cancellation or error will result in early determination.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
@@ -28,7 +28,7 @@ extension Deferred
   }
 
   /// Return a `Deferred` whose determination will occur at the earliest`delay` from the time of evaluation.
-  /// Note that a cancelation or error will result in early determination.
+  /// Note that a cancellation or error will result in early determination.
   ///
   /// - parameter delay: a time interval, as `DispatchTimeInterval`
   /// - returns: a `Deferred` reference
@@ -39,7 +39,7 @@ extension Deferred
   }
 
   /// Return a `Deferred` whose determination will occur after a given timestamp.
-  /// Note that a cancelation or error will result in early determination.
+  /// Note that a cancellation or error will result in early determination.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference

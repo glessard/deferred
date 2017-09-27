@@ -274,7 +274,7 @@ open class Deferred<Value>
       repeat {
         waiter.pointee.next = waitQueue?.assumingMemoryBound(to: Waiter<Value>.self)
         if CAtomicsMutablePointerCAS(&waitQueue, UnsafeMutableRawPointer(waiter), &waiters, .weak, .acqrel, .acquire)
-        { // waiter is now enqueued; it will be deallocated at a later time by WaitQueue.notifyAll()
+        { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
         }
       } while waitQueue != .determined

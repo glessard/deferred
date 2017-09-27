@@ -604,10 +604,7 @@ class DeferredTests: XCTestCase
     d1.onValue { _ in XCTFail() }
     d1.notify  { r in XCTAssert(r.error != nil) }
     d1.onError {
-      e in
-      guard let de = e as? DeferredError else { fatalError() }
-      guard case .canceled(let m) = de, m == "test" else { fatalError() }
-      e1.fulfill()
+      if $0 as? DeferredError == DeferredError.canceled("test") { e1.fulfill() }
     }
 
     let d2 = d1.map  { $0 + 100 }
@@ -615,10 +612,7 @@ class DeferredTests: XCTestCase
     d2.onValue { _ in XCTFail() }
     d2.notify  { r in XCTAssert(r.error != nil) }
     d2.onError {
-      e in
-      guard let de = e as? DeferredError else { fatalError() }
-      guard case .canceled(let m) = de, m == "test" else { fatalError() }
-      e2.fulfill()
+      if $0 as? DeferredError == DeferredError.canceled("test") { e2.fulfill() }
     }
 
     d1.cancel("test")
