@@ -81,6 +81,12 @@ extension Deferred
 
 extension Deferred
 {
+  /// Initialize a `Deferred` with a computation task to be performed in the background
+  /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
+  ///
+  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS.
+  /// - parameter task: the computation to be performed
+
   public static func RetryTask(_ attempts: Int, qos: DispatchQoS = DispatchQoS.current ?? .default,
                                task: @escaping () throws -> Value) -> Deferred
   {
@@ -88,11 +94,23 @@ extension Deferred
     return Deferred.RetryTask(attempts, queue: queue, task: task)
   }
 
+  /// Initialize a `Deferred` with a computation task to be performed in the background
+  /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
+  /// - parameter task: the computation to be performed
+
   public static func RetryTask(_ attempts: Int, queue: DispatchQueue,
                                task: @escaping () throws -> Value) -> Deferred
   {
     return Deferred.Retrying(attempts, queue: queue, task: { Deferred(queue: queue, task: task) })
   }
+
+  /// Initialize a `Deferred` with a computation task to be performed in the background
+  /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
+  ///
+  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS.
+  /// - parameter task: the computation to be performed
 
   public static func Retrying(_ attempts: Int, qos: DispatchQoS = DispatchQoS.current ?? .default,
                               task: @escaping () -> Deferred) -> Deferred
@@ -100,6 +118,12 @@ extension Deferred
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return Deferred.Retrying(attempts, queue: queue, task: task)
   }
+
+  /// Initialize a `Deferred` with a computation task to be performed in the background
+  /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
+  /// - parameter task: the computation to be performed
 
   public static func Retrying(_ attempts: Int, queue: DispatchQueue,
                               task: @escaping () -> Deferred) -> Deferred
