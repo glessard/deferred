@@ -8,16 +8,21 @@
 
 public struct Determined<Value>
 {
-  let result: Result<Value>
+  private let state: State<Value>
 
-  init(_ result: Result<Value>)
+  init(_ value: Value)
   {
-    self.result = result
+    state = .value(value)
+  }
+
+  init(_ error: Error)
+  {
+    state = .error(error)
   }
 
   public func get() throws -> Value
   {
-    switch result
+    switch state
     {
     case .value(let value): return value
     case .error(let error): throw error
@@ -25,22 +30,28 @@ public struct Determined<Value>
   }
 
   public var value: Value? {
-    if case .value(let value) = result { return value }
+    if case .value(let value) = state { return value }
     return nil
   }
 
   public var error: Error? {
-    if case .error(let error) = result { return error }
+    if case .error(let error) = state { return error }
     return nil
   }
 
   public var isValue: Bool {
-    if case .value = result { return true }
+    if case .value = state { return true }
     return false
   }
 
   public var isError: Bool {
-    if case .error = result { return true }
+    if case .error = state { return true }
     return false
   }
+}
+
+private enum State<Value>
+{
+  case value(Value)
+  case error(Error)
 }
