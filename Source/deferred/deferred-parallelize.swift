@@ -69,8 +69,13 @@ extension Collection
       DispatchQueue.concurrentPerform(iterations: count) {
         iteration in
         deferreds[iteration].beginExecution()
-        let result = Result { try task(self[indexList[iteration]]) }
-        deferreds[iteration].determine(result) // an error here means `deferred[index]` has been canceled
+        do {
+          let value = try task(self[indexList[iteration]])
+          deferreds[iteration].determine(value)
+        }
+        catch {
+          deferreds[iteration].determine(error)
+        }
       }
     }
     return deferreds
@@ -108,8 +113,13 @@ extension Collection where Index == Indices.Iterator.Element
       DispatchQueue.concurrentPerform(iterations: count) {
         iteration in
         deferreds[iteration].beginExecution()
-        let result = Result { try task(self[indexList[iteration]]) }
-        deferreds[iteration].determine(result) // an error here means `deferred[index]` has been canceled
+        do {
+          let value = try task(self[indexList[iteration]])
+          deferreds[iteration].determine(value)
+        }
+        catch {
+          deferreds[iteration].determine(error)
+        }
       }
     }
     return deferreds

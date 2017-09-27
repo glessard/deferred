@@ -521,8 +521,8 @@ class DeferredTests: XCTestCase
   func testQoS()
   {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    let q = DispatchQueue.global(qos: .background)
-    let qb = Deferred(queue: q, qos: .utility) { qos_class_self() }
+    let q = DispatchQueue.global(qos: .utility)
+    let qb = Deferred(queue: q, task: { qos_class_self() }).notifying(at: .background)
     // Verify that the block's QOS was adjusted and is different from the queue's
     XCTAssert(qb.value == QOS_CLASS_UTILITY)
     XCTAssert(qb.qos == DispatchQoS.background)

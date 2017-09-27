@@ -22,6 +22,7 @@ class TBDTests: XCTestCase
     ("testNotify1", testNotify1),
     ("testNotify2", testNotify2),
     ("testNotify3", testNotify3),
+    ("testNotify4", testNotify4),
     ("testNeverDetermined", testNeverDetermined),
     ("testParallel1", testParallel1),
     ("testParallel2", testParallel2),
@@ -160,6 +161,25 @@ class TBDTests: XCTestCase
       e3.fulfill()
     }
     waitForExpectations(timeout: 1.0) { _ in d3.cancel() }
+  }
+
+  func testNotify4()
+  {
+    let e = expectation(description: "TBD determination chain")
+    let d1 = TBD<Int>()
+    let d2 = TBD<Int>()
+    let r = nzRandom()
+
+    d1.notify(task: { d in d2.determine(d) })
+    d2.notify {
+      d in
+      XCTAssert(d.isValue)
+      if d.value == r { e.fulfill() }
+    }
+
+    d1.determine(r)
+
+    waitForExpectations(timeout: 0.1)
   }
 
   func testNeverDetermined()
