@@ -22,6 +22,7 @@ class TBDTests: XCTestCase
     ("testNotify1", testNotify1),
     ("testNotify2", testNotify2),
     ("testNotify3", testNotify3),
+    ("testNotify4", testNotify4),
     ("testNeverDetermined", testNeverDetermined),
     ("testParallel1", testParallel1),
     ("testParallel2", testParallel2),
@@ -73,16 +74,12 @@ class TBDTests: XCTestCase
     let reason = "unused"
     tbd1.cancel(reason)
     XCTAssert(tbd1.value == nil)
-    switch tbd1.result
-    {
-    case .value: XCTFail()
-    case .error(let error):
-      if let e = error as? DeferredError, case .canceled(let message) = e
-      {
-        XCTAssert(message == reason)
-      }
-      else { XCTFail() }
+    do {
+      _ = try tbd1.get()
+      XCTFail()
     }
+    catch DeferredError.canceled(let message) { XCTAssert(message == reason) }
+    catch { XCTFail() }
 
     let e = expectation(description: "Cancel before setting")
     let tbd3 = TBD<Int>()
@@ -121,7 +118,7 @@ class TBDTests: XCTestCase
     tbd.determine(value)
 
     tbd.notify {
-      XCTAssert( $0 == Result.value(value) )
+      XCTAssert( $0.value == value )
       e1.fulfill()
     }
     waitForExpectations(timeout: 1.0)
@@ -134,7 +131,7 @@ class TBDTests: XCTestCase
 
     var value = nzRandom()
     tbd.notify {
-      XCTAssert( $0 == Result.value(value) )
+      XCTAssert( $0.value == value )
       e2.fulfill()
     }
 
@@ -151,9 +148,9 @@ class TBDTests: XCTestCase
     let e3 = expectation(description: "TBD never determined")
     let d3 = TBD<Int>()
     d3.notify {
-      result in
+      determined in
       do {
-        _ = try result.getValue()
+        _ = try determined.get()
         XCTFail()
       }
       catch DeferredError.canceled {}
@@ -164,6 +161,25 @@ class TBDTests: XCTestCase
       e3.fulfill()
     }
     waitForExpectations(timeout: 1.0) { _ in d3.cancel() }
+  }
+
+  func testNotify4()
+  {
+    let e = expectation(description: "TBD determination chain")
+    let d1 = TBD<Int>()
+    let d2 = TBD<Int>()
+    let r = nzRandom()
+
+    d1.notify(task: { d in d2.determine(d) })
+    d2.notify {
+      d in
+      XCTAssert(d.isValue)
+      if d.value == r { e.fulfill() }
+    }
+
+    d1.determine(r)
+
+    waitForExpectations(timeout: 0.1)
   }
 
   func testNeverDetermined()
@@ -212,13 +228,12 @@ class TBDTests: XCTestCase
     let combined = combine(arrays)
     let determined = combined.map { $0.flatMap({$0}) }
 
-    switch determined.result
-    {
-    case .value(let value):
+    do {
+      let value = try determined.get()
       XCTAssert(value.count == count*count)
       value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
-    default: XCTFail()
     }
+    catch { XCTFail() }
   }
 
   func testParallel3()
@@ -232,14 +247,13 @@ class TBDTests: XCTestCase
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
     let c = combine(d)
     c.notify {
-      r in
-      switch r
-      {
-      case .value(let value):
+      determined in
+      do {
+        let value = try determined.get()
         XCTAssert(value.count == count)
         e.fulfill()
-      default: XCTFail()
       }
+      catch { XCTFail() }
     }
 
     waitForExpectations(timeout: 1.0)

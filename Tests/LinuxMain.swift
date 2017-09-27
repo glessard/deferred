@@ -2,7 +2,6 @@ import XCTest
 @testable import deferredTests
 
 XCTMain([
-  testCase(ResultTests.allTests),
   testCase(DeferredTests.allTests),
   testCase(DeferredCombinationTests.allTests),
   testCase(DeferredCombinationTimedTests.allTests),

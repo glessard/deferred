@@ -67,15 +67,15 @@ public func reduce<T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ d
                          initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
 {
   guard deferreds.isEmpty == false
-    else { return Deferred(qos: qos, result: Result.value(initial)) }
+    else { return Deferred(qos: qos, value: initial) }
 
   let queue = DispatchQueue(label: "reduce-collection", qos: qos)
-  let accumulator = Deferred(queue: queue, result: Result.value(initial))
+  let accumulator = Deferred(queue: queue, value: initial)
 
   let reduced = deferreds.reduce(accumulator) {
     (accumulator, deferred) in
     accumulator.flatMap {
-      u in deferred.notifying(on: queue).map { t in try combine(u,t) }
+      u in deferred.enqueuing(on: queue).map { t in try combine(u,t) }
     }
   }
 
@@ -102,14 +102,14 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? 
   where S.Iterator.Element == Deferred<T>
 {
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
-  let accumulator = Deferred(queue: queue, result: Result.value(initial))
+  let accumulator = Deferred(queue: queue, value: initial)
 
   // We iterate on a background thread because S could block on next()
   let reduced = Deferred<Deferred<U>>(queue: queue) {
     deferreds.reduce(accumulator) {
       (accumulator, deferred) in
       accumulator.flatMap {
-        u in deferred.notifying(on: queue).map { t in try combine(u,t) }
+        u in deferred.enqueuing(on: queue).map { t in try combine(u,t) }
       }
     }
   }
@@ -203,7 +203,7 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS
   if deferreds.count == 0
   {
     let error = DeferredError.canceled("cannot find first determined from an empty set in \(#function)")
-    return Deferred(qos: qos, result: Result.error(error))
+    return Deferred(qos: qos, error: error)
   }
 
   let queue = DispatchQueue(label: "first-collection", qos: qos, attributes: .concurrent)
@@ -211,12 +211,7 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS
 
   deferreds.forEach {
     deferred in
-    deferred.notify {
-      _ in
-      // an error here just means `deferred` wasn't the first to become determined
-      first.determine(deferred)
-    }
-
+    deferred.notify { _ in first.determine(deferred) }
     if cancelOthers { first.notify { _ in deferred.cancel() } }
   }
 
@@ -236,12 +231,7 @@ public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.c
     deferreds.forEach {
       deferred in
       subscribed = true
-      deferred.notify {
-        _ in
-        // an error here just means `deferred` wasn't the first to become determined
-        first.determine(deferred)
-      }
-
+      deferred.notify { _ in first.determine(deferred) }
       if cancelOthers { first.notify { _ in deferred.cancel() } }
     }
 

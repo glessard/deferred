@@ -18,6 +18,8 @@ class DeletionTests: XCTestCase
     ("testDeallocDeferred1", testDeallocDeferred1),
     ("testDeallocDeferred2", testDeallocDeferred2),
     ("testDeallocDeferred3", testDeallocDeferred3),
+    ("testDeallocDeferred4", testDeallocDeferred4),
+    ("testDelayedDeallocDeferred", testDelayedDeallocDeferred),
     ("testDeallocTBD1", testDeallocTBD1),
     ("testDeallocTBD2", testDeallocTBD2),
     ("testDeallocTBD3", testDeallocTBD3),
@@ -64,6 +66,32 @@ class DeletionTests: XCTestCase
     }
 
     waitForExpectations(timeout: 0.1)
+  }
+
+  func testDeallocDeferred4()
+  {
+    let mapped: Deferred<Void> = {
+      let deferred = Dealloc(expectation: expectation(description: "will dealloc deferred 4"))
+      return deferred.map { _ in XCTFail("Unexpected notification") }
+    }()
+    mapped.cancel()
+
+    waitForExpectations(timeout: 0.1)
+  }
+
+  func testDelayedDeallocDeferred()
+  {
+    let witness: Deferred<Void>
+    let e = expectation(description: "deallocation delay")
+    do {
+      let queue = DispatchQueue(label: "\(#function)")
+      let delayed = Deferred(queue: queue, value: ()).delay(.milliseconds(50))
+      _ = delayed.map { XCTFail("a value no one waits for should not be computed") }
+      witness = delayed.map { e.fulfill() }
+    }
+
+    waitForExpectations(timeout: 0.5)
+    _ = witness.value
   }
 
   class DeallocTBD: TBD<Void>
