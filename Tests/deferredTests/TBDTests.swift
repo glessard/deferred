@@ -73,16 +73,12 @@ class TBDTests: XCTestCase
     let reason = "unused"
     tbd1.cancel(reason)
     XCTAssert(tbd1.value == nil)
-    switch tbd1.result
-    {
-    case .value: XCTFail()
-    case .error(let error):
-      if let e = error as? DeferredError, case .canceled(let message) = e
-      {
-        XCTAssert(message == reason)
-      }
-      else { XCTFail() }
+    do {
+      _ = try tbd1.get()
+      XCTFail()
     }
+    catch DeferredError.canceled(let message) { XCTAssert(message == reason) }
+    catch { XCTFail() }
 
     let e = expectation(description: "Cancel before setting")
     let tbd3 = TBD<Int>()
@@ -212,13 +208,12 @@ class TBDTests: XCTestCase
     let combined = combine(arrays)
     let determined = combined.map { $0.flatMap({$0}) }
 
-    switch determined.result
-    {
-    case .value(let value):
+    do {
+      let value = try determined.get()
       XCTAssert(value.count == count*count)
       value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
-    default: XCTFail()
     }
+    catch { XCTFail() }
   }
 
   func testParallel3()
