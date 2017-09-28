@@ -51,7 +51,8 @@ class DeferredTests: XCTestCase
     ("testCancelBind", testCancelBind),
     ("testCancelApply", testCancelApply),
     ("testTimeout", testTimeout),
-    ("testValidate", testValidate),
+    ("testValidate1", testValidate1),
+    ("testValidate2", testValidate2),
   ].sorted(by: {$0.0 < $1.0})
 
   func testExample()
@@ -770,16 +771,26 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testValidate()
+  func testValidate1()
   {
     let d = (0..<10).map({Deferred.init(value:$0)})
-    let v = d.map({ $0.validate(predicate: { $0%2 == 0 })})
-    let e = v.filter({$0.error == nil})
+    let m = String(nzRandom())
+
+    let v = d.map({ $0.validate(qos: .background, predicate: { $0%2 == 0 }, message: m) })
+    let e = v.flatMap { $0.error }
     XCTAssert(e.count == d.count/2)
-    if let invalid = v.filter({ $0.value == nil}).first?.error as? DeferredError
-    {
-      XCTAssert(invalid == DeferredError.invalid(""))
-    }
+    XCTAssertEqual(e.first as? DeferredError, DeferredError.invalid(m))
+  }
+
+  func testValidate2()
+  {
+    let d = (0..<10).map({Deferred.init(value:$0)})
+    let i = nzRandom()
+
+    let v = d.map({ $0.validate(qos: .utility, predicate: { if $0%2 == 0 { throw TestError(i) } }) })
+    let e = v.flatMap { $0.error }
+    XCTAssert(e.count == d.count/2)
+    XCTAssertEqual(e.first as? TestError, TestError(i))
   }
 
   func testOptional()
