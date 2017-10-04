@@ -97,7 +97,7 @@ open class Deferred<Value>
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Value)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
+    let queue = DispatchQueue(label: "deferred", qos: qos)
     self.init(queue: queue, task: task)
   }
 
@@ -135,7 +135,7 @@ open class Deferred<Value>
 
   public convenience init(qos: DispatchQoS = .current, value: Value)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
+    let queue = DispatchQueue(label: "deferred", qos: qos)
     self.init(queue: queue, value: value)
   }
 
@@ -156,7 +156,7 @@ open class Deferred<Value>
 
   public convenience init(qos: DispatchQoS = .current, error: Error)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
+    let queue = DispatchQueue(label: "deferred", qos: qos)
     self.init(queue: queue, error: error)
   }
 
@@ -416,18 +416,19 @@ open class Deferred<Value>
   public func notifying(on queue: DispatchQueue) -> Deferred { return enqueuing(on: queue) }
 
   /// Set the quality-of-service to use for future notifications.
-  /// The returned `Deferred` will issue notifications on a concurrent queue at the specified quality-of-service class.
+  /// The returned `Deferred` will issue notifications on a new queue at the specified quality-of-service class.
   /// - parameter qos: the quality-of-service class to be used by the returned `Deferred`
+  /// - parameter serially: whether the new queue should be serial; defaults to `true`
   /// - returns: a new `Deferred` whose notifications will run at quality-of-service `qos`
 
-  public func enqueuing(at qos: DispatchQoS, serially: Bool = false) -> Deferred
+  public func enqueuing(at qos: DispatchQoS, serially: Bool = true) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos, attributes: serially ? [] : .concurrent)
     return enqueuing(on: queue)
   }
 
   @available(*, unavailable, renamed: "enqueuing")
-  public func notifying(at qos: DispatchQoS, serially: Bool = false) -> Deferred { return enqueuing(at: qos, serially: serially) }
+  public func notifying(at qos: DispatchQoS, serially: Bool = true) -> Deferred { return enqueuing(at: qos, serially: serially) }
 }
 
 
@@ -640,7 +641,7 @@ open class TBD<Value>: Deferred<Value>
 
   public convenience init(qos: DispatchQoS = .current)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
+    let queue = DispatchQueue(label: "deferred", qos: qos)
     self.init(queue: queue)
   }
 

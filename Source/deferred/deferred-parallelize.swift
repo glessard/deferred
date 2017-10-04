@@ -53,7 +53,7 @@ extension Collection
   public func deferredMap<Value>(qos: DispatchQoS = .current,
                                  task: @escaping (_ element: Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-    let queue = DispatchQueue(label: "deferred-map", qos: qos, attributes: .concurrent)
+    let queue = DispatchQueue(label: "deferred-map", qos: qos)
     return deferredMap(queue: queue, task: task)
   }
 
@@ -100,7 +100,7 @@ extension Collection where Index == Indices.Iterator.Element
   public func deferredMap<Value>(qos: DispatchQoS = .current,
                                  task: @escaping (_ element: Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-    let queue = DispatchQueue(label: "deferred-map", qos: qos, attributes: .concurrent)
+    let queue = DispatchQueue(label: "deferred-map", qos: qos)
     return deferredMap(queue: queue, task: task)
   }
 

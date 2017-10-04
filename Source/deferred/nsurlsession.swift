@@ -35,7 +35,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
 
   init(qos: DispatchQoS)
   {
-    let queue = DispatchQueue(label: "urlsession", qos: qos, attributes: .concurrent)
+    let queue = DispatchQueue(label: "urlsession", qos: qos)
     super.init(queue: queue)
   }
 

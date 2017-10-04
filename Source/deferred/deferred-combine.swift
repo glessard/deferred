@@ -234,7 +234,7 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = .current,
     return Deferred(qos: qos, error: error)
   }
 
-  let queue = DispatchQueue(label: "first-collection", qos: qos, attributes: .concurrent)
+  let queue = DispatchQueue(label: "first-collection", qos: qos)
   let first = TBD<Deferred<Value>>(queue: queue)
 
   deferreds.forEach {
@@ -261,7 +261,7 @@ public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = .current,
                                                 _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
   where S.Iterator.Element: Deferred<Value>
 {
-  let queue = DispatchQueue(label: "first-sequence", qos: qos, attributes: .concurrent)
+  let queue = DispatchQueue(label: "first-sequence", qos: qos)
   let first = TBD<Deferred<Value>>(queue: queue)
 
   // We iterate on a background thread because the sequence (type S) could block on next()

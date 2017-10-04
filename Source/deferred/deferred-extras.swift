@@ -248,7 +248,7 @@ extension Optional
 
   public func deferred(qos: DispatchQoS = .current) -> Deferred<Wrapped>
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: .concurrent)
+    let queue = DispatchQueue(label: "deferred", qos: qos)
     return self.deferred(queue: queue)
   }
 }
