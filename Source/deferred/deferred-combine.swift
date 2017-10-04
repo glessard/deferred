@@ -10,32 +10,35 @@ import Dispatch
 
 // combine two or more Deferred objects into one.
 
-/// Combine an array of `Deferred`s into a new `Deferred` whose value is an array.
+/// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
 /// The combined `Deferred` will become determined after every input `Deferred` is determined.
+/// The combined `Deferred` will use a new queue at the requested (or current) QoS.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
-/// The combined `Deferred` will use the queue from the first element of the input array (unless the input array is empty.)
 ///
-/// - parameter deferreds: an array of `Deferred`
+/// - parameter qos: the QoS at which the `combine` operation and its notifications should occur; defaults to the current QoS
+/// - parameter deferreds: a `Collection` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Value>(qos: DispatchQoS = DispatchQoS.current ?? .default,
-                           _ deferreds: [Deferred<Value>]) -> Deferred<[Value]>
+public func combine<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                          _ deferreds: C) -> Deferred<[Value]>
+  where C.Iterator.Element == Deferred<Value>
 {
   var combined = [Value]()
-  combined.reserveCapacity(deferreds.count)
+  combined.reserveCapacity(numericCast(deferreds.count))
 
   let reduced = reduce(qos: qos, deferreds, initial: (), combine: { _, value in combined.append(value) })
-  return reduced.map { _ in combined }
+  return reduced.map(transform: { _ in combined })
 }
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
 /// The combined `Deferred` will become determined after every input `Deferred` has become determined.
+/// The combined `Deferred` will use a new queue at the requested (or current) QoS.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
-/// The combined `Deferred` will use the concurrent queue at the current qos class.
 ///
-/// - parameter deferreds: an array of `Deferred`
+/// - parameter qos: the QoS at which the `combine` operation and its notifications should occur; defaults to the current QoS
+/// - parameter deferreds: a `Sequence` of `Deferred`
 /// - returns: a new `Deferred`
 
 public func combine<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
@@ -45,7 +48,7 @@ public func combine<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?
   var combined = [Value]()
 
   let reduced = reduce(qos: qos, deferreds, initial: (), combine: { _, value in combined.append(value) })
-  return reduced.map { _ in combined }
+  return reduced.map(transform: { _ in combined })
 }
 
 /// Returns the result of repeatedly calling `combine` with an
@@ -56,15 +59,20 @@ public func combine<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
-/// The combined `Deferred` will use the qos from the first element of the input array (unless the input array is empty.)
+/// The combined `Deferred` will use a new queue at the requested (or current) QoS.
 ///
-/// - parameter qos: the Quality-of-Service at which the `reduce` operation and its notifications should occur; defaults to the current QoS
-/// - parameter deferreds: an array of `Deferred`
+/// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS
+/// - parameter deferreds: a `Collection` of `Deferred`
+/// - parameter initial: a value to use as the initial accumulating value
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
+/// - parameter accumulated: the accumulated value up to this element of the `Collection`
+/// - parameter element: a new element to be accumulated
 
-public func reduce<T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ deferreds: [Deferred<T>],
-                         initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
+public func reduce<C: Collection, T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                        _ deferreds: C, initial: U,
+                                        combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
+  where C.Iterator.Element == Deferred<T>
 {
   guard deferreds.isEmpty == false
     else { return Deferred(qos: qos, value: initial) }
@@ -91,14 +99,19 @@ public func reduce<T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ d
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
-/// The combined `Deferred` will use a serial queue at the current qos class.
+/// The combined `Deferred` will use a new queue at the requested (or current) QoS.
 ///
-/// - parameter deferreds: an array of `Deferred`
+/// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS
+/// - parameter deferreds: a `Sequence` of `Deferred`
+/// - parameter initial: a value to use as the initial accumulating value
 /// - parameter combine: a reducing function
 /// - returns: a new `Deferred`
+/// - parameter accumulated: the accumulated value up to this element of the `Collection`
+/// - parameter element: a new element to be accumulated
 
-public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default, _ deferreds: S,
-                                      initial: U, combine: @escaping (U,T) throws -> U) -> Deferred<U>
+public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? .default,
+                                      _ deferreds: S, initial: U,
+                                      combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
   where S.Iterator.Element == Deferred<T>
 {
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
@@ -114,7 +127,7 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS = DispatchQoS.current ?? 
     }
   }
 
-  return reduced.flatMap { $0 }
+  return reduced.flatMap(transform: { $0 })
 }
 
 /// Combine two `Deferred` into one.
@@ -167,9 +180,11 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 /// `DeferredError.canceled` error.
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first; if this
-/// biasing is a problem, consider shuffling the array first.
+/// biasing is a problem, consider shuffling the collection first.
 ///
-/// - parameter deferreds: an array of `Deferred`
+/// - parameter qos: the QoS class at which to execute the new `Deferred`'s notifications
+/// - parameter deferreds: a `Collection` of `Deferred`
+/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
 
 public func firstValue<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
@@ -178,6 +193,17 @@ public func firstValue<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.curr
 {
   return firstDetermined(qos: qos, deferreds, cancelOthers: cancelOthers).flatMap { $0 }
 }
+
+/// Return the value of the first of an array of `Deferred`s to be determined.
+/// Note that if the array is empty the resulting `Deferred` will resolve to a
+/// `DeferredError.canceled` error.
+/// Note also that if more than one element is already determined at the time
+/// the function is called, the earliest one will be considered first.
+///
+/// - parameter qos: the QoS class at which to execute the new `Deferred`'s notifications
+/// - parameter deferreds: a `Sequence` of `Deferred`
+/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
+/// - returns: a new `Deferred`
 
 public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                            _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
@@ -191,9 +217,11 @@ public func firstValue<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.curren
 /// `DeferredError.canceled` error.
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first; if this
-/// biasing is a problem, consider shuffling the array first.
+/// biasing is a problem, consider shuffling the collection first.
 ///
-/// - parameter deferreds: an array of `Deferred`
+/// - parameter qos: the QoS class at which to execute the new `Deferred`'s notifications
+/// - parameter deferreds: a `Collection` of `Deferred`
+/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
 
 public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS.current ?? .default,
@@ -217,6 +245,17 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = DispatchQoS
 
   return first
 }
+
+/// Return the first of an array of `Deferred`s to become determined.
+/// Note that if the array is empty the resulting `Deferred` will resolve to a
+/// `DeferredError.canceled` error.
+/// Note also that if more than one element is already determined at the time
+/// the function is called, the earliest one will be considered first.
+///
+/// - parameter qos: the QoS class at which to execute the new `Deferred`'s notifications
+/// - parameter deferreds: a `Sequence` of `Deferred`
+/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
+/// - returns: a new `Deferred`
 
 public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS = DispatchQoS.current ?? .default,
                                                 _ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
