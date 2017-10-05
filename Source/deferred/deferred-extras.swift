@@ -230,7 +230,7 @@ extension Deferred
   /// - returns: a `Deferred` reference representing the return value of the transform
   /// - parameter value: the value to be transformed for a new `Deferred`
 
-  public final func apply<Other>(queue: DispatchQueue? = nil,
+  public func apply<Other>(queue: DispatchQueue? = nil,
                                  transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
   {
     let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
@@ -248,7 +248,7 @@ extension Deferred
   /// - returns: a `Deferred` reference representing the return value of the transform
   /// - parameter value: the value to be transformed for a new `Deferred`
 
-  public final func apply<Other>(qos: DispatchQoS,
+  public func apply<Other>(qos: DispatchQoS,
                                  transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
@@ -268,7 +268,7 @@ extension Deferred
   /// - returns: a `Deferred` reference holding a validated `Value`
   /// - parameter value: the value to be validated
 
-  public final func validate(queue: DispatchQueue? = nil,
+  public func validate(queue: DispatchQueue? = nil,
                              predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
   {
     return self.map(queue: queue) {
@@ -287,7 +287,7 @@ extension Deferred
   /// - returns: a `Deferred` reference holding a validated `Value`
   /// - parameter value: the value to be validated
 
-  public final func validate(qos: DispatchQoS,
+  public func validate(qos: DispatchQoS,
                              predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
@@ -302,7 +302,7 @@ extension Deferred
   /// - returns: a `Deferred` reference holding a validated `Value`
   /// - parameter value: the value to be validated
 
-  public final func validate(queue: DispatchQueue? = nil,
+  public func validate(queue: DispatchQueue? = nil,
                              predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
   {
     return self.map(queue: queue) {
@@ -320,7 +320,7 @@ extension Deferred
   /// - returns: a `Deferred` reference holding a validated `Value`
   /// - parameter value: the value to be validated
 
-  public final func validate(qos: DispatchQoS,
+  public func validate(qos: DispatchQoS,
                              predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)

@@ -17,8 +17,8 @@ import CAtomics
 public enum DeferredState
 {
   case waiting, executing, succeeded, errored
-  /// Whether this `DeferredState` is final.
-  /// returns: `true` iff this `DeferredState` is final
+  /// Whether this `DeferredState` is determined.
+  /// returns: `true` iff this `DeferredState` represents one of the states where it is determined
   public var isDetermined: Bool { return self == .succeeded || self == .errored }
 }
 
@@ -456,7 +456,7 @@ open class Deferred<Value>
 
 /// A mapped `Deferred`
 
-internal final class Mapped<Value>: Deferred<Value>
+internal class Mapped<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `map`
@@ -487,7 +487,7 @@ internal final class Mapped<Value>: Deferred<Value>
   }
 }
 
-internal final class Bind<Value>: Deferred<Value>
+internal class Bind<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `flatMap`
@@ -553,7 +553,7 @@ internal final class Bind<Value>: Deferred<Value>
 
 /// A `Deferred` that applies a `Deferred` transform onto its input
 
-internal final class Applicator<Value>: Deferred<Value>
+internal class Applicator<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `apply`
@@ -597,7 +597,7 @@ internal final class Applicator<Value>: Deferred<Value>
 
 /// A `Deferred` with a time delay
 
-internal final class Delayed<Value>: Deferred<Value>
+internal class Delayed<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a time after which this `Deferred` may become determined.
   /// The determination could be delayed further if `source` has not become determined yet,

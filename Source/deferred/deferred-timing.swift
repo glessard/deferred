@@ -22,7 +22,7 @@ extension Deferred
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public final func delay(queue: DispatchQueue? = nil, seconds delay: Double) -> Deferred
+  public func delay(queue: DispatchQueue? = nil, seconds delay: Double) -> Deferred
   {
     return self.delay(queue: queue, until: .now() + delay)
   }
@@ -33,7 +33,7 @@ extension Deferred
   /// - parameter delay: a time interval, as `DispatchTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public final func delay(queue: DispatchQueue? = nil, _ delay: DispatchTimeInterval) -> Deferred
+  public func delay(queue: DispatchQueue? = nil, _ delay: DispatchTimeInterval) -> Deferred
   {
     return self.delay(queue: queue, until: .now() + delay)
   }
@@ -44,7 +44,7 @@ extension Deferred
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
-  public final func delay(queue: DispatchQueue? = nil, until time: DispatchTime) -> Deferred
+  public func delay(queue: DispatchQueue? = nil, until time: DispatchTime) -> Deferred
   { // FIXME: don't special-case .distantFuture (https://bugs.swift.org/browse/SR-5706)
     guard time > .now() || time == .distantFuture else { return self }
     return Delayed(queue: queue, source: self, until: time)
@@ -63,7 +63,7 @@ extension Deferred
   /// - returns: self
 
   @discardableResult
-  public final func timeout(seconds: Double, reason: String = "") -> Deferred
+  public func timeout(seconds: Double, reason: String = "") -> Deferred
   {
     return self.timeout(after: .now() + seconds, reason: reason)
   }
@@ -76,7 +76,7 @@ extension Deferred
   /// - returns: self
 
   @discardableResult
-  public final func timeout(_ timeout: DispatchTimeInterval, reason: String = "") -> Deferred
+  public func timeout(_ timeout: DispatchTimeInterval, reason: String = "") -> Deferred
   {
     return self.timeout(after: .now() + timeout, reason: reason)
   }
@@ -89,7 +89,7 @@ extension Deferred
   /// - returns: self
 
   @discardableResult
-  public final func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred
+  public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred
   {
     if isDetermined { return self }
 
