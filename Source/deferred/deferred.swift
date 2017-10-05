@@ -94,19 +94,6 @@ open class Deferred<Value>
     stateid.initialize(2)
   }
 
-  // MARK: initialize with a closure
-
-  /// Initialize with a computation task to be performed in the background
-  ///
-  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
-  /// - parameter task: the computation to be performed
-
-  public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Value)
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, task: task)
-  }
-
   /// Initialize with a computation task to be performed on the specified queue
   ///
   /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
@@ -131,7 +118,18 @@ open class Deferred<Value>
     }
   }
 
-  // MARK: initialize with a result, value or error
+  // MARK: convenience initializers
+
+  /// Initialize with a computation task to be performed in the background
+  ///
+  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
+  /// - parameter task: the computation to be performed
+
+  public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Value)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, task: task)
+  }
 
   /// Initialize to an already determined state
   ///
@@ -175,11 +173,11 @@ open class Deferred<Value>
     self.init(queue: queue, result: Determined(error))
   }
 
-  // MARK: fileprivate methods
+  // MARK: state changes / determine
 
   /// Change the state of this `Deferred` from `.waiting` to `.executing`
 
-  fileprivate func beginExecution()
+  internal func beginExecution()
   {
     if stateid.load(.relaxed) == 0 { stateid.store(1, .relaxed) }
   }
@@ -356,7 +354,7 @@ open class Deferred<Value>
   ///
   /// - returns: this `Deferred`'s determined result
 
-  private var determined: Determined<Value> {
+  public var result: Determined<Value> {
     if waiters.load(.acquire) != .determined
     {
       if let current = DispatchQoS.QoSClass.current, current > queue.qos.qosClass
@@ -383,11 +381,22 @@ open class Deferred<Value>
 
   public func get() throws -> Value
   {
-    return try determined.get()
+    return try result.get()
   }
 
-  @available(*, unavailable, message: "the isDetermined property provides a non-blocking check that can replace peek()")
-  public func peek() -> Value? { return nil }
+  /// Get this `Deferred`'s `Determined` result if exists, `nil` otherwise.
+  /// This call is non-blocking.
+  ///
+  /// - returns: this `Deferred`'s determined result, or `nil`
+
+  public func peek() -> Determined<Value>?
+  {
+    if waiters.load(.acquire) == .determined
+    {
+      return determination
+    }
+    return nil
+  }
 
   /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
   /// If the `Deferred` is determined with an `Error`, return nil.
@@ -397,7 +406,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined value, or `nil`
 
   public var value: Value? {
-    return determined.value
+    return result.value
   }
 
   /// Get this `Deferred`'s error state, blocking if necessary until it becomes determined.
@@ -408,7 +417,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined error state, or `nil`
 
   public var error: Error? {
-    return determined.error
+    return result.error
   }
 
   /// Get the QoS of this `Deferred`'s queue
