@@ -11,10 +11,10 @@ import Dispatch
 
 extension Deferred
 {
-  /// Initialize an array of `Deferred` to be computed in parallel, at the desired quality of service level
+  /// Initialize an array of `Deferred` to be computed in parallel, at the desired QoS level
   ///
   /// - parameter count: the number of parallel tasks to perform
-  /// - parameter qos: the QoS at which the parallel task should be performed
+  /// - parameter qos: the QoS at which the parallel task should be performed; defaults to the current QoS class.
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
   /// - parameter index: an index for the computation
@@ -43,9 +43,9 @@ extension Deferred
 #if swift(>=3.2)
 extension Collection
 {
-  /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
+  /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired QoS level
   ///
-  /// - parameter qos: the QoS at which the parallel task should be performed
+  /// - parameter qos: the QoS at which the parallel task should be performed; defaults to the current QoS class.
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
   /// - parameter element: an element to transform into a new `Deferred`
@@ -90,9 +90,9 @@ extension Collection
 #else
 extension Collection where Index == Indices.Iterator.Element
 {
-  /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired quality of service level
+  /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired QoS level
   ///
-  /// - parameter qos: the QoS at which the parallel task should be performed
+  /// - parameter qos: the QoS at which the parallel task should be performed; defaults to the current QoS class.
   /// - parameter task: the computation to be performed in parallel
   /// - returns: an array of `Deferred`
   /// - parameter element: an element to transform into a new `Deferred`

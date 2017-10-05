@@ -17,6 +17,8 @@ import CAtomics
 public enum DeferredState
 {
   case waiting, executing, succeeded, errored
+  /// Whether this `DeferredState` is final.
+  /// returns: `true` iff this `DeferredState` is final
   public var isDetermined: Bool { return self == .succeeded || self == .errored }
 }
 
@@ -28,14 +30,18 @@ extension UnsafeMutableRawPointer
 /// An asynchronous computation.
 ///
 /// A `Deferred` starts out undetermined, in the `.waiting` state.
-/// It may then enter the `.executing` state, and will eventually become `.determined`.
-/// Once it is `.determined`, it is ready to supply a result.
+/// It may then enter the `.executing` state, and may eventually become determined,
+/// either having `.succeeded` or `.errored`.
 ///
-/// The `get()` method and the `value` and `error` properties can be used to obtain
-/// the result of a `Deferred`, blocking if necessary until a result is available.
-/// If the result is ready when those are called, they return immediately.
+/// A `Deferred` that becomes determined, will henceforth always be determined: it can no longer mutate.
 ///
-/// A closure supplied to the `enqueue` method will be called after the `Deferred` has become determined.
+/// The `get()` function will return the computation result (or throw an `Error`),
+/// blocking until it becomes available. If the result is ready when `get()` is called,
+/// it will return immediately. The properties `value` and `error` are convenient non-throwing wrappers
+/// for the `get()` method -- although they do block.
+///
+/// Closures supplied to the `enqueuing` function will be called after the `Deferred` has become determined.
+/// The functions `map`, `flatMap`, `notify` and others are wrappers that add functionality to the `enqueuing` function.
 
 open class Deferred<Value>
 {
@@ -56,7 +62,7 @@ open class Deferred<Value>
 
   // MARK: designated initializers
 
-  fileprivate init<Other>(queue: DispatchQueue? = nil, source: Deferred<Other>, beginExecution: Bool = false)
+  fileprivate init<Other>(queue: DispatchQueue?, source: Deferred<Other>, beginExecution: Bool = false)
   {
     self.queue = queue ?? source.queue
     self.source = source
@@ -92,7 +98,7 @@ open class Deferred<Value>
 
   /// Initialize with a computation task to be performed in the background
   ///
-  /// - parameter qos:  the Quality-of-Service class at which the computation (and notifications) should be performed; defaults to the current QoS.
+  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
   /// - parameter task: the computation to be performed
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Value)
@@ -104,10 +110,9 @@ open class Deferred<Value>
   /// Initialize with a computation task to be performed on the specified queue
   ///
   /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
-  /// - parameter qos:   the Quality-of-Service class at which the computation should be performed; defaults to the QOS class of `queue`
   /// - parameter task:  the computation to be performed
 
-  public init(queue: DispatchQueue, qos: DispatchQoS? = nil, task: @escaping () throws -> Value)
+  public init(queue: DispatchQueue, task: @escaping () throws -> Value)
   {
     self.queue = queue
     source = nil
@@ -130,7 +135,7 @@ open class Deferred<Value>
 
   /// Initialize to an already determined state
   ///
-  /// - parameter qos: the Quality-of-Service class at which the notifications should be performed.
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
   /// - parameter value: the value of this `Deferred`
 
   public convenience init(qos: DispatchQoS = .current, value: Value)
@@ -151,7 +156,7 @@ open class Deferred<Value>
 
   /// Initialize with an Error
   ///
-  /// - parameter qos: the Quality-of-Service class at which the notifications should be performed.
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
   /// - parameter error: the error state of this `Deferred`
 
   public convenience init(qos: DispatchQoS = .current, error: Error)
@@ -256,19 +261,27 @@ open class Deferred<Value>
   /// Multiple threads can call this method at once; they will succeed in turn.
   /// If one or more thread enters a race to enqueue with `determine()`, as soon as `determine()` succeeds
   /// all current and subsequent attempts to enqueue will result in immediate dispatch of the task.
-  /// Note that the enqueued closure will does not modify `task`, and will not extend the lifetime of `self`.
   ///
-  /// - parameter qos:  the Quality-of-Service class at which this notification should execute; defaults to the QOS class of this `Deferred`'s queue.
+  /// Note that the enqueued closure will does not modify `task`, and will not extend the lifetime of `self`.
+  /// If you need to extend the lifetime of `self` until `task` executes, use `notify()`.
+  ///
+  /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
+  /// - parameter boostQoS: whether `enqueue` should attempt to boost the QoS if `queue.qos` is higher than `self.qos`; defaults to `true`
   /// - parameter task: a closure to be executed after `self` becomes determined.
   /// - parameter result: the determined result of `self`
 
-  open func enqueue(qos: DispatchQoS? = nil, task: @escaping (_ result: Determined<Value>) -> Void)
+  open func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (_ result: Determined<Value>) -> Void)
   {
     var waitQueue = waiters.load(.acquire)
     if waitQueue != .determined
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
-      waiter.initialize(to: Waiter(qos, task))
+      waiter.initialize(to: Waiter(queue, task))
+
+      if boostQoS, let qos = queue?.qos, qos > self.queue.qos
+      { // try to raise `self.queue`'s QoS if the notification needs to execute at a higher QoS
+        self.queue.async(qos: qos, flags: [.enforceQoS, .barrier], execute: {})
+      }
 
       repeat {
         waiter.pointee.next = waitQueue?.assumingMemoryBound(to: Waiter<Value>.self)
@@ -284,24 +297,24 @@ open class Deferred<Value>
     }
 
     // this Deferred is determined
-    queue.async(qos: qos, execute: { [value = determination!] in task(value) })
+    let q = queue ?? self.queue
+    q.async(execute: { [value = determination!] in task(value) })
   }
 
   /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes determined.
   /// The enqueued closure will extend the lifetime of `self` until `task` completes.
   ///
-  /// - parameter qos:  the Quality-of-Service class at which this notification should execute; defaults to the QOS class of this `Deferred`'s queue.
+  /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
   /// - parameter task: a closure to be executed as a notification
   /// - parameter result: the determined result of `self`
 
-  public func notify(qos: DispatchQoS? = nil, task: @escaping (_ result: Determined<Value>) -> Void)
+  public func notify(queue: DispatchQueue? = nil, task: @escaping (_ result: Determined<Value>) -> Void)
   {
-    enqueue(qos: qos, task: { value in withExtendedLifetime(self) { task(value) } })
+    enqueue(queue: queue, task: { value in withExtendedLifetime(self) { task(value) } })
   }
 
   /// Query the current state of this `Deferred`
-  ///
-  /// - returns: a `DeferredState` (`.waiting`, `.executing` or `.determined`)
+  /// - returns: a `DeferredState` that describes this `Deferred`
 
   public var state: DeferredState {
     return (waiters.load(.acquire) != .determined) ?
@@ -309,21 +322,20 @@ open class Deferred<Value>
       (determination!.isValue ? .succeeded : .errored)
   }
 
-  /// Query whether this `Deferred` has been determined.
-  ///
-  /// - returns: wheither this `Deferred` has been determined.
+  /// Query whether this `Deferred` has become determined.
+  /// - returns: `true` iff this `Deferred` has become determined.
 
   public var isDetermined: Bool {
     return waiters.load(.relaxed) == .determined
   }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
-  /// A successful cancellation will result in a `Deferred` equivalent as if it had been initialized as follows:
+  /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
   /// ```
   /// Deferred<Value>(error: DeferredError.canceled(reason))
   /// ```
   ///
-  /// - parameter reason: a `String` detailing the reason for the attempted cancellation.
+  /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
   /// - returns: whether the cancellation was performed successfully.
 
   @discardableResult
@@ -339,14 +351,21 @@ open class Deferred<Value>
   }
 
   /// Get this `Deferred`'s `Determined` result, blocking if necessary until it exists.
+  /// When called on a `Deferred` that is already determined, this call is non-blocking.
+  /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
   ///
   /// - returns: this `Deferred`'s determined result
 
   private var determined: Determined<Value> {
     if waiters.load(.acquire) != .determined
     {
+      if let current = DispatchQoS.QoSClass.current, current > queue.qos.qosClass
+      { // try to boost the QoS class of the running task if it is lower than the current thread's QoS
+        queue.async(qos: DispatchQoS(qosClass: current, relativePriority: 0),
+                    flags: [.enforceQoS, .barrier], execute: {})
+      }
       let s = DispatchSemaphore(value: 0)
-      self.enqueue(qos: DispatchQoS.current) { _ in s.signal() }
+      self.enqueue(boostQoS: false, task: { _ in s.signal() })
       s.wait()
       _ = waiters.load(.acquire)
     }
@@ -360,7 +379,7 @@ open class Deferred<Value>
   /// When called on a `Deferred` that is already determined, this call is non-blocking.
   /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
   ///
-  /// - returns: this `Deferred`'s determined value, or `nil`
+  /// - returns: this `Deferred`'s determined value, or a thrown `Error`
 
   public func get() throws -> Value
   {
@@ -372,7 +391,8 @@ open class Deferred<Value>
 
   /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
   /// If the `Deferred` is determined with an `Error`, return nil.
-  /// In either case, this property will block until `Deferred` is determined.
+  /// When called on a `Deferred` that is already determined, this call is non-blocking.
+  /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
   ///
   /// - returns: this `Deferred`'s determined value, or `nil`
 
@@ -380,22 +400,24 @@ open class Deferred<Value>
     return determined.value
   }
 
-  /// Get this `Deferred`'s error, blocking if necessary until it becomes determined.
+  /// Get this `Deferred`'s error state, blocking if necessary until it becomes determined.
   /// If the `Deferred` is determined with a `Value`, return nil.
-  /// In either case, this property will block until `Deferred` is determined.
+  /// When called on a `Deferred` that is already determined, this call is non-blocking.
+  /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
   ///
-  /// - returns: this `Deferred`'s determined value, or `nil`
+  /// - returns: this `Deferred`'s determined error state, or `nil`
 
   public var error: Error? {
     return determined.error
   }
 
-  /// Get the quality-of-service class of this `Deferred`'s queue
-  /// - returns: the quality-of-service class of this `Deferred`'s queue
+  /// Get the QoS of this `Deferred`'s queue
+  /// - returns: the QoS of this `Deferred`'s queue
 
   public var qos: DispatchQoS { return self.queue.qos }
 
-  /// Set the queue to be used for future notifications
+  /// Get a `Deferred` that will use a different queue for its notifications
+  ///
   /// - parameter queue: the queue to be used by the returned `Deferred`
   /// - returns: a new `Deferred` whose notifications will execute on `queue`
 
@@ -408,18 +430,18 @@ open class Deferred<Value>
 
     let beginExecution = stateid.load(.relaxed) != 0
     let deferred = Deferred(queue: queue, source: self, beginExecution: beginExecution)
-    self.enqueue(qos: queue.qos, task: { [weak deferred] in deferred?.determine($0) })
+    self.enqueue(queue: queue, boostQoS: false, task: { [weak deferred] in deferred?.determine($0) })
     return deferred
   }
 
   @available(*, unavailable, renamed: "enqueuing")
   public func notifying(on queue: DispatchQueue) -> Deferred { return enqueuing(on: queue) }
 
-  /// Set the quality-of-service to use for future notifications.
-  /// The returned `Deferred` will issue notifications on a new queue at the specified quality-of-service class.
-  /// - parameter qos: the quality-of-service class to be used by the returned `Deferred`
-  /// - parameter serially: whether the new queue should be serial; defaults to `true`
-  /// - returns: a new `Deferred` whose notifications will run at quality-of-service `qos`
+  /// Get a `Deferred` that will use a different QoS for its notifications
+  ///
+  /// - parameter qos: the QoS to be used by the returned `Deferred`
+  /// - parameter serially: whether the notifications should be dispatched on a serial queue; defaults to `true`
+  /// - returns: a new `Deferred` whose notifications will execute at QoS `qos`
 
   public func enqueuing(at qos: DispatchQoS, serially: Bool = true) -> Deferred
   {
@@ -439,17 +461,16 @@ internal final class Mapped<Value>: Deferred<Value>
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `map`
   ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
+  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
-  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Value)
+  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Value)
   {
-    super.init(source: source)
+    super.init(queue: queue, source: source)
 
-    source.enqueue(qos: qos) {
+    source.enqueue(queue: queue) {
       [weak self] value in
       guard let this = self else { return }
       if this.isDetermined { return }
@@ -471,24 +492,23 @@ internal final class Bind<Value>: Deferred<Value>
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `flatMap`
   ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
+  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
-  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: @escaping (_ value: U) -> Deferred<Value>)
+  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) -> Deferred<Value>)
   {
-    super.init(source: source)
+    super.init(queue: queue, source: source)
 
-    source.enqueue(qos: qos) {
+    source.enqueue(queue: queue) {
       [weak self] value in
       guard let this = self else { return }
       if this.isDetermined { return }
       this.beginExecution()
       do {
         let value = try value.get()
-        transform(value).notify(qos: qos) {
+        transform(value).notify(queue: queue) {
           [weak this] transformed in
           this?.determine(transformed)
         }
@@ -500,26 +520,25 @@ internal final class Bind<Value>: Deferred<Value>
   }
 
   /// Initialize with a `Deferred` source and a transform to be computed in the background
-  /// This constructor is used by `recover` -- flatMap for the `ErrorType` path.
+  /// This constructor is used by `recover` -- flatMap for the `Error` path.
   ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
+  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose error should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.error` and whose result is represented by this `Deferred`
   /// - parameter error:     the Error to be transformed for a new `Deferred`
 
-  init(qos: DispatchQoS?, source: Deferred<Value>, transform: @escaping (_ error: Error) -> Deferred<Value>)
+  init(queue: DispatchQueue?, source: Deferred<Value>, transform: @escaping (_ error: Error) -> Deferred<Value>)
   {
-    super.init(source: source)
+    super.init(queue: queue, source: source)
 
-    source.enqueue(qos: qos) {
+    source.enqueue(queue: queue) {
       [weak self] determined in
       guard let this = self else { return }
       if this.isDetermined { return }
       this.beginExecution()
       if let error = determined.error
       {
-        transform(error).notify(qos: qos) {
+        transform(error).notify(queue: queue) {
           [weak this] transformed in
           this?.determine(transformed)
         }
@@ -539,23 +558,22 @@ internal final class Applicator<Value>: Deferred<Value>
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `apply`
   ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued
-  /// - parameter qos:       the QOS class at which to execute the transform; defaults to the QOS class of this `Deferred`'s queue.
+  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
-  init<U>(qos: DispatchQoS?, source: Deferred<U>, transform: Deferred<(_ value: U) throws -> Value>)
+  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: Deferred<(_ value: U) throws -> Value>)
   {
-    super.init(source: source)
+    super.init(queue: queue, source: source)
 
-    source.enqueue(qos: qos) {
+    source.enqueue(queue: queue) {
       [weak self] value in
       guard let this = self else { return }
       if this.isDetermined { return }
       do {
         let value = try value.get()
-        transform.notify(qos: qos) {
+        transform.notify(queue: queue) {
           [weak this] transform in
           guard let this = this else { return }
           if this.isDetermined { return }
@@ -577,7 +595,7 @@ internal final class Applicator<Value>: Deferred<Value>
   }
 }
 
-/// A `Deferred` with a time-delay
+/// A `Deferred` with a time delay
 
 internal final class Delayed<Value>: Deferred<Value>
 {
@@ -586,14 +604,15 @@ internal final class Delayed<Value>: Deferred<Value>
   /// but it will not happen earlier than the time referred to by `until`.
   /// This constructor is used by `delay`
   ///
+  /// - parameter queue:  the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source: the `Deferred` whose value should be delayed
   /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
 
-  init(source: Deferred<Value>, until time: DispatchTime)
+  init(queue: DispatchQueue?, source: Deferred<Value>, until time: DispatchTime)
   {
-    super.init(source: source)
+    super.init(queue: queue, source: source)
 
-    source.enqueue {
+    source.enqueue(queue: queue, boostQoS: false) {
       [weak self] value in
       guard let this = self else { return }
       if this.isDetermined { return }
@@ -637,7 +656,7 @@ open class TBD<Value>: Deferred<Value>
 
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
-  /// - parameter qos: the Quality-of-Service class at which the notifications should be performed; defaults to the current quality-of-service class.
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
   public convenience init(qos: DispatchQoS = .current)
   {
@@ -659,7 +678,7 @@ open class TBD<Value>: Deferred<Value>
     return super.determine(result)
   }
 
-  /// Set the value of this `Deferred`  and dispatch all notifications for execution.
+  /// Set the value of this `Deferred` and dispatch all notifications for execution.
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.

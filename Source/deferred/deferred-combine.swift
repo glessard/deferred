@@ -16,7 +16,7 @@ import Dispatch
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
 ///
-/// - parameter qos: the QoS at which the `combine` operation and its notifications should occur; defaults to the current QoS
+/// - parameter qos: the QoS at which the `combine` operation and its notifications should occur; defaults to the current QoS class
 /// - parameter deferreds: a `Collection` of `Deferred`
 /// - returns: a new `Deferred`
 
@@ -37,7 +37,7 @@ public func combine<Value, C: Collection>(qos: DispatchQoS = .current,
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
 ///
-/// - parameter qos: the QoS at which the `combine` operation and its notifications should occur; defaults to the current QoS
+/// - parameter qos: the QoS at which the `combine` operation and its notifications should occur; defaults to the current QoS class
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - returns: a new `Deferred`
 
@@ -61,7 +61,7 @@ public func combine<Value, S: Sequence>(qos: DispatchQoS = .current,
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
 /// The combined `Deferred` will use a new queue at the requested (or current) QoS.
 ///
-/// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS
+/// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS class
 /// - parameter deferreds: a `Collection` of `Deferred`
 /// - parameter initial: a value to use as the initial accumulating value
 /// - parameter combine: a reducing function
@@ -83,7 +83,7 @@ public func reduce<C: Collection, T, U>(qos: DispatchQoS = .current,
   let reduced = deferreds.reduce(accumulator) {
     (accumulator, deferred) in
     accumulator.flatMap {
-      u in deferred.enqueuing(on: queue).map { t in try combine(u,t) }
+      u in deferred.map(queue: queue) { t in try combine(u,t) }
     }
   }
 
@@ -101,7 +101,7 @@ public func reduce<C: Collection, T, U>(qos: DispatchQoS = .current,
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
 /// The combined `Deferred` will use a new queue at the requested (or current) QoS.
 ///
-/// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS
+/// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS class
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - parameter initial: a value to use as the initial accumulating value
 /// - parameter combine: a reducing function
@@ -122,7 +122,7 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS = .current,
     deferreds.reduce(accumulator) {
       (accumulator, deferred) in
       accumulator.flatMap {
-        u in deferred.enqueuing(on: queue).map { t in try combine(u,t) }
+        u in deferred.map(queue: queue) { t in try combine(u,t) }
       }
     }
   }
@@ -182,7 +182,7 @@ public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: D
 /// the function is called, the earliest one will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
 ///
-/// - parameter qos: the QoS class at which to execute the new `Deferred`'s notifications
+/// - parameter qos: the QoS at which to execute the new `Deferred`'s notifications; defaults to the current QoS class.
 /// - parameter deferreds: a `Collection` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
@@ -200,7 +200,7 @@ public func firstValue<Value, C: Collection>(qos: DispatchQoS = .current,
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first.
 ///
-/// - parameter qos: the QoS class at which to execute the new `Deferred`'s notifications
+/// - parameter qos: the QoS at which to execute the new `Deferred`'s notifications; defaults to the current QoS class.
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
@@ -219,7 +219,7 @@ public func firstValue<Value, S: Sequence>(qos: DispatchQoS = .current,
 /// the function is called, the earliest one will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
 ///
-/// - parameter qos: the QoS class at which to execute the new `Deferred`'s notifications
+/// - parameter qos: the QoS at which to execute the new `Deferred`'s notifications; defaults to the current QoS class.
 /// - parameter deferreds: a `Collection` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`
@@ -252,7 +252,7 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS = .current,
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first.
 ///
-/// - parameter qos: the QoS class at which to execute the new `Deferred`'s notifications
+/// - parameter qos: the QoS at which to execute the new `Deferred`'s notifications; defaults to the current QoS class.
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
 /// - returns: a new `Deferred`

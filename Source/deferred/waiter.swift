@@ -10,19 +10,20 @@ import Dispatch
 
 struct Waiter<T>
 {
-  private let qos: DispatchQoS?
+  private let queue: DispatchQueue?
   private let handler: (Determined<T>) -> Void
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
-  init(_ qos: DispatchQoS? = nil, _ handler: @escaping (Determined<T>) -> Void)
+  init(_ queue: DispatchQueue?, _ handler: @escaping (Determined<T>) -> Void)
   {
-    self.qos = qos
+    self.queue = queue
     self.handler = handler
   }
 
   fileprivate func notify(_ queue: DispatchQueue, _ value: Determined<T>)
   {
-    queue.async(qos: qos) { [ handler = self.handler ] in handler(value) }
+    let q = self.queue ?? queue
+    q.async { [handler = self.handler] in handler(value) }
   }
 }
 
