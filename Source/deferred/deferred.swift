@@ -665,7 +665,7 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  public override func determine(_ result: Determined<Value>) -> Bool
+  open override func determine(_ result: Determined<Value>) -> Bool
   {
     return super.determine(result)
   }
@@ -679,9 +679,9 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  public override func determine(_ value: Value) -> Bool
+  open override func determine(_ value: Value) -> Bool
   {
-    return super.determine(value)
+    return determine(Determined(value))
   }
 
   /// Set this `Deferred` to an error and dispatch all notifications for execution.
@@ -693,9 +693,9 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  public override func determine(_ error: Error) -> Bool
+  open override func determine(_ error: Error) -> Bool
   {
-    return super.determine(error)
+    return determine(Determined(error))
   }
 
   /// Change the state of this `TBD` from `.waiting` to `.executing`
