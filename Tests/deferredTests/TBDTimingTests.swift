@@ -41,13 +41,10 @@ class TBDTimingTests: XCTestCase
 
       first.determine( (0, ref, ref) )
 
-      do {
-        let (iterations, tic, toc) = try dt.get()
-        let interval = toc.timeIntervalSince(tic)
-        // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per message")
-        _ = interval/Double(iterations)
-      }
-      catch { XCTFail() }
+      let (iterations, tic, toc) = try! dt.get()
+      let interval = toc.timeIntervalSince(tic)
+      // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per message")
+      _ = interval/Double(iterations)
     }
   }
 
@@ -65,12 +62,9 @@ class TBDTimingTests: XCTestCase
       let dt = start.map { start in Date().timeIntervalSince(start) }
       start.determine(Date())
 
-      do {
-        let interval = try dt.get()
-        // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per notification")
-        _ = interval
-      }
-      catch { XCTFail() }
+      let interval = try! dt.get()
+      // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per notification")
+      _ = interval
     }
   }
 }

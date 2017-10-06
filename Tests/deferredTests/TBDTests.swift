@@ -68,7 +68,7 @@ class TBDTests: XCTestCase
     XCTAssert(tbd.determine(value) == false)
   }
 
-  func testCancel()
+  func testCancel() throws
   {
     let tbd1 = TBD<Void>()
     let reason = "unused"
@@ -79,7 +79,6 @@ class TBDTests: XCTestCase
       XCTFail()
     }
     catch DeferredError.canceled(let message) { XCTAssert(message == reason) }
-    catch { XCTFail() }
 
     let e = expectation(description: "Cancel before setting")
     let tbd3 = TBD<Int>()
@@ -137,12 +136,7 @@ class TBDTests: XCTestCase
     let d3 = TBD<Int>()
     d3.notify {
       determined in
-      do {
-        _ = try determined.get()
-        XCTFail()
-      }
-      catch DeferredError.canceled {}
-      catch { XCTFail() }
+      XCTAssert(determined.error as? DeferredError == DeferredError.canceled(""))
     }
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
       // This will trigger the `XCWaitCompletionHandler` in the `waitForExpectationsWithTimeout` call below.
@@ -202,7 +196,7 @@ class TBDTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testParallel2()
+  func testParallel2() throws
   {
     let count = 10
 
@@ -216,35 +210,22 @@ class TBDTests: XCTestCase
     let combined = combine(arrays)
     let determined = combined.map { $0.flatMap({$0}) }
 
-    do {
-      let value = try determined.get()
-      XCTAssert(value.count == count*count)
-      value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
-    }
-    catch { XCTFail() }
+    let value = try determined.get()
+    XCTAssert(value.count == count*count)
+    value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
   }
 
-  func testParallel3()
+  func testParallel3() throws
   {
     // Verify that "accidentally" passing a serial queue to inParallel doesn't cause a deadlock
 
     let q = DispatchQueue(label: "test1", qos: .utility)
 
     let count = 20
-    let e = expectation(description: "e")
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
     let c = combine(d)
-    c.notify {
-      determined in
-      do {
-        let value = try determined.get()
-        XCTAssert(value.count == count)
-        e.fulfill()
-      }
-      catch { XCTFail() }
-    }
-
-    waitForExpectations(timeout: 1.0)
+    let value = try c.get()
+    XCTAssert(value.count == count)
   }
 
   func testParallel4()

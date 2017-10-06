@@ -115,15 +115,7 @@ class DeletionTests: XCTestCase
     }()
 
     let e = expectation(description: "observed cancellation")
-    deferred.notify {
-      d in
-      do {
-        _ = try d.get()
-      }
-      catch {
-        if error as? DeferredError == DeferredError.timedOut("") { e.fulfill() }
-      }
-    }
+    deferred.notify { if $0.error as? DeferredError == DeferredError.timedOut("") { e.fulfill() } }
 
     deferred.timeout(seconds: 0.1)
     waitForExpectations(timeout: 1.0)

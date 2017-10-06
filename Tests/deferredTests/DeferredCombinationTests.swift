@@ -178,7 +178,7 @@ class DeferredCombinationTests: XCTestCase
     XCTAssert(c?.3 == v4)
   }
 
-  func testFirstValue()
+  func testFirstValue() throws
   {
     let count = 10
     let lucky = Int(nzRandom()) % count
@@ -189,14 +189,13 @@ class DeferredCombinationTests: XCTestCase
     XCTAssert(deferreds[lucky].determine(lucky))
     XCTAssert(first.value == lucky)
 
-    deferreds.forEach {
+    try deferreds.forEach {
       d in
       do {
         let value = try d.get()
         XCTAssert(value == lucky)
       }
       catch DeferredError.canceled(let s) { XCTAssert(s == "") }
-      catch { XCTFail("Wrong error: \(error)") }
     }
 
     let never = firstValue(EmptyIterator<Deferred<Any>>())
@@ -205,13 +204,12 @@ class DeferredCombinationTests: XCTestCase
       XCTFail("never.value should be nil, was \(value)")
     }
     catch DeferredError.invalid(let m) { XCTAssert(m != "") }
-    catch { XCTFail("Wrong error: \(error)") }
 
     let one = firstValue([Deferred(value: ())])
     XCTAssert(one.error == nil)
   }
 
-  func testFirstDetermined()
+  func testFirstDetermined() throws
   {
     let count = 10
 
@@ -225,14 +223,14 @@ class DeferredCombinationTests: XCTestCase
       }
     }
 
-    func oneBy1(_ deferreds: [Deferred<Int>])
+    func oneBy1(_ deferreds: [Deferred<Int>]) throws
     {
       let first = firstDetermined(deferreds, cancelOthers: true)
       if let index = deferreds.index(where: { d in d === first.value })
       {
         var d = deferreds
         d.remove(at: index)
-        oneBy1(d)
+        try oneBy1(d)
       }
 
       if deferreds.count == 0
@@ -242,11 +240,10 @@ class DeferredCombinationTests: XCTestCase
           XCTFail("first.value should be nil, was \(value)")
         }
         catch DeferredError.invalid(let m) { XCTAssert(m != "") }
-        catch { XCTFail("Wrong error: \(error)") }
       }
     }
 
-    oneBy1(deferreds)
+    try oneBy1(deferreds)
     waitForExpectations(timeout: 1.0)
   }
 }
@@ -277,11 +274,8 @@ class DeferredCombinationTimedTests: XCTestCase
       let inputs = (1...iterations).map { Deferred(value: $0) }
       self.startMeasuring()
       let c = reduce(inputs, initial: 0, combine: +)
-      do {
-        let v = try c.get()
-        XCTAssert(v == (iterations*(iterations+1)/2))
-      }
-      catch { XCTFail() }
+      let v = try? c.get()
+      XCTAssert(v == (iterations*(iterations+1)/2))
       self.stopMeasuring()
     }
   }
@@ -300,11 +294,8 @@ class DeferredCombinationTimedTests: XCTestCase
           u in deferred.map { t in u+t }
         }
       }
-      do {
-        let v = try c.get()
-        XCTAssert(v == (iterations*(iterations+1)/2))
-      }
-      catch { XCTFail() }
+      let v = try? c.get()
+      XCTAssert(v == (iterations*(iterations+1)/2))
       self.stopMeasuring()
     }
   }
@@ -317,11 +308,8 @@ class DeferredCombinationTimedTests: XCTestCase
       let inputs = (1...iterations).map { Deferred(value: $0) }
       self.startMeasuring()
       let c = combine(inputs)
-      do {
-        let v = try c.get()
-        XCTAssert(v.count == iterations)
-      }
-      catch { XCTFail() }
+      let v = try? c.get()
+      XCTAssert(v?.count == iterations)
       self.stopMeasuring()
     }
   }

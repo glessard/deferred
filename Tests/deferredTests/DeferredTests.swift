@@ -246,7 +246,7 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 2.0)
   }
 
-  func testGet()
+  func testGet() throws
   {
     let e = TestError(1)
     let d1 = Deferred(value: 1.0)
@@ -258,7 +258,7 @@ class DeferredTests: XCTestCase
       XCTFail()
     } catch let error as TestError {
       XCTAssert(error == e)
-    } catch { XCTFail() }
+    }
 
     XCTAssert(double == 1.0)
   }
@@ -809,7 +809,7 @@ class DeferredTests: XCTestCase
     XCTAssertEqual(e.first as? TestError, TestError(i))
   }
 
-  func testOptional()
+  func testOptional() throws
   {
     let rnd = nzRandom()
 
@@ -824,7 +824,6 @@ class DeferredTests: XCTestCase
       XCTFail()
     }
     catch DeferredError.invalid {}
-    catch { XCTFail() }
   }
 
   func testDeferredError()
