@@ -68,7 +68,7 @@ open class Deferred<Value>
     self.source = source
     determination = nil
     waiters.initialize(nil)
-    stateid.initialize(beginExecution ? 1:0)
+    stateid.initialize(beginExecution && (source.stateid.load(.relaxed) != 0) ? 1:0)
   }
 
   fileprivate init(queue: DispatchQueue)
@@ -424,42 +424,6 @@ open class Deferred<Value>
   /// - returns: the QoS of this `Deferred`'s queue
 
   public var qos: DispatchQoS { return self.queue.qos }
-
-  /// Get a `Deferred` that will use a different queue for its notifications
-  ///
-  /// - parameter queue: the queue to be used by the returned `Deferred`
-  /// - returns: a new `Deferred` whose notifications will execute on `queue`
-
-  public func enqueuing(on queue: DispatchQueue) -> Deferred
-  {
-    if waiters.load(.acquire) == .determined
-    {
-      return Deferred(queue: queue, result: determination!)
-    }
-
-    let beginExecution = stateid.load(.relaxed) != 0
-    let deferred = Deferred(queue: queue, source: self, beginExecution: beginExecution)
-    self.enqueue(queue: queue, boostQoS: false, task: { [weak deferred] in deferred?.determine($0) })
-    return deferred
-  }
-
-  @available(*, unavailable, renamed: "enqueuing")
-  public func notifying(on queue: DispatchQueue) -> Deferred { return enqueuing(on: queue) }
-
-  /// Get a `Deferred` that will use a different QoS for its notifications
-  ///
-  /// - parameter qos: the QoS to be used by the returned `Deferred`
-  /// - parameter serially: whether the notifications should be dispatched on a serial queue; defaults to `true`
-  /// - returns: a new `Deferred` whose notifications will execute at QoS `qos`
-
-  public func enqueuing(at qos: DispatchQoS, serially: Bool = true) -> Deferred
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: serially ? [] : .concurrent)
-    return enqueuing(on: queue)
-  }
-
-  @available(*, unavailable, renamed: "enqueuing")
-  public func notifying(at qos: DispatchQoS, serially: Bool = true) -> Deferred { return enqueuing(at: qos, serially: serially) }
 }
 
 
@@ -492,6 +456,25 @@ internal class Mapped<Value>: Deferred<Value>
       catch {
         this.determine(error)
       }
+    }
+  }
+
+  /// Initialize with a `Deferred` source, without a transform.
+  /// This constructor is used by `enqueuing(on:)`
+  ///
+  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
+  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
+
+  init(queue: DispatchQueue?, source: Deferred<Value>)
+  {
+    if let result = source.peek()
+    {
+      super.init(queue: queue ?? source.queue, result: result)
+    }
+    else
+    {
+      super.init(queue: queue, source: source, beginExecution: true)
+      source.enqueue(queue: queue, boostQoS: false, task: { [weak self] in self?.determine($0) })
     }
   }
 }

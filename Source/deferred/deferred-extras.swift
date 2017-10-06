@@ -39,6 +39,41 @@ extension Deferred
   }
 }
 
+// MARK: enqueuing: use a different queue or QoS for notifications
+
+extension Deferred
+{
+  /// Get a `Deferred` that will have the same `result` as `self` once determined,
+  /// but will use a different queue for its notifications
+  ///
+  /// - parameter queue: the queue to be used by the returned `Deferred`
+  /// - returns: a new `Deferred` whose notifications will execute on `queue`
+
+  public func enqueuing(on queue: DispatchQueue) -> Deferred
+  {
+    return Mapped(queue: queue, source: self)
+  }
+
+  @available(*, unavailable, renamed: "enqueuing")
+  public func notifying(on queue: DispatchQueue) -> Deferred { return enqueuing(on: queue) }
+
+  /// Get a `Deferred` that will have the same `result` as `self` once determined,
+  /// but will use a different queue at the specified QoS for its notifications
+  ///
+  /// - parameter qos: the QoS to be used by the returned `Deferred`
+  /// - parameter serially: whether the notifications should be dispatched on a serial queue; defaults to `true`
+  /// - returns: a new `Deferred` whose notifications will execute at QoS `qos`
+
+  public func enqueuing(at qos: DispatchQoS, serially: Bool = true) -> Deferred
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: serially ? [] : .concurrent)
+    return enqueuing(on: queue)
+  }
+
+  @available(*, unavailable, renamed: "enqueuing")
+  public func notifying(at qos: DispatchQoS, serially: Bool = true) -> Deferred { return enqueuing(at: qos, serially: serially) }
+}
+
 // MARK: map: asynchronously transform a `Deferred` into another
 
 extension Deferred
