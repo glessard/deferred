@@ -429,7 +429,7 @@ open class Deferred<Value>
 
 /// A mapped `Deferred`
 
-class Mapped<Value>: Deferred<Value>
+class Map<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `map`
@@ -545,7 +545,7 @@ class Bind<Value>: Deferred<Value>
 
 /// A `Deferred` that applies a `Deferred` transform onto its input
 
-class Applicator<Value>: Deferred<Value>
+class Apply<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `apply`
@@ -589,7 +589,7 @@ class Applicator<Value>: Deferred<Value>
 
 /// A `Deferred` with a time delay
 
-class Delayed<Value>: Deferred<Value>
+class Delay<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a time after which this `Deferred` may become determined.
   /// The determination could be delayed further if `source` has not become determined yet,
