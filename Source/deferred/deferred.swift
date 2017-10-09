@@ -45,7 +45,7 @@ extension UnsafeMutableRawPointer
 
 open class Deferred<Value>
 {
-  fileprivate let queue: DispatchQueue
+  let queue: DispatchQueue
   private var source: AnyObject?
 
   private var determination: Determined<Value>?
@@ -177,7 +177,7 @@ open class Deferred<Value>
 
   /// Change the state of this `Deferred` from `.waiting` to `.executing`
 
-  internal func beginExecution()
+  func beginExecution()
   {
     if stateid.load(.relaxed) == 0 { stateid.store(1, .relaxed) }
   }
@@ -429,7 +429,7 @@ open class Deferred<Value>
 
 /// A mapped `Deferred`
 
-internal class Mapped<Value>: Deferred<Value>
+class Mapped<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `map`
@@ -479,7 +479,7 @@ internal class Mapped<Value>: Deferred<Value>
   }
 }
 
-internal class Bind<Value>: Deferred<Value>
+class Bind<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `flatMap`
@@ -545,7 +545,7 @@ internal class Bind<Value>: Deferred<Value>
 
 /// A `Deferred` that applies a `Deferred` transform onto its input
 
-internal class Applicator<Value>: Deferred<Value>
+class Applicator<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `apply`
@@ -589,7 +589,7 @@ internal class Applicator<Value>: Deferred<Value>
 
 /// A `Deferred` with a time delay
 
-internal class Delayed<Value>: Deferred<Value>
+class Delayed<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a time after which this `Deferred` may become determined.
   /// The determination could be delayed further if `source` has not become determined yet,
