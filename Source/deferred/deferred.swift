@@ -465,11 +465,11 @@ class Mapped<Value>: Deferred<Value>
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
 
-  init(queue: DispatchQueue?, source: Deferred<Value>)
+  init(queue: DispatchQueue, source: Deferred<Value>)
   {
     if let result = source.peek()
     {
-      super.init(queue: queue ?? source.queue, result: result)
+      super.init(queue: queue, result: result)
     }
     else
     {

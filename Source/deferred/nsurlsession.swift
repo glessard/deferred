@@ -36,7 +36,7 @@ public class DeferredURLSessionTask<Value>: Mapped<Value>
   init(source: TBD<Value>, task: URLSessionTask)
   {
     urlSessionTask = task
-    super.init(queue: nil, source: source)
+    super.init(queue: source.queue, source: source)
   }
 
   @discardableResult
