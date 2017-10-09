@@ -161,6 +161,15 @@ extension Deferred
 
 extension Deferred
 {
+  public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other>
+    where Value == Deferred<Other>
+  {
+    return Flatten(queue: queue, source: self)
+  }
+}
+
+extension Deferred
+{
   /// Initialize a `Deferred` with a computation task to be performed in the background
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///

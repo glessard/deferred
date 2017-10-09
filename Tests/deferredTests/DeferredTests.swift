@@ -40,6 +40,7 @@ class DeferredTests: XCTestCase
     ("testRecover", testRecover),
     ("testRetry", testRetry),
     ("testFlatMap", testFlatMap),
+    ("testFlatten", testFlatten),
     ("testApply", testApply),
     ("testApply1", testApply1),
     ("testApply2", testApply2),
@@ -470,6 +471,50 @@ class DeferredTests: XCTestCase
     let d3 = badOperand.flatMap { _ in Deferred<Void> { XCTFail() } }
     XCTAssert(d3.value == nil)
     XCTAssert(d3.error as? TestError == TestError(error))
+  }
+
+  func testFlatten()
+  {
+    let value = nzRandom()
+    let error = nzRandom()
+
+    let goodOperand = Deferred(value: Deferred(value: value))
+    let d1 = goodOperand.flatten()
+    XCTAssert(d1.value == value)
+
+    let badOperand1 = Deferred<Deferred<Int>>(error: TestError(error))
+    let d2 = badOperand1.flatten()
+    XCTAssert(d2.error as? TestError == TestError(error))
+
+    let deferredValue = TBD<Deferred<Int>>()
+    let d3 = deferredValue.flatten()
+    let e3 = expectation(description: "flatten, part 3")
+    d3.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e3.fulfill() })
+    deferredValue.determine(Deferred(value: value))
+
+    let badOperand2 = TBD<Deferred<Int>>()
+    let d4 = badOperand2.flatten()
+    let e4 = expectation(description: "flatten, part 4")
+    d4.recover(transform: { Deferred(error: $0) }).onError(task: { _ in e4.fulfill() })
+    badOperand2.determine(TestError(error))
+
+    let tbd = TBD<Int>()
+    let fullyDeferred = Deferred(value: tbd.delay(seconds: 0.02)).delay(seconds: 0.01)
+    let d5 = fullyDeferred.flatten()
+    let e5 = expectation(description: "flatten, part 5")
+    d5.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e5.fulfill() })
+
+    let semiDeferred = Deferred(value: tbd.delay(seconds: 0.01))
+    let d6 = semiDeferred.flatten()
+    let e6 = expectation(description: "flatten, part 6")
+    d6.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e6.fulfill() })
+
+//    let willCompile = Deferred(value: d1).flatten()
+//    let wontCompile = Deferred(value: 99).flatten()
+
+    tbd.determine(value)
+
+    waitForExpectations(timeout: 0.1)
   }
 
   func testApply()
