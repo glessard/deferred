@@ -74,13 +74,9 @@ public func reduce<C: Collection, T, U>(qos: DispatchQoS = .current,
                                         combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
   where C.Iterator.Element == Deferred<T>
 {
-  guard deferreds.isEmpty == false
-    else { return Deferred(qos: qos, value: initial) }
-
   let queue = DispatchQueue(label: "reduce-collection", qos: qos)
-  let accumulator = Deferred(queue: queue, value: initial)
 
-  let reduced = deferreds.reduce(accumulator) {
+  let reduced = deferreds.reduce(Deferred(queue: queue, value: initial)) {
     (accumulator, deferred) in
     accumulator.flatMap {
       u in deferred.map(queue: queue) { t in try combine(u,t) }
@@ -115,11 +111,11 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS = .current,
   where S.Iterator.Element == Deferred<T>
 {
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
-  let accumulator = Deferred(queue: queue, value: initial)
 
-  // We iterate on a background thread because S could block on next()
+  // We execute `Sequence.reduce` on a background thread
+  // because nothing prevents S from blocking on `Sequence.next()`
   let reduced = Deferred<Deferred<U>>(queue: queue) {
-    deferreds.reduce(accumulator) {
+    deferreds.reduce(Deferred(queue: queue, value: initial)) {
       (accumulator, deferred) in
       accumulator.flatMap {
         u in deferred.map(queue: queue) { t in try combine(u,t) }
