@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
+		033928191F8C099700F4B44B /* deferred-first.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033928181F8C099700F4B44B /* deferred-first.swift */; };
+		0339281A1F8C099700F4B44B /* deferred-first.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033928181F8C099700F4B44B /* deferred-first.swift */; };
 		035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
 		035D0C161D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
 		035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0E1D84A8DB00F4B44B /* deferred-error.swift */; };
@@ -105,6 +107,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		033928181F8C099700F4B44B /* deferred-first.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "deferred-first.swift"; path = "deferred/deferred-first.swift"; sourceTree = "<group>"; };
 		034857621C11BD5E00F4B44B /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
 		035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-combine.swift"; path = "deferred/deferred-combine.swift"; sourceTree = "<group>"; };
 		035D0C0E1D84A8DB00F4B44B /* deferred-error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-error.swift"; path = "deferred/deferred-error.swift"; sourceTree = "<group>"; };
@@ -201,6 +204,7 @@
 				03857DB71F55C3DE00F4B44B /* deferred-timing.swift */,
 				035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */,
 				035D0C101D84A8DB00F4B44B /* deferred-parallelize.swift */,
+				033928181F8C099700F4B44B /* deferred-first.swift */,
 				035D0C121D84A8DB00F4B44B /* nsurlsession.swift */,
 				03D59CB31F7B6CB900F4B44B /* determined.swift */,
 				035D0C141D84A8DB00F4B44B /* waiter.swift */,
@@ -554,6 +558,7 @@
 				035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */,
 				035D0C191D84A8DB00F4B44B /* deferred-extras.swift in Sources */,
 				035D0C231D84A8DB00F4B44B /* waiter.swift in Sources */,
+				033928191F8C099700F4B44B /* deferred-first.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -587,6 +592,7 @@
 				035D0C161D84A8DB00F4B44B /* deferred-combine.swift in Sources */,
 				035D0C1A1D84A8DB00F4B44B /* deferred-extras.swift in Sources */,
 				035D0C241D84A8DB00F4B44B /* waiter.swift in Sources */,
+				0339281A1F8C099700F4B44B /* deferred-first.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
