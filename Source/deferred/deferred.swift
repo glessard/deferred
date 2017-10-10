@@ -466,8 +466,8 @@ class Transfer<Value>: Deferred<Value>
   /// (Acts like a fast path for a Map with no transform.)
   /// This constructor is used by `enqueuing(on:)`
   ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
+  /// - parameter queue:     the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
+  /// - parameter source:    the `Deferred` whose value will be transferred into a new instance.
 
   init(queue: DispatchQueue, source: Deferred<Value>)
   {
@@ -485,6 +485,13 @@ class Transfer<Value>: Deferred<Value>
 
 class Flatten<Value>: Deferred<Value>
 {
+  /// Flatten a Deferred-of-a-Deferred<Value> to a Deferred<Value>.
+  /// (In the right conditions, acts like a fast path for a flatMap with no transform.)
+  /// This constructor is used by `flatten()`
+  ///
+  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
+  /// - parameter source: the `Deferred` whose value will be transferred into a new instance.
+
   init(queue: DispatchQueue? = nil, source: Deferred<Deferred<Value>>)
   {
     if let determined = source.peek()

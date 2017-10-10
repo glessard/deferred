@@ -161,6 +161,12 @@ extension Deferred
 
 extension Deferred
 {
+  /// Flatten a Deferred-of-a-Deferred<Value> to a Deferred<Value>.
+  /// (In the right conditions, acts like a fast path for a flatMap with no transform.)
+  ///
+  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
+  /// - returns: a flattened `Deferred`
+
   public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other>
     where Value == Deferred<Other>
   {
