@@ -51,7 +51,7 @@ extension Deferred
 
   public func enqueuing(on queue: DispatchQueue) -> Deferred
   {
-    return Map(queue: queue, source: self)
+    return Transfer(queue: queue, source: self)
   }
 
   @available(*, unavailable, renamed: "enqueuing")

@@ -458,8 +458,12 @@ class Map<Value>: Deferred<Value>
       }
     }
   }
+}
 
-  /// Initialize with a `Deferred` source, without a transform.
+class Transfer<Value>: Deferred<Value>
+{
+  /// Transfer a `Deferred` result to a new `Deferred` that notifies on a new queue.
+  /// (Acts like a fast path for a Map with no transform.)
   /// This constructor is used by `enqueuing(on:)`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`

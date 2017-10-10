@@ -29,7 +29,7 @@ public enum URLSessionError: Error
   case InvalidState
 }
 
-public class DeferredURLSessionTask<Value>: Mapped<Value>
+public class DeferredURLSessionTask<Value>: Transfer<Value>
 {
   public let urlSessionTask: URLSessionTask
 
