@@ -21,8 +21,10 @@ class DeferredCombinationTests: XCTestCase
     ("testCombine2", testCombine2),
     ("testCombine3", testCombine3),
     ("testCombine4", testCombine4),
-    ("testFirstValue", testFirstValue),
-    ("testFirstDetermined", testFirstDetermined),
+    ("testFirstValueCollection", testFirstValueCollection),
+    ("testFirstValueSequence", testFirstValueSequence),
+    ("testFirstDeterminedCollection", testFirstDeterminedCollection),
+    ("testFirstDeterminedSequence", testFirstDeterminedSequence),
   ]
 
   func testReduce()
@@ -178,13 +180,13 @@ class DeferredCombinationTests: XCTestCase
     XCTAssert(c?.3 == v4)
   }
 
-  func testFirstValue() throws
+  func testFirstValueCollection() throws
   {
     let count = 10
     let lucky = Int(nzRandom()) % count
 
     let deferreds = (0..<count).map { _ in TBD<Int>() }
-    let first = firstValue(AnySequence(deferreds), cancelOthers: true)
+    let first = firstValue(deferreds, cancelOthers: true)
 
     XCTAssert(deferreds[lucky].determine(lucky))
     XCTAssert(first.value == lucky)
@@ -198,6 +200,12 @@ class DeferredCombinationTests: XCTestCase
       catch DeferredError.canceled(let s) { XCTAssert(s == "") }
     }
 
+    let one = firstValue(queue: DispatchQueue.global(), deferreds: [Deferred(value: ())])
+    XCTAssert(one.error == nil)
+  }
+
+  func testFirstValueSequence() throws
+  {
     let never = firstValue(EmptyIterator<Deferred<Any>>())
     do {
       let value = try never.get()
@@ -205,11 +213,11 @@ class DeferredCombinationTests: XCTestCase
     }
     catch DeferredError.invalid(let m) { XCTAssert(m != "") }
 
-    let one = firstValue([Deferred(value: ())])
-    XCTAssert(one.error == nil)
+    let one = firstValue(queue: DispatchQueue.global(), deferreds: AnySequence(CollectionOfOne(Deferred(value: 10))))
+    XCTAssert(one.value == 10)
   }
 
-  func testFirstDetermined() throws
+  func testFirstDeterminedCollection() throws
   {
     let count = 10
 
@@ -245,6 +253,29 @@ class DeferredCombinationTests: XCTestCase
 
     try oneBy1(deferreds)
     waitForExpectations(timeout: 1.0)
+  }
+
+  func testFirstDeterminedSequence() throws
+  {
+    let count = 10
+    let seq = { () -> AnyIterator<Deferred<Int>> in
+      var c = count
+      return AnyIterator { () -> Deferred<Int>? in
+        if c == 0 { return nil }
+        defer { c = c-1 }
+        return Deferred(value: c).delay(.milliseconds(c))
+      }
+    }()
+
+    let first = firstDetermined(seq, cancelOthers: true)
+    XCTAssertEqual(try? first.get().get(), 1)
+
+    let never = firstDetermined(EmptyIterator<Deferred<Any>>())
+    do {
+      let value = try never.get()
+      XCTFail("never.value should be nil, was \(value)")
+    }
+    catch DeferredError.invalid(let m) { XCTAssert(m != "") }
   }
 }
 
