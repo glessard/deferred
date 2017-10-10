@@ -565,7 +565,10 @@ class Bind<Value>: Deferred<Value>
       }
     }
   }
+}
 
+class Recover<Value>: Deferred<Value>
+{
   /// Initialize with a `Deferred` source and a transform to be computed in the background
   /// This constructor is used by `recover` -- flatMap for the `Error` path.
   ///

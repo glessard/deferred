@@ -142,7 +142,7 @@ extension Deferred
   public func recover(queue: DispatchQueue? = nil,
                       transform: @escaping (_ error: Error) -> Deferred<Value>) -> Deferred<Value>
   {
-    return Bind(queue: queue, source: self, transform: transform)
+    return Recover(queue: queue, source: self, transform: transform)
   }
 
   /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
@@ -155,7 +155,7 @@ extension Deferred
                       transform: @escaping (_ error: Error) -> Deferred<Value>) -> Deferred<Value>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
-    return Bind(queue: queue, source: self, transform: transform)
+    return Recover(queue: queue, source: self, transform: transform)
   }
 }
 
