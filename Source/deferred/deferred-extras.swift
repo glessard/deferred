@@ -51,7 +51,7 @@ extension Deferred
 
   public func enqueuing(on queue: DispatchQueue) -> Deferred
   {
-    return Map(queue: queue, source: self)
+    return Transfer(queue: queue, source: self)
   }
 
   @available(*, unavailable, renamed: "enqueuing")
@@ -156,6 +156,15 @@ extension Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return Bind(queue: queue, source: self, transform: transform)
+  }
+}
+
+extension Deferred
+{
+  public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other>
+    where Value == Deferred<Other>
+  {
+    return Flatten(queue: queue, source: self)
   }
 }
 

@@ -458,8 +458,12 @@ class Map<Value>: Deferred<Value>
       }
     }
   }
+}
 
-  /// Initialize with a `Deferred` source, without a transform.
+class Transfer<Value>: Deferred<Value>
+{
+  /// Transfer a `Deferred` result to a new `Deferred` that notifies on a new queue.
+  /// (Acts like a fast path for a Map with no transform.)
   /// This constructor is used by `enqueuing(on:)`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
@@ -476,6 +480,57 @@ class Map<Value>: Deferred<Value>
       super.init(queue: queue, source: source, beginExecution: true)
       source.enqueue(queue: queue, boostQoS: false, task: { [weak self] in self?.determine($0) })
     }
+  }
+}
+
+class Flatten<Value>: Deferred<Value>
+{
+  init(queue: DispatchQueue? = nil, source: Deferred<Deferred<Value>>)
+  {
+    if let determined = source.peek()
+    {
+      let mine = queue ?? source.queue
+      do {
+        let deferred = try determined.get()
+        if let result = deferred.peek()
+        {
+          super.init(queue: mine, result: result)
+        }
+        else
+        {
+          super.init(queue: mine, source: deferred, beginExecution: true)
+          deferred.enqueue(queue: mine, boostQoS: false, task: { [weak self] in self?.determine($0) })
+        }
+      }
+      catch {
+        super.init(queue: mine, result: Determined(error))
+      }
+      return
+    }
+
+    super.init(queue: queue, source: source)
+    source.enqueue(queue: queue) {
+      [weak self] determined in
+      do {
+        let deferred = try determined.get()
+        if let result = deferred.peek()
+        {
+          self?.determine(result)
+        }
+        else
+        {
+          deferred.notify(queue: queue, task: { [weak self] in self?.determine($0) })
+        }
+      }
+      catch {
+        self?.determine(error)
+      }
+    }
+  }
+
+  convenience init(_ source: Deferred<Deferred<Value>>)
+  {
+    self.init(queue: nil, source: source)
   }
 }
 
