@@ -112,8 +112,8 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS = .current,
 {
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
 
-  // We execute `Sequence.reduce` on a background thread
-  // because nothing prevents S from blocking on `Sequence.next()`
+  // We execute `Sequence.reduce` asynchronously because
+  // nothing prevents S from blocking on `Sequence.next()`
   let reduced = Deferred<Deferred<U>>(queue: queue) {
     deferreds.reduce(Deferred(queue: queue, value: initial)) {
       (accumulator, deferred) in
@@ -123,7 +123,7 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS = .current,
     }
   }
 
-  return reduced.flatMap(transform: { $0 })
+  return Flatten(reduced)
 }
 
 /// Combine two `Deferred` into one.
