@@ -20,6 +20,7 @@ class DeletionTests: XCTestCase
     ("testDeallocTBD2", testDeallocTBD2),
     ("testDeallocTBD3", testDeallocTBD3),
     ("testDeallocTBD4", testDeallocTBD4),
+    ("testLongTaskCancellation", testLongTaskCancellation),
   ]
 
   func testDelayedDeallocDeferred()

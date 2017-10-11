@@ -79,7 +79,7 @@ class DeferredTests: XCTestCase
       return (3*d).description
     }
 
-    result3.notify { syncprint($0) }
+    result3.notify { syncprint("Result 3 is: \($0.value!)") }
 
     let result4 = combine(result1, result2)
 
@@ -552,7 +552,6 @@ class DeferredTests: XCTestCase
     var v2 = 0
     result.notify {
       determined in
-      print("\(v1), \(v2), \(result)")
       XCTAssert(determined.value == (Double(v1*v2)))
       expect.fulfill()
     }
@@ -895,10 +894,11 @@ class DeferredTests: XCTestCase
     ]
 
     let strings = errors.map(String.init(describing: ))
-    print(strings)
+    // strings.forEach({print($0)})
 
     for (i,e) in errors.enumerated()
     {
+      XCTAssert(String(describing: e) == strings[i])
       errors.enumerated().forEach {
         index, error in
         XCTAssert((error == e) == (index == i))
