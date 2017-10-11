@@ -98,20 +98,19 @@ class DeferredTests: XCTestCase
 
   func testExample2()
   {
-    let d = Deferred {
-      () -> Double in
+    let d = Deferred<Double> {
       usleep(50000)
       return 1.0
     }
-    d.value.map { print($0) }
+    print(d.value!)
   }
 
   func testExample3()
   {
     let transform = Deferred { i throws in Double(7*i) } // Deferred<Int throws -> Double>
-    let operand = Deferred(value: 6)                     // Deferred<Int>
+    let operand = Deferred(value: 6).delay(seconds: 0.1) // Deferred<Int>
     let result = operand.apply(transform: transform)     // Deferred<Double>
-    result.value.map { print($0) }                       // 42.0
+    print(result.value!)                                 // 42.0
   }
 
   func testDelay()
