@@ -10,10 +10,6 @@ import XCTest
 import Foundation
 import Dispatch
 
-#if SWIFT_PACKAGE
-  import syncprint
-#endif
-
 import deferred
 
 
@@ -59,40 +55,39 @@ class DeferredTests: XCTestCase
 
   func testExample()
   {
-    syncprint("Starting")
+    print("Starting")
 
     let result1 = Deferred(task: {
       () -> Double in
-      defer { syncprint("Computing result1") }
+      defer { print("Computing result1") }
       return 10.5
     }).delay(.milliseconds(50))
 
     let result2 = result1.map {
       (d: Double) -> Int in
-      syncprint("Computing result2")
+      print("Computing result2")
       return Int(floor(2*d))
     }.delay(.milliseconds(500))
 
     let result3 = result1.map {
       (d: Double) -> String in
-      syncprint("Computing result3")
+      print("Computing result3")
       return (3*d).description
     }
 
-    result3.notify { syncprint("Result 3 is: \($0.value!)") }
+    result3.notify { print("Result 3 is: \($0.value!)") }
 
     let result4 = combine(result1, result2)
 
     let result5 = result2.map(transform: Double.init).timeout(.milliseconds(50))
 
-    syncprint("Waiting")
-    syncprint("Result 1: \(result1.value!)")
-    syncprint("Result 2: \(result2.value!)")
-    syncprint("Result 3: \(result3.value!)")
-    syncprint("Result 4: \(result4.value!)")
-    syncprint("Result 5: \(result5.error!)")
-    syncprint("Done")
-    syncprintwait()
+    print("Waiting")
+    print("Result 1: \(result1.value!)")
+    print("Result 2: \(result2.value!)")
+    print("Result 3: \(result3.value!)")
+    print("Result 4: \(result4.value!)")
+    print("Result 5: \(result5.error!)")
+    print("Done")
 
     XCTAssert(result1.error == nil)
     XCTAssert(result2.error == nil)
