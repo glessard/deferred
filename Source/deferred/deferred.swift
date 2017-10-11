@@ -193,14 +193,13 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ result: Determined<Value>) -> Bool
   {
-    var current: Int32 = 1
-    while !stateid.loadCAS(&current, 2, .weak, .relaxed, .relaxed)
-    { // keep trying if another thread hasn't succeeded yet
+    var current = stateid.load(.relaxed)
+    repeat { // keep trying if another thread hasn't succeeded yet
       if current == 2
       { // another thread succeeded ahead of this one
         return false
       }
-    }
+    } while !stateid.loadCAS(&current, 2, .weak, .relaxed, .relaxed)
 
     determination = result
     source = nil
