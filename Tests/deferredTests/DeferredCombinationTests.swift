@@ -257,12 +257,11 @@ class DeferredCombinationTests: XCTestCase
 
   func testFirstDeterminedSequence() throws
   {
-    let count = 10
     let seq = { () -> AnyIterator<Deferred<Int>> in
-      var c = count
+      var c = 10
       return AnyIterator { () -> Deferred<Int>? in
         if c == 0 { return nil }
-        defer { c = c-1 }
+        defer { c = c/10 }
         return Deferred(value: c).delay(.milliseconds(c))
       }
     }()
@@ -275,7 +274,7 @@ class DeferredCombinationTests: XCTestCase
       let value = try never.get()
       XCTFail("never.value should be nil, was \(value)")
     }
-    catch DeferredError.invalid(let m) { XCTAssert(m != "") }
+    catch DeferredError.invalid {}
   }
 }
 
