@@ -210,11 +210,27 @@ extension Deferred
   /// - parameter qos: the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
   /// - parameter task: the computation to be performed
 
-  public static func Retrying(_ attempts: Int, qos: DispatchQoS = .current,
+  public static func Retrying(_ attempts: Int, qos: DispatchQoS = .unspecified,
                               task: @escaping () -> Deferred) -> Deferred
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    return Deferred.Retrying(attempts, queue: queue, task: task)
+    guard attempts > 0 else
+    {
+      let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
+      return Deferred<Value>(qos: qos, error: error)
+    }
+
+    let deferred: Deferred
+    if qos == .unspecified
+    {
+      deferred = task()
+    }
+    else
+    {
+      let queue = DispatchQueue(label: "deferred", qos: qos)
+      deferred = Deferred<Int>(queue: queue, value: 0).flatMap(transform: { _ in task() })
+    }
+
+    return Deferred.Retrying(attempts-1, deferred, task: task)
   }
 
   /// Initialize a `Deferred` with a computation task to be performed in the background
@@ -232,8 +248,15 @@ extension Deferred
       let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
       return Deferred<Value>(queue: queue, error: error)
     }
+    
+    let deferred = Deferred<Int>(queue: queue, value: 0).flatMap(transform: { _ in task() })
 
-    return (1..<attempts).reduce(task().enqueuing(on: queue)) {
+    return Deferred.Retrying(attempts-1, deferred, task: task)
+  }
+  
+  private static func Retrying(_ attempts: Int, _ deferred: Deferred, task: @escaping () -> Deferred) -> Deferred
+  {
+    return (0..<attempts).reduce(deferred) {
       (deferred, _) in
       deferred.recover(transform: { _ in task() })
     }
