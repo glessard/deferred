@@ -179,7 +179,7 @@ open class Deferred<Value>
 
   func beginExecution()
   {
-    if stateid.load(.relaxed) == 0 { stateid.store(1, .relaxed) }
+    stateid.CAS(0, 1, .strong, .relaxed)
   }
 
   /// Set the `Result` of this `Deferred` and dispatch all notifications for execution.
