@@ -248,12 +248,12 @@ extension Deferred
       let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
       return Deferred<Value>(queue: queue, error: error)
     }
-    
+
     let deferred = Deferred<Int>(queue: queue, value: 0).flatMap(transform: { _ in task() })
 
     return Deferred.Retrying(attempts-1, deferred, task: task)
   }
-  
+
   private static func Retrying(_ attempts: Int, _ deferred: Deferred, task: @escaping () -> Deferred) -> Deferred
   {
     return (0..<attempts).reduce(deferred) {
