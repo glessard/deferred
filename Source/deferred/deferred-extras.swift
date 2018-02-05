@@ -54,9 +54,6 @@ extension Deferred
     return Transfer(queue: queue, source: self)
   }
 
-  @available(*, unavailable, renamed: "enqueuing")
-  public func notifying(on queue: DispatchQueue) -> Deferred { return enqueuing(on: queue) }
-
   /// Get a `Deferred` that will have the same `result` as `self` once determined,
   /// but will use a different queue at the specified QoS for its notifications
   ///
@@ -69,9 +66,6 @@ extension Deferred
     let queue = DispatchQueue(label: "deferred", qos: qos, attributes: serially ? [] : .concurrent)
     return enqueuing(on: queue)
   }
-
-  @available(*, unavailable, renamed: "enqueuing")
-  public func notifying(at qos: DispatchQoS, serially: Bool = true) -> Deferred { return enqueuing(at: qos, serially: serially) }
 }
 
 // MARK: map: asynchronously transform a `Deferred` into another
