@@ -34,7 +34,9 @@ class DeferredTests: XCTestCase
     ("testNotify4", testNotify4),
     ("testMap", testMap),
     ("testRecover", testRecover),
-    ("testRetry", testRetry),
+    ("testRetrying1", testRetrying1),
+    ("testRetrying2", testRetrying2),
+    ("testRetryTask", testRetryTask),
     ("testFlatMap", testFlatMap),
     ("testFlatten", testFlatten),
     ("testApply", testApply),
@@ -405,43 +407,80 @@ class DeferredTests: XCTestCase
     else { XCTFail() }
   }
 
-  func testRetry()
+  func testRetrying1()
+  {
+    let retries = 5
+    let queue = DispatchQueue(label: "test")
+
+    let r1 = Deferred.Retrying(0, queue: queue, task: { Deferred<Void>(task: {XCTFail()}) })
+    if let e = r1.error as? DeferredError,
+       case .invalid(let s) = e
+    { _ = s } // print(s)
+    else { XCTFail() }
+
+    var counter = 0
+    let r2 = Deferred.Retrying(retries, queue: queue) {
+      () -> Deferred<Int> in
+      counter += 1
+      if counter < retries { return Deferred(error: TestError(counter)) }
+      return Deferred(value: counter)
+    }
+    XCTAssert(r2.value == retries)
+  }
+
+  func testRetrying2()
   {
     let retries = 5
 
+    let r1 = Deferred.Retrying(0, task: { Deferred<Void>(task: {XCTFail()}) })
+    if let e = r1.error as? DeferredError,
+      case .invalid(let s) = e
+    { _ = s } // print(s)
+    else { XCTFail() }
+
     var counter = 0
-    let r1 = Deferred.RetryTask(retries) {
+    let r2 = Deferred.Retrying(retries) {
+      () -> Deferred<Int> in
+      counter += 1
+      if counter < retries { return Deferred(error: TestError(counter)) }
+      return Deferred(value: counter)
+    }
+    XCTAssert(r2.value == retries)
+
+    let r3 = Deferred.Retrying(retries, qos: .background) {
+      () -> Deferred<Int> in
+      counter += 1
+      return Deferred(error: TestError(counter))
+    }
+    XCTAssert(r3.error as? TestError == TestError(2*retries))
+  }
+
+  func testRetryTask()
+  {
+    let retries = 5
+    let queue = DispatchQueue(label: "test", qos: .background)
+
+    var counter = 0
+    let r1 = Deferred.RetryTask(retries, queue: queue) {
       () in
       counter += 1
       throw TestError(counter)
     }
     XCTAssert(r1.value == nil)
     XCTAssert(r1.error as? TestError == TestError(retries))
-    XCTAssert(counter == retries)
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+    XCTAssert(r1.qos == .background)
+#endif
 
-    let r2 = Deferred.Retrying(0, task: { Deferred<Void>(task: {XCTFail()}) })
-    if let e = r2.error as? DeferredError,
-       case .invalid(let s) = e
-    { _ = s } // print(s) }
-    else { XCTFail() }
-
-    counter = 0
-    let r3 = Deferred.Retrying(retries) {
-      () -> Deferred<Int> in
+    let r2 = Deferred.RetryTask(retries, qos: .utility) {
       counter += 1
-      if counter < retries { return Deferred(error: TestError(counter)) }
-      return Deferred(value: counter)
+      throw TestError(counter)
     }
-    XCTAssert(r3.value == retries)
-
-    counter = 0
-    let r4 = Deferred.RetryTask(retries) {
-      () throws -> Int in
-      counter += 1
-      guard counter < retries else { throw TestError(counter) }
-      return counter
-    }
-    XCTAssert(r4.value == 1)
+    XCTAssert(r2.value == nil)
+    XCTAssert(r2.error as? TestError == TestError(2*retries))
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+    XCTAssert(r2.qos == .utility)
+#endif
   }
 
   func testFlatMap()
