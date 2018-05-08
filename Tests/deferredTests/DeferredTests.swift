@@ -880,7 +880,11 @@ class DeferredTests: XCTestCase
     let m = String(nzRandom())
 
     let v = d.map({ $0.validate(qos: .background, predicate: { $0%2 == 0 }, message: m) })
+#if swift(>=4.1)
+    let e = v.compactMap { $0.error }
+#else
     let e = v.flatMap { $0.error }
+#endif
     XCTAssert(e.count == d.count/2)
     XCTAssertEqual(e.first as? DeferredError, DeferredError.invalid(m))
   }
@@ -891,7 +895,11 @@ class DeferredTests: XCTestCase
     let i = nzRandom()
 
     let v = d.map({ $0.validate(qos: .utility, predicate: { if $0%2 == 0 { throw TestError(i) } }) })
+#if swift(>=4.1)
+    let e = v.compactMap { $0.error }
+#else
     let e = v.flatMap { $0.error }
+#endif
     XCTAssert(e.count == d.count/2)
     XCTAssertEqual(e.first as? TestError, TestError(i))
   }

@@ -290,7 +290,11 @@ open class Deferred<Value>
 
       // this Deferred has become determined; clean up
       waiter.deinitialize(count: 1)
+#if swift(>=4.1)
+      waiter.deallocate()
+#else
       waiter.deallocate(capacity: 1)
+#endif
     }
 
     // this Deferred is determined

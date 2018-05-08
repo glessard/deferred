@@ -50,6 +50,24 @@ public struct Determined<Value>
   }
 }
 
+#if swift (>=4.1)
+extension Determined: Equatable where Value: Equatable
+{
+  public static func ==(lhs: Determined, rhs: Determined) -> Bool
+  {
+    switch (lhs.state, rhs.state)
+    {
+    case (.value(let lhv), .value(let rhv)):
+      return lhv == rhv
+    case (.error(let lhe), .error(let rhe)):
+      return String(describing: lhe) == String(describing: rhe)
+    default:
+      return false
+    }
+  }
+}
+#endif
+
 private enum State<Value>
 {
   case value(Value)

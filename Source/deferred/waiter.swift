@@ -37,7 +37,11 @@ func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waite
     current.pointee.notify(queue, value)
 
     current.deinitialize(count: 1)
+#if swift(>=4.1)
+    current.deallocate()
+#else
     current.deallocate(capacity: 1)
+#endif
   }
 }
 
@@ -49,7 +53,11 @@ func deallocateWaiters<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?)
     waiter = current.pointee.next
 
     current.deinitialize(count: 1)
+#if swift(>=4.1)
+    current.deallocate()
+#else
     current.deallocate(capacity: 1)
+#endif
   }
 }
 
