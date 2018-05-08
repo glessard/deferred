@@ -57,8 +57,12 @@ extension Determined: Equatable where Value: Equatable
   {
     switch (lhs.state, rhs.state)
     {
-    case (.value(let lhv), .value(let rhv)): return lhv == rhv
-    default: return false // assume that error states are never equal
+    case (.value(let lhv), .value(let rhv)):
+      return lhv == rhv
+    case (.error(let lhe), .error(let rhe)):
+      return String(describing: lhe) == String(describing: rhe)
+    default:
+      return false
     }
   }
 }
