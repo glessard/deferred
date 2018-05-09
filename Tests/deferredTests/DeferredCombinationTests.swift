@@ -185,10 +185,17 @@ class DeferredCombinationTests: XCTestCase
     let count = 10
     let lucky = Int(nzRandom()) % count
 
-    let deferreds = (0..<count).map { _ in TBD<Int>() }
+    let deferreds = (0..<count).map {
+      i -> TBD<Int> in
+      let e = expectation(description: String(i))
+      let d = TBD<Int>()
+      d.notify { _ in e.fulfill() }
+      return d
+    }
     let first = firstValue(deferreds, cancelOthers: true)
 
     XCTAssert(deferreds[lucky].determine(lucky))
+    waitForExpectations(timeout: 0.1)
     XCTAssert(first.value == lucky)
 
     try deferreds.forEach {
