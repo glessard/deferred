@@ -30,6 +30,8 @@
 		0366AE5D1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */; };
 		0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
 		0366AE5F1DF0FEC400F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
+		0370F2D620C8E25400F4B44B /* DeterminedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0370F2D520C8E25400F4B44B /* DeterminedTests.swift */; };
+		0370F2D720C8E25400F4B44B /* DeterminedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0370F2D520C8E25400F4B44B /* DeterminedTests.swift */; };
 		0381475B1E4138BA00F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		03857DB81F55C3DE00F4B44B /* deferred-timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03857DB71F55C3DE00F4B44B /* deferred-timing.swift */; };
 		03857DB91F55C40F00F4B44B /* deferred-timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03857DB71F55C3DE00F4B44B /* deferred-timing.swift */; };
@@ -119,6 +121,7 @@
 		0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TBDTimingTests.swift; path = DeferredTests/TBDTimingTests.swift; sourceTree = "<group>"; };
 		0366AE541DF0FEC400F4B44B /* TestError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TestError.swift; path = DeferredTests/TestError.swift; sourceTree = "<group>"; };
 		0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = URLSessionTests.swift; path = DeferredTests/URLSessionTests.swift; sourceTree = "<group>"; };
+		0370F2D520C8E25400F4B44B /* DeterminedTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeterminedTests.swift; path = deferredTests/DeterminedTests.swift; sourceTree = "<group>"; };
 		0372B2DC1F8DBB2900F4B44B /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		0374DFB01DFF5BD800F4B44B /* nzRandom.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nzRandom.swift; path = DeferredTests/nzRandom.swift; sourceTree = "<group>"; };
 		038147591E4138BA00F4B44B /* DeletionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeletionTests.swift; path = deferredTests/DeletionTests.swift; sourceTree = "<group>"; };
@@ -230,6 +233,7 @@
 				0366AE521DF0FEC400F4B44B /* TBDTests.swift */,
 				0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */,
 				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
+				0370F2D520C8E25400F4B44B /* DeterminedTests.swift */,
 				03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */,
 				0366AE541DF0FEC400F4B44B /* TestError.swift */,
 				0374DFB01DFF5BD800F4B44B /* nzRandom.swift */,
@@ -566,6 +570,7 @@
 			files = (
 				0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */,
 				03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */,
+				0370F2D620C8E25400F4B44B /* DeterminedTests.swift in Sources */,
 				0366AE5C1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */,
 				039E18411DFF621300F4B44B /* nzRandom.swift in Sources */,
 				03E8795B1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift in Sources */,
@@ -599,6 +604,7 @@
 			files = (
 				0366AE5F1DF0FEC400F4B44B /* TestError.swift in Sources */,
 				03AA21751E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */,
+				0370F2D720C8E25400F4B44B /* DeterminedTests.swift in Sources */,
 				0366AE5D1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */,
 				039E18421DFF621400F4B44B /* nzRandom.swift in Sources */,
 				03E8795C1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift in Sources */,
@@ -918,8 +924,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_SWIFT3_OBJC_INFERENCE = Off;
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -966,9 +971,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				SDKROOT = macosx;
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
-				SWIFT_SWIFT3_OBJC_INFERENCE = Off;
-				SWIFT_VERSION = 4.0;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 4.2;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
