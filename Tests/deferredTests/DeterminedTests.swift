@@ -41,7 +41,7 @@ class DeterminedTests: XCTestCase
     let t3 = t1.flatMap { i1 in t2.map { i2 in i1*i2 } }
     t3.notify {
       determined in
-      XCTAssert(determined == Determined(v1*v2))
+      XCTAssert(determined == Determined(value: v1*v2))
       e.fulfill()
     }
 
@@ -62,7 +62,7 @@ class DeterminedTests: XCTestCase
 
     t1.notify {
       determined in
-      XCTAssert(determined != Determined(TestError(ev)))
+      XCTAssert(determined != Determined(error: TestError(ev)))
       e1.fulfill()
     }
 
@@ -70,7 +70,7 @@ class DeterminedTests: XCTestCase
 
     t2.notify {
       determined in
-      XCTAssert(determined == Determined(TestError(ev)))
+      XCTAssert(determined == Determined(error: TestError(ev)))
       e2.fulfill()
     }
 
@@ -85,8 +85,8 @@ class DeterminedTests: XCTestCase
     let v1 = nzRandom()
     let v2 = nzRandom()
 
-    let detValue = Determined<Int>(v1)
-    let detError = Determined<Int>(TestError(v2))
+    let detValue = Determined<Int>(value: v1)
+    let detError = Determined<Int>(error: TestError(v2))
 
     do {
       let v = try detValue.get()
@@ -104,8 +104,8 @@ class DeterminedTests: XCTestCase
     XCTAssertNil(detValue.error)
     XCTAssertNil(detError.value)
 
-    XCTAssert(detValue.isValue)
-    XCTAssert(detError.isError)
+    XCTAssertTrue(detValue.isValue)
+    XCTAssertTrue(detError.isError)
 
     XCTAssertFalse(detValue.isError)
     XCTAssertFalse(detError.isValue)
