@@ -8,7 +8,7 @@
 
 import Dispatch
 
-import CAtomics
+import Atomics
 
 /// The possible states of a `Deferred`.
 ///
