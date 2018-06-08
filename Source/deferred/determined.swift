@@ -68,7 +68,7 @@ extension Determined: Equatable where Value: Equatable
 }
 #endif
 
-private enum State<Value>
+enum State<Value>
 {
   case value(Value)
   case error(Error)
