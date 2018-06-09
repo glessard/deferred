@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		030A0C8820CB48FC00F4B44B /* Atomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 030A0C8020CB48DF00F4B44B /* Atomics.framework */; };
 		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		033928191F8C099700F4B44B /* deferred-first.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033928181F8C099700F4B44B /* deferred-first.swift */; };
 		035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
@@ -42,12 +43,38 @@
 		03B776A520CAED2F00F4B44B /* deferred.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* determined.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
-		03E79C671F506EAF00F4B44B /* CAtomics.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E79C641F506E9D00F4B44B /* CAtomics.c */; };
-		03E79C6D1F50704D00F4B44B /* CAtomics.h in Headers */ = {isa = PBXBuildFile; fileRef = 03E79C6C1F506FE500F4B44B /* CAtomics.h */; };
 		03E8795B1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		030A0C7F20CB48DF00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 030110EF1B4B896700F4B44B;
+			remoteInfo = Atomics;
+		};
+		030A0C8120CB48DF00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 030110F91B4B896700F4B44B;
+			remoteInfo = AtomicsTests;
+		};
+		030A0C8320CB48DF00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 03DB46F31B4C7AFB00F4B44B;
+			remoteInfo = Atomics_TestApp;
+		};
+		030A0C8520CB48DF00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 03DB47061B4C7AFC00F4B44B;
+			remoteInfo = Atomics_TestAppTests;
+		};
 		03B4E0781C14003C00F4B44B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 03E60E231AAA571100F4B44B /* Project object */;
@@ -86,6 +113,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Atomics.xcodeproj; path = Atomics/Xcode/Atomics.xcodeproj; sourceTree = "<group>"; };
 		033928181F8C099700F4B44B /* deferred-first.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "deferred-first.swift"; path = "deferred/deferred-first.swift"; sourceTree = "<group>"; };
 		034857621C11BD5E00F4B44B /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
 		035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-combine.swift"; path = "deferred/deferred-combine.swift"; sourceTree = "<group>"; };
@@ -123,9 +151,6 @@
 		03B7769420CAECFC00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03D59CB31F7B6CB900F4B44B /* determined.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = determined.swift; path = deferred/determined.swift; sourceTree = "<group>"; };
 		03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "dispatch-utilities.swift"; path = "deferred/dispatch-utilities.swift"; sourceTree = "<group>"; };
-		03E79C641F506E9D00F4B44B /* CAtomics.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CAtomics.c; sourceTree = "<group>"; };
-		03E79C691F506ECE00F4B44B /* module.map */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.map; sourceTree = "<group>"; };
-		03E79C6C1F506FE500F4B44B /* CAtomics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CAtomics.h; sourceTree = "<group>"; };
 		03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DispatchUtilitiesTests.swift; path = deferredTests/DispatchUtilitiesTests.swift; sourceTree = "<group>"; };
 		03FD35AD1F328D4E00F4B44B /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text; name = .travis.yml; path = ../.travis.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -135,6 +160,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				030A0C8820CB48FC00F4B44B /* Atomics.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,6 +190,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		030A0C3220CB48CA00F4B44B /* dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */,
+			);
+			path = dependencies;
+			sourceTree = "<group>";
+		};
+		030A0C7920CB48DF00F4B44B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				030A0C8020CB48DF00F4B44B /* Atomics.framework */,
+				030A0C8220CB48DF00F4B44B /* AtomicsTests.xctest */,
+				030A0C8420CB48DF00F4B44B /* Atomics_TestApp.app */,
+				030A0C8620CB48DF00F4B44B /* Atomics_TestAppTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		030A0C8720CB48FC00F4B44B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		03850ABD1C76AB2200F4B44B /* Source */ = {
 			isa = PBXGroup;
 			children = (
@@ -181,14 +233,6 @@
 			);
 			name = Source;
 			path = ../Source;
-			sourceTree = SOURCE_ROOT;
-		};
-		03850ADC1C76AB7D00F4B44B /* utilities */ = {
-			isa = PBXGroup;
-			children = (
-				03E79C631F506E9D00F4B44B /* CAtomics */,
-			);
-			path = utilities;
 			sourceTree = SOURCE_ROOT;
 		};
 		03850AEA1C76ABF500F4B44B /* Tests */ = {
@@ -256,13 +300,14 @@
 				03FD35AD1F328D4E00F4B44B /* .travis.yml */,
 				0372B2DC1F8DBB2900F4B44B /* README.md */,
 				03850ABD1C76AB2200F4B44B /* Source */,
-				03850ADC1C76AB7D00F4B44B /* utilities */,
 				03850AEA1C76ABF500F4B44B /* Tests */,
 				03B4E0631C13FF6900F4B44B /* deferred */,
 				03B4E07A1C14003C00F4B44B /* deferred-tests */,
 				03B7767C20CAECFA00F4B44B /* deferredTest */,
 				03B7769120CAECFC00F4B44B /* deferredTestTests */,
+				030A0C3220CB48CA00F4B44B /* dependencies */,
 				03E60E2D1AAA571100F4B44B /* Products */,
+				030A0C8720CB48FC00F4B44B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -277,16 +322,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		03E79C631F506E9D00F4B44B /* CAtomics */ = {
-			isa = PBXGroup;
-			children = (
-				03E79C691F506ECE00F4B44B /* module.map */,
-				03E79C641F506E9D00F4B44B /* CAtomics.c */,
-				03E79C6C1F506FE500F4B44B /* CAtomics.h */,
-			);
-			path = CAtomics;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -294,7 +329,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03E79C6D1F50704D00F4B44B /* CAtomics.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -418,6 +452,12 @@
 			mainGroup = 03E60E221AAA571100F4B44B;
 			productRefGroup = 03E60E2D1AAA571100F4B44B /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 030A0C7920CB48DF00F4B44B /* Products */;
+					ProjectRef = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				03B4E06C1C14003B00F4B44B /* deferred */,
@@ -427,6 +467,37 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		030A0C8020CB48DF00F4B44B /* Atomics.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = Atomics.framework;
+			remoteRef = 030A0C7F20CB48DF00F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		030A0C8220CB48DF00F4B44B /* AtomicsTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = AtomicsTests.xctest;
+			remoteRef = 030A0C8120CB48DF00F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		030A0C8420CB48DF00F4B44B /* Atomics_TestApp.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = Atomics_TestApp.app;
+			remoteRef = 030A0C8320CB48DF00F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		030A0C8620CB48DF00F4B44B /* Atomics_TestAppTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = Atomics_TestAppTests.xctest;
+			remoteRef = 030A0C8520CB48DF00F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		03B4E06B1C14003B00F4B44B /* Resources */ = {
@@ -470,7 +541,6 @@
 				035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */,
 				03857DB81F55C3DE00F4B44B /* deferred-timing.swift in Sources */,
 				035D0C1B1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
-				03E79C671F506EAF00F4B44B /* CAtomics.c in Sources */,
 				035D0C1D1D84A8DB00F4B44B /* deferred.swift in Sources */,
 				03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */,
 				03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */,
