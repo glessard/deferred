@@ -8,7 +8,7 @@
 
 import Dispatch
 
-import CAtomics
+import Atomics
 
 /// The possible states of a `Deferred`.
 ///
@@ -149,7 +149,7 @@ open class Deferred<Value>
 
   public convenience init(queue: DispatchQueue, value: Value)
   {
-    self.init(queue: queue, result: Determined(value))
+    self.init(queue: queue, result: Determined(value: value))
   }
 
   /// Initialize with an Error
@@ -170,7 +170,7 @@ open class Deferred<Value>
 
   public convenience init(queue: DispatchQueue, error: Error)
   {
-    self.init(queue: queue, result: Determined(error))
+    self.init(queue: queue, result: Determined(error: error))
   }
 
   // MARK: state changes / determine
@@ -234,7 +234,7 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ value: Value) -> Bool
   {
-    return determine(Determined(value))
+    return determine(Determined(value: value))
   }
 
   /// Set this `Deferred` to an error and dispatch all notifications for execution.
@@ -248,7 +248,7 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ error: Error) -> Bool
   {
-    return determine(Determined(error))
+    return determine(Determined(error: error))
   }
 
   // MARK: public interface
@@ -513,7 +513,7 @@ class Flatten<Value>: Deferred<Value>
         }
       }
       catch {
-        super.init(queue: mine, result: Determined(error))
+        super.init(queue: mine, result: Determined(error: error))
       }
       return
     }
@@ -749,7 +749,7 @@ open class TBD<Value>: Deferred<Value>
   @discardableResult
   open override func determine(_ value: Value) -> Bool
   {
-    return determine(Determined(value))
+    return determine(Determined(value: value))
   }
 
   /// Set this `Deferred` to an error and dispatch all notifications for execution.
@@ -763,7 +763,7 @@ open class TBD<Value>: Deferred<Value>
   @discardableResult
   open override func determine(_ error: Error) -> Bool
   {
-    return determine(Determined(error))
+    return determine(Determined(error: error))
   }
 
   /// Change the state of this `TBD` from `.waiting` to `.executing`
