@@ -15,11 +15,6 @@ import deferred
 
 class TBDTimingTests: XCTestCase
 {
-  static var allTests = [
-    ("testPerformancePropagationTime", testPerformancePropagationTime),
-    ("testPerformanceNotificationTime", testPerformanceNotificationTime),
-  ]
-
   let propagationTestCount = 10_000
 
   func testPerformancePropagationTime()
