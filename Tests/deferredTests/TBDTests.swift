@@ -15,21 +15,6 @@ import deferred
 
 class TBDTests: XCTestCase
 {
-  static var allTests = [
-    ("testDetermine1", testDetermine1),
-    ("testDetermine2", testDetermine2),
-    ("testCancel", testCancel),
-    ("testNotify1", testNotify1),
-    ("testNotify2", testNotify2),
-    ("testNotify3", testNotify3),
-    ("testNotify4", testNotify4),
-    ("testNeverDetermined", testNeverDetermined),
-    ("testParallel1", testParallel1),
-    ("testParallel2", testParallel2),
-    ("testParallel3", testParallel3),
-    ("testParallel4", testParallel4),
-  ]
-
   func testDetermine1()
   {
     let tbd = TBD<Int>()

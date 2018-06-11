@@ -159,6 +159,7 @@
 		03B7768920CAECFC00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03B7768E20CAECFC00F4B44B /* deferredTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = deferredTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		03B7769420CAECFC00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		03BEA0DF20CF3C1200F4B44B /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = XCTestManifests.swift; path = deferredTests/XCTestManifests.swift; sourceTree = "<group>"; };
 		03D59CB31F7B6CB900F4B44B /* determined.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = determined.swift; path = deferred/determined.swift; sourceTree = "<group>"; };
 		03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "dispatch-utilities.swift"; path = "deferred/dispatch-utilities.swift"; sourceTree = "<group>"; };
 		03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DispatchUtilitiesTests.swift; path = deferredTests/DispatchUtilitiesTests.swift; sourceTree = "<group>"; };
@@ -260,6 +261,7 @@
 				03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */,
 				0366AE541DF0FEC400F4B44B /* TestError.swift */,
 				0374DFB01DFF5BD800F4B44B /* nzRandom.swift */,
+				03BEA0DF20CF3C1200F4B44B /* XCTestManifests.swift */,
 			);
 			name = Tests;
 			path = ../Tests;
@@ -369,6 +371,7 @@
 			buildConfigurationList = 03B4E0811C14003C00F4B44B /* Build configuration list for PBXNativeTarget "deferred-tests" */;
 			buildPhases = (
 				03B4E0721C14003C00F4B44B /* Sources */,
+				03BEA0DB20CF38C100F4B44B /* ShellScript */,
 				03B4E0731C14003C00F4B44B /* Frameworks */,
 				03B4E0741C14003C00F4B44B /* Resources */,
 			);
@@ -544,6 +547,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		03BEA0DB20CF38C100F4B44B /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "testdir=\"../Tests/deferredTests\"\nmanifest=\"XCTestManifests.swift\"\nnewer=`/usr/bin/find $testdir -newer $testdir/$manifest`\nif /bin/test ! -e $testdir/$manifest -o ! -z $newer\nthen\n    /usr/bin/swift test --generate-linuxmain\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		03B4E0681C14003B00F4B44B /* Sources */ = {

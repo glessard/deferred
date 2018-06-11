@@ -13,20 +13,6 @@ import deferred
 
 class DeferredCombinationTests: XCTestCase
 {
-  static var allTests = [
-    ("testReduce", testReduce),
-    ("testReduceCancel", testReduceCancel),
-    ("testCombineArray1", testCombineArray1),
-    ("testCombineArray2", testCombineArray2),
-    ("testCombine2", testCombine2),
-    ("testCombine3", testCombine3),
-    ("testCombine4", testCombine4),
-    ("testFirstValueCollection", testFirstValueCollection),
-    ("testFirstValueSequence", testFirstValueSequence),
-    ("testFirstDeterminedCollection", testFirstDeterminedCollection),
-    ("testFirstDeterminedSequence", testFirstDeterminedSequence),
-  ]
-
   func testReduce()
   {
     let count = 9
@@ -287,14 +273,6 @@ class DeferredCombinationTests: XCTestCase
 
 class DeferredCombinationTimedTests: XCTestCase
 {
-  static var allTests: [(String, (DeferredCombinationTimedTests) -> () throws -> Void)] {
-    return [
-      ("testPerformanceReduce", testPerformanceReduce),
-      ("testPerformanceCombine", testPerformanceCombine),
-      ("testPerformanceABAProneReduce", testPerformanceABAProneReduce),
-    ]
-  }
-
   let loopTestCount = 5_000
 
 #if swift(>=4.0) && (os(macOS) || os(iOS) || os(tvOS) || os(watchOS)) || (swift(>=4.1) && os(Linux))
