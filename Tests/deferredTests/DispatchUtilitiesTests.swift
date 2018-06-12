@@ -14,12 +14,6 @@ import Dispatch
 
 class DispatchUtilitiesTests: XCTestCase
 {
-  static var allTests = [
-    ("testQoSClass", testQoSClass),
-    ("testQoS", testQoS),
-    ("testCurrent", testCurrent),
-  ]
-
   func testQoSClass()
   {
     let classes: [DispatchQoS.QoSClass] = [.unspecified, .background, .utility, .default, .userInitiated, .userInteractive]

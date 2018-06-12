@@ -12,21 +12,9 @@ import XCTest
 
 class DeterminedTests: XCTestCase
 {
-#if swift (>=4.1)
-  static var allTests = [
-    ("testEquals1", testEquals1),
-    ("testEquals2", testEquals2),
-    ("testGetters", testGetters),
-  ].sorted(by: {$0.0 < $1.0})
-#else
-  static var allTests = [
-    ("testGetters", testGetters)
-  ]
-#endif
-
-#if swift (>=4.1)
   func testEquals1()
   {
+#if swift (>=4.1)
     let t1 = TBD<Int>()
     let t2 = TBD<Int>()
 
@@ -49,10 +37,12 @@ class DeterminedTests: XCTestCase
     t2.determine(nzRandom())
 
     waitForExpectations(timeout: 1.0)
+#endif
   }
 
   func testEquals2()
   {
+#if swift (>=4.1)
     let ev = nzRandom()
 
     let t1 = TBD<Int>()
@@ -77,8 +67,8 @@ class DeterminedTests: XCTestCase
     t1.determine(ev)
 
     waitForExpectations(timeout: 1.0)
-  }
 #endif
+  }
 
   func testGetters() throws
   {

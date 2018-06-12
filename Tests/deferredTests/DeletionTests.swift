@@ -14,15 +14,6 @@ import deferred
 
 class DeletionTests: XCTestCase
 {
-  static var allTests = [
-    ("testDelayedDeallocDeferred", testDelayedDeallocDeferred),
-    ("testDeallocTBD1", testDeallocTBD1),
-    ("testDeallocTBD2", testDeallocTBD2),
-    ("testDeallocTBD3", testDeallocTBD3),
-    ("testDeallocTBD4", testDeallocTBD4),
-    ("testLongTaskCancellation", testLongTaskCancellation),
-  ]
-
   func testDelayedDeallocDeferred()
   {
     let witness: Deferred<Void>

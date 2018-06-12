@@ -15,46 +15,6 @@ import deferred
 
 class DeferredTests: XCTestCase
 {
-  static var allTests = [
-    ("testExample", testExample),
-    ("testExample2", testExample2),
-    ("testExample3", testExample3),
-    ("testDeferredError", testDeferredError),
-    ("testDelay", testDelay),
-    ("testValue", testValue),
-    ("testPeek", testPeek),
-    ("testValueBlocks", testValueBlocks),
-    ("testValueUnblocks", testValueUnblocks),
-    ("testState", testState),
-    ("testGet", testGet),
-    ("testOptional", testOptional),
-    ("testNotify1", testNotify1),
-    ("testNotify2", testNotify2),
-    ("testNotify3", testNotify3),
-    ("testNotify4", testNotify4),
-    ("testMap", testMap),
-    ("testRecover", testRecover),
-    ("testRetrying1", testRetrying1),
-    ("testRetrying2", testRetrying2),
-    ("testRetryTask", testRetryTask),
-    ("testFlatMap", testFlatMap),
-    ("testFlatten", testFlatten),
-    ("testApply", testApply),
-    ("testApply1", testApply1),
-    ("testApply2", testApply2),
-    ("testApply3", testApply3),
-    ("testQoS", testQoS),
-    ("testCancel", testCancel),
-    ("testCancelAndNotify", testCancelAndNotify),
-    ("testCancelMap", testCancelMap),
-    ("testCancelDelay", testCancelDelay),
-    ("testCancelBind", testCancelBind),
-    ("testCancelApply", testCancelApply),
-    ("testTimeout", testTimeout),
-    ("testValidate1", testValidate1),
-    ("testValidate2", testValidate2),
-  ].sorted(by: {$0.0 < $1.0})
-
   func testExample()
   {
     print("Starting")
