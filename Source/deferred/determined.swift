@@ -68,8 +68,17 @@ extension Determined: Equatable where Value: Equatable
 }
 #endif
 
+#if swift (>=4.2)
+@usableFromInline
 enum State<Value>
 {
   case value(Value)
   case error(Error)
 }
+#else
+enum State<Value>
+{
+case value(Value)
+case error(Error)
+}
+#endif

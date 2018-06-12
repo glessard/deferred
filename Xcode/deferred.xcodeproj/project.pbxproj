@@ -43,6 +43,8 @@
 		03B776A520CAED2F00F4B44B /* deferred.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* determined.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
+		03DB071E20CC4BA600F4B44B /* Atomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 030A0C8020CB48DF00F4B44B /* Atomics.framework */; };
+		03DB071F20CC4BA600F4B44B /* Atomics.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 030A0C8020CB48DF00F4B44B /* Atomics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		03E8795B1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -96,6 +98,13 @@
 			remoteGlobalIDString = 03B4E06C1C14003B00F4B44B;
 			remoteInfo = deferred;
 		};
+		03DB072020CC4BA600F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 030110EE1B4B896700F4B44B;
+			remoteInfo = Atomics;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -106,6 +115,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				03B776A520CAED2F00F4B44B /* deferred.framework in Embed Frameworks */,
+				03DB071F20CC4BA600F4B44B /* Atomics.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -177,6 +187,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */,
+				03DB071E20CC4BA600F4B44B /* Atomics.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -384,6 +395,7 @@
 			);
 			dependencies = (
 				03B776A720CAED2F00F4B44B /* PBXTargetDependency */,
+				03DB072120CC4BA600F4B44B /* PBXTargetDependency */,
 			);
 			name = deferredTest;
 			productName = deferredTest;
@@ -610,6 +622,11 @@
 			target = 03B4E06C1C14003B00F4B44B /* deferred */;
 			targetProxy = 03B776A620CAED2F00F4B44B /* PBXContainerItemProxy */;
 		};
+		03DB072120CC4BA600F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Atomics;
+			targetProxy = 03DB072020CC4BA600F4B44B /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -650,8 +667,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
-				SWIFT_COMPILATION_MODE = singlefile;
-				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/CAtomics;
+				SUPPORTED_PLATFORMS = "macosx iphoneos appletvos iphonesimulator appletvsimulator";
 			};
 			name = Debug;
 		};
@@ -673,7 +689,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
-				SWIFT_INCLUDE_PATHS = $SRCROOT/utilities/CAtomics;
+				SUPPORTED_PLATFORMS = "macosx iphoneos appletvos iphonesimulator appletvsimulator";
 			};
 			name = Release;
 		};
@@ -686,6 +702,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "macosx iphoneos appletvos iphonesimulator appletvsimulator";
 			};
 			name = Debug;
 		};
@@ -698,6 +715,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "macosx iphoneos appletvos iphonesimulator appletvsimulator";
 			};
 			name = Release;
 		};
@@ -708,25 +726,19 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 96558JVW34;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				INFOPLIST_FILE = deferredTest/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTest.x03a1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -738,23 +750,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 96558JVW34;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = deferredTest/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTest.x03a1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -767,25 +774,19 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 96558JVW34;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				INFOPLIST_FILE = deferredTestTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTestTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/deferredTest.app/deferredTest";
 			};
@@ -798,23 +799,18 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 96558JVW34;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = deferredTestTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTestTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/deferredTest.app/deferredTest";
 				VALIDATE_PRODUCT = YES;
@@ -867,7 +863,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				ONLY_ACTIVE_ARCH = YES;
-				SUPPORTED_PLATFORMS = "macosx iphoneos appletvos iphonesimulator appletvsimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Off;
 				SWIFT_VERSION = 4.2;
@@ -918,7 +913,6 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				SUPPORTED_PLATFORMS = "macosx iphoneos appletvos iphonesimulator appletvsimulator";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_SWIFT3_OBJC_INFERENCE = Off;
 				SWIFT_VERSION = 4.2;
