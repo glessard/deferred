@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		030A0C8820CB48FC00F4B44B /* Atomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 030A0C8020CB48DF00F4B44B /* Atomics.framework */; };
+		03110CEE20D2069F00F4B44B /* deferred.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		033928191F8C099700F4B44B /* deferred-first.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033928181F8C099700F4B44B /* deferred-first.swift */; };
 		035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
@@ -40,12 +41,13 @@
 		03B776A220CAED1C00F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
 		03B776A320CAED1C00F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
-		03B776A520CAED2F00F4B44B /* deferred.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* determined.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
 		03DB071E20CC4BA600F4B44B /* Atomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 030A0C8020CB48DF00F4B44B /* Atomics.framework */; };
 		03DB071F20CC4BA600F4B44B /* Atomics.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 030A0C8020CB48DF00F4B44B /* Atomics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		03E8795B1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */; };
+		03E9756B20D2050100F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
+		03E9756F20D2050A00F4B44B /* Atomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 030A0C8020CB48DF00F4B44B /* Atomics.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +78,27 @@
 			proxyType = 2;
 			remoteGlobalIDString = 03DB47061B4C7AFC00F4B44B;
 			remoteInfo = Atomics_TestAppTests;
+		};
+		03110CEA20D2065900F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03E60E231AAA571100F4B44B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 03B4E06C1C14003B00F4B44B;
+			remoteInfo = deferred;
+		};
+		03110CEC20D2065900F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 030110EE1B4B896700F4B44B;
+			remoteInfo = Atomics;
+		};
+		03110CEF20D206DE00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 030110EE1B4B896700F4B44B;
+			remoteInfo = Atomics;
 		};
 		03B4E0781C14003C00F4B44B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -114,7 +137,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				03B776A520CAED2F00F4B44B /* deferred.framework in Embed Frameworks */,
+				03110CEE20D2069F00F4B44B /* deferred.framework in Embed Frameworks */,
 				03DB071F20CC4BA600F4B44B /* Atomics.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -148,8 +171,8 @@
 		03B4E0641C13FF6900F4B44B /* deferred.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deferred.h; sourceTree = "<group>"; };
 		03B4E0651C13FF6900F4B44B /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03B4E06D1C14003B00F4B44B /* deferred.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = deferred.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		03B4E0761C14003C00F4B44B /* deferred-tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "deferred-tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		03B4E0921C14026300F4B44B /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = "deferred-tests/Info.plist"; sourceTree = SOURCE_ROOT; };
+		03B4E0761C14003C00F4B44B /* deferredTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = deferredTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		03B4E0921C14026300F4B44B /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03B7767B20CAECFA00F4B44B /* deferredTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = deferredTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		03B7767D20CAECFB00F4B44B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		03B7767F20CAECFB00F4B44B /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -187,8 +210,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */,
 				03DB071E20CC4BA600F4B44B /* Atomics.framework in Frameworks */,
+				03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -196,6 +219,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03E9756F20D2050A00F4B44B /* Atomics.framework in Frameworks */,
+				03E9756B20D2050100F4B44B /* deferred.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -276,12 +301,11 @@
 			path = deferred;
 			sourceTree = "<group>";
 		};
-		03B4E07A1C14003C00F4B44B /* deferred-tests */ = {
+		03B4E07A1C14003C00F4B44B /* deferredTests */ = {
 			isa = PBXGroup;
 			children = (
 				03B4E0921C14026300F4B44B /* Info.plist */,
 			);
-			name = "deferred-tests";
 			path = deferredTests;
 			sourceTree = "<group>";
 		};
@@ -315,7 +339,7 @@
 				03850ABD1C76AB2200F4B44B /* Source */,
 				03850AEA1C76ABF500F4B44B /* Tests */,
 				03B4E0631C13FF6900F4B44B /* deferred */,
-				03B4E07A1C14003C00F4B44B /* deferred-tests */,
+				03B4E07A1C14003C00F4B44B /* deferredTests */,
 				03B7767C20CAECFA00F4B44B /* deferredTest */,
 				03B7769120CAECFC00F4B44B /* deferredTestTests */,
 				030A0C3220CB48CA00F4B44B /* dependencies */,
@@ -328,7 +352,7 @@
 			isa = PBXGroup;
 			children = (
 				03B4E06D1C14003B00F4B44B /* deferred.framework */,
-				03B4E0761C14003C00F4B44B /* deferred-tests.xctest */,
+				03B4E0761C14003C00F4B44B /* deferredTests.xctest */,
 				03B7767B20CAECFA00F4B44B /* deferredTest.app */,
 				03B7768E20CAECFC00F4B44B /* deferredTestTests.xctest */,
 			);
@@ -360,29 +384,30 @@
 			buildRules = (
 			);
 			dependencies = (
+				03110CF020D206DE00F4B44B /* PBXTargetDependency */,
 			);
 			name = deferred;
 			productName = deferred;
 			productReference = 03B4E06D1C14003B00F4B44B /* deferred.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		03B4E0751C14003C00F4B44B /* deferred-tests */ = {
+		03B4E0751C14003C00F4B44B /* deferredTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 03B4E0811C14003C00F4B44B /* Build configuration list for PBXNativeTarget "deferred-tests" */;
+			buildConfigurationList = 03B4E0811C14003C00F4B44B /* Build configuration list for PBXNativeTarget "deferredTests" */;
 			buildPhases = (
 				03B4E0721C14003C00F4B44B /* Sources */,
-				03BEA0DB20CF38C100F4B44B /* ShellScript */,
 				03B4E0731C14003C00F4B44B /* Frameworks */,
 				03B4E0741C14003C00F4B44B /* Resources */,
+				03BEA0DB20CF38C100F4B44B /* ShellScript */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				03B4E0791C14003C00F4B44B /* PBXTargetDependency */,
 			);
-			name = "deferred-tests";
+			name = deferredTests;
 			productName = deferredTests;
-			productReference = 03B4E0761C14003C00F4B44B /* deferred-tests.xctest */;
+			productReference = 03B4E0761C14003C00F4B44B /* deferredTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		03B7767A20CAECFA00F4B44B /* deferredTest */ = {
@@ -397,8 +422,8 @@
 			buildRules = (
 			);
 			dependencies = (
-				03B776A720CAED2F00F4B44B /* PBXTargetDependency */,
 				03DB072120CC4BA600F4B44B /* PBXTargetDependency */,
+				03B776A720CAED2F00F4B44B /* PBXTargetDependency */,
 			);
 			name = deferredTest;
 			productName = deferredTest;
@@ -416,6 +441,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				03110CED20D2065900F4B44B /* PBXTargetDependency */,
+				03110CEB20D2065900F4B44B /* PBXTargetDependency */,
 				03B7769020CAECFC00F4B44B /* PBXTargetDependency */,
 			);
 			name = deferredTestTests;
@@ -476,7 +503,7 @@
 			projectRoot = "";
 			targets = (
 				03B4E06C1C14003B00F4B44B /* deferred */,
-				03B4E0751C14003C00F4B44B /* deferred-tests */,
+				03B4E0751C14003C00F4B44B /* deferredTests */,
 				03B7767A20CAECFA00F4B44B /* deferredTest */,
 				03B7768D20CAECFC00F4B44B /* deferredTestTests */,
 			);
@@ -627,6 +654,21 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		03110CEB20D2065900F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 03B4E06C1C14003B00F4B44B /* deferred */;
+			targetProxy = 03110CEA20D2065900F4B44B /* PBXContainerItemProxy */;
+		};
+		03110CED20D2065900F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Atomics;
+			targetProxy = 03110CEC20D2065900F4B44B /* PBXContainerItemProxy */;
+		};
+		03110CF020D206DE00F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Atomics;
+			targetProxy = 03110CEF20D206DE00F4B44B /* PBXContainerItemProxy */;
+		};
 		03B4E0791C14003C00F4B44B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 03B4E06C1C14003B00F4B44B /* deferred */;
@@ -717,7 +759,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = "deferred-tests/Info.plist";
+				INFOPLIST_FILE = deferredTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -730,7 +772,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = "deferred-tests/Info.plist";
+				INFOPLIST_FILE = deferredTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -754,7 +796,7 @@
 				DEVELOPMENT_TEAM = 96558JVW34;
 				GCC_DYNAMIC_NO_PIC = NO;
 				INFOPLIST_FILE = deferredTest/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTest.x03a1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -777,7 +819,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 96558JVW34;
 				INFOPLIST_FILE = deferredTest/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTest.x03a1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -955,7 +997,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		03B4E0811C14003C00F4B44B /* Build configuration list for PBXNativeTarget "deferred-tests" */ = {
+		03B4E0811C14003C00F4B44B /* Build configuration list for PBXNativeTarget "deferredTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				03B4E0821C14003C00F4B44B /* Debug */,
