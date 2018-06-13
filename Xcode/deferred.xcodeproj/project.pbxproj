@@ -554,17 +554,13 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
-			);
-			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "testdir=\"../Tests/deferredTests\"\nmanifest=\"XCTestManifests.swift\"\nnewer=`/usr/bin/find $testdir -newer $testdir/$manifest`\nif /bin/test ! -e $testdir/$manifest -o ! -z $newer\nthen\n    /usr/bin/swift test --generate-linuxmain\nfi\n";
+			shellScript = "/bin/bash ${PROJECT_DIR}/../Utilities/generate-linuxmain.sh\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
