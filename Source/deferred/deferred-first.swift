@@ -233,7 +233,7 @@ where S.Iterator.Element: Deferred<Value>
 
 public func firstDetermined<Value, S>(queue: DispatchQueue, deferreds: S,
                                       cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where S: Sequence, S.Element: Deferred<Value>
+  where S: Sequence, S.Iterator.Element: Deferred<Value>
 {
   let first = TBD<Deferred<Value>>(queue: queue)
 
