@@ -336,7 +336,7 @@ extension Deferred
   /// - parameter value: the value to be validated
 
   public func validate(queue: DispatchQueue? = nil,
-                             predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
+                       predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
   {
     return self.map(queue: queue) {
       value in
@@ -355,7 +355,7 @@ extension Deferred
   /// - parameter value: the value to be validated
 
   public func validate(qos: DispatchQoS,
-                             predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
+                       predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return validate(queue: queue, predicate: predicate, message: message)
@@ -370,7 +370,7 @@ extension Deferred
   /// - parameter value: the value to be validated
 
   public func validate(queue: DispatchQueue? = nil,
-                             predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
+                       predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
   {
     return self.map(queue: queue) {
       value in
@@ -388,7 +388,7 @@ extension Deferred
   /// - parameter value: the value to be validated
 
   public func validate(qos: DispatchQoS,
-                             predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
+                       predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return validate(queue: queue, predicate: predicate)
