@@ -10,7 +10,7 @@ let package = Package(
     .library(name: "deferred", type: .static, targets: ["deferred"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/glessard/swift-atomics.git", from: "4.0.0"),
+    .package(url: "https://github.com/glessard/swift-atomics.git", from: "4.1.0"),
   ],
   targets: [
     .target(name: "deferred", dependencies: ["CAtomics"]),
@@ -27,7 +27,7 @@ let package = Package(
     Target(name: "deferred"),
   ],
   dependencies: [
-    .Package(url: "https://github.com/glessard/swift-atomics.git", majorVersion: 4, minor: 0),
+    .Package(url: "https://github.com/glessard/swift-atomics.git", majorVersion: 4, minor: 1),
   ]
 )
 
