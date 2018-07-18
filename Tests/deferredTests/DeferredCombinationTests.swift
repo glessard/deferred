@@ -275,7 +275,7 @@ class DeferredCombinationTimedTests: XCTestCase
 {
   let loopTestCount = 5_000
 
-#if swift(>=4.0) && (os(macOS) || os(iOS) || os(tvOS) || os(watchOS)) || (swift(>=4.1) && os(Linux))
+#if (swift(>=4.0) && (os(macOS) || os(iOS) || os(tvOS) || os(watchOS))) || (swift(>=4.1) && os(Linux))
   var metrics: [XCTPerformanceMetric] { return DeferredCombinationTimedTests.defaultPerformanceMetrics }
 #else
   var metrics: [String] { return DeferredCombinationTimedTests.defaultPerformanceMetrics() }
