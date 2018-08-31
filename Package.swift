@@ -1,6 +1,12 @@
-// swift-tools-version:4.0
+// swift-tools-version:4.2
 
 import PackageDescription
+
+#if !swift(>=4.2)
+let versions = [3,4]
+#else
+let versions = [SwiftVersion.v3, .v4, .v4_2]
+#endif
 
 #if swift(>=4.0)
 
@@ -16,7 +22,7 @@ let package = Package(
     .target(name: "deferred", dependencies: ["CAtomics"]),
     .testTarget(name: "deferredTests", dependencies: ["deferred"]),
   ],
-  swiftLanguageVersions: [3,4]
+  swiftLanguageVersions: versions
 )
 
 #else
