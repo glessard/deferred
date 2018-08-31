@@ -179,7 +179,13 @@ open class Deferred<Value>
 
   func beginExecution()
   {
-    stateid.CAS(0, 1, .strong, .relaxed)
+    var current = stateid.load(.relaxed)
+    repeat {
+      if current != 0
+      { // execution state has already been marked as begun
+        return
+      }
+    } while !stateid.loadCAS(&current, 1, .weak, .relaxed, .relaxed)
   }
 
   /// Set the `Result` of this `Deferred` and dispatch all notifications for execution.
