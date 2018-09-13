@@ -69,6 +69,24 @@ extension Determined: Equatable where Value: Equatable
 #endif
 
 #if swift (>=4.2)
+extension Determined: Hashable where Value: Hashable
+{
+  public func hash(into hasher: inout Hasher)
+  {
+    switch self.state
+    {
+    case .value(let value):
+      Int(0).hash(into: &hasher)
+      value.hash(into: &hasher)
+    case .error(let error):
+      Int(1).hash(into: &hasher)
+      String(describing: error).hash(into: &hasher)
+    }
+  }
+}
+#endif
+
+#if swift (>=4.2)
 @usableFromInline
 enum State<Value>
 {
