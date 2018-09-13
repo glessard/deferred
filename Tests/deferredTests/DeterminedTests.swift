@@ -29,7 +29,11 @@ class DeterminedTests: XCTestCase
     let t3 = t1.flatMap { i1 in t2.map { i2 in i1*i2 } }
     t3.notify {
       determined in
-      XCTAssert(determined == Determined(value: v1*v2))
+      let ref = Determined(value: v1*v2)
+      XCTAssert(determined == ref)
+#if swift(>=4.2)
+      XCTAssert(determined.hashValue == ref.hashValue)
+#endif
       e.fulfill()
     }
 
@@ -52,7 +56,11 @@ class DeterminedTests: XCTestCase
 
     t1.notify {
       determined in
-      XCTAssert(determined != Determined(error: TestError(ev)))
+      let ref = Determined<Int>(error: TestError(ev))
+      XCTAssert(determined != ref)
+#if swift(>=4.2)
+      XCTAssert(determined.hashValue != ref.hashValue)
+#endif
       e1.fulfill()
     }
 
@@ -60,13 +68,29 @@ class DeterminedTests: XCTestCase
 
     t2.notify {
       determined in
-      XCTAssert(determined == Determined(error: TestError(ev)))
+      let ref = Determined<Int>(error: TestError(ev))
+      XCTAssert(determined == ref)
+#if swift(>=4.2)
+      XCTAssert(determined.hashValue == ref.hashValue)
+#endif
       e2.fulfill()
     }
 
     t1.determine(ev)
 
     waitForExpectations(timeout: 1.0)
+#endif
+  }
+
+  func testHashable()
+  {
+#if swift(>=4.2)
+    let d1 = Determined<Int>(value: nzRandom())
+    let d2 = Determined<Int>(error: TestError(nzRandom()))
+
+    let set = Set([d1, d2])
+
+    XCTAssert(set.contains(d1))
 #endif
   }
 

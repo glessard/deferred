@@ -82,6 +82,7 @@ extension DeterminedTests {
         ("testEquals1", testEquals1),
         ("testEquals2", testEquals2),
         ("testGetters", testGetters),
+        ("testHashable", testHashable),
     ]
 }
 
