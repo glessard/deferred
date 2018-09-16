@@ -72,4 +72,16 @@ class DeterminedTests: XCTestCase
     XCTAssertFalse(detValue.isError)
     XCTAssertFalse(detError.isValue)
   }
+
+  func testCustomStringConvertible() throws
+  {
+    let value = Determined(value: 1)
+    let error = value.isError ? value : Determined(error: TestError(1))
+
+    let v = String(describing: value)
+    let e = String(describing: error)
+
+    XCTAssert(v != e)
+    // print(v, "\n", e, separator: "")
+  }
 }
