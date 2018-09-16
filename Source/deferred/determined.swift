@@ -10,12 +10,12 @@ public struct Determined<Value>
 {
   private let state: State<Value>
 
-  init(value: Value)
+  public init(value: Value)
   {
     state = .value(value)
   }
 
-  init(error: Error)
+  public init(error: Error)
   {
     state = .error(error)
   }

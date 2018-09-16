@@ -8,77 +8,25 @@
 
 import XCTest
 
-@testable import deferred
+import deferred
 
 class DeterminedTests: XCTestCase
 {
-  func testEquals1()
+  func testEquals()
   {
-#if swift (>=4.1)
-    let t1 = TBD<Int>()
-    let t2 = TBD<Int>()
+#if swift(>=4.1)
+    let i1 = nzRandom()
+    let i2 = nzRandom()
+    let i3 = i1*i2
 
-    var v1 = 0
-    var v2 = 0
+    let o3 = Determined(value: i1*i2)
+    XCTAssert(o3 == Determined(value: i3))
+    XCTAssert(o3 != Determined(value: i2))
 
-    t1.onValue { v1 = $0 }
-    t2.onValue { v2 = $0 }
-
-    let e = expectation(description: "equality test")
-
-    let t3 = t1.flatMap { i1 in t2.map { i2 in i1*i2 } }
-    t3.notify {
-      determined in
-      let ref = Determined(value: v1*v2)
-      XCTAssert(determined == ref)
-#if swift(>=4.2)
-      XCTAssert(determined.hashValue == ref.hashValue)
-#endif
-      e.fulfill()
-    }
-
-    t1.determine(nzRandom())
-    t2.determine(nzRandom())
-
-    waitForExpectations(timeout: 1.0)
-#endif
-  }
-
-  func testEquals2()
-  {
-#if swift (>=4.1)
-    let ev = nzRandom()
-
-    let t1 = TBD<Int>()
-    let t2 = t1.map { i -> Int in throw TestError(i) }
-
-    let e1 = expectation(description: "equality test a")
-
-    t1.notify {
-      determined in
-      let ref = Determined<Int>(error: TestError(ev))
-      XCTAssert(determined != ref)
-#if swift(>=4.2)
-      XCTAssert(determined.hashValue != ref.hashValue)
-#endif
-      e1.fulfill()
-    }
-
-    let e2 = expectation(description: "equality test b")
-
-    t2.notify {
-      determined in
-      let ref = Determined<Int>(error: TestError(ev))
-      XCTAssert(determined == ref)
-#if swift(>=4.2)
-      XCTAssert(determined.hashValue == ref.hashValue)
-#endif
-      e2.fulfill()
-    }
-
-    t1.determine(ev)
-
-    waitForExpectations(timeout: 1.0)
+    var o4 = o3
+    o4 = Determined(error: TestError(i1))
+    XCTAssert(o3 != o4)
+    XCTAssert(o4 != Determined(error: TestError(i2)))
 #endif
   }
 
