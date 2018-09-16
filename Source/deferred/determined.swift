@@ -8,7 +8,7 @@
 
 public struct Determined<Value>
 {
-  private let state: State<Value>
+  fileprivate let state: State<Value>
 
   public init(value: Value)
   {
@@ -47,6 +47,17 @@ public struct Determined<Value>
   public var isError: Bool {
     if case .error = state { return true }
     return false
+  }
+}
+
+extension Determined: CustomStringConvertible
+{
+  public var description: String {
+    switch state
+    {
+    case .value(let value): return String(describing: value)
+    case .error(let error): return "Error: \(error)"
+    }
   }
 }
 
