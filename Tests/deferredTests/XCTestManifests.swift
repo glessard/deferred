@@ -79,8 +79,8 @@ extension DeletionTests {
 
 extension DeterminedTests {
     static let __allTests = [
-        ("testEquals1", testEquals1),
-        ("testEquals2", testEquals2),
+        ("testCustomStringConvertible", testCustomStringConvertible),
+        ("testEquals", testEquals),
         ("testGetters", testGetters),
         ("testHashable", testHashable),
     ]
