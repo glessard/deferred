@@ -3,12 +3,10 @@
 import PackageDescription
 
 #if !swift(>=4.2)
-let versions = [3,4]
+let versions = [4]
 #else
-let versions = [SwiftVersion.v3, .v4, .v4_2]
+let versions = [SwiftVersion.v4, .v4_2]
 #endif
-
-#if swift(>=4.0)
 
 let package = Package(
   name: "deferred",
@@ -24,17 +22,3 @@ let package = Package(
   ],
   swiftLanguageVersions: versions
 )
-
-#else
-
-let package = Package(
-  name: "deferred",
-  targets: [
-    Target(name: "deferred"),
-  ],
-  dependencies: [
-    .Package(url: "https://github.com/glessard/swift-atomics.git", majorVersion: 4, minor: 1),
-  ]
-)
-
-#endif
