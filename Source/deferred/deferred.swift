@@ -503,11 +503,11 @@ class Flatten<Value>: Deferred<Value>
 
   init(queue: DispatchQueue? = nil, source: Deferred<Deferred<Value>>)
   {
-    if let determined = source.peek()
+    if let outcome = source.peek()
     {
       let mine = queue ?? source.queue
       do {
-        let deferred = try determined.get()
+        let deferred = try outcome.get()
         if let result = deferred.peek()
         {
           super.init(queue: mine, result: result)
@@ -526,9 +526,9 @@ class Flatten<Value>: Deferred<Value>
 
     super.init(queue: queue, source: source)
     source.enqueue(queue: queue) {
-      [weak self] determined in
+      [weak self] outcome in
       do {
-        let deferred = try determined.get()
+        let deferred = try outcome.get()
         if let result = deferred.peek()
         {
           self?.determine(result)
@@ -598,11 +598,11 @@ class Recover<Value>: Deferred<Value>
     super.init(queue: queue, source: source)
 
     source.enqueue(queue: queue) {
-      [weak self] determined in
+      [weak self] outcome in
       guard let this = self else { return }
       if this.isDetermined { return }
       this.beginExecution()
-      if let error = determined.error
+      if let error = outcome.error
       {
         transform(error).notify(queue: queue) {
           [weak this] transformed in
@@ -611,7 +611,7 @@ class Recover<Value>: Deferred<Value>
       }
       else
       {
-        this.determine(determined)
+        this.determine(outcome)
       }
     }
   }
