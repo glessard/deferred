@@ -15,7 +15,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/glessard/swift-atomics.git", from: "4.1.0"),
-    .package(path: "../outcome")
+    .package(url: "https://github.com/glessard/outcome.git", from: "4.1.0")
   ],
   targets: [
     .target(name: "deferred", dependencies: ["CAtomics", "Outcome"]),
