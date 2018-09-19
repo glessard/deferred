@@ -7,6 +7,7 @@
 //
 
 import Dispatch
+import Outcome
 
 import Foundation
 //import struct Foundation.Data
@@ -49,7 +50,7 @@ class DeferredURLSessionTask<Value>: Transfer<Value>
     return true
   }
 
-  public override func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (Determined<Value>) -> Void)
+  public override func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (Outcome<Value>) -> Void)
   {
     if state == .waiting
     {
