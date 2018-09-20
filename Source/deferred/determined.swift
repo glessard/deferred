@@ -7,4 +7,5 @@
 
 import Outcome
 
+@available(*, deprecated, renamed: "Outcome")
 public typealias Determined = Outcome
