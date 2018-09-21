@@ -80,18 +80,24 @@ open class Deferred<Value>
     stateid.initialize(0)
   }
 
-  /// Initialize to an already determined state
+  /// Initialize with a pre-determined `Outcome`
   ///
-  /// - parameter queue:  the dispatch queue upon which to execute future notifications for this `Deferred`
-  /// - parameter result: the result of this `Deferred`
+  /// - parameter queue: the dispatch queue upon which to execute future notifications for this `Deferred`
+  /// - parameter outcome: the `Outcome` of this `Deferred`
 
-  public init(queue: DispatchQueue, result: Outcome<Value>)
+  public init(queue: DispatchQueue, outcome: Outcome<Value>)
   {
     self.queue = queue
     source = nil
-    determined = result
+    determined = outcome
     waiters.initialize(.determined)
     stateid.initialize(2)
+  }
+
+  @available(*, deprecated, renamed: "init(queue:outcome:)")
+  public convenience init(queue: DispatchQueue, result: Outcome<Value>)
+  {
+    self.init(queue: queue, outcome: result)
   }
 
   /// Initialize with a computation task to be performed on the specified queue
@@ -149,7 +155,7 @@ open class Deferred<Value>
 
   public convenience init(queue: DispatchQueue, value: Value)
   {
-    self.init(queue: queue, result: Outcome(value: value))
+    self.init(queue: queue, outcome: Outcome(value: value))
   }
 
   /// Initialize with an Error
@@ -170,7 +176,7 @@ open class Deferred<Value>
 
   public convenience init(queue: DispatchQueue, error: Error)
   {
-    self.init(queue: queue, result: Outcome(error: error))
+    self.init(queue: queue, outcome: Outcome(error: error))
   }
 
   // MARK: state changes / determine
@@ -363,7 +369,7 @@ open class Deferred<Value>
   ///
   /// - returns: this `Deferred`'s determined `Outcome`
 
-  public var result: Outcome<Value> {
+  public var outcome: Outcome<Value> {
     if waiters.load(.acquire) != .determined
     {
       if let current = DispatchQoS.QoSClass.current, current > queue.qos.qosClass
@@ -381,6 +387,9 @@ open class Deferred<Value>
     return determined!
   }
 
+  @available(*, deprecated, renamed: "outcome")
+  public var result: Outcome<Value> { return self.outcome }
+
   /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
   /// If the `Deferred` is determined with an `Error`, throw it.
   /// When called on a `Deferred` that is already determined, this call is non-blocking.
@@ -390,7 +399,7 @@ open class Deferred<Value>
 
   public func get() throws -> Value
   {
-    return try result.get()
+    return try outcome.get()
   }
 
   /// Get this `Deferred`'s `Outcome` result if exists, `nil` otherwise.
@@ -415,7 +424,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined value, or `nil`
 
   public var value: Value? {
-    return result.value
+    return outcome.value
   }
 
   /// Get this `Deferred`'s error state, blocking if necessary until it becomes determined.
@@ -426,7 +435,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined error state, or `nil`
 
   public var error: Error? {
-    return result.error
+    return outcome.error
   }
 
   /// Get the QoS of this `Deferred`'s queue
@@ -482,7 +491,7 @@ class Transfer<Value>: Deferred<Value>
   {
     if let outcome = source.peek()
     {
-      super.init(queue: queue, result: outcome)
+      super.init(queue: queue, outcome: outcome)
     }
     else
     {
@@ -510,7 +519,7 @@ class Flatten<Value>: Deferred<Value>
         let deferred = try outcome.get()
         if let outcome = deferred.peek()
         {
-          super.init(queue: mine, result: outcome)
+          super.init(queue: mine, outcome: outcome)
         }
         else
         {
@@ -519,7 +528,7 @@ class Flatten<Value>: Deferred<Value>
         }
       }
       catch {
-        super.init(queue: mine, result: Outcome(error: error))
+        super.init(queue: mine, outcome: Outcome(error: error))
       }
       return
     }
