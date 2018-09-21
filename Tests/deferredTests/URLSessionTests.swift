@@ -51,11 +51,12 @@ class URLSessionTests: XCTestCase
       return false
     }
 
-    switch success.result
-    {
-    case .value(let success) where success == true: break // savor success
-    case .value:            XCTFail("Failed without error")
-    case .error(let error): XCTFail(String(describing: error))
+    do {
+      let success = try success.get()
+      XCTAssert(success, "Failed with error")
+    }
+    catch {
+      XCTFail(String(describing: error))
     }
 
     session.invalidateAndCancel()
@@ -66,23 +67,22 @@ class URLSessionTests: XCTestCase
     let url = URL(string: basePath)!
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
-    request.httpBody = Data(fromString: "name=John Tester&age=97&data=****")
+    request.httpBody = String("name=John Tester&age=97&data=****").data(using: .utf8)
 
     let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
     let dataTask = session.deferredDataTask(with: request)
 
-    switch dataTask.result
-    {
-    case .value(let data, let response):
+    do {
+      let (data, response) = try dataTask.get()
       XCTAssert(response.statusCode == 200)
       XCTAssert(data.count > 0)
-      if let i = String(fromData: data).components(separatedBy: " ").last
+      if let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
       {
         XCTAssert(Int(i) == 4)
       }
       else { XCTFail("unexpected data in response") }
-
-    case .error(let error):
+    }
+    catch {
       XCTFail(String(describing: error))
     }
 
@@ -112,7 +112,7 @@ class URLSessionTests: XCTestCase
 
   func testData_DoubleCancellation()
   {
-    let deferred: DeferredURLSessionTask<(Data, HTTPURLResponse)> = {
+    let deferred: Deferred<(Data, HTTPURLResponse)> = {
       let url = URL(string: imagePath)!
       let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
       defer { session.invalidateAndCancel() }
@@ -142,7 +142,7 @@ class URLSessionTests: XCTestCase
     let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
 
     let deferred = session.deferredDataTask(with: url)
-    deferred.task?.suspend()
+    deferred.urlSessionTask.suspend()
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
@@ -166,12 +166,12 @@ class URLSessionTests: XCTestCase
 
     let deferred = session.deferredDataTask(with: request)
 
-    switch deferred.result
-    {
-    case .value(let data, let response):
+    do {
+      let (data, response) = try deferred.get()
       XCTAssert(data.count > 0)
       XCTAssert(response.statusCode == 404)
-    case .error(let error):
+    }
+    catch {
       XCTFail(String(describing: error))
     }
 
@@ -209,10 +209,12 @@ class URLSessionTests: XCTestCase
       return false
     }
 
-    switch success.result
-    {
-    case .value(let success): XCTAssert(success, "Failed without error")
-    case .error(let error):   XCTFail(String(describing: error))
+    do {
+      let success = try success.get()
+      XCTAssert(success, "Failed without error")
+    }
+    catch {
+      XCTFail(String(describing: error))
     }
 
     session.invalidateAndCancel()
@@ -271,7 +273,7 @@ class URLSessionTests: XCTestCase
     let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
 
     let deferred = session.deferredDownloadTask(with: url)
-    deferred.task?.suspend()
+    deferred.urlSessionTask.suspend()
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
@@ -360,14 +362,14 @@ class URLSessionTests: XCTestCase
 
     let deferred = session.deferredDownloadTask(with: request)
 
-    switch deferred.result
-    {
-    case .value(_, let handle, let response):
+    do {
+      let (_, handle, response) = try deferred.get()
       let data = handle.readDataToEndOfFile()
       handle.closeFile()
       XCTAssert(data.count > 0)
       XCTAssert(response.statusCode == 404)
-    case .error(let error):
+    }
+    catch {
       XCTFail(String(describing: error))
     }
 
@@ -382,7 +384,7 @@ class URLSessionTests: XCTestCase
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
 
-    let data = Data(fromString: "name=John Tester&age=97")
+    let data = String("name=John Tester&age=97").data(using: .utf8)!
 
     let deferred = session.deferredUploadTask(with: request, fromData: data)
     let canceled = deferred.cancel()
@@ -409,19 +411,18 @@ class URLSessionTests: XCTestCase
     request.httpMethod = method
 
     let payload = "data=" + String(repeatElement("A", count: 1995))
-    let length = payload.characters.count
-    let message = Data(fromString: payload)
+    let length = payload.count
+    let message = payload.data(using: .utf8)!
     XCTAssert(message.count == length)
 
     let task = session.deferredUploadTask(with: request, fromData: message)
 
-    switch task.result
-    {
-    case let .value(data, response):
+    do {
+      let (data, response) = try task.get()
       XCTAssert(response.statusCode == 200)
-      XCTAssert(task.task?.countOfBytesSent == Int64(length))
+      XCTAssert(task.urlSessionTask.countOfBytesSent == Int64(length))
 
-      if case let reply = String(fromData: data),
+      if let reply = String(data: data, encoding: .utf8),
          let text = reply.components(separatedBy: " ").last,
          let tlen = Int(text)
       {
@@ -431,8 +432,8 @@ class URLSessionTests: XCTestCase
       {
         XCTFail("Unexpected data in response")
       }
-
-    case .error(let error):
+    }
+    catch {
       XCTFail(String(describing: error))
     }
 
@@ -458,8 +459,8 @@ class URLSessionTests: XCTestCase
     request.httpMethod = method
 
     let payload = "data=" + String(repeatElement("A", count: 1995))
-    let length = payload.characters.count
-    let message = Data(fromString: payload)
+    let length = payload.count
+    let message = payload.data(using: .utf8)!
     XCTAssert(message.count == length)
 
     let path = NSTemporaryDirectory() + "temporary.tmp"
@@ -481,13 +482,12 @@ class URLSessionTests: XCTestCase
 
     let task = session.deferredUploadTask(with: request, fromFile: fileurl)
 
-    switch task.result
-    {
-    case let .value(data, response):
+    do {
+      let (data, response) = try task.get()
       XCTAssert(response.statusCode == 200)
-      XCTAssert(task.task?.countOfBytesSent == Int64(length))
+      XCTAssert(task.urlSessionTask.countOfBytesSent == Int64(length))
 
-      if case let reply = String(fromData: data),
+      if let reply = String(data: data, encoding: .utf8),
          let text = reply.components(separatedBy: " ").last,
          let tlen = Int(text)
       {
@@ -497,8 +497,8 @@ class URLSessionTests: XCTestCase
       {
         XCTFail("Unexpected data in response")
       }
-
-    case .error(let error):
+    }
+    catch {
       XCTFail(String(describing: error))
     }
 
