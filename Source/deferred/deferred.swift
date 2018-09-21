@@ -478,7 +478,7 @@ class Map<Value>: Deferred<Value>
   }
 }
 
-class Transfer<Value>: Deferred<Value>
+open class Transferred<Value>: Deferred<Value>
 {
   /// Transfer a `Deferred` result to a new `Deferred` that notifies on a new queue.
   /// (Acts like a fast path for a Map with no transform.)
@@ -487,7 +487,7 @@ class Transfer<Value>: Deferred<Value>
   /// - parameter queue:     the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value will be transferred into a new instance.
 
-  init(queue: DispatchQueue, source: Deferred<Value>)
+  init(from source: Deferred<Value>, on queue: DispatchQueue)
   {
     if let outcome = source.peek()
     {
@@ -496,14 +496,15 @@ class Transfer<Value>: Deferred<Value>
     else
     {
       super.init(queue: queue, source: source, beginExecution: true)
-      source.enqueue(queue: queue, boostQoS: false, task: { [weak self] in self?.determine($0) })
+      source.enqueue(queue: queue, boostQoS: false,
+                     task: { [weak self] outcome in self?.determine(outcome) })
     }
   }
 }
 
 class Flatten<Value>: Deferred<Value>
 {
-  /// Flatten a Deferred-of-a-Deferred<Value> to a Deferred<Value>.
+  /// Flatten a Deferred<Deferred<Value>> to a Deferred<Value>.
   /// (In the right conditions, acts like a fast path for a flatMap with no transform.)
   /// This constructor is used by `flatten()`
   ///
