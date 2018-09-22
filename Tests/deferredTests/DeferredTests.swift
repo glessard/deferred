@@ -345,10 +345,15 @@ class DeferredTests: XCTestCase
     XCTAssert(d1.value == value)
     XCTAssert(d1.error == nil)
 
-    // bad operand, transform throws
+    // bad operand, transform throws (type 1)
     let d2 = badOperand.recover { error in Deferred { throw TestError(value) } }
     XCTAssert(d2.value == nil)
     XCTAssert(d2.error as? TestError == TestError(value))
+
+    // bad operand, transform throws (type 2)
+    let d5 = badOperand.recover { _ in throw TestError(value) }
+    XCTAssert(d5.value == nil)
+    XCTAssert(d5.error as? TestError == TestError(value))
 
     // bad operand, transform executes
     let d3 = badOperand.recover { error in Deferred(value: Double(value)) }

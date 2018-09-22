@@ -109,7 +109,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func flatMap<Other>(queue: DispatchQueue? = nil,
-                             transform: @escaping (_ value: Value) -> Deferred<Other>) -> Deferred<Other>
+                             transform: @escaping (_ value: Value) throws -> Deferred<Other>) -> Deferred<Other>
   {
     return Bind<Other>(queue: queue, source: self, transform: transform)
   }
@@ -121,7 +121,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func flatMap<Other>(qos: DispatchQoS,
-                             transform: @escaping (_ value: Value) -> Deferred<Other>) -> Deferred<Other>
+                             transform: @escaping (_ value: Value) throws -> Deferred<Other>) -> Deferred<Other>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return Bind<Other>(queue: queue, source: self, transform: transform)
@@ -134,7 +134,7 @@ extension Deferred
   /// - parameter error: the Error to be transformed for a new `Deferred`
 
   public func recover(queue: DispatchQueue? = nil,
-                      transform: @escaping (_ error: Error) -> Deferred<Value>) -> Deferred<Value>
+                      transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
   {
     return Recover(queue: queue, source: self, transform: transform)
   }
@@ -146,7 +146,7 @@ extension Deferred
   /// - parameter error: the Error to be transformed for a new `Deferred`
 
   public func recover(qos: DispatchQoS,
-                      transform: @escaping (_ error: Error) -> Deferred<Value>) -> Deferred<Value>
+                      transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return Recover(queue: queue, source: self, transform: transform)
