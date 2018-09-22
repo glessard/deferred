@@ -560,7 +560,7 @@ class Bind<Value>: Deferred<Value>
   /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
-  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) -> Deferred<Value>)
+  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Deferred<Value>)
   {
     super.init(queue: queue, source: source)
 
@@ -571,7 +571,8 @@ class Bind<Value>: Deferred<Value>
       this.beginExecution()
       do {
         let value = try value.get()
-        transform(value).notify(queue: queue) {
+        let transformed = try transform(value)
+        transformed.notify(queue: queue) {
           [weak this] transformed in
           this?.determine(transformed)
         }
@@ -593,7 +594,7 @@ class Recover<Value>: Deferred<Value>
   /// - parameter transform: the transform to be applied to `source.error` and whose result is represented by this `Deferred`
   /// - parameter error:     the Error to be transformed for a new `Deferred`
 
-  init(queue: DispatchQueue?, source: Deferred<Value>, transform: @escaping (_ error: Error) -> Deferred<Value>)
+  init(queue: DispatchQueue?, source: Deferred<Value>, transform: @escaping (_ error: Error) throws -> Deferred<Value>)
   {
     super.init(queue: queue, source: source)
 
@@ -604,9 +605,15 @@ class Recover<Value>: Deferred<Value>
       this.beginExecution()
       if let error = determined.error
       {
-        transform(error).notify(queue: queue) {
-          [weak this] transformed in
-          this?.determine(transformed)
+        do {
+          let transformed = try transform(error)
+          transformed.notify(queue: queue) {
+            [weak this] transformed in
+            this?.determine(transformed)
+          }
+        }
+        catch {
+          this.determine(error)
         }
       }
       else
