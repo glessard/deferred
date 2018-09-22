@@ -204,8 +204,8 @@ extension Deferred
   /// - parameter qos: the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
   /// - parameter task: the computation to be performed
 
-  public static func Retrying(_ attempts: Int, qos: DispatchQoS = .unspecified,
-                              task: @escaping () -> Deferred) -> Deferred
+  public static func Retrying(_ attempts: Int, qos: DispatchQoS = .current,
+                              task: @escaping () throws -> Deferred) -> Deferred
   {
     guard attempts > 0 else
     {
@@ -213,17 +213,7 @@ extension Deferred
       return Deferred<Value>(qos: qos, error: error)
     }
 
-    let deferred: Deferred
-    if qos == .unspecified
-    {
-      deferred = task()
-    }
-    else
-    {
-      let queue = DispatchQueue(label: "deferred", qos: qos)
-      deferred = Deferred<Int>(queue: queue, value: 0).flatMap(transform: { _ in task() })
-    }
-
+    let deferred = Deferred<Deferred>(qos: qos, task: task).flatten()
     return Deferred.Retrying(attempts-1, deferred, task: task)
   }
 
@@ -235,7 +225,7 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func Retrying(_ attempts: Int, queue: DispatchQueue,
-                              task: @escaping () -> Deferred) -> Deferred
+                              task: @escaping () throws -> Deferred) -> Deferred
   {
     guard attempts > 0 else
     {
@@ -243,16 +233,15 @@ extension Deferred
       return Deferred<Value>(queue: queue, error: error)
     }
 
-    let deferred = Deferred<Int>(queue: queue, value: 0).flatMap(transform: { _ in task() })
-
+    let deferred = Deferred<Deferred>(queue: queue, task: task).flatten()
     return Deferred.Retrying(attempts-1, deferred, task: task)
   }
 
-  private static func Retrying(_ attempts: Int, _ deferred: Deferred, task: @escaping () -> Deferred) -> Deferred
+  private static func Retrying(_ attempts: Int, _ deferred: Deferred, task: @escaping () throws -> Deferred) -> Deferred
   {
     return (0..<attempts).reduce(deferred) {
       (deferred, _) in
-      deferred.recover(transform: { _ in task() })
+      deferred.recover(transform: { _ in try task() })
     }
   }
 }
