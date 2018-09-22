@@ -40,7 +40,7 @@ extension Deferred
   }
 }
 
-extension Collection where Index == Indices.Iterator.Element
+extension Collection
 {
   /// Map a collection to an array of `Deferred` to be computed in parallel, at the desired QoS level
   ///
@@ -66,16 +66,22 @@ extension Collection where Index == Indices.Iterator.Element
   public func deferredMap<Value>(queue: DispatchQueue,
                                  task: @escaping (_ element: Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-    let count: Int = numericCast(self.count)
+#if swift(>=4.2)
+    typealias Distance = Int
+    let count = self.count
+#else
+    typealias Distance = IndexDistance
+    let count = Int(self.count)
+#endif
     let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) }
-    let indexList = Array(self.indices)
 
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {
         iteration in
         deferreds[iteration].beginExecution()
+        let index = self.index(self.startIndex, offsetBy: Distance(iteration))
         do {
-          let value = try task(self[indexList[iteration]])
+          let value = try task(self[index])
           deferreds[iteration].determine(value)
         }
         catch {
