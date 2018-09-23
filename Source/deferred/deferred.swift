@@ -487,15 +487,15 @@ open class Transferred<Value>: Deferred<Value>
   /// - parameter queue:     the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value will be transferred into a new instance.
 
-  init(from source: Deferred<Value>, on queue: DispatchQueue)
+  public init(from source: Deferred<Value>, on queue: DispatchQueue? = nil)
   {
     if let outcome = source.peek()
     {
-      super.init(queue: queue, outcome: outcome)
+      super.init(queue: queue ?? source.queue, outcome: outcome)
     }
     else
     {
-      super.init(queue: queue, source: source, beginExecution: true)
+      super.init(queue: queue ?? source.queue, source: source, beginExecution: true)
       source.enqueue(queue: queue, boostQoS: false,
                      task: { [weak self] outcome in self?.determine(outcome) })
     }
