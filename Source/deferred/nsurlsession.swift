@@ -7,6 +7,7 @@
 //
 
 import Dispatch
+import Outcome
 
 import Foundation
 //import struct Foundation.Data
@@ -29,14 +30,18 @@ public enum URLSessionError: Error
   case InvalidState
 }
 
-class DeferredURLSessionTask<Value>: Transfer<Value>
+public class DeferredURLSessionTask<Value>: Transferred<Value>
 {
   public let urlSessionTask: URLSessionTask
 
   init(source: TBD<Value>, task: URLSessionTask)
   {
     urlSessionTask = task
-    super.init(queue: source.queue, source: source)
+    super.init(from: source, on: source.queue)
+  }
+
+  deinit {
+    urlSessionTask.cancel()
   }
 
   @discardableResult
@@ -49,7 +54,8 @@ class DeferredURLSessionTask<Value>: Transfer<Value>
     return true
   }
 
-  public override func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (Determined<Value>) -> Void)
+  public override func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true,
+                               task: @escaping (Outcome<Value>) -> Void)
   {
     if state == .waiting
     {
@@ -90,55 +96,55 @@ public extension URLSession
   }
 
   public func deferredDataTask(qos: DispatchQoS = .current,
-                               with request: URLRequest) -> Deferred<(Data, HTTPURLResponse)>
+                               with request: URLRequest) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    guard let scheme = request.url?.scheme, scheme == "http" || scheme == "https"
-    else {
-      let e = DeferredError.invalid(
-        "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
-      )
-      return Deferred(error: e)
+    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
+
+    if let scheme = request.url?.scheme,
+       scheme != "http" && scheme != "https"
+    {
+      let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
+      tbd.determine(DeferredError.invalid(message))
     }
 
-    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
     let task = dataTask(with: request, completionHandler: dataCompletion(tbd))
     return DeferredURLSessionTask(source: tbd, task: task)
   }
 
   public func deferredDataTask(qos: DispatchQoS = .current,
-                               with url: URL) -> Deferred<(Data, HTTPURLResponse)>
+                               with url: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
     return deferredDataTask(qos: qos, with: URLRequest(url: url))
   }
 
   public func deferredUploadTask(qos: DispatchQoS = .current,
-                                 with request: URLRequest, fromData bodyData: Data) -> Deferred<(Data, HTTPURLResponse)>
+                                 with request: URLRequest, fromData bodyData: Data) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    guard let scheme = request.url?.scheme, scheme == "http" || scheme == "https"
-      else {
-        let e = DeferredError.invalid(
-          "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
-        )
-        return Deferred(error: e)
+    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
+
+    if let scheme = request.url?.scheme,
+       scheme != "http" && scheme != "https"
+    {
+      let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
+      tbd.determine(DeferredError.invalid(message))
     }
 
-    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
     let task = uploadTask(with: request, from: bodyData, completionHandler: dataCompletion(tbd))
     return DeferredURLSessionTask(source: tbd, task: task)
   }
 
   public func deferredUploadTask(qos: DispatchQoS = .current,
-                                 with request: URLRequest, fromFile fileURL: URL) -> Deferred<(Data, HTTPURLResponse)>
+                                 with request: URLRequest, fromFile fileURL: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    guard let scheme = request.url?.scheme, scheme == "http" || scheme == "https"
-      else {
-        let e = DeferredError.invalid(
-          "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
-        )
-        return Deferred(error: e)
+    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
+
+    if let scheme = request.url?.scheme,
+       scheme != "http" && scheme != "https"
+    {
+      let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
+      tbd.determine(DeferredError.invalid(message))
     }
 
-    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
     let task = uploadTask(with: request, fromFile: fileURL, completionHandler: dataCompletion(tbd))
     return DeferredURLSessionTask(source: tbd, task: task)
   }
@@ -209,29 +215,29 @@ extension URLSession
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   with request: URLRequest) -> Deferred<(URL, FileHandle, HTTPURLResponse)>
+                                   with request: URLRequest) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
   {
-    guard let scheme = request.url?.scheme, scheme == "http" || scheme == "https"
-      else {
-        let e = DeferredError.invalid(
-          "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
-        )
-        return Deferred(error: e)
+    let tbd = TBD<(URL, FileHandle, HTTPURLResponse)>(qos: qos)
+
+    if let scheme = request.url?.scheme,
+       scheme != "http" && scheme != "https"
+    {
+      let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
+      tbd.determine(DeferredError.invalid(message))
     }
 
-    let tbd = TBD<(URL, FileHandle, HTTPURLResponse)>(qos: qos)
     let task = downloadTask(with: request, completionHandler: downloadCompletion(tbd))
     return DeferredDownloadTask(source: tbd, task: task)
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   with url: URL) -> Deferred<(URL, FileHandle, HTTPURLResponse)>
+                                   with url: URL) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
   {
     return deferredDownloadTask(qos: qos, with: URLRequest(url: url))
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   withResumeData data: Data) -> Deferred<(URL, FileHandle, HTTPURLResponse)>
+                                   withResumeData data: Data) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
   {
     let tbd = TBD<(URL, FileHandle, HTTPURLResponse)>(qos: qos)
 

@@ -7,27 +7,28 @@
 //
 
 import Dispatch
+import Outcome
 
 struct Waiter<T>
 {
   private let queue: DispatchQueue?
-  private let handler: (Determined<T>) -> Void
+  private let handler: (Outcome<T>) -> Void
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
-  init(_ queue: DispatchQueue?, _ handler: @escaping (Determined<T>) -> Void)
+  init(_ queue: DispatchQueue?, _ handler: @escaping (Outcome<T>) -> Void)
   {
     self.queue = queue
     self.handler = handler
   }
 
-  fileprivate func notify(_ queue: DispatchQueue, _ value: Determined<T>)
+  fileprivate func notify(_ queue: DispatchQueue, _ value: Outcome<T>)
   {
     let q = self.queue ?? queue
     q.async { [handler = self.handler] in handler(value) }
   }
 }
 
-func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ value: Determined<T>)
+func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ value: Outcome<T>)
 {
   var head = reverseList(tail)
   while let current = head

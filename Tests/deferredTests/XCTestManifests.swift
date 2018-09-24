@@ -77,15 +77,6 @@ extension DeletionTests {
     ]
 }
 
-extension DeterminedTests {
-    static let __allTests = [
-        ("testCustomStringConvertible", testCustomStringConvertible),
-        ("testEquals", testEquals),
-        ("testGetters", testGetters),
-        ("testHashable", testHashable),
-    ]
-}
-
 extension DispatchUtilitiesTests {
     static let __allTests = [
         ("testCurrent", testCurrent),
@@ -125,7 +116,6 @@ public func __allTests() -> [XCTestCaseEntry] {
         testCase(DeferredCombinationTimedTests.__allTests),
         testCase(DeferredTests.__allTests),
         testCase(DeletionTests.__allTests),
-        testCase(DeterminedTests.__allTests),
         testCase(DispatchUtilitiesTests.__allTests),
         testCase(TBDTests.__allTests),
         testCase(TBDTimingTests.__allTests),

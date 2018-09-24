@@ -278,8 +278,8 @@ class DeferredTests: XCTestCase
       return 42
     }
     d3.notify {
-      determined in
-      guard let e = determined.error,
+      outcome in
+      guard let e = outcome.error,
             let deferredErr = e as? DeferredError,
             case .canceled = deferredErr
       else
@@ -549,8 +549,8 @@ class DeferredTests: XCTestCase
     var v1 = 0
     var v2 = 0
     result.notify {
-      determined in
-      XCTAssert(determined.value == (Double(v1*v2)))
+      outcome in
+      XCTAssert(outcome.value == (Double(v1*v2)))
       expect.fulfill()
     }
 
