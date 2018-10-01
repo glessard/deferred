@@ -14,11 +14,9 @@ extension DispatchQoS
 {
   static public var current: DispatchQoS
   {
-    if let qosClass = DispatchQoS.QoSClass.current
-    {
-      return DispatchQoS(qosClass: qosClass, relativePriority: 0)
-    }
-    return .default
+    guard let qosClass = DispatchQoS.QoSClass.current
+      else { return .default }
+    return DispatchQoS(qosClass: qosClass, relativePriority: 0)
   }
 }
 
