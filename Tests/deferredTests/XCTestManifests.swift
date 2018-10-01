@@ -58,6 +58,7 @@ extension DeferredTests {
         ("testRetryTask", testRetryTask),
         ("testState", testState),
         ("testTimeout", testTimeout),
+        ("testTransfer", testTransfer),
         ("testValidate1", testValidate1),
         ("testValidate2", testValidate2),
         ("testValue", testValue),

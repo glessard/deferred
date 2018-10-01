@@ -515,6 +515,21 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 0.1)
   }
 
+  func testTransfer()
+  {
+    let r1 = nzRandom()
+    let r2 = nzRandom()
+
+    let transferred1 = Transferred(from: Deferred(value: r1))
+
+    let tbd = TBD<Int>(qos: .background)
+    let transferred2 = Transferred(from: tbd)
+    tbd.determine(r2)
+
+    XCTAssert(transferred1.value == r1)
+    XCTAssert(transferred2.value == r2)
+  }
+
   func testApply()
   {
     // a simple curried function.
