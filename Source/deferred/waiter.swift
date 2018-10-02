@@ -64,18 +64,16 @@ func deallocateWaiters<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?)
 
 private func reverseList<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?) -> UnsafeMutablePointer<Waiter<T>>?
 {
-  if tail != nil && tail!.pointee.next != nil
-  {
-    var head: UnsafeMutablePointer<Waiter<T>>? = nil
-    var current = tail
-    while let element = current
-    {
-      current = element.pointee.next
+  if tail?.pointee.next == nil { return tail }
 
-      element.pointee.next = head
-      head = element
-    }
-    return head
+  var head: UnsafeMutablePointer<Waiter<T>>? = nil
+  var current = tail
+  while let element = current
+  {
+    current = element.pointee.next
+
+    element.pointee.next = head
+    head = element
   }
-  return tail
+  return head
 }
