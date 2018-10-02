@@ -37,7 +37,6 @@ extension DeferredTests {
         ("testCancelDelay", testCancelDelay),
         ("testCancelMap", testCancelMap),
         ("testDeferredError", testDeferredError),
-        ("testDelay", testDelay),
         ("testExample", testExample),
         ("testExample2", testExample2),
         ("testExample3", testExample3),
@@ -64,6 +63,18 @@ extension DeferredTests {
         ("testValue", testValue),
         ("testValueBlocks", testValueBlocks),
         ("testValueUnblocks", testValueUnblocks),
+    ]
+}
+
+extension DelayTests {
+    static let __allTests = [
+        ("testAbandonedDelay", testAbandonedDelay),
+        ("testCancelDelay", testCancelDelay),
+        ("testDelayError", testDelayError),
+        ("testDelayValue", testDelayValue),
+        ("testDistantFuture", testDistantFuture),
+        ("testDistantFutureDelay", testDistantFutureDelay),
+        ("testSourceSlowerThanDelay", testSourceSlowerThanDelay),
     ]
 }
 
@@ -116,6 +127,7 @@ public func __allTests() -> [XCTestCaseEntry] {
         testCase(DeferredCombinationTests.__allTests),
         testCase(DeferredCombinationTimedTests.__allTests),
         testCase(DeferredTests.__allTests),
+        testCase(DelayTests.__allTests),
         testCase(DeletionTests.__allTests),
         testCase(DispatchUtilitiesTests.__allTests),
         testCase(TBDTests.__allTests),

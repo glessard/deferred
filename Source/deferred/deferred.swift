@@ -697,8 +697,7 @@ class Delay<Value>: Deferred<Value>
 
     source.enqueue(queue: queue, boostQoS: false) {
       [weak self] outcome in
-      guard let this = self else { return }
-      if this.isDetermined { return }
+      guard let this = self, (this.isDetermined == false) else { return }
 
       if outcome.isError
       {

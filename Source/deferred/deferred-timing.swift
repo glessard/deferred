@@ -45,8 +45,8 @@ extension Deferred
   /// - returns: a `Deferred` reference
 
   public func delay(queue: DispatchQueue? = nil, until time: DispatchTime) -> Deferred
-  { // FIXME: don't special-case .distantFuture (https://bugs.swift.org/browse/SR-5706)
-    guard time > .now() || time == .distantFuture else { return self }
+  {
+    guard time > .now() else { return self }
     return Delay(queue: queue, source: self, until: time)
   }
 }
