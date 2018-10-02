@@ -7,14 +7,19 @@
 //
 
 import Dispatch
+import CAtomics
 
-/// Return the value of the first of an array of `Deferred`s to be determined.
+/// Return the value of the first of an array of `Deferred`s to be determined succesfully.
+///
+/// The returned `Deferred` be determined with an `Error` only if every input `Deferred`
+/// is determined with an `Error`; in such a situation the returned `Error` will be
+/// the last one to have been determined.
 ///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
-/// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first; if this
+/// Note also that if more than one element has a value at the time
+/// the function is called, the earliest one encountered will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
 ///
 /// - parameter qos: the QoS at which the new `Deferred`'s notifications will be executed
@@ -26,16 +31,21 @@ public func firstValue<Value, C: Collection>(qos: DispatchQoS,
                                              deferreds: C, cancelOthers: Bool = false) -> Deferred<Value>
   where C.Iterator.Element: Deferred<Value>
 {
-  return Flatten(firstDetermined(qos: qos, deferreds: deferreds, cancelOthers: cancelOthers))
+  let queue = DispatchQueue(label: "first-collection", qos: qos)
+  return firstValue(queue: queue, deferreds: deferreds, cancelOthers: cancelOthers)
 }
 
-/// Return the value of the first of an array of `Deferred`s to be determined.
+/// Return the value of the first of an array of `Deferred`s to be determined succesfully.
+///
+/// The returned `Deferred` be determined with an `Error` only if every input `Deferred`
+/// is determined with an `Error`; in such a situation the returned `Error` will be
+/// the last one to have been determined.
 ///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
-/// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first; if this
+/// Note also that if more than one element has a value at the time
+/// the function is called, the earliest one encountered will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
 ///
 /// - parameter deferreds: a `Collection` of `Deferred`
@@ -48,13 +58,17 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, cancelOthers: Bool 
   return firstValue(qos: .current, deferreds: deferreds, cancelOthers: cancelOthers)
 }
 
-/// Return the value of the first of an array of `Deferred`s to be determined.
+/// Return the value of the first of an array of `Deferred`s to be determined succesfully.
+///
+/// The returned `Deferred` be determined with an `Error` only if every input `Deferred`
+/// is determined with an `Error`; in such a situation the returned `Error` will be
+/// the error returned by the last `Deferred` in the input `Sequence`.
 ///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
-/// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first; if this
+/// Note also that if more than one element has a value at the time
+/// the function is called, the earliest one encountered will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
 ///
 /// - parameter queue: the `DispatchQueue` on which the new `Deferred`'s notifications will be executed.
@@ -66,16 +80,50 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
                                              deferreds: C, cancelOthers: Bool = false) -> Deferred<Value>
   where C.Iterator.Element: Deferred<Value>
 {
-  return Flatten(firstDetermined(queue: queue, deferreds: deferreds, cancelOthers: cancelOthers))
+  if deferreds.isEmpty
+  {
+    let error = DeferredError.invalid("cannot find first determined value from an empty set in \(#function)")
+    return Deferred(queue: queue, error: error)
+  }
+
+  let count = deferreds.count
+  var determined = AtomicInt()
+  determined.initialize(1)
+
+  let first = TBD<Value>(queue: queue)
+
+  deferreds.forEach {
+    deferred in
+    deferred.notify {
+      outcome in
+      do {
+        let value = try outcome.get()
+        first.determine(value: value)
+      }
+      catch {
+        if determined.fetch_add(1, .relaxed) == count
+        { // all the others have errored, and this one errored as well
+          first.determine(error: error)
+        }
+      }
+    }
+    if cancelOthers { first.notify { _ in deferred.cancel() }}
+  }
+
+  return first
 }
 
-/// Return the value of the first of an array of `Deferred`s to be determined.
+/// Return the value of the `Deferred`s to be determined successfully out of a `Sequence`.
+///
+/// The returned `Deferred` be determined with an `Error` only if every input `Deferred`
+/// is determined with an `Error`; in such a situation the returned `Error` will be
+/// the error returned by the last `Deferred` in the input `Sequence`.
 ///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
 /// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first.
+/// the function is called, the earliest one encountered will be considered first.
 ///
 /// - parameter qos: the QoS at which the new `Deferred`'s notifications will be executed
 /// - parameter deferreds: a `Sequence` of `Deferred`
@@ -86,16 +134,21 @@ public func firstValue<Value, S: Sequence>(qos: DispatchQoS,
                                            deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
   where S.Iterator.Element: Deferred<Value>
 {
-  return Flatten(firstDetermined(qos: qos, deferreds: deferreds, cancelOthers: cancelOthers))
+  let queue = DispatchQueue(label: "first-sequence", qos: qos)
+  return firstValue(queue: queue, deferreds: deferreds, cancelOthers: cancelOthers)
 }
 
-/// Return the value of the first of an array of `Deferred`s to be determined.
+/// Return the value of the `Deferred`s to be determined successfully out of a `Sequence`.
+///
+/// The returned `Deferred` be determined with an `Error` only if every input `Deferred`
+/// is determined with an `Error`; in such a situation the returned `Error` will be
+/// the last one to have been determined.
 ///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
 /// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first.
+/// the function is called, the earliest one encountered will be considered first.
 ///
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
@@ -107,13 +160,17 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = 
   return firstValue(qos: .current, deferreds: deferreds, cancelOthers: cancelOthers)
 }
 
-/// Return the value of the first of an array of `Deferred`s to be determined.
+/// Return the value of the `Deferred`s to be determined successfully out of a `Sequence`.
+///
+/// The returned `Deferred` be determined with an `Error` only if every input `Deferred`
+/// is determined with an `Error`; in such a situation the returned `Error` will be
+/// the error returned by the last `Deferred` in the input `Sequence`.
 ///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
 /// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first.
+/// the function is called, the earliest one encountered will be considered first.
 ///
 /// - parameter queue: the `DispatchQueue` on which the new `Deferred`'s notifications will be executed.
 /// - parameter deferreds: a `Sequence` of `Deferred`
@@ -124,7 +181,50 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
                                            deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
   where S.Iterator.Element: Deferred<Value>
 {
-  return Flatten(firstDetermined(queue: queue, deferreds: deferreds, cancelOthers: cancelOthers))
+  let first = TBD<Value>(queue: queue)
+
+  queue.async {
+    var errorTBDs: [Deferred<Error>] = []
+    deferreds.forEach {
+      deferred in
+      let determinedError = TBD<Error>()
+      errorTBDs.append(determinedError)
+      deferred.notify {
+        outcome in
+        do {
+          let value = try outcome.get()
+          first.determine(value)
+        }
+        catch {
+          determinedError.determine(value: error)
+        }
+        if cancelOthers { first.notify { _ in deferred.cancel() } }
+      }
+    }
+
+    let combined = combine(queue: queue, deferreds: errorTBDs)
+    combined.notify {
+      outcome in
+      do {
+        let errors = try outcome.get()
+        if let error = errors.last
+        {
+          first.determine(error: error)
+        }
+        else
+        { // our sequence was empty
+          let error = DeferredError.invalid("cannot find first determined value from an empty set in \(#function)")
+          first.determine(error: error)
+        }
+      }
+      catch { // `combined` will get an error outcome if `first` gets an outcome first
+        first.determine(error: error)
+      }
+    }
+    first.notify { _ in combined.cancel() }
+  }
+
+  return first
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
@@ -132,8 +232,8 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
-/// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first; if this
+/// Note also that if more than one element has a value at the time
+/// the function is called, the earliest one encountered will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
 ///
 /// - parameter qos: the QoS at which the new `Deferred`'s notifications will be executed
@@ -154,8 +254,8 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS,
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
-/// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first; if this
+/// Note also that if more than one element has a value at the time
+/// the function is called, the earliest one encountered will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
 ///
 /// - parameter deferreds: a `Collection` of `Deferred`
@@ -173,8 +273,8 @@ public func firstDetermined<Value, C: Collection>(_ deferreds: C, cancelOthers: 
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
 ///
-/// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first; if this
+/// Note also that if more than one element has a value at the time
+/// the function is called, the earliest one encountered will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
 ///
 /// - parameter queue: the `DispatchQueue` on which the new `Deferred`'s notifications will be executed.
@@ -209,7 +309,7 @@ public func firstDetermined<Value, C: Collection>(queue: DispatchQueue,
 /// `DeferredError.invalid` error.
 ///
 /// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first.
+/// the function is called, the earliest one encountered will be considered first.
 ///
 /// - parameter qos: the QoS at which the new `Deferred`'s notifications will be executed
 /// - parameter deferreds: a `Sequence` of `Deferred`
@@ -230,7 +330,7 @@ public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS,
 /// `DeferredError.invalid` error.
 ///
 /// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first.
+/// the function is called, the earliest one encountered will be considered first.
 ///
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get determined first (defaults to `false`)
@@ -248,7 +348,7 @@ where S.Iterator.Element: Deferred<Value>
 /// `DeferredError.invalid` error.
 ///
 /// Note also that if more than one element is already determined at the time
-/// the function is called, the earliest one will be considered first.
+/// the function is called, the earliest one encountered will be considered first.
 ///
 /// - parameter queue: the `DispatchQueue` on which the new `Deferred`'s notifications will be executed.
 /// - parameter deferreds: a `Sequence` of `Deferred`
