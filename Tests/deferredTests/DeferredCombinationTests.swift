@@ -183,7 +183,7 @@ class DeferredRacingTests: XCTestCase
     }
     let first = firstValue(deferreds, cancelOthers: true)
 
-    XCTAssert(deferreds[lucky].determine(lucky))
+    XCTAssert(deferreds[lucky].determine(value: lucky))
     waitForExpectations(timeout: 0.1)
     XCTAssert(first.value == lucky)
 

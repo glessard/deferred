@@ -20,7 +20,7 @@ class TBDTests: XCTestCase
     let tbd = TBD<Int>()
     tbd.beginExecution()
     let value = nzRandom()
-    XCTAssert(tbd.determine(value))
+    XCTAssert(tbd.determine(value: value))
     XCTAssert(tbd.isDetermined)
     XCTAssert(tbd.value == value)
     XCTAssert(tbd.error == nil)
@@ -40,7 +40,7 @@ class TBDTests: XCTestCase
     var value = nzRandom()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.01) {
       value = nzRandom()
-      XCTAssert(tbd.determine(value))
+      XCTAssert(tbd.determine(value: value))
     }
 
     XCTAssert(tbd.isDetermined == false)
@@ -50,7 +50,7 @@ class TBDTests: XCTestCase
     XCTAssert(tbd.error == nil)
 
     // Try and fail to determine tbd a second time.
-    XCTAssert(tbd.determine(value) == false)
+    XCTAssert(tbd.determine(value: value) == false)
   }
 
   func testCancel() throws
@@ -69,7 +69,7 @@ class TBDTests: XCTestCase
     let tbd3 = TBD<Int>()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) { XCTAssert(tbd3.cancel() == true) }
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
-      if tbd3.determine(nzRandom())
+      if tbd3.determine(value: nzRandom())
       {
         XCTFail()
       }
@@ -87,7 +87,7 @@ class TBDTests: XCTestCase
     let value = nzRandom()
     let e1 = expectation(description: "TBD notification after determination")
     let tbd = TBD<Int>()
-    tbd.determine(value)
+    tbd.determine(value: value)
 
     tbd.notify {
       XCTAssert( $0.value == value )
@@ -109,7 +109,7 @@ class TBDTests: XCTestCase
 
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 10e-6) {
       value = nzRandom()
-      XCTAssert(tbd.determine(value))
+      XCTAssert(tbd.determine(value: value))
     }
 
     waitForExpectations(timeout: 1.0)
@@ -144,7 +144,7 @@ class TBDTests: XCTestCase
       if d.value == r { e.fulfill() }
     }
 
-    d1.determine(r)
+    d1.determine(value: r)
 
     waitForExpectations(timeout: 0.1)
   }

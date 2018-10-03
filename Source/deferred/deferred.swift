@@ -816,6 +816,7 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
+  @available(*, deprecated, renamed: "determine(value:)")
   public final func determine(_ value: Value) -> Bool
   {
     return determine(value: value)

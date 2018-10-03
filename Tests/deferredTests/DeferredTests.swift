@@ -446,7 +446,7 @@ class DeferredTests: XCTestCase
     let d3 = deferredValue.flatten()
     let e3 = expectation(description: "flatten, part 3")
     d3.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e3.fulfill() })
-    deferredValue.determine(Deferred(value: value))
+    deferredValue.determine(value: Deferred(value: value))
 
     let badOperand2 = TBD<Deferred<Int>>()
     let d4 = badOperand2.flatten()
@@ -468,7 +468,7 @@ class DeferredTests: XCTestCase
 //    let willCompile = Deferred(value: d1).flatten()
 //    let wontCompile = Deferred(value: 99).flatten()
 
-    tbd.determine(value)
+    tbd.determine(value: value)
 
     waitForExpectations(timeout: 0.1)
   }
@@ -482,7 +482,7 @@ class DeferredTests: XCTestCase
 
     let tbd = TBD<Int>(qos: .background)
     let transferred2 = Transferred(from: tbd)
-    tbd.determine(r2)
+    tbd.determine(value: r2)
 
     XCTAssert(transferred1.value == r1)
     XCTAssert(transferred2.value == r2)
@@ -536,7 +536,7 @@ class DeferredTests: XCTestCase
 
     g.notify { _ in
       v2 = Int(nzRandom() & 0x7fff + 10000)
-      operand.determine(v2)
+      operand.determine(value: v2)
     }
 
     XCTAssertFalse(operand.isDetermined)
@@ -544,7 +544,7 @@ class DeferredTests: XCTestCase
     XCTAssertFalse(transform.isDetermined)
     XCTAssert(transform.state == .waiting)
 
-    g.determine(0)
+    g.determine(value: 0)
     waitForExpectations(timeout: 1.0)
 
     XCTAssert(transform.state == .succeeded)
@@ -606,7 +606,7 @@ class DeferredTests: XCTestCase
     let r5 = o5.apply(transform: t5)
     combine(t5,r5).notify { _ in e5.fulfill() }
     r5.cancel()
-    t5.determine({ Float($0) })
+    t5.determine(value: { Float($0) })
     XCTAssert(r5.value == nil)
     XCTAssert(r5.error as? DeferredError == DeferredError.canceled(""))
 
@@ -729,7 +729,7 @@ class DeferredTests: XCTestCase
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
-    tbd.determine(numericCast(nzRandom()))
+    tbd.determine(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -743,7 +743,7 @@ class DeferredTests: XCTestCase
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
-    tbd.determine(numericCast(nzRandom()))
+    tbd.determine(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -772,7 +772,7 @@ class DeferredTests: XCTestCase
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
 
-    tbd.determine(numericCast(nzRandom()))
+    tbd.determine(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -807,7 +807,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.cancel() == true)
     XCTAssert(d4.cancel() == true)
 
-    tbd.determine(numericCast(nzRandom()))
+    tbd.determine(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
