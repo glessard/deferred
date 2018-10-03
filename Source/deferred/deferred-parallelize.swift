@@ -66,7 +66,7 @@ extension Collection
   public func deferredMap<Value>(queue: DispatchQueue,
                                  task: @escaping (_ element: Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-#if swift(>=4.2)
+#if swift(>=4.1)
     typealias Distance = Int
     let count = self.count
 #else
