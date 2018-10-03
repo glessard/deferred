@@ -193,7 +193,7 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
         outcome in
         do {
           let value = try outcome.get()
-          first.determine(value)
+          first.determine(value: value)
         }
         catch {
           determinedError.determine(value: error)
