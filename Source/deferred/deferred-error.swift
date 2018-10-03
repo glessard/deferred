@@ -10,7 +10,7 @@
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredError: Error
+public enum DeferredError: Error, Equatable
 {
   case canceled(String)
   case invalid(String)
@@ -38,8 +38,7 @@ extension DeferredError: CustomStringConvertible
   }
 }
 
-extension DeferredError: Equatable {}
-
+#if !swift(>=4.1)
 public func == (a: DeferredError, b: DeferredError) -> Bool
 {
   switch (a,b)
@@ -50,3 +49,4 @@ public func == (a: DeferredError, b: DeferredError) -> Bool
   default:                                     return false
   }
 }
+#endif
