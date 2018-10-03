@@ -6,13 +6,21 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-struct TestError: Error, Equatable
+enum TestError: Error, Equatable
 {
-  let error: Int
-  init(_ e: Int = 0) { error = e }
+  case value(Int)
+
+  var error: Int {
+    switch self { case .value(let v): return v }
+  }
+
+  init(_ e: Int = 0) { self = .value(e) }
 }
 
 func == (l: TestError, r: TestError) -> Bool
 {
-  return l.error == r.error
+  switch (l,r)
+  {
+  case let (.value(lv), .value(rv)): return lv == rv
+  }
 }

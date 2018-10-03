@@ -165,7 +165,10 @@ class DeferredCombinationTests: XCTestCase
     XCTAssert(c?.2 == v3)
     XCTAssert(c?.3 == v4)
   }
+}
 
+class DeferredRacingTests: XCTestCase
+{
   func testFirstValueCollection() throws
   {
     let count = 10
@@ -192,22 +195,86 @@ class DeferredCombinationTests: XCTestCase
       }
       catch DeferredError.canceled(let s) { XCTAssert(s == "") }
     }
+  }
 
-    let one = firstValue(queue: DispatchQueue.global(), deferreds: [Deferred(value: ())])
-    XCTAssert(one.error == nil)
+  func testFirstValueEmptyCollection() throws
+  {
+    let zero = firstValue(queue: DispatchQueue.global(), deferreds: Array<Deferred<Void>>())
+    do {
+      _ = try zero.outcome.get()
+      XCTFail()
+    }
+    catch DeferredError.invalid(let m) {
+      XCTAssert(m != "")
+    }
+  }
+
+  func testFirstValueCollectionError() throws
+  {
+    let integers = (0..<10)
+#if swift(>=4.2)
+    let errored = integers.randomElement()
+#else
+    let errored = 5
+#endif
+    let deferreds = integers.map {
+      i -> Deferred<Int> in
+      let delayed = Deferred<Int>(value: i).delay(.milliseconds(i == errored ? 100 : 0))
+      return delayed.map { throw TestError($0) }
+    }
+
+    let first = firstValue(deferreds)
+    do {
+      _ = try first.outcome.get()
+      XCTFail()
+    }
+    catch TestError.value(let e) {
+      XCTAssert(e == errored, String(describing: e))
+    }
   }
 
   func testFirstValueSequence() throws
+  {
+    let one = firstValue(queue: DispatchQueue.global(),
+                         deferreds: AnySequence([Deferred(value: 10), Deferred(error: TestError(10))]),
+                         cancelOthers: true)
+    XCTAssert(one.value == 10)
+  }
+
+  func testFirstValueEmptySequence() throws
   {
     let never = firstValue(EmptyIterator<Deferred<Any>>())
     do {
       let value = try never.get()
       XCTFail("never.value should be nil, was \(value)")
     }
-    catch DeferredError.invalid(let m) { XCTAssert(m != "") }
+    catch DeferredError.invalid(let m) {
+      XCTAssert(m != "")
+    }
+  }
 
-    let one = firstValue(queue: DispatchQueue.global(), deferreds: AnySequence(CollectionOfOne(Deferred(value: 10))))
-    XCTAssert(one.value == 10)
+  func testFirstValueSequenceError() throws
+  {
+    let integers = (0..<10)
+    #if swift(>=4.2)
+    let errored = integers.dropLast().randomElement()
+    #else
+    let errored = 5
+    #endif
+    let deferreds = integers.map {
+      i -> Deferred<Int> in
+      let delayed = Deferred<Int>(value: i).delay(.milliseconds(i == errored ? 100 : 0))
+      return delayed.map { throw TestError($0) }
+    }
+
+    let first = firstValue(AnySequence(deferreds))
+    do {
+      _ = try first.outcome.get()
+      XCTFail()
+    }
+    catch TestError.value(let e) {
+      XCTAssert(e == integers.last, String(describing: e))
+    }
   }
 
   func testFirstDeterminedCollection() throws
