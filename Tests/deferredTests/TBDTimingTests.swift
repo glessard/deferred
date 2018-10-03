@@ -34,7 +34,7 @@ class TBDTimingTests: XCTestCase
         }
       }
 
-      first.determine( (0, ref, ref) )
+      first.determine(value: (0, ref, ref))
 
       let (iterations, tic, toc) = try! dt.get()
       let interval = toc.timeIntervalSince(tic)
@@ -55,7 +55,7 @@ class TBDTimingTests: XCTestCase
       }
 
       let dt = start.map { start in Date().timeIntervalSince(start) }
-      start.determine(Date())
+      start.determine(value: Date())
 
       let interval = try! dt.get()
       // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per notification")

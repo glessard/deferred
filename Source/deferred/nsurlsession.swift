@@ -87,7 +87,7 @@ public extension URLSession
 
       if let d = data, let r = response as? HTTPURLResponse
       {
-        tbd.determine( (d,r) )
+        tbd.determine(value: (d,r))
         return
       }
       // Probably an impossible situation
@@ -201,7 +201,7 @@ extension URLSession
       {
         do {
           let f = try FileHandle(forReadingFrom: u)
-          tbd.determine( (u,f,r) )
+          tbd.determine(value: (u,f,r))
         }
         catch {
           // Likely an impossible situation
