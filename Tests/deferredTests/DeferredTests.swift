@@ -452,7 +452,7 @@ class DeferredTests: XCTestCase
     let d4 = badOperand2.flatten()
     let e4 = expectation(description: "flatten, part 4")
     d4.recover(transform: { Deferred(error: $0) }).onError(task: { _ in e4.fulfill() })
-    badOperand2.determine(TestError(error))
+    badOperand2.determine(error: TestError(error))
 
     let tbd = TBD<Int>()
     let fullyDeferred = Deferred(value: tbd.delay(seconds: 0.02)).delay(seconds: 0.01)
@@ -531,7 +531,7 @@ class DeferredTests: XCTestCase
 
     g.notify { _ in
       v1 = Int(nzRandom() & 0x7fff + 10000)
-      transform.determine { i in Double(v1*i) }
+      transform.determine(value: { i in Double(v1*i) })
     }
 
     g.notify { _ in

@@ -27,7 +27,7 @@ class TBDTests: XCTestCase
 
     let tbe = TBD<Void>()
     tbe.beginExecution()
-    XCTAssert(tbe.determine(TestError(value)))
+    XCTAssert(tbe.determine(error: TestError(value)))
     XCTAssert(tbe.isDetermined)
     XCTAssert(tbe.value == nil)
     XCTAssert(tbe.error as? TestError == TestError(value))
