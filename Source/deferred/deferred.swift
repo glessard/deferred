@@ -195,6 +195,7 @@ open class Deferred<Value>
   }
 
   /// Set the `Outcome` of this `Deferred` and dispatch all notifications for execution.
+  ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
@@ -226,16 +227,8 @@ open class Deferred<Value>
     return true
   }
 
-  /// Set the `Outcome` of this `Deferred` and dispatch all notifications for execution.
-  /// Note that a `Deferred` can only be determined once.
-  /// On subsequent calls, `determine` will fail and return `false`.
-  /// This operation is lock-free and thread-safe.
-  ///
-  /// - parameter determined: the determined value for this `Deferred`
-  /// - returns: whether the call succesfully changed the state of this `Deferred`.
-
-
   /// Set the value of this `Deferred` and dispatch all notifications for execution.
+  ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
@@ -250,6 +243,7 @@ open class Deferred<Value>
   }
 
   /// Set this `Deferred` to an error and dispatch all notifications for execution.
+  ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
@@ -266,10 +260,15 @@ open class Deferred<Value>
   // MARK: public interface
 
   /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes determined.
+  ///
   /// This operation is lock-free and thread-safe.
   /// Multiple threads can call this method at once; they will succeed in turn.
-  /// If one or more thread enters a race to enqueue with `determine()`, as soon as `determine()` succeeds
-  /// all current and subsequent attempts to enqueue will result in immediate dispatch of the task.
+  ///
+  /// Before `determine()` has been called, the effect of `enqueue()` is to add the closure
+  /// to a list of closures to be called once this `Deferred` has a determined outcome.
+  ///
+  /// After `determine()` has been called, the effect of `enqueue()` is to immediately
+  /// enqueue the closure for execution.
   ///
   /// Note that the enqueued closure will does not modify `task`, and will not extend the lifetime of `self`.
   /// If you need to extend the lifetime of `self` until `task` executes, use `notify()`.
@@ -315,6 +314,7 @@ open class Deferred<Value>
   }
 
   /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes determined.
+  ///
   /// The enqueued closure will extend the lifetime of `self` until `task` completes.
   ///
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
@@ -343,6 +343,7 @@ open class Deferred<Value>
   }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
+  ///
   /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
   /// ```
   /// Deferred<Value>(error: DeferredError.canceled(reason))
@@ -357,6 +358,11 @@ open class Deferred<Value>
     return cancel(.canceled(reason))
   }
 
+  /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
+  ///
+  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
+  /// - returns: whether the cancellation was performed successfully.
+
   @discardableResult
   open func cancel(_ error: DeferredError) -> Bool
   {
@@ -364,7 +370,9 @@ open class Deferred<Value>
   }
 
   /// Get this `Deferred`'s `Outcome` result, blocking if necessary until it exists.
+  ///
   /// When called on a `Deferred` that is already determined, this call is non-blocking.
+  ///
   /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
   ///
   /// - returns: this `Deferred`'s determined `Outcome`
@@ -391,7 +399,9 @@ open class Deferred<Value>
   public var result: Outcome<Value> { return self.outcome }
 
   /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
-  /// If the `Deferred` is determined with an `Error`, throw it.
+  ///
+  /// If the `Deferred` is determined with an `Error`, that `Error` is thrown.
+  ///
   /// When called on a `Deferred` that is already determined, this call is non-blocking.
   /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
   ///
@@ -403,6 +413,7 @@ open class Deferred<Value>
   }
 
   /// Get this `Deferred`'s `Outcome` result if exists, `nil` otherwise.
+  ///
   /// This call is non-blocking.
   ///
   /// - returns: this `Deferred`'s determined result, or `nil`
@@ -417,7 +428,9 @@ open class Deferred<Value>
   }
 
   /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
+  ///
   /// If the `Deferred` is determined with an `Error`, return nil.
+  ///
   /// When called on a `Deferred` that is already determined, this call is non-blocking.
   /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
   ///
@@ -428,7 +441,9 @@ open class Deferred<Value>
   }
 
   /// Get this `Deferred`'s error state, blocking if necessary until it becomes determined.
+  ///
   /// If the `Deferred` is determined with a `Value`, return nil.
+  ///
   /// When called on a `Deferred` that is already determined, this call is non-blocking.
   /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
   ///
@@ -450,6 +465,7 @@ open class Deferred<Value>
 class Map<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
+  ///
   /// This constructor is used by `map`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
@@ -481,7 +497,9 @@ class Map<Value>: Deferred<Value>
 open class Transferred<Value>: Deferred<Value>
 {
   /// Transfer a `Deferred` result to a new `Deferred` that notifies on a new queue.
-  /// (Acts like a fast path for a Map with no transform.)
+  ///
+  /// Acts like a fast path for a Map with no transform.
+  ///
   /// This constructor is used by `enqueuing(on:)`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
@@ -505,7 +523,9 @@ open class Transferred<Value>: Deferred<Value>
 class Flatten<Value>: Deferred<Value>
 {
   /// Flatten a Deferred<Deferred<Value>> to a Deferred<Value>.
-  /// (In the right conditions, acts like a fast path for a flatMap with no transform.)
+  ///
+  /// In the right conditions, acts like a fast path for a flatMap with no transform.
+  ///
   /// This constructor is used by `flatten()`
   ///
   /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
@@ -554,6 +574,12 @@ class Flatten<Value>: Deferred<Value>
     }
   }
 
+  /// Flatten a Deferred<Deferred<Value>> to a Deferred<Value>.
+  ///
+  /// In the right conditions, acts like a fast path for a flatMap with no transform.
+  ///
+  /// - parameter source: the `Deferred` whose value will be transferred into a new instance.
+
   convenience init(_ source: Deferred<Deferred<Value>>)
   {
     self.init(queue: nil, source: source)
@@ -563,6 +589,7 @@ class Flatten<Value>: Deferred<Value>
 class Bind<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
+  ///
   /// This constructor is used by `flatMap`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
@@ -597,6 +624,7 @@ class Bind<Value>: Deferred<Value>
 class Recover<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
+  ///
   /// This constructor is used by `recover` -- flatMap for the `Error` path.
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
@@ -639,6 +667,7 @@ class Recover<Value>: Deferred<Value>
 class Apply<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a transform to be computed in the background
+  ///
   /// This constructor is used by `apply`
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
@@ -683,8 +712,10 @@ class Apply<Value>: Deferred<Value>
 class Delay<Value>: Deferred<Value>
 {
   /// Initialize with a `Deferred` source and a time after which this `Deferred` may become determined.
+  ///
   /// The determination could be delayed further if `source` has not become determined yet,
   /// but it will not happen earlier than the time referred to by `until`.
+  ///
   /// This constructor is used by `delay`
   ///
   /// - parameter queue:  the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
@@ -747,6 +778,7 @@ open class TBD<Value>: Deferred<Value>
   }
 
   /// Set the `Outcome` of this `Deferred` and dispatch all notifications for execution.
+  ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
@@ -761,6 +793,7 @@ open class TBD<Value>: Deferred<Value>
   }
 
   /// Set the value of this `Deferred` and dispatch all notifications for execution.
+  ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
@@ -789,6 +822,7 @@ open class TBD<Value>: Deferred<Value>
   }
 
   /// Set this `Deferred` to an error and dispatch all notifications for execution.
+  ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.

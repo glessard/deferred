@@ -17,6 +17,7 @@ import Dispatch
 extension Deferred
 {
   /// Return a `Deferred` whose determination will occur at least a number of seconds from the time of evaluation.
+  ///
   /// Note that a cancellation or error will result in early determination.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
@@ -28,6 +29,7 @@ extension Deferred
   }
 
   /// Return a `Deferred` whose determination will occur at the earliest`delay` from the time of evaluation.
+  ///
   /// Note that a cancellation or error will result in early determination.
   ///
   /// - parameter delay: a time interval, as `DispatchTimeInterval`
@@ -39,6 +41,7 @@ extension Deferred
   }
 
   /// Return a `Deferred` whose determination will occur after a given timestamp.
+  ///
   /// Note that a cancellation or error will result in early determination.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
@@ -56,6 +59,7 @@ extension Deferred
 extension Deferred
 {
   /// Ensure this `Deferred` will be determined by the given deadline.
+  ///
   /// If `self` has not become determined before the timeout expires, `self` will be canceled.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
@@ -69,6 +73,7 @@ extension Deferred
   }
 
   /// Ensure this `Deferred` will be determined by the given deadline.
+  ///
   /// If `self` has not become determined before the timeout expires, `self` will be canceled.
   ///
   /// - parameter timeout: a time interval
@@ -82,6 +87,7 @@ extension Deferred
   }
 
   /// Ensure this `Deferred` will be determined by the given deadline.
+  ///
   /// If `self` has not become determined before the timeout expires, `self` will be canceled.
   ///
   /// - parameter deadline: a timestamp used as a deadline

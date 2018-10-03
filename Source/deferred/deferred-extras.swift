@@ -17,6 +17,7 @@ extension Deferred
   // MARK: onValue: execute a task when (and only when) a computation succeeds
 
   /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with a value
+  ///
   /// - parameter queue: the `DispatchQueue` on which to execute the notification; defaults to `self`'s queue.
   /// - parameter task: the closure to be enqueued
   /// - parameter value: the value of the just-determined `Deferred`
@@ -29,6 +30,7 @@ extension Deferred
   // MARK: onError: execute a task when (and only when) a computation fails
 
   /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes determined with an error
+  ///
   /// - parameter queue: the `DispatchQueue` on which to execute the notification; defaults to `self`'s queue.
   /// - parameter task: the closure to be enqueued
   /// - parameter error: the error from the just-determined `Deferred`
@@ -73,6 +75,7 @@ extension Deferred
 extension Deferred
 {
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined, creating a new `Deferred`
+  ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
@@ -85,6 +88,7 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined, creating a new `Deferred`
+  ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
@@ -103,6 +107,7 @@ extension Deferred
 extension Deferred
 {
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
@@ -115,6 +120,7 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes determined.
+  ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
@@ -128,6 +134,7 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
+  ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
@@ -140,6 +147,7 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously if and when `self` becomes determined with an error.
+  ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
@@ -156,7 +164,8 @@ extension Deferred
 extension Deferred
 {
   /// Flatten a Deferred-of-a-Deferred<Value> to a Deferred<Value>.
-  /// (In the right conditions, acts like a fast path for a flatMap with no transform.)
+  ///
+  /// In the right conditions, acts like a fast path for a flatMap with no transform.
   ///
   /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
   /// - returns: a flattened `Deferred`
@@ -171,6 +180,7 @@ extension Deferred
 extension Deferred
 {
   /// Initialize a `Deferred` with a computation task to be performed in the background
+  ///
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///
   /// - parameter attempts: a maximum number of times to attempt `task`
@@ -185,6 +195,7 @@ extension Deferred
   }
 
   /// Initialize a `Deferred` with a computation task to be performed in the background
+  ///
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///
   /// - parameter attempts: a maximum number of times to attempt `task`
@@ -198,6 +209,7 @@ extension Deferred
   }
 
   /// Initialize a `Deferred` with a computation task to be performed in the background
+  ///
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///
   /// - parameter attempts: a maximum number of times to attempt `task`
@@ -218,6 +230,7 @@ extension Deferred
   }
 
   /// Initialize a `Deferred` with a computation task to be performed in the background
+  ///
   /// If at first it does not succeed, it will try `attempts` times in total before being determined with an `Error`.
   ///
   /// - parameter attempts: a maximum number of times to attempt `task`
@@ -251,6 +264,7 @@ extension Deferred
 extension Deferred
 {
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
+  ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
@@ -263,6 +277,7 @@ extension Deferred
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become determined.
+  ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
   /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
   /// - returns: a `Deferred` reference representing the return value of the transform
@@ -316,6 +331,7 @@ extension Deferred
 extension Deferred
 {
   /// Insert a validation step in a chain of Deferred.
+  ///
   /// Pass `Value` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
   ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
@@ -335,6 +351,7 @@ extension Deferred
   }
 
   /// Insert a validation step in a chain of Deferred.
+  ///
   /// Pass `Value` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
   ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
@@ -351,6 +368,7 @@ extension Deferred
   }
 
   /// Insert a validation step in a chain of Deferred.
+  ///
   /// Pass `Value` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
   ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
@@ -369,6 +387,7 @@ extension Deferred
   }
 
   /// Insert a validation step in a chain of Deferred.
+  ///
   /// Pass `Value` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
   ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
@@ -387,6 +406,7 @@ extension Deferred
 extension Optional
 {
   /// Create a `Deferred` from this `Optional`.
+  ///
   /// If `optional` is `nil` then `Deferred` will be determined with the error `DeferredError.invalid`
   ///
   /// - parameter queue: the dispatch queue upon the new `Deferred`'s notifications will be performed
@@ -403,6 +423,7 @@ extension Optional
   }
 
   /// Create a `Deferred` from this `Optional`.
+  ///
   /// If `optional` is `nil` then `Deferred` will be determined with the error `DeferredError.invalid`
   ///
   /// - parameter qos: the QoS at which to perform notifications for the new `Deferred`; defaults to the current QoS class.

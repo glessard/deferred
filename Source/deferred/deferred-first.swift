@@ -9,8 +9,10 @@
 import Dispatch
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
+///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
@@ -28,8 +30,10 @@ public func firstValue<Value, C: Collection>(qos: DispatchQoS,
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
+///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
@@ -45,8 +49,10 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, cancelOthers: Bool 
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
+///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
@@ -64,8 +70,10 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
+///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first.
 ///
@@ -82,8 +90,10 @@ public func firstValue<Value, S: Sequence>(qos: DispatchQoS,
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
+///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first.
 ///
@@ -98,8 +108,10 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = 
 }
 
 /// Return the value of the first of an array of `Deferred`s to be determined.
+///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first.
 ///
@@ -116,8 +128,10 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
+///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
@@ -136,8 +150,10 @@ public func firstDetermined<Value, C: Collection>(qos: DispatchQoS,
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
+///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
@@ -153,8 +169,10 @@ public func firstDetermined<Value, C: Collection>(_ deferreds: C, cancelOthers: 
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
+///
 /// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first; if this
 /// biasing is a problem, consider shuffling the collection first.
@@ -186,8 +204,10 @@ public func firstDetermined<Value, C: Collection>(queue: DispatchQueue,
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
+///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first.
 ///
@@ -205,8 +225,10 @@ public func firstDetermined<Value, S: Sequence>(qos: DispatchQoS,
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
+///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first.
 ///
@@ -221,8 +243,10 @@ where S.Iterator.Element: Deferred<Value>
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
+///
 /// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
 /// `DeferredError.invalid` error.
+///
 /// Note also that if more than one element is already determined at the time
 /// the function is called, the earliest one will be considered first.
 ///

@@ -11,7 +11,9 @@ import Dispatch
 // combine two or more Deferred objects into one.
 
 /// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
+///
 /// The combined `Deferred` will become determined after every input `Deferred` is determined.
+///
 /// The combined `Deferred` will use a new queue at the requested QoS.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
@@ -29,7 +31,9 @@ public func combine<Value, C: Collection>(qos: DispatchQoS,
 }
 
 /// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
+///
 /// The combined `Deferred` will become determined after every input `Deferred` is determined.
+///
 /// The combined `Deferred` will use a new queue at the current QoS.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
@@ -44,7 +48,9 @@ public func combine<Value, C: Collection>(_ deferreds: C) -> Deferred<[Value]>
 }
 
 /// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
+///
 /// The combined `Deferred` will become determined after every input `Deferred` is determined.
+///
 /// The combined `Deferred` will use the supplied queue.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
@@ -65,7 +71,9 @@ public func combine<Value, C: Collection>(queue: DispatchQueue,
 }
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
+///
 /// The combined `Deferred` will become determined after every input `Deferred` has become determined.
+///
 /// The combined `Deferred` will use a new queue at the requested (or current) QoS.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
@@ -83,7 +91,9 @@ public func combine<Value, S: Sequence>(qos: DispatchQoS = .current,
 }
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
+///
 /// The combined `Deferred` will become determined after every input `Deferred` is determined.
+///
 /// The combined `Deferred` will use a new queue at the current QoS.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
@@ -98,7 +108,9 @@ public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
 }
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
+///
 /// The combined `Deferred` will become determined after every input `Deferred` is determined.
+///
 /// The combined `Deferred` will use the supplied queue.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
@@ -119,13 +131,17 @@ public func combine<Value, S: Sequence>(queue: DispatchQueue,
 
 /// Returns the result of repeatedly calling `combine` with an
 /// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn. That is, return a deferred version of
+/// `deferreds`, in turn.
+///
+/// That is, return a deferred version of
 /// `combine(combine(...combine(combine(initial, deferreds[0].value),
 /// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
+///
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
-/// The combined `Deferred` will use a new queue at the requested QoS.
+///
+/// The combined `Deferred` will use the supplied queue.
 ///
 /// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS class
 /// - parameter deferreds: a `Collection` of `Deferred`
@@ -146,12 +162,16 @@ public func reduce<C: Collection, T, U>(qos: DispatchQoS,
 
 /// Returns the result of repeatedly calling `combine` with an
 /// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn. That is, return a deferred version of
+/// `deferreds`, in turn.
+///
+/// That is, return a deferred version of
 /// `combine(combine(...combine(combine(initial, deferreds[0].value),
 /// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
+///
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
+///
 /// The combined `Deferred` will use a new queue at the current QoS.
 ///
 /// - parameter deferreds: a `Collection` of `Deferred`
@@ -170,12 +190,16 @@ public func reduce<C: Collection, T, U>(_ deferreds: C, initial: U,
 
 /// Returns the result of repeatedly calling `combine` with an
 /// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn. That is, return a deferred version of
+/// `deferreds`, in turn.
+///
+/// That is, return a deferred version of
 /// `combine(combine(...combine(combine(initial, deferreds[0].value),
 /// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
+///
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
+///
 /// The combined `Deferred` will use the supplied queue.
 ///
 /// - parameter queue: the queue onto which the `reduce` operation and its notifications will occur
@@ -203,13 +227,17 @@ public func reduce<C: Collection, T, U>(queue: DispatchQueue,
 
 /// Returns the result of repeatedly calling `combine` with an
 /// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn. That is, return a deferred version of
+/// `deferreds`, in turn.
+///
+/// That is, return a deferred version of
 /// `combine(combine(...combine(combine(initial, deferreds[0].value),
 /// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
 /// (Never mind that you can't index a Sequence.)
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
+///
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
+///
 /// The combined `Deferred` will use a new queue at the requested QoS.
 ///
 /// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS class
@@ -231,13 +259,17 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS,
 
 /// Returns the result of repeatedly calling `combine` with an
 /// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn. That is, return a deferred version of
+/// `deferreds`, in turn.
+///
+/// That is, return a deferred version of
 /// `combine(combine(...combine(combine(initial, deferreds[0].value),
 /// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
 /// (Never mind that you can't index a Sequence.)
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
+///
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
+///
 /// The combined `Deferred` will use a new queue at the current QoS.
 ///
 /// - parameter deferreds: a `Sequence` of `Deferred`
@@ -256,13 +288,17 @@ public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U,
 
 /// Returns the result of repeatedly calling `combine` with an
 /// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn. That is, return a deferred version of
+/// `deferreds`, in turn.
+///
+/// That is, return a deferred version of
 /// `combine(combine(...combine(combine(initial, deferreds[0].value),
 /// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
 /// (Never mind that you can't index a Sequence.)
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
+///
 /// If the reducing function throws an error, the resulting `Deferred` will contain that error.
+///
 /// The combined `Deferred` will use the supplied queue.
 ///
 /// - parameter queue: the queue onto which the `reduce` operation and its notifications will occur
@@ -293,8 +329,11 @@ public func reduce<S: Sequence, T, U>(queue: DispatchQueue,
 }
 
 /// Combine two `Deferred` into one.
+///
 /// The returned `Deferred` will become determined after both inputs are determined.
+///
 /// If either of the elements resolves to an error, the combined `Deferred` will be an error.
+///
 /// The combined `Deferred` will use the queue from the first input, `d1`.
 ///
 /// - parameter d1: a `Deferred`
@@ -307,8 +346,11 @@ public func combine<T1,T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(
 }
 
 /// Combine three `Deferred` into one.
+///
 /// The returned `Deferred` will become determined after all inputs are determined.
+///
 /// If any of the elements resolves to an error, the combined `Deferred` will be an error.
+///
 /// The combined `Deferred` will use the queue from the first input, `d1`.
 ///
 /// - parameter d1: a `Deferred`
@@ -322,8 +364,11 @@ public func combine<T1,T2,T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Defe
 }
 
 /// Combine four `Deferred` into one.
+///
 /// The returned `Deferred` will become determined after all inputs are determined.
+///
 /// If any of the elements resolves to an error, the combined `Deferred` will be an error.
+///
 /// The combined `Deferred` will use the queue from the first input, `d1`.
 ///
 /// - parameter d1: a `Deferred`
