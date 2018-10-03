@@ -178,7 +178,7 @@ public func firstDetermined<Value, C: Collection>(queue: DispatchQueue,
 
   deferreds.forEach {
     deferred in
-    deferred.notify { _ in first.determine(deferred) }
+    deferred.notify { _ in first.determine(value: deferred) }
     if cancelOthers { first.notify { _ in deferred.cancel() } }
   }
 
@@ -244,14 +244,14 @@ public func firstDetermined<Value, S>(queue: DispatchQueue, deferreds: S,
     deferreds.forEach {
       deferred in
       subscribed = true
-      deferred.notify { _ in first.determine(deferred) }
+      deferred.notify { _ in first.determine(value: deferred) }
       if cancelOthers { first.notify { _ in deferred.cancel() } }
     }
 
     if !subscribed
     {
       let error = DeferredError.invalid("cannot find first determined from an empty set in \(#function)")
-      first.determine(error)
+      first.determine(error: error)
     }
   }
 

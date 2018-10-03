@@ -116,10 +116,10 @@ open class Deferred<Value>
     queue.async {
       do {
         let value = try task()
-        self.determine(value)
+        self.determine(value: value)
       }
       catch {
-        self.determine(error)
+        self.determine(error: error)
       }
     }
   }
@@ -244,7 +244,7 @@ open class Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  fileprivate func determine(_ value: Value) -> Bool
+  fileprivate func determine(value: Value) -> Bool
   {
     return determine(Outcome(value: value))
   }
@@ -258,7 +258,7 @@ open class Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  fileprivate func determine(_ error: Error) -> Bool
+  fileprivate func determine(error: Error) -> Bool
   {
     return determine(Outcome(error: error))
   }
@@ -360,7 +360,7 @@ open class Deferred<Value>
   @discardableResult
   open func cancel(_ error: DeferredError) -> Bool
   {
-    return determine(error)
+    return determine(error: error)
   }
 
   /// Get this `Deferred`'s `Outcome` result, blocking if necessary until it exists.
@@ -469,10 +469,10 @@ class Map<Value>: Deferred<Value>
       do {
         let value = try outcome.get()
         let transformed = try transform(value)
-        this.determine(transformed)
+        this.determine(value: transformed)
       }
       catch {
-        this.determine(error)
+        this.determine(error: error)
       }
     }
   }
@@ -549,7 +549,7 @@ class Flatten<Value>: Deferred<Value>
         }
       }
       catch {
-        self?.determine(error)
+        self?.determine(error: error)
       }
     }
   }
@@ -588,7 +588,7 @@ class Bind<Value>: Deferred<Value>
         }
       }
       catch {
-        this.determine(error) // an error here means this `Deferred` has been canceled.
+        this.determine(error: error)
       }
     }
   }
@@ -623,7 +623,7 @@ class Recover<Value>: Deferred<Value>
           }
         }
         catch {
-          this.determine(error)
+          this.determine(error: error)
         }
       }
       else
@@ -664,15 +664,15 @@ class Apply<Value>: Deferred<Value>
           do {
             let transform = try transform.get()
             let transformed = try transform(value)
-            this.determine(transformed)
+            this.determine(value: transformed)
           }
           catch {
-            this.determine(error)
+            this.determine(error: error)
           }
         }
       }
       catch {
-        this.determine(error)
+        this.determine(error: error)
       }
     }
   }
@@ -769,9 +769,23 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  open override func determine(_ value: Value) -> Bool
+  open override func determine(value: Value) -> Bool
   {
     return determine(Outcome(value: value))
+  }
+
+  /// Set the value of this `Deferred` and dispatch all notifications for execution.
+  /// Note that a `Deferred` can only be determined once.
+  /// On subsequent calls, `determine` will fail and return `false`.
+  /// This operation is lock-free and thread-safe.
+  ///
+  /// - parameter value: the intended value for this `Deferred`
+  /// - returns: whether the call succesfully changed the state of this `Deferred`.
+
+  @discardableResult
+  public final func determine(_ value: Value) -> Bool
+  {
+    return determine(value: value)
   }
 
   /// Set this `Deferred` to an error and dispatch all notifications for execution.
@@ -783,7 +797,7 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  open override func determine(_ error: Error) -> Bool
+  open override func determine(error: Error) -> Bool
   {
     return determine(Outcome(error: error))
   }

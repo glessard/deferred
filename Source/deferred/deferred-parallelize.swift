@@ -82,10 +82,10 @@ extension Collection
         let index = self.index(self.startIndex, offsetBy: Distance(iteration))
         do {
           let value = try task(self[index])
-          deferreds[iteration].determine(value)
+          deferreds[iteration].determine(value: value)
         }
         catch {
-          deferreds[iteration].determine(error)
+          deferreds[iteration].determine(error: error)
         }
       }
     }

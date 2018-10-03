@@ -81,7 +81,7 @@ public extension URLSession
 
       if let error = error
       {
-        tbd.determine(error)
+        tbd.determine(error: error)
         return
       }
 
@@ -91,7 +91,7 @@ public extension URLSession
         return
       }
       // Probably an impossible situation
-      tbd.determine(URLSessionError.InvalidState)
+      tbd.determine(error: URLSessionError.InvalidState)
     }
   }
 
@@ -104,7 +104,7 @@ public extension URLSession
        scheme != "http" && scheme != "https"
     {
       let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
-      tbd.determine(DeferredError.invalid(message))
+      tbd.determine(error: DeferredError.invalid(message))
     }
 
     let task = dataTask(with: request, completionHandler: dataCompletion(tbd))
@@ -126,7 +126,7 @@ public extension URLSession
        scheme != "http" && scheme != "https"
     {
       let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
-      tbd.determine(DeferredError.invalid(message))
+      tbd.determine(error: DeferredError.invalid(message))
     }
 
     let task = uploadTask(with: request, from: bodyData, completionHandler: dataCompletion(tbd))
@@ -142,7 +142,7 @@ public extension URLSession
        scheme != "http" && scheme != "https"
     {
       let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
-      tbd.determine(DeferredError.invalid(message))
+      tbd.determine(error: DeferredError.invalid(message))
     }
 
     let task = uploadTask(with: request, fromFile: fileURL, completionHandler: dataCompletion(tbd))
@@ -188,12 +188,12 @@ extension URLSession
           let URLSessionDownloadTaskResumeData = NSURLSessionDownloadTaskResumeData
 #endif
           if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
-          { tbd.determine(URLSessionError.InterruptedDownload(error, data)) }
+          { tbd.determine(error: URLSessionError.InterruptedDownload(error, data)) }
           else
-          { tbd.determine(DeferredError.canceled(error.localizedDescription)) }
+          { tbd.determine(error: DeferredError.canceled(error.localizedDescription)) }
         }
         else
-        { tbd.determine(error) }
+        { tbd.determine(error: error) }
         return
       }
 
@@ -205,12 +205,12 @@ extension URLSession
         }
         catch {
           // Likely an impossible situation
-          tbd.determine(error)
+          tbd.determine(error: error)
         }
         return
       }
       // Probably an impossible situation
-      tbd.determine(URLSessionError.InvalidState)
+      tbd.determine(error: URLSessionError.InvalidState)
     }
   }
 
@@ -223,7 +223,7 @@ extension URLSession
        scheme != "http" && scheme != "https"
     {
       let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
-      tbd.determine(DeferredError.invalid(message))
+      tbd.determine(error: DeferredError.invalid(message))
     }
 
     let task = downloadTask(with: request, completionHandler: downloadCompletion(tbd))
