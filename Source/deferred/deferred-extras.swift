@@ -167,7 +167,7 @@ extension Deferred
   ///
   /// In the right conditions, acts like a fast path for a flatMap with no transform.
   ///
-  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
+  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `self.queue` if `nil`
   /// - returns: a flattened `Deferred`
 
   public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other>
