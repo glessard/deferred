@@ -98,14 +98,6 @@ extension DeletionTests {
     ]
 }
 
-extension DispatchUtilitiesTests {
-    static let __allTests = [
-        ("testCurrent", testCurrent),
-        ("testQoS", testQoS),
-        ("testQoSClass", testQoSClass),
-    ]
-}
-
 extension TBDTests {
     static let __allTests = [
         ("testCancel", testCancel),
@@ -139,7 +131,6 @@ public func __allTests() -> [XCTestCaseEntry] {
         testCase(DeferredTests.__allTests),
         testCase(DelayTests.__allTests),
         testCase(DeletionTests.__allTests),
-        testCase(DispatchUtilitiesTests.__allTests),
         testCase(TBDTests.__allTests),
         testCase(TBDTimingTests.__allTests),
     ]

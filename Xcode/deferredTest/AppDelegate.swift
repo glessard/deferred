@@ -9,6 +9,7 @@
 import UIKit
 
 import deferred
+import CAtomics
 
 #if !swift(>=4.2)
 extension UIApplication { typealias LaunchOptionsKey = UIApplicationLaunchOptionsKey }
@@ -24,8 +25,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   {
     let tbd = TBD<Bool>()
     tbd.onValue { assert($0) }
-    tbd.determine(true)
-    return tbd.value!
+
+    var b = AtomicBool()
+    b.store(true, .release)
+    tbd.determine(value: b.load(.acquire))
+
+    let c = DispatchQoS.current
+    assert(c.qosClass == DispatchQoS.userInteractive.qosClass)
+
+    return tbd.outcome.value!
   }
 
   func applicationWillResignActive(_ application: UIApplication) {

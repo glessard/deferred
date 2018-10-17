@@ -4,3 +4,6 @@
 [submodule "Xcode/dependencies/Outcome"]
 	path = Xcode/dependencies/Outcome
 	url = https://github.com/glessard/outcome.git
+[submodule "Xcode/dependencies/CurrentQoS"]
+	path = Xcode/dependencies/CurrentQoS
+	url = https://github.com/glessard/CurrentQoS.git
