@@ -48,6 +48,10 @@
 		03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* determined.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
 		03E9756B20D2050100F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
+		03FC96F721779E1500F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
+		03FC96F821779E2800F4B44B /* CurrentQoS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		03FC96FD21779E4200F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
+		03FC96FE21779E4200F4B44B /* Outcome.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0358CBDA2153107C00F4B44B /* Outcome.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -191,6 +195,27 @@
 			remoteGlobalIDString = 0312008B2152C95100F4B44B;
 			remoteInfo = Outcome;
 		};
+		03FC96F521779E0D00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 03840EA721769D5400F4B44B;
+			remoteInfo = CurrentQoS;
+		};
+		03FC96F921779E3C00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 03840EA721769D5400F4B44B;
+			remoteInfo = CurrentQoS;
+		};
+		03FC96FB21779E3C00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0358CBD42153107C00F4B44B /* Outcome.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0312008B2152C95100F4B44B;
+			remoteInfo = Outcome;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -200,6 +225,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				03FC96F821779E2800F4B44B /* CurrentQoS.framework in Embed Frameworks */,
 				038CB65A20DC63A500F4B44B /* CAtomics.framework in Embed Frameworks */,
 				03110CEE20D2069F00F4B44B /* deferred.framework in Embed Frameworks */,
 				0358CBDF2153109F00F4B44B /* Outcome.framework in Embed Frameworks */,
@@ -276,6 +302,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03FC96F721779E1500F4B44B /* CurrentQoS.framework in Frameworks */,
 				038CB65920DC639400F4B44B /* CAtomics.framework in Frameworks */,
 				03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */,
 				0358CBDE2153109F00F4B44B /* Outcome.framework in Frameworks */,
@@ -286,6 +313,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03FC96FD21779E4200F4B44B /* CurrentQoS.framework in Frameworks */,
+				03FC96FE21779E4200F4B44B /* Outcome.framework in Frameworks */,
 				038CB65D20DC63CB00F4B44B /* CAtomics.framework in Frameworks */,
 				03E9756B20D2050100F4B44B /* deferred.framework in Frameworks */,
 			);
@@ -511,6 +540,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				03FC96F621779E0D00F4B44B /* PBXTargetDependency */,
 				038CB65820DC638E00F4B44B /* PBXTargetDependency */,
 				03B776A720CAED2F00F4B44B /* PBXTargetDependency */,
 				0358CBE12153109F00F4B44B /* PBXTargetDependency */,
@@ -531,6 +561,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				03FC96FA21779E3C00F4B44B /* PBXTargetDependency */,
+				03FC96FC21779E3C00F4B44B /* PBXTargetDependency */,
 				038CB65C20DC63C500F4B44B /* PBXTargetDependency */,
 				03110CEB20D2065900F4B44B /* PBXTargetDependency */,
 				03B7769020CAECFC00F4B44B /* PBXTargetDependency */,
@@ -839,6 +871,21 @@
 			isa = PBXTargetDependency;
 			name = Outcome;
 			targetProxy = 03DEFA5C21764B1E00F4B44B /* PBXContainerItemProxy */;
+		};
+		03FC96F621779E0D00F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CurrentQoS;
+			targetProxy = 03FC96F521779E0D00F4B44B /* PBXContainerItemProxy */;
+		};
+		03FC96FA21779E3C00F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CurrentQoS;
+			targetProxy = 03FC96F921779E3C00F4B44B /* PBXContainerItemProxy */;
+		};
+		03FC96FC21779E3C00F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Outcome;
+			targetProxy = 03FC96FB21779E3C00F4B44B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
