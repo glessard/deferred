@@ -45,6 +45,7 @@
 		03B776A220CAED1C00F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
 		03B776A320CAED1C00F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
+		03C599182176A18400F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
 		03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* determined.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
 		03E8795B1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */; };
@@ -164,6 +165,34 @@
 			remoteGlobalIDString = 03B4E06C1C14003B00F4B44B;
 			remoteInfo = deferred;
 		};
+		03C599142176A17600F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 03840EA821769D5400F4B44B;
+			remoteInfo = CurrentQoS;
+		};
+		03C599162176A17600F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 03840EB121769D5400F4B44B;
+			remoteInfo = CurrentQoSTests;
+		};
+		03C599192176A18D00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 03840EA721769D5400F4B44B;
+			remoteInfo = CurrentQoS;
+		};
+		03DEFA5C21764B1E00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0358CBD42153107C00F4B44B /* Outcome.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0312008B2152C95100F4B44B;
+			remoteInfo = Outcome;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -220,6 +249,7 @@
 		03B7768E20CAECFC00F4B44B /* deferredTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = deferredTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		03B7769420CAECFC00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03BEA0DF20CF3C1200F4B44B /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = XCTestManifests.swift; path = deferredTests/XCTestManifests.swift; sourceTree = "<group>"; };
+		03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CurrentQoS.xcodeproj; path = CurrentQoS/Xcode/CurrentQoS.xcodeproj; sourceTree = "<group>"; };
 		03D59CB31F7B6CB900F4B44B /* determined.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = determined.swift; path = deferred/determined.swift; sourceTree = "<group>"; };
 		03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "dispatch-utilities.swift"; path = "deferred/dispatch-utilities.swift"; sourceTree = "<group>"; };
 		03E8795A1F6C98ED00F4B44B /* DispatchUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DispatchUtilitiesTests.swift; path = deferredTests/DispatchUtilitiesTests.swift; sourceTree = "<group>"; };
@@ -231,6 +261,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03C599182176A18400F4B44B /* CurrentQoS.framework in Frameworks */,
 				0358CBDD2153109600F4B44B /* Outcome.framework in Frameworks */,
 				038CB65620DC637600F4B44B /* CAtomics.framework in Frameworks */,
 			);
@@ -269,6 +300,7 @@
 		030A0C3220CB48CA00F4B44B /* dependencies */ = {
 			isa = PBXGroup;
 			children = (
+				03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */,
 				0358CBD42153107C00F4B44B /* Outcome.xcodeproj */,
 				030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */,
 			);
@@ -380,6 +412,15 @@
 			path = deferredTestTests;
 			sourceTree = "<group>";
 		};
+		03C599102176A17500F4B44B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				03C599152176A17600F4B44B /* CurrentQoS.framework */,
+				03C599172176A17600F4B44B /* CurrentQoSTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		03E60E221AAA571100F4B44B = {
 			isa = PBXGroup;
 			children = (
@@ -434,6 +475,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				03C5991A2176A18D00F4B44B /* PBXTargetDependency */,
+				03DEFA5D21764B1E00F4B44B /* PBXTargetDependency */,
 				038CB64820DC636D00F4B44B /* PBXTargetDependency */,
 			);
 			name = deferred;
@@ -551,6 +594,10 @@
 					ProjectRef = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
 				},
 				{
+					ProductGroup = 03C599102176A17500F4B44B /* Products */;
+					ProjectRef = 03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */;
+				},
+				{
 					ProductGroup = 0358CBD52153107C00F4B44B /* Products */;
 					ProjectRef = 0358CBD42153107C00F4B44B /* Outcome.xcodeproj */;
 				},
@@ -620,6 +667,20 @@
 			fileType = wrapper.cfbundle;
 			path = AtomicsTestAppTests.xctest;
 			remoteRef = 038CB65420DC636D00F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		03C599152176A17600F4B44B /* CurrentQoS.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = CurrentQoS.framework;
+			remoteRef = 03C599142176A17600F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		03C599172176A17600F4B44B /* CurrentQoSTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = CurrentQoSTests.xctest;
+			remoteRef = 03C599162176A17600F4B44B /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -774,6 +835,16 @@
 			isa = PBXTargetDependency;
 			target = 03B4E06C1C14003B00F4B44B /* deferred */;
 			targetProxy = 03B776A620CAED2F00F4B44B /* PBXContainerItemProxy */;
+		};
+		03C5991A2176A18D00F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CurrentQoS;
+			targetProxy = 03C599192176A18D00F4B44B /* PBXContainerItemProxy */;
+		};
+		03DEFA5D21764B1E00F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Outcome;
+			targetProxy = 03DEFA5C21764B1E00F4B44B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
