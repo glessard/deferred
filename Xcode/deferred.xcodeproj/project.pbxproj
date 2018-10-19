@@ -48,6 +48,9 @@
 		03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* determined.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
 		03E9756B20D2050100F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
+		03F2AC84217935F200F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
+		03F2AC85217935F200F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
+		03F2AC86217935F200F4B44B /* Outcome.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0358CBDA2153107C00F4B44B /* Outcome.framework */; };
 		03FC96F721779E1500F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
 		03FC96F821779E2800F4B44B /* CurrentQoS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		03FC96FD21779E4200F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
@@ -195,6 +198,27 @@
 			remoteGlobalIDString = 0312008B2152C95100F4B44B;
 			remoteInfo = Outcome;
 		};
+		03F2AC77217935E700F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 03840EA721769D5400F4B44B;
+			remoteInfo = CurrentQoS;
+		};
+		03F2AC79217935E700F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0358CBD42153107C00F4B44B /* Outcome.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0312008B2152C95100F4B44B;
+			remoteInfo = Outcome;
+		};
+		03F2AC7B217935E700F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 031CA35C20DBDCAD00F4B44B;
+			remoteInfo = CAtomics;
+		};
 		03FC96F521779E0D00F4B44B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */;
@@ -294,6 +318,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03F2AC84217935F200F4B44B /* CAtomics.framework in Frameworks */,
+				03F2AC85217935F200F4B44B /* CurrentQoS.framework in Frameworks */,
+				03F2AC86217935F200F4B44B /* Outcome.framework in Frameworks */,
 				03B4E0771C14003C00F4B44B /* deferred.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -521,6 +548,9 @@
 			buildRules = (
 			);
 			dependencies = (
+				03F2AC78217935E700F4B44B /* PBXTargetDependency */,
+				03F2AC7A217935E700F4B44B /* PBXTargetDependency */,
+				03F2AC7C217935E700F4B44B /* PBXTargetDependency */,
 				03B4E0791C14003C00F4B44B /* PBXTargetDependency */,
 			);
 			name = deferredTests;
@@ -872,6 +902,21 @@
 			name = Outcome;
 			targetProxy = 03DEFA5C21764B1E00F4B44B /* PBXContainerItemProxy */;
 		};
+		03F2AC78217935E700F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CurrentQoS;
+			targetProxy = 03F2AC77217935E700F4B44B /* PBXContainerItemProxy */;
+		};
+		03F2AC7A217935E700F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Outcome;
+			targetProxy = 03F2AC79217935E700F4B44B /* PBXContainerItemProxy */;
+		};
+		03F2AC7C217935E700F4B44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CAtomics;
+			targetProxy = 03F2AC7B217935E700F4B44B /* PBXContainerItemProxy */;
+		};
 		03FC96F621779E0D00F4B44B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = CurrentQoS;
@@ -1042,7 +1087,6 @@
 				DEVELOPMENT_TEAM = 96558JVW34;
 				GCC_DYNAMIC_NO_PIC = NO;
 				INFOPLIST_FILE = deferredTestTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTestTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1066,7 +1110,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 96558JVW34;
 				INFOPLIST_FILE = deferredTestTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tffenterprises.deferredTestTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
