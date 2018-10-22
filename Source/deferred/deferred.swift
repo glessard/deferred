@@ -35,10 +35,10 @@ extension UnsafeMutableRawPointer
 ///
 /// A `Deferred` that becomes determined, will henceforth always be determined: it can no longer mutate.
 ///
-/// The `get()` function will return the value of the computation's result (or throw an `Error`),
-/// blocking until it becomes available. If the result is ready when `get()` is called,
-/// it will return immediately. The properties `value` and `error` are convenient non-throwing wrappers
-/// for the `get()` method -- although they do block.
+/// The `get()` function will return the value of the computation's `Outcome` (or throw an `Error`),
+/// blocking until it becomes available. If the outcome of the computation is known when `get()` is called,
+/// it will return immediately.
+/// The properties `value` and `error` are convenient non-throwing (but blocking) wrappers  for the `get()` method.
 ///
 /// Closures supplied to the `enqueue` function will be called after the `Deferred` has become determined.
 /// The functions `map`, `flatMap`, `notify` and others are wrappers that add functionality to the `enqueue` function.
@@ -369,7 +369,7 @@ open class Deferred<Value>
     return determine(error: error)
   }
 
-  /// Get this `Deferred`'s `Outcome` result, blocking if necessary until it exists.
+  /// Get this `Deferred`'s determined `Outcome`, blocking if necessary until it exists.
   ///
   /// When called on a `Deferred` that is already determined, this call is non-blocking.
   ///
@@ -412,11 +412,11 @@ open class Deferred<Value>
     return try outcome.get()
   }
 
-  /// Get this `Deferred`'s `Outcome` result if exists, `nil` otherwise.
+  /// Get this `Deferred`'s `Outcome` if has been determined, `nil` otherwise.
   ///
-  /// This call is non-blocking.
+  /// This call is non-blocking and wait-free.
   ///
-  /// - returns: this `Deferred`'s determined result, or `nil`
+  /// - returns: this `Deferred`'s determined `Outcome`, or `nil`
 
   public func peek() -> Outcome<Value>?
   {
@@ -470,7 +470,7 @@ class Map<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+  /// - parameter transform: the transform to be applied to `source.value` and whose outcome is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
   init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Value)
@@ -496,7 +496,7 @@ class Map<Value>: Deferred<Value>
 
 open class Transferred<Value>: Deferred<Value>
 {
-  /// Transfer a `Deferred` result to a new `Deferred` that notifies on a new queue.
+  /// Transfer a `Deferred` `Outcome` to a new `Deferred` that notifies on a new queue.
   ///
   /// Acts like a fast path for a Map with no transform.
   ///
@@ -594,7 +594,7 @@ class Bind<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+  /// - parameter transform: the transform to be applied to `source.value` and whose outcome is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
   init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Deferred<Value>)
@@ -629,7 +629,7 @@ class Recover<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose error should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.error` and whose result is represented by this `Deferred`
+  /// - parameter transform: the transform to be applied to `source.error` and whose outcome is represented by this `Deferred`
   /// - parameter error:     the Error to be transformed for a new `Deferred`
 
   init(queue: DispatchQueue?, source: Deferred<Value>, transform: @escaping (_ error: Error) throws -> Deferred<Value>)
@@ -672,7 +672,7 @@ class Apply<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
+  /// - parameter transform: the transform to be applied to `source.value` and whose outcome is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
   init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: Deferred<(_ value: U) throws -> Value>)

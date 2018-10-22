@@ -45,7 +45,7 @@ extension Deferred
 
 extension Deferred
 {
-  /// Get a `Deferred` that will have the same `result` as `self` once determined,
+  /// Get a `Deferred` that will have the same `Outcome` as `self` once determined,
   /// but will use a different queue for its notifications
   ///
   /// - parameter queue: the queue to be used by the returned `Deferred`
@@ -56,7 +56,7 @@ extension Deferred
     return Transferred(from: self, on: queue)
   }
 
-  /// Get a `Deferred` that will have the same `result` as `self` once determined,
+  /// Get a `Deferred` that will have the same `Outcome` as `self` once determined,
   /// but will use a different queue at the specified QoS for its notifications
   ///
   /// - parameter qos: the QoS to be used by the returned `Deferred`
