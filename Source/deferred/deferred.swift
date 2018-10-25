@@ -217,6 +217,11 @@ open class Deferred<Value>
     determined = outcome
     source = nil
 
+    // This atomic swap operation uses memory order .acqrel.
+    // "release" ordering ensures visibility of changes to `determined` above to another thread.
+    // "acquire" ordering ensures visibility of changes to `waitQueue` from another thread.
+    // Any atomic load of `waiters` that precedes a possible use of `determined`
+    // *must* use memory order .acquire.
     let waitQueue = waiters.swap(.determined, .acqrel)?.assumingMemoryBound(to: Waiter<Value>.self)
     // precondition(waitQueue != .determined)
     notifyWaiters(queue, waitQueue, outcome)
