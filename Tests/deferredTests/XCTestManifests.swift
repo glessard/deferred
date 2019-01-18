@@ -122,6 +122,20 @@ extension TBDTimingTests {
     ]
 }
 
+extension URLSessionTests {
+    static let __allTests = [
+        ("testData_Cancellation", testData_Cancellation),
+        ("testData_DoubleCancellation", testData_DoubleCancellation),
+        ("testData_NotFound", testData_NotFound),
+        ("testData_OK_Standard", testData_OK_Standard),
+        ("testData_OK", testData_OK),
+        ("testData_SuspendCancel", testData_SuspendCancel),
+        ("testDownload_Cancellation", testDownload_Cancellation),
+        ("testDownload_DoubleCancellation", testDownload_DoubleCancellation),
+        ("testDownload_OK", testDownload_OK),
+    ]
+}
+
 #if !os(macOS)
 public func __allTests() -> [XCTestCaseEntry] {
     return [
@@ -133,6 +147,7 @@ public func __allTests() -> [XCTestCaseEntry] {
         testCase(DeletionTests.__allTests),
         testCase(TBDTests.__allTests),
         testCase(TBDTimingTests.__allTests),
+        testCase(URLSessionTests.__allTests),
     ]
 }
 #endif
