@@ -197,6 +197,11 @@ extension URLSession
         return
       }
 
+#if os(Linux) && true
+      print(location ?? "no url")
+      print(response.map(String.init(describing:)) ?? "no response")
+#endif
+
       if let u = location, let r = response as? HTTPURLResponse
       {
         do {
