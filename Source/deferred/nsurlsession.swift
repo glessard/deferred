@@ -190,7 +190,7 @@ extension URLSession
           if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
           { tbd.determine(error: URLSessionError.InterruptedDownload(error, data)) }
           else
-          { tbd.determine(error: DeferredError.canceled(error.localizedDescription)) }
+          { tbd.determine(error: error) }
         }
         else
         { tbd.determine(error: error) }
