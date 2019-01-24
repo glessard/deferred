@@ -13,10 +13,6 @@ import deferred
 
 let baseURL = URL(string: "http://www.somewhere.com/")!
 
-//let basePath = "http://localhost:9973/"
-//let imagePath = basePath + "image.jpg"
-//let notFoundPath = basePath + "404"
-
 public class TestURLServer: URLProtocol
 {
   static private var testURLs: [URL: (URLRequest) -> (Data, HTTPURLResponse)] = [:]
@@ -72,6 +68,7 @@ class URLSessionTests: XCTestCase
       let data = Data("Text with a 🔨".utf8)
       var headers = request.allHTTPHeaderFields ?? [:]
       headers["Content-Length"] = String(data.count)
+      headers["Content-Type"] = "text/plain; charset=utf-8"
       let response = HTTPURLResponse(url: textURL, statusCode: 200, httpVersion: nil, headerFields: headers)
       XCTAssert(data.count > 0)
       XCTAssertNotNil(response)
@@ -84,14 +81,16 @@ class URLSessionTests: XCTestCase
     let e = expectation(description: "data task")
     let task = session.dataTask(with: request) {
       (data: Data?, response: URLResponse?, error: Error?) in
-      print(data.map(String.init(describing:)) ?? "no data")
-      print(response.map(String.init(describing:)) ?? "no response")
-      if let r = response as? HTTPURLResponse { print(r.statusCode) }
-      print(response?.mimeType ?? "no mime type")
-      print(response?.textEncodingName ?? "no text encoding")
-      print(response?.expectedContentLength ?? -1)
-      print(error.map(String.init(describing:)) ?? "no error")
-      print(data.flatMap({ String(data: $0, encoding: .utf8) }) ?? "no string")
+      XCTAssertEqual(data?.count, 16)
+      XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+      XCTAssertEqual(response?.mimeType, "text/plain")
+      XCTAssertEqual(response?.textEncodingName, "utf-8")
+      XCTAssertEqual(response?.expectedContentLength, 16)
+      XCTAssertNil(error)
+      XCTAssertNotNil(data)
+      let s = data.flatMap({ String(data: $0, encoding: .utf8) })
+      XCTAssertNotNil(s)
+      XCTAssert(s?.contains("🔨") ?? false, "Failed with error")
       e.fulfill()
     }
 
@@ -169,7 +168,7 @@ class URLSessionTests: XCTestCase
   {
     let deferred: Deferred<(Data, HTTPURLResponse)> = {
       let url = URL(string: "http://localhost:9973/image.jpg")!
-      let session = URLSession(configuration: URLSessionConfiguration.default)
+      let session = URLSession(configuration: .default)
       defer { session.finishTasksAndInvalidate() }
 
       return session.deferredDataTask(with: url)
@@ -192,7 +191,7 @@ class URLSessionTests: XCTestCase
   func testData_SuspendCancel() throws
   {
     let url = URL(string: "http://localhost:9973/image.jpg")!
-    let session = URLSession(configuration: URLSessionConfiguration.default)
+    let session = URLSession(configuration: .default)
 
     let deferred = session.deferredDataTask(with: url)
     deferred.urlSessionTask.suspend()
@@ -415,7 +414,7 @@ class URLSessionTests: XCTestCase
   {
     let deferred: DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)> = {
       let url = URL(string: "http://localhost:9973/image.jpg")!
-      let session = URLSession(configuration: URLSessionConfiguration.default)
+      let session = URLSession(configuration: .default)
       defer { session.finishTasksAndInvalidate() }
 
       return session.deferredDownloadTask(with: url)
@@ -437,8 +436,8 @@ class URLSessionTests: XCTestCase
 
   func testDownload_SuspendCancel() throws
   {
-    let url = baseURL.appendingPathComponent("image.jpg")
-    let session = URLSession(configuration: URLSessionConfiguration.default)
+    let url = URL(string: "http://localhost:9973/image.jpg")!
+    let session = URLSession(configuration: .default)
 
     let deferred = session.deferredDownloadTask(with: url)
     deferred.urlSessionTask.suspend()
