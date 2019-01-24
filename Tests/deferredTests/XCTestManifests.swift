@@ -132,8 +132,11 @@ extension URLSessionTests {
         ("testData_SuspendCancel", testData_SuspendCancel),
         ("testDownload_Cancellation", testDownload_Cancellation),
         ("testDownload_DoubleCancellation", testDownload_DoubleCancellation),
+        ("testDownload_NotFound", testDownload_NotFound),
         ("testDownload_OK_Standard", testDownload_OK_Standard),
         ("testDownload_OK", testDownload_OK),
+        ("testDownload_SuspendCancel", testDownload_SuspendCancel),
+        ("testUploadData_Cancellation", testUploadData_Cancellation),
     ]
 }
 
