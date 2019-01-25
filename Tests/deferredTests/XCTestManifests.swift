@@ -129,6 +129,7 @@ extension URLSessionTests {
         ("testData_NotFound", testData_NotFound),
         ("testData_OK_Standard", testData_OK_Standard),
         ("testData_OK", testData_OK),
+        ("testData_Post", testData_Post),
         ("testData_SuspendCancel", testData_SuspendCancel),
         ("testDownload_Cancellation", testDownload_Cancellation),
         ("testDownload_DoubleCancellation", testDownload_DoubleCancellation),

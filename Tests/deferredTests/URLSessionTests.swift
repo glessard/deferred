@@ -232,36 +232,66 @@ class URLSessionTests: XCTestCase
     session.finishTasksAndInvalidate()
   }
 
-#if false
-
-  func testData_Post()
+  func testData_Post() throws
   {
-    let url = URL(string: basePath)!
+    let url = baseURL.appendingPathComponent("api")
+
+    TestURLServer.register(url: url) {
+      request -> (Data, HTTPURLResponse) in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertNil(request.httpBody)
+      XCTAssertNotNil(request.httpBodyStream)
+      if let stream = request.httpBodyStream
+      {
+        stream.open()
+        defer { stream.close() }
+        XCTAssertEqual(stream.hasBytesAvailable, true)
+
+#if swift(>=4.1)
+        let b = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 1)
+        defer { b.deallocate() }
+#else
+        let b = UnsafeMutableRawPointer.allocate(bytes: 256, alignedTo: 1)
+        defer { b.deallocate(bytes: 256, alignedTo: 1) }
+#endif
+        let read = stream.read(b.assumingMemoryBound(to: UInt8.self), maxLength: 256)
+        XCTAssertGreaterThan(read, 0)
+        if let received = String(data: Data(bytes: b, count: read), encoding: .utf8)
+        {
+          XCTAssertFalse(received.isEmpty)
+          let responseText = (request.httpMethod ?? "NONE") + " " + String(received.count)
+          var headers = request.allHTTPHeaderFields ?? [:]
+          headers["Content-Type"] = "text/plain"
+          headers["Content-Length"] = String(responseText.count)
+          let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
+          XCTAssertNotNil(response)
+          return (responseText.data(using: .utf8)!, response!)
+        }
+      }
+
+      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: request.allHTTPHeaderFields)
+      XCTAssertNotNil(response)
+      return (Data("Not Found".utf8), response!)
+    }
+
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
-    request.httpBody = String("name=John Tester&age=97&data=****").data(using: .utf8)
+    let body = String("name=Tester&age=97&data=****").data(using: .utf8)!
+    request.httpBodyStream = InputStream(data: body)
+    request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+    request.setValue(String(body.count), forHTTPHeaderField: "Content-Length")
 
-    let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
+    let session = URLSession(configuration: URLSessionTests.configuration)
     let dataTask = session.deferredDataTask(with: request)
 
-    do {
-      let (data, response) = try dataTask.get()
-      XCTAssert(response.statusCode == 200)
-      XCTAssert(data.count > 0)
-      if let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
-      {
-        XCTAssert(Int(i) == 4)
-      }
-      else { XCTFail("unexpected data in response") }
-    }
-    catch {
-      XCTFail(String(describing: error))
-    }
+    let (data, response) = try dataTask.get()
+    XCTAssertEqual(response.statusCode, 200)
+    XCTAssertGreaterThan(data.count, 0)
+    let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
+    XCTAssertEqual(i, String(body.count))
 
     session.finishTasksAndInvalidate()
   }
-
-#endif
 
   func testDownload_OK_Standard() throws
   {
