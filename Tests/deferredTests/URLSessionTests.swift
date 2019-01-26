@@ -613,120 +613,142 @@ class URLSessionTests: XCTestCase
     session.finishTasksAndInvalidate()
   }
 
-#if false
-
-  func uploadData_OK(method: String)
+  func testUploadData_OK() throws
   {
-    let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
+    let url = baseURL.appendingPathComponent("upload")
+    let session = URLSession(configuration: URLSessionTests.configuration)
 
-    let url = URL(string: basePath)!
+    TestURLServer.register(url: url) {
+      request -> (Data, HTTPURLResponse) in
+      XCTAssertEqual(request.url, url)
+      XCTAssertEqual(request.httpMethod, "PUT")
+      XCTAssertNil(request.httpBody)
+      XCTAssertNotNil(request.httpBodyStream)
+      if let stream = request.httpBodyStream
+      {
+        stream.open()
+        defer { stream.close() }
+        XCTAssertEqual(stream.hasBytesAvailable, true)
+
+#if swift(>=4.1)
+        let b = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 1)
+        defer { b.deallocate() }
+#else
+        let b = UnsafeMutableRawPointer.allocate(bytes: 256, alignedTo: 1)
+        defer { b.deallocate(bytes: 256, alignedTo: 1) }
+#endif
+        let read = stream.read(b.assumingMemoryBound(to: UInt8.self), maxLength: 256)
+        XCTAssertGreaterThan(read, 0)
+        if let received = String(data: Data(bytes: b, count: read), encoding: .utf8)
+        {
+          XCTAssertFalse(received.isEmpty)
+          let responseText = (request.httpMethod ?? "NONE") + " " + String(received.count)
+          var headers = request.allHTTPHeaderFields ?? [:]
+          headers["Content-Type"] = "text/plain"
+          headers["Content-Length"] = String(responseText.count)
+          let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
+          XCTAssertNotNil(response)
+          return (Data(responseText.utf8), response!)
+        }
+      }
+
+      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: [:])
+      XCTAssertNotNil(response)
+      return(Data("Not Found".utf8), response!)
+    }
+
     var request = URLRequest(url: url)
-    request.httpMethod = method
+    request.httpMethod = "PUT"
 
-    let payload = "data=" + String(repeatElement("A", count: 1995))
-    let length = payload.count
+    let payload = "data=" + String(repeatElement("A", count: 189)) + "🦉"
     let message = payload.data(using: .utf8)!
-    XCTAssert(message.count == length)
 
     let task = session.deferredUploadTask(with: request, fromData: message)
 
-    do {
-      let (data, response) = try task.get()
-      XCTAssert(response.statusCode == 200)
-      XCTAssert(task.urlSessionTask.countOfBytesSent == Int64(length))
-
-      if let reply = String(data: data, encoding: .utf8),
-         let text = reply.components(separatedBy: " ").last,
-         let tlen = Int(text)
-      {
-        XCTAssert(tlen == length-5)
-      }
-      else
-      {
-        XCTFail("Unexpected data in response")
-      }
-    }
-    catch {
-      XCTFail(String(describing: error))
-    }
+    let (data, response) = try task.get()
+    XCTAssertEqual(response.statusCode, 200)
+    XCTAssertGreaterThan(data.count, 0)
+    let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
+    XCTAssertEqual(i, String(payload.count))
 
     session.finishTasksAndInvalidate()
   }
 
-  func testUploadData_POST_OK()
+  func testUploadFile_OK() throws
   {
-    uploadData_OK(method: "POST")
-  }
+    let url = baseURL.appendingPathComponent("upload")
+    let session = URLSession(configuration: URLSessionTests.configuration)
 
-  func testUploadData_PUT_OK()
-  {
-    uploadData_OK(method: "PUT")
-  }
+    TestURLServer.register(url: url) {
+      request -> (Data, HTTPURLResponse) in
+      XCTAssertEqual(request.url, url)
+      XCTAssertEqual(request.httpMethod, "PUT")
+      XCTAssertNil(request.httpBody)
+      XCTAssertNotNil(request.httpBodyStream)
+      if let stream = request.httpBodyStream
+      {
+        stream.open()
+        defer { stream.close() }
 
-  func uploadFile_OK(method: String)
-  {
-    let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
+#if swift(>=4.1)
+        let b = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 1)
+        defer { b.deallocate() }
+#else
+        let b = UnsafeMutableRawPointer.allocate(bytes: 256, alignedTo: 1)
+        defer { b.deallocate(bytes: 256, alignedTo: 1) }
+#endif
+        let read = stream.read(b.assumingMemoryBound(to: UInt8.self), maxLength: 256)
+        XCTAssertGreaterThan(read, 0)
+        if let received = String(data: Data(bytes: b, count: read), encoding: .utf8)
+        {
+          XCTAssertFalse(received.isEmpty)
+          let responseText = (request.httpMethod ?? "NONE") + " " + String(received.count)
+          var headers = request.allHTTPHeaderFields ?? [:]
+          headers["Content-Type"] = "text/plain"
+          headers["Content-Length"] = String(responseText.count)
+          let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
+          XCTAssertNotNil(response)
+          return (Data(responseText.utf8), response!)
+        }
+      }
 
-    let url = URL(string: basePath)!
+      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: [:])
+      XCTAssertNotNil(response)
+      return(Data("Not Found".utf8), response!)
+    }
+
     var request = URLRequest(url: url)
-    request.httpMethod = method
+    request.httpMethod = "PUT"
 
-    let payload = "data=" + String(repeatElement("A", count: 1995))
-    let length = payload.count
+    let payload = "data=" + String(repeatElement("A", count: 189)) + "🦉"
     let message = payload.data(using: .utf8)!
-    XCTAssert(message.count == length)
 
-    let path = NSTemporaryDirectory() + "temporary.tmp"
-    if !FileManager.default.fileExists(atPath: path)
+#if os(Linux)
+    let tempDir = URL(string: "file:///tmp/")!
+#else
+    let userDir = try FileManager.default.url(for: .desktopDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+    let tempDir = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: userDir, create: true)
+#endif
+    let fileURL = tempDir.appendingPathComponent("temporary.tmp")
+    if !FileManager.default.fileExists(atPath: fileURL.path)
     {
-      FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
+      _ = FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
     }
 
-    let fileurl = URL(string: "file://" + path)!
-    guard let handle = try? FileHandle(forWritingTo: fileurl) else
-    {
-      XCTFail("could not open temporary file")
-      return
-    }
+    let handle = try FileHandle(forWritingTo: fileURL)
 
     handle.write(message)
     handle.truncateFile(atOffset: handle.offsetInFile)
     handle.closeFile()
 
-    let task = session.deferredUploadTask(with: request, fromFile: fileurl)
+    let task = session.deferredUploadTask(with: request, fromFile: fileURL)
 
-    do {
-      let (data, response) = try task.get()
-      XCTAssert(response.statusCode == 200)
-      XCTAssert(task.urlSessionTask.countOfBytesSent == Int64(length))
-
-      if let reply = String(data: data, encoding: .utf8),
-         let text = reply.components(separatedBy: " ").last,
-         let tlen = Int(text)
-      {
-        XCTAssert(tlen == length-5)
-      }
-      else
-      {
-        XCTFail("Unexpected data in response")
-      }
-    }
-    catch {
-      XCTFail(String(describing: error))
-    }
+    let (data, response) = try task.get()
+    XCTAssertEqual(response.statusCode, 200)
+    XCTAssertGreaterThan(data.count, 0)
+    let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
+    XCTAssertEqual(i, String(payload.count))
 
     session.finishTasksAndInvalidate()
   }
-
-  func testUploadFile_POST_OK()
-  {
-    uploadFile_OK(method: "POST")
-  }
-
-  func testUploadFile_PUT_OK()
-  {
-    uploadFile_OK(method: "PUT")
-  }
-
-#endif
 }

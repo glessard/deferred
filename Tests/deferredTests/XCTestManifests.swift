@@ -138,6 +138,8 @@ extension URLSessionTests {
         ("testDownload_OK", testDownload_OK),
         ("testDownload_SuspendCancel", testDownload_SuspendCancel),
         ("testUploadData_Cancellation", testUploadData_Cancellation),
+        ("testUploadData_OK", testUploadData_OK),
+        ("testUploadFile_OK", testUploadFile_OK),
     ]
 }
 
