@@ -58,22 +58,27 @@ class URLSessionTests: XCTestCase
     configuration.protocolClasses = [TestURLServer.self]
   }
 
+}
+
+let textURL = baseURL.appendingPathComponent("text")
+func simpleGET(_ request: URLRequest) -> (Data, HTTPURLResponse)
+{
+  XCTAssert(request.url == textURL)
+  let data = Data("Text with a 🔨".utf8)
+  var headers = request.allHTTPHeaderFields ?? [:]
+  headers["Content-Length"] = String(data.count)
+  headers["Content-Type"] = "text/plain; charset=utf-8"
+  let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: headers)
+  XCTAssert(data.count > 0)
+  XCTAssertNotNil(response)
+  return (data, response!)
+}
+
+extension URLSessionTests
+{
   func testData_OK_Standard() throws
   {
-    let textURL = baseURL.appendingPathComponent("text")
-
-    TestURLServer.register(url: textURL) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssert(request.url == textURL)
-      let data = Data("Text with a 🔨".utf8)
-      var headers = request.allHTTPHeaderFields ?? [:]
-      headers["Content-Length"] = String(data.count)
-      headers["Content-Type"] = "text/plain; charset=utf-8"
-      let response = HTTPURLResponse(url: textURL, statusCode: 200, httpVersion: nil, headerFields: headers)
-      XCTAssert(data.count > 0)
-      XCTAssertNotNil(response)
-      return (data, response!)
-    }
+    TestURLServer.register(url: textURL, response: simpleGET(_:))
 
     let request = URLRequest(url: textURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
@@ -81,11 +86,10 @@ class URLSessionTests: XCTestCase
     let e = expectation(description: "data task")
     let task = session.dataTask(with: request) {
       (data: Data?, response: URLResponse?, error: Error?) in
-      XCTAssertEqual(data?.count, 16)
       XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
       XCTAssertEqual(response?.mimeType, "text/plain")
       XCTAssertEqual(response?.textEncodingName, "utf-8")
-      XCTAssertEqual(response?.expectedContentLength, 16)
+      XCTAssertEqual(response?.expectedContentLength, (data?.count).map(Int64.init))
       XCTAssertNil(error)
       XCTAssertNotNil(data)
       let s = data.flatMap({ String(data: $0, encoding: .utf8) })
@@ -101,19 +105,7 @@ class URLSessionTests: XCTestCase
 
   func testData_OK() throws
   {
-    let textURL = baseURL.appendingPathComponent("text")
-
-    TestURLServer.register(url: textURL) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssert(request.url == textURL)
-      let data = Data("Text with a 🔨".utf8)
-      var headers = request.allHTTPHeaderFields ?? [:]
-      headers["Content-Length"] = String(data.count)
-      let response = HTTPURLResponse(url: textURL, statusCode: 200, httpVersion: nil, headerFields: headers)
-      XCTAssert(data.count > 0)
-      XCTAssertNotNil(response)
-      return (data, response!)
-    }
+    TestURLServer.register(url: textURL, response: simpleGET(_:))
 
     let request = URLRequest(url: textURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
