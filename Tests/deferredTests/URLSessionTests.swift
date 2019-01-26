@@ -159,7 +159,7 @@ extension URLSessionTests
   func testData_DoubleCancellation() throws
   {
     let deferred: Deferred<(Data, HTTPURLResponse)> = {
-      let url = URL(string: "http://localhost:9973/image.jpg")!
+      let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
       let session = URLSession(configuration: .default)
       defer { session.finishTasksAndInvalidate() }
 
@@ -182,7 +182,7 @@ extension URLSessionTests
 
   func testData_SuspendCancel() throws
   {
-    let url = URL(string: "http://localhost:9973/image.jpg")!
+    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
     let session = URLSession(configuration: .default)
 
     let deferred = session.deferredDataTask(with: url)
@@ -428,6 +428,9 @@ extension URLSessionTests
     catch let error as URLError {
       XCTAssertEqual(error.code, .cancelled)
     }
+    catch URLSessionError.InterruptedDownload(let error, _) {
+      XCTAssertEqual(error.code, .cancelled)
+    }
 
     session.finishTasksAndInvalidate()
   }
@@ -435,7 +438,7 @@ extension URLSessionTests
   func testDownload_DoubleCancellation() throws
   {
     let deferred: DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)> = {
-      let url = URL(string: "http://localhost:9973/image.jpg")!
+      let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
       let session = URLSession(configuration: .default)
       defer { session.finishTasksAndInvalidate() }
 
@@ -458,7 +461,7 @@ extension URLSessionTests
 
   func testDownload_SuspendCancel() throws
   {
-    let url = URL(string: "http://localhost:9973/image.jpg")!
+    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
     let session = URLSession(configuration: .default)
 
     let deferred = session.deferredDownloadTask(with: url)
@@ -471,6 +474,9 @@ extension URLSessionTests
       XCTFail("succeeded incorrectly")
     }
     catch let error as URLError {
+      XCTAssertEqual(error.code, .cancelled)
+    }
+    catch URLSessionError.InterruptedDownload(let error, _) {
       XCTAssertEqual(error.code, .cancelled)
     }
 
