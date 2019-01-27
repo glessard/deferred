@@ -60,6 +60,8 @@ class URLSessionTests: XCTestCase
 
 }
 
+//MARK: successful download requests
+
 let textURL = baseURL.appendingPathComponent("text")
 func simpleGET(_ request: URLRequest) -> (Data, HTTPURLResponse)
 {
@@ -79,7 +81,6 @@ extension URLSessionTests
   func testData_OK_Standard() throws
   {
     TestURLServer.register(url: textURL, response: simpleGET(_:))
-
     let request = URLRequest(url: textURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
 
@@ -106,7 +107,6 @@ extension URLSessionTests
   func testData_OK() throws
   {
     TestURLServer.register(url: textURL, response: simpleGET(_:))
-
     let request = URLRequest(url: textURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
 
@@ -114,10 +114,8 @@ extension URLSessionTests
 
     let success = task.map {
       (data, response) throws -> String in
-      if !(200..<300).contains(response.statusCode)
-      {
-        throw URLSessionError.ServerStatus(response.statusCode)
-      }
+      XCTAssertEqual(response.statusCode, 200)
+      guard response.statusCode == 200 else { throw URLSessionError.ServerStatus(response.statusCode) }
       guard let string = String(data: data, encoding: .utf8) else { throw TestError() }
       return string
     }
@@ -128,6 +126,111 @@ extension URLSessionTests
     session.finishTasksAndInvalidate()
   }
 
+  func testDownload_OK() throws
+  {
+#if os(Linux)
+    print("this test does not succeed due to a corelibs-foundation bug")
+#else
+    TestURLServer.register(url: textURL, response: simpleGET(_:))
+    let request = URLRequest(url: textURL)
+    let session = URLSession(configuration: URLSessionTests.configuration)
+
+    let task = session.deferredDownloadTask(with: request)
+
+    let success = task.map {
+      (url, file, response) throws -> String in
+      defer { file.closeFile() }
+      XCTAssertEqual(response.statusCode, 200)
+      guard response.statusCode == 200 else { throw URLSessionError.ServerStatus(response.statusCode) }
+      guard let string = String(data: file.readDataToEndOfFile(), encoding: .utf8) else { throw TestError() }
+      return string
+    }
+
+    let s = try success.get()
+    XCTAssert(s.contains("🔨"), "Failed with error")
+
+    session.finishTasksAndInvalidate()
+#endif
+  }
+
+  func testDownload_OK_Standard() throws
+  {
+#if os(Linux)
+    print("this test does not succeed due to a corelibs-foundation bug")
+#else
+    let imageURL = URL(string: "https://s.gravatar.com/avatar/3797130f79b69ac59b8540bffa4c96fa?s=300")!
+
+    let request = URLRequest(url: imageURL)
+    let session = URLSession(configuration: .default)
+
+    let e = expectation(description: "image task")
+    var d: Data?
+    let task = session.downloadTask(with: request) {
+      (url: URL?, response: URLResponse?, error: Error?) in
+      XCTAssertNil(error)
+      XCTAssertNotNil(response)
+      XCTAssertNotNil(url)
+
+      if let url = url, let f = try? FileHandle(forReadingFrom: url)
+      {
+        d = f.readDataToEndOfFile()
+        f.closeFile()
+      }
+
+      e.fulfill()
+    }
+
+    task.resume()
+    waitForExpectations(timeout: 10.0)
+    session.finishTasksAndInvalidate()
+
+    guard let data = d else { throw TestError(-999) }
+    XCTAssertGreaterThan(data.count, 0)
+
+    TestURLServer.register(url: imageURL) {
+      request -> (Data, HTTPURLResponse) in
+      XCTAssert(request.url == imageURL)
+      var headers = request.allHTTPHeaderFields ?? [:]
+      headers["Content-Length"] = String(data.count)
+      let response = HTTPURLResponse(url: imageURL, statusCode: 200, httpVersion: nil, headerFields: headers)
+      XCTAssert(data.count > 0)
+      XCTAssertNotNil(response)
+      return (data, response!)
+    }
+
+    let localSession = URLSession(configuration: URLSessionTests.configuration)
+
+    let f = expectation(description: "cached image")
+    let localTask = localSession.downloadTask(with: imageURL) {
+      (url: URL?, response: URLResponse?, error: Error?) in
+      XCTAssertNil(error)
+      XCTAssertNotNil(response)
+      XCTAssertNotNil(url)
+
+      if let url = url, let f = try? FileHandle(forReadingFrom: url)
+      {
+        let copy = f.readDataToEndOfFile()
+        f.closeFile()
+
+        XCTAssertEqual(copy, data)
+      }
+      else
+      {
+        XCTFail("did not receive a copy")
+      }
+
+      f.fulfill()
+    }
+
+    localTask.resume()
+    waitForExpectations(timeout: 1.0)
+    localSession.finishTasksAndInvalidate()
+#endif
+  }
+}
+
+extension URLSessionTests
+{
   func testData_Cancellation() throws
   {
     let url = baseURL.appendingPathComponent("image.jpg")
@@ -285,124 +388,6 @@ extension URLSessionTests
     session.finishTasksAndInvalidate()
   }
 
-  func testDownload_OK_Standard() throws
-  {
-#if os(Linux)
-    print("this test does not succeed due to a corelibs-foundation bug")
-#else
-    let imageURL = URL(string: "https://s.gravatar.com/avatar/3797130f79b69ac59b8540bffa4c96fa?s=300")!
-
-    let request = URLRequest(url: imageURL)
-    let session = URLSession(configuration: .default)
-
-    let e = expectation(description: "image task")
-    var d: Data?
-    let task = session.downloadTask(with: request) {
-      (url: URL?, response: URLResponse?, error: Error?) in
-      XCTAssertNil(error)
-      XCTAssertNotNil(response)
-      XCTAssertNotNil(url)
-
-      if let url = url, let f = try? FileHandle(forReadingFrom: url)
-      {
-        d = f.readDataToEndOfFile()
-        f.closeFile()
-      }
-
-      e.fulfill()
-    }
-
-    task.resume()
-    waitForExpectations(timeout: 10.0)
-    session.finishTasksAndInvalidate()
-
-    guard let data = d else { throw TestError(-999) }
-    XCTAssertGreaterThan(data.count, 0)
-
-    TestURLServer.register(url: imageURL) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssert(request.url == imageURL)
-      var headers = request.allHTTPHeaderFields ?? [:]
-      headers["Content-Length"] = String(data.count)
-      let response = HTTPURLResponse(url: imageURL, statusCode: 200, httpVersion: nil, headerFields: headers)
-      XCTAssert(data.count > 0)
-      XCTAssertNotNil(response)
-      return (data, response!)
-    }
-
-    let localSession = URLSession(configuration: URLSessionTests.configuration)
-
-    let f = expectation(description: "cached image")
-    let localTask = localSession.downloadTask(with: imageURL) {
-      (url: URL?, response: URLResponse?, error: Error?) in
-      XCTAssertNil(error)
-      XCTAssertNotNil(response)
-      XCTAssertNotNil(url)
-
-      if let url = url, let f = try? FileHandle(forReadingFrom: url)
-      {
-        let copy = f.readDataToEndOfFile()
-        f.closeFile()
-
-        XCTAssertEqual(copy, data)
-      }
-      else
-      {
-        XCTFail("did not receive a copy")
-      }
-
-      f.fulfill()
-    }
-
-    localTask.resume()
-    waitForExpectations(timeout: 1.0)
-    localSession.finishTasksAndInvalidate()
-#endif
-  }
-
-  func testDownload_OK() throws
-  {
-#if os(Linux)
-    print("this test does not succeed due to a corelibs-foundation bug")
-#else
-    let textURL = baseURL.appendingPathComponent("text")
-
-    TestURLServer.register(url: textURL) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssert(request.url == textURL)
-      var s = String(repeating: ".", count: 19999)
-      s.append("🔨")
-      let data = Data(s.utf8)
-      var headers = request.allHTTPHeaderFields ?? [:]
-      headers["Content-Length"] = String(data.count)
-      let response = HTTPURLResponse(url: textURL, statusCode: 200, httpVersion: nil, headerFields: headers)
-      XCTAssert(data.count > 0)
-      XCTAssertNotNil(response)
-      return (data, response!)
-    }
-
-    let request = URLRequest(url: textURL)
-    let session = URLSession(configuration: URLSessionTests.configuration)
-
-    let task = session.deferredDownloadTask(with: request)
-
-    let success = task.map {
-      (url, file, response) throws -> String in
-      if !(200..<300).contains(response.statusCode)
-      {
-        throw URLSessionError.ServerStatus(response.statusCode)
-      }
-      defer { file.closeFile() }
-
-      return String(data: file.readDataToEndOfFile(), encoding: .utf8) ?? ""
-    }
-
-    let s = try success.get()
-    XCTAssert(s.contains("🔨"), "Failed with error")
-
-    session.finishTasksAndInvalidate()
-#endif
-  }
 
   func testDownload_Cancellation() throws
   {
