@@ -229,6 +229,8 @@ extension URLSessionTests
   }
 }
 
+//MARK: requests with cancellations
+
 extension URLSessionTests
 {
   func testData_Cancellation() throws
@@ -304,6 +306,34 @@ extension URLSessionTests
     session.finishTasksAndInvalidate()
   }
 
+  func testUploadData_Cancellation() throws
+  {
+    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
+    let session = URLSession(configuration: .default)
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+
+    let data = String("name=John Tester&age=97").data(using: .utf8)!
+
+    let deferred = session.deferredUploadTask(with: request, fromData: data)
+    let canceled = deferred.cancel()
+    XCTAssert(canceled)
+
+    do {
+      let _ = try deferred.get()
+      XCTFail("failed to cancel")
+    }
+    catch let error as URLError {
+      XCTAssertEqual(error.code, .cancelled)
+    }
+
+    session.finishTasksAndInvalidate()
+  }
+}
+
+extension URLSessionTests
+{
   func testData_NotFound() throws
   {
     let url = baseURL.appendingPathComponent("404")
@@ -562,39 +592,6 @@ extension URLSessionTests
   //
   //    waitForExpectations(withTimeout: 9.9) { _ in session.finishTasksAndInvalidate() }
   //  }
-
-  func testUploadData_Cancellation() throws
-  {
-    let url = baseURL.appendingPathComponent("image.jpg")
-    let session = URLSession(configuration: URLSessionTests.configuration)
-
-    TestURLServer.register(url: url) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssert(request.url == url)
-      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: [:])
-      XCTAssertNotNil(response)
-      return (Data("Not Found".utf8), response!)
-    }
-
-    var request = URLRequest(url: url)
-    request.httpMethod = "POST"
-
-    let data = String("name=John Tester&age=97").data(using: .utf8)!
-
-    let deferred = session.deferredUploadTask(with: request, fromData: data)
-    let canceled = deferred.cancel()
-    XCTAssert(canceled)
-
-    do {
-      let _ = try deferred.get()
-      XCTFail("failed to cancel")
-    }
-    catch let error as URLError {
-      XCTAssertEqual(error.code, .cancelled)
-    }
-
-    session.finishTasksAndInvalidate()
-  }
 
   func testUploadData_OK() throws
   {
