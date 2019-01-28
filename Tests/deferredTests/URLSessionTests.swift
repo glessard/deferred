@@ -554,6 +554,16 @@ func handleStreamedBody(_ request: URLRequest) -> (Data, HTTPURLResponse)
   return (Data(responseText.utf8), response!)
 }
 
+func handleLinuxUploadProblem(_ request: URLRequest) -> (Data, HTTPURLResponse)
+{
+  XCTAssertNil(request.httpBody)
+  // On Linux as of core-foundation 4.2, upload tasks do not seem to
+  // make the HTTP body available in any way. It may be a problem with
+  // URLProtocol mocking.
+  XCTAssertNil(request.httpBodyStream) // ensure test will fail when the bug is fixed
+  return missingGET(request)
+}
+
 extension URLSessionTests
 {
   func testData_Post() throws
@@ -584,7 +594,11 @@ extension URLSessionTests
   func testUploadData_OK() throws
   {
     let url = baseURL.appendingPathComponent("upload")
+#if os(Linux)
+    TestURLServer.register(url: url, response: handleLinuxUploadProblem(_:))
+#else
     TestURLServer.register(url: url, response: handleStreamedBody(_:))
+#endif
     let session = URLSession(configuration: URLSessionTests.configuration)
 
     var request = URLRequest(url: url)
@@ -596,10 +610,12 @@ extension URLSessionTests
     let task = session.deferredUploadTask(with: request, fromData: message)
 
     let (data, response) = try task.get()
+#if !os(Linux)
     XCTAssertEqual(response.statusCode, 200)
     XCTAssertGreaterThan(data.count, 0)
     let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
     XCTAssertEqual(i, String(payload.count))
+#endif
 
     session.finishTasksAndInvalidate()
   }
@@ -607,7 +623,11 @@ extension URLSessionTests
   func testUploadFile_OK() throws
   {
     let url = baseURL.appendingPathComponent("upload")
+#if os(Linux)
+    TestURLServer.register(url: url, response: handleLinuxUploadProblem(_:))
+#else
     TestURLServer.register(url: url, response: handleStreamedBody(_:))
+#endif
     let session = URLSession(configuration: URLSessionTests.configuration)
 
     var request = URLRequest(url: url)
@@ -637,10 +657,12 @@ extension URLSessionTests
     let task = session.deferredUploadTask(with: request, fromFile: fileURL)
 
     let (data, response) = try task.get()
+#if !os(Linux)
     XCTAssertEqual(response.statusCode, 200)
     XCTAssertGreaterThan(data.count, 0)
     let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
     XCTAssertEqual(i, String(payload.count))
+#endif
 
     session.finishTasksAndInvalidate()
     try FileManager.default.removeItem(at: fileURL)
