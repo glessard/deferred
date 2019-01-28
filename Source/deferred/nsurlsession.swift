@@ -99,10 +99,10 @@ public extension URLSession
   {
     let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
 
-    if let scheme = request.url?.scheme,
-       scheme != "http" && scheme != "https"
+    let scheme = request.url?.scheme
+    if scheme != "http" && scheme != "https"
     {
-      let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
+      let message = "deferred does not support url scheme \"\(scheme ?? "unknown")\""
       tbd.determine(error: DeferredError.invalid(message))
     }
 
@@ -121,10 +121,10 @@ public extension URLSession
   {
     let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
 
-    if let scheme = request.url?.scheme,
-       scheme != "http" && scheme != "https"
+    let scheme = request.url?.scheme
+    if scheme != "http" && scheme != "https"
     {
-      let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
+      let message = "deferred does not support url scheme \"\(scheme ?? "unknown")\""
       tbd.determine(error: DeferredError.invalid(message))
     }
 
@@ -137,10 +137,10 @@ public extension URLSession
   {
     let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
 
-    if let scheme = request.url?.scheme,
-       scheme != "http" && scheme != "https"
+    let scheme = request.url?.scheme
+    if scheme != "http" && scheme != "https"
     {
-      let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
+      let message = "deferred does not support url scheme \"\(scheme ?? "unknown")\""
       tbd.determine(error: DeferredError.invalid(message))
     }
 
@@ -218,10 +218,10 @@ extension URLSession
   {
     let tbd = TBD<(URL, HTTPURLResponse)>(qos: qos)
 
-    if let scheme = request.url?.scheme,
-       scheme != "http" && scheme != "https"
+    let scheme = request.url?.scheme
+    if scheme != "http" && scheme != "https"
     {
-      let message = "deferred does not support url scheme \"\(request.url?.scheme! ?? "unknown")\""
+      let message = "deferred does not support url scheme \"\(scheme ?? "unknown")\""
       tbd.determine(error: DeferredError.invalid(message))
     }
 

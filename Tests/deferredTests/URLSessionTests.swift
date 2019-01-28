@@ -240,16 +240,8 @@ extension URLSessionTests
 {
   func testData_Cancellation() throws
   {
-    let url = baseURL.appendingPathComponent("image.jpg")
-    let session = URLSession(configuration: URLSessionTests.configuration)
-
-    TestURLServer.register(url: url) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssert(request.url == url)
-      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: request.allHTTPHeaderFields)
-      XCTAssertNotNil(response)
-      return (Data("Not Found".utf8), response!)
-    }
+    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
+    let session = URLSession(configuration: .default)
 
     let deferred = session.deferredDataTask(with: url)
     let canceled = deferred.cancel()
@@ -672,5 +664,86 @@ extension URLSessionTests
 
     session.finishTasksAndInvalidate()
     try FileManager.default.removeItem(at: fileURL)
+  }
+}
+
+let invalidURL = URL(string: "unknown://url.scheme")!
+extension URLSessionTests
+{
+  func testInvalidDataTaskURL() throws
+  {
+    let request = URLRequest(url: invalidURL)
+    let session = URLSession(configuration: .default)
+    let task = session.deferredDataTask(with: request)
+    do {
+      _ = try task.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch DeferredError.invalid(let message) {
+      XCTAssert(message.contains(request.url?.scheme ?? "$$"))
+    }
+    session.finishTasksAndInvalidate()
+  }
+
+  func testInvalidDownloadTaskURL() throws
+  {
+    let request = URLRequest(url: invalidURL)
+    let session = URLSession(configuration: .default)
+    let task = session.deferredDownloadTask(with: request)
+    do {
+      _ = try task.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch DeferredError.invalid(let message) {
+      XCTAssert(message.contains(request.url?.scheme ?? "$$"))
+    }
+    session.finishTasksAndInvalidate()
+  }
+
+  func testInvalidUploadTaskURL1() throws
+  {
+    let request = URLRequest(url: invalidURL)
+    let session = URLSession(configuration: .default)
+    let data = Data("data".utf8)
+    let task = session.deferredUploadTask(with: request, fromData: data)
+    do {
+      _ = try task.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch DeferredError.invalid(let message) {
+      XCTAssert(message.contains(request.url?.scheme ?? "$$"))
+    }
+    session.finishTasksAndInvalidate()
+  }
+
+  func testInvalidUploadTaskURL2() throws
+  {
+    let request = URLRequest(url: invalidURL)
+    let session = URLSession(configuration: .default)
+    let message = Data("data".utf8)
+#if os(Linux)
+    let tempDir = URL(string: "file:///tmp/")!
+#else
+    let userDir = try FileManager.default.url(for: .desktopDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+    let tempDir = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: userDir, create: true)
+#endif
+    let fileURL = tempDir.appendingPathComponent("temporary.tmp")
+    if !FileManager.default.fileExists(atPath: fileURL.path)
+    {
+      _ = FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
+    }
+    let handle = try FileHandle(forWritingTo: fileURL)
+    handle.write(message)
+    handle.truncateFile(atOffset: handle.offsetInFile)
+    handle.closeFile()
+    let task = session.deferredUploadTask(with: request, fromFile: fileURL)
+    do {
+      _ = try task.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch DeferredError.invalid(let message) {
+      XCTAssert(message.contains(request.url?.scheme ?? "$$"))
+    }
+    session.finishTasksAndInvalidate()
   }
 }
