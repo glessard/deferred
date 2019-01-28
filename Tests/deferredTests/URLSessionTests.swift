@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Dispatch
 import Foundation
 
 import deferred
@@ -15,9 +16,16 @@ let baseURL = URL(string: "http://www.somewhere.com/")!
 
 public class TestURLServer: URLProtocol
 {
-  static private var testURLs: [URL: (URLRequest) -> (Data, HTTPURLResponse)] = [:]
+  typealias Chunks = [Chunk]
+  typealias Response = (URLRequest) -> (Chunks, HTTPURLResponse)
+  static private var testURLs: [URL: Response] = [:]
 
-  static func register(url: URL, response: @escaping (URLRequest) -> (Data, HTTPURLResponse))
+  public enum Chunk
+  {
+    case data(Data), wait(TimeInterval)
+  }
+
+  static func register(url: URL, response: @escaping Response)
   {
     testURLs[url] = response
   }
@@ -32,18 +40,45 @@ public class TestURLServer: URLProtocol
     return request
   }
 
+  private func dispatchNextChunk(queue: DispatchQueue, chunks: [Chunk])
+  {
+    if let chunk = chunks.first
+    {
+      let chunks = chunks.dropFirst()
+      switch chunk
+      {
+      case .data(let data):
+        queue.async {
+          self.client?.urlProtocol(self, didLoad: data)
+          self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
+        }
+      case .wait(let interval):
+        queue.asyncAfter(deadline: .now() + interval) {
+          self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
+        }
+      }
+    }
+    else
+    {
+      client?.urlProtocolDidFinishLoading(self)
+    }
+  }
+
   public override func startLoading()
   {
     if let url = request.url,
        let data = TestURLServer.testURLs[url]
     {
-      let (data, response) = data(request)
+      let (chunks, response) = data(request)
+      let queue = DispatchQueue(label: "url-protocol", qos: .background)
 
       client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-      client?.urlProtocol(self, didLoad: data)
+      dispatchNextChunk(queue: queue, chunks: chunks)
     }
-
-    client?.urlProtocolDidFinishLoading(self)
+    else
+    {
+      client?.urlProtocolDidFinishLoading(self)
+    }
   }
 
   public override func stopLoading() { }
@@ -63,7 +98,7 @@ class URLSessionTests: XCTestCase
 //MARK: successful download requests
 
 let textURL = baseURL.appendingPathComponent("text")
-func simpleGET(_ request: URLRequest) -> (Data, HTTPURLResponse)
+func simpleGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
 {
   XCTAssert(request.url == textURL)
   let data = Data("Text with a 🔨".utf8)
@@ -73,7 +108,7 @@ func simpleGET(_ request: URLRequest) -> (Data, HTTPURLResponse)
   let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: headers)
   XCTAssert(data.count > 0)
   XCTAssertNotNil(response)
-  return (data, response!)
+  return ([.data(data)], response!)
 }
 
 extension URLSessionTests
@@ -193,14 +228,14 @@ extension URLSessionTests
     XCTAssertGreaterThan(data.count, 0)
 
     TestURLServer.register(url: imageURL) {
-      request -> (Data, HTTPURLResponse) in
+      request -> ([TestURLServer.Chunk], HTTPURLResponse) in
       XCTAssert(request.url == imageURL)
       var headers = request.allHTTPHeaderFields ?? [:]
       headers["Content-Length"] = String(data.count)
       let response = HTTPURLResponse(url: imageURL, statusCode: 200, httpVersion: nil, headerFields: headers)
       XCTAssert(data.count > 0)
       XCTAssertNotNil(response)
-      return (data, response!)
+      return ([.data(data)], response!)
     }
 
     let localSession = URLSession(configuration: URLSessionTests.configuration)
@@ -403,11 +438,11 @@ extension URLSessionTests
 //MARK: requests to missing URLs
 
 let missingURL = baseURL.appendingPathComponent("404")
-func missingGET(_ request: URLRequest) -> (Data, HTTPURLResponse)
+func missingGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
 {
   let response = HTTPURLResponse(url: missingURL, statusCode: 404, httpVersion: nil, headerFields: [:])
   XCTAssertNotNil(response)
-  return (Data("Not Found".utf8), response!)
+  return ([.data(Data("Not Found".utf8))], response!)
 }
 
 extension URLSessionTests
@@ -518,7 +553,7 @@ extension URLSessionTests
 
 //MARK: requests with data in HTTP body
 
-func handleStreamedBody(_ request: URLRequest) -> (Data, HTTPURLResponse)
+func handleStreamedBody(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
 {
   XCTAssertNil(request.httpBody)
   XCTAssertNotNil(request.httpBodyStream)
@@ -549,10 +584,10 @@ func handleStreamedBody(_ request: URLRequest) -> (Data, HTTPURLResponse)
   headers["Content-Length"] = String(responseText.count)
   let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
   XCTAssertNotNil(response)
-  return (Data(responseText.utf8), response!)
+  return ([.data(Data(responseText.utf8))], response!)
 }
 
-func handleLinuxUploadProblem(_ request: URLRequest) -> (Data, HTTPURLResponse)
+func handleLinuxUploadProblem(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
 {
   XCTAssertNil(request.httpBody)
   // On Linux as of core-foundation 4.2, upload tasks do not seem to
