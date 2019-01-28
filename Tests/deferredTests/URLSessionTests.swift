@@ -263,7 +263,7 @@ extension URLSessionTests
 
   func testData_DoubleCancellation() throws
   {
-    let deferred: Deferred<(Data, HTTPURLResponse)> = {
+    let deferred: DeferredURLSessionTask<(Data, HTTPURLResponse)> = {
       let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
       let session = URLSession(configuration: .default)
       defer { session.finishTasksAndInvalidate() }
@@ -271,14 +271,14 @@ extension URLSessionTests
       return session.deferredDataTask(with: url)
     }()
 
-    usleep(1000)
+    deferred.urlSessionTask.cancel()
 
     do {
       let _ = try deferred.get()
       XCTFail("succeeded incorrectly")
     }
     catch let error as URLError {
-      XCTAssertEqual(error.code, .cannotConnectToHost)
+      XCTAssertEqual(error.code, .cancelled)
     }
 
     let canceled = deferred.cancel()
@@ -300,6 +300,77 @@ extension URLSessionTests
       XCTFail("succeeded incorrectly")
     }
     catch let error as URLError {
+      XCTAssertEqual(error.code, .cancelled)
+    }
+
+    session.finishTasksAndInvalidate()
+  }
+
+  func testDownload_Cancellation() throws
+  {
+    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
+    let session = URLSession(configuration: .default)
+
+    let deferred = session.deferredDownloadTask(with: url)
+    let canceled = deferred.cancel()
+    XCTAssert(canceled)
+
+    do {
+      let _ = try deferred.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch let error as URLError {
+      XCTAssertEqual(error.code, .cancelled)
+    }
+    catch URLSessionError.InterruptedDownload(let error, _) {
+      XCTAssertEqual(error.code, .cancelled)
+    }
+
+    session.finishTasksAndInvalidate()
+  }
+
+  func testDownload_DoubleCancellation() throws
+  {
+    let deferred: DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)> = {
+      let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
+      let session = URLSession(configuration: .default)
+      defer { session.finishTasksAndInvalidate() }
+
+      return session.deferredDownloadTask(with: url)
+    }()
+
+    deferred.urlSessionTask.cancel()
+
+    do {
+      let _ = try deferred.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch let error as URLError {
+      XCTAssertEqual(error.code, .cancelled)
+    }
+
+    let canceled = deferred.cancel()
+    XCTAssert(canceled == false)
+  }
+
+  func testDownload_SuspendCancel() throws
+  {
+    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
+    let session = URLSession(configuration: .default)
+
+    let deferred = session.deferredDownloadTask(with: url)
+    deferred.urlSessionTask.suspend()
+    let canceled = deferred.cancel()
+    XCTAssert(canceled)
+
+    do {
+      let _ = try deferred.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch let error as URLError {
+      XCTAssertEqual(error.code, .cancelled)
+    }
+    catch URLSessionError.InterruptedDownload(let error, _) {
       XCTAssertEqual(error.code, .cancelled)
     }
 
@@ -419,84 +490,6 @@ extension URLSessionTests
   }
 
 
-  func testDownload_Cancellation() throws
-  {
-    let url = baseURL.appendingPathComponent("image.jpg")
-    let session = URLSession(configuration: URLSessionTests.configuration)
-
-    TestURLServer.register(url: url) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssert(request.url == url)
-      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: request.allHTTPHeaderFields)
-      XCTAssertNotNil(response)
-      return (Data("Not Found".utf8), response!)
-    }
-
-    let deferred = session.deferredDownloadTask(with: url)
-    let canceled = deferred.cancel()
-    XCTAssert(canceled)
-
-    do {
-      let _ = try deferred.get()
-      XCTFail("succeeded incorrectly")
-    }
-    catch let error as URLError {
-      XCTAssertEqual(error.code, .cancelled)
-    }
-    catch URLSessionError.InterruptedDownload(let error, _) {
-      XCTAssertEqual(error.code, .cancelled)
-    }
-
-    session.finishTasksAndInvalidate()
-  }
-
-  func testDownload_DoubleCancellation() throws
-  {
-    let deferred: DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)> = {
-      let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
-      let session = URLSession(configuration: .default)
-      defer { session.finishTasksAndInvalidate() }
-
-      return session.deferredDownloadTask(with: url)
-    }()
-
-    usleep(1000)
-
-    do {
-      let _ = try deferred.get()
-      XCTFail("succeeded incorrectly")
-    }
-    catch let error as URLError {
-      XCTAssertEqual(error.code, .cannotConnectToHost)
-    }
-
-    let canceled = deferred.cancel()
-    XCTAssert(canceled == false)
-  }
-
-  func testDownload_SuspendCancel() throws
-  {
-    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
-    let session = URLSession(configuration: .default)
-
-    let deferred = session.deferredDownloadTask(with: url)
-    deferred.urlSessionTask.suspend()
-    let canceled = deferred.cancel()
-    XCTAssert(canceled)
-
-    do {
-      let _ = try deferred.get()
-      XCTFail("succeeded incorrectly")
-    }
-    catch let error as URLError {
-      XCTAssertEqual(error.code, .cancelled)
-    }
-    catch URLSessionError.InterruptedDownload(let error, _) {
-      XCTAssertEqual(error.code, .cancelled)
-    }
-
-    session.finishTasksAndInvalidate()
-  }
 
   func testDownload_NotFound() throws
   {
