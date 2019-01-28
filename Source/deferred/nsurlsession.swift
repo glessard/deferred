@@ -151,13 +151,17 @@ public extension URLSession
 
 private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 {
+  init(source: TBD<Value>, task: URLSessionDownloadTask)
+  {
+    super.init(source: source, task: task)
+  }
+
   @discardableResult
   override func cancel(_ reason: String = "") -> Bool
   {
     guard !self.isDetermined else { return false }
 
-    guard let task = urlSessionTask as? URLSessionDownloadTask
-    else { return super.cancel(reason) }
+    let task = urlSessionTask as! URLSessionDownloadTask
 
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     // try to propagate the cancellation upstream
