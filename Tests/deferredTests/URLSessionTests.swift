@@ -385,7 +385,7 @@ extension URLSessionTests
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
 
-    let data = String("name=John Tester&age=97").data(using: .utf8)!
+    let data = Data("name=John Tester&age=97".utf8)
 
     let deferred = session.deferredUploadTask(with: request, fromData: data)
     let canceled = deferred.cancel()
@@ -408,7 +408,6 @@ extension URLSessionTests
 let missingURL = baseURL.appendingPathComponent("404")
 func missingGET(_ request: URLRequest) -> (Data, HTTPURLResponse)
 {
-  XCTAssert(request.url == missingURL)
   let response = HTTPURLResponse(url: missingURL, statusCode: 404, httpVersion: nil, headerFields: [:])
   XCTAssertNotNil(response)
   return (Data("Not Found".utf8), response!)
@@ -519,58 +518,57 @@ extension URLSessionTests
 //    waitForExpectations(withTimeout: 9.9) { _ in session.finishTasksAndInvalidate() }
 //  }
 
+//MARK: requests with data in HTTP body
+
+func handleStreamedBody(_ request: URLRequest) -> (Data, HTTPURLResponse)
+{
+  XCTAssertNil(request.httpBody)
+  XCTAssertNotNil(request.httpBodyStream)
+  guard let stream = request.httpBodyStream
+    else { return missingGET(request) } // happens on Linux as of core-foundation 4.2
+
+  stream.open()
+  defer { stream.close() }
+  XCTAssertEqual(stream.hasBytesAvailable, true)
+
+#if swift(>=4.1)
+  let b = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 1)
+  defer { b.deallocate() }
+#else
+  let b = UnsafeMutableRawPointer.allocate(bytes: 256, alignedTo: 1)
+  defer { b.deallocate(bytes: 256, alignedTo: 1) }
+#endif
+  let read = stream.read(b.assumingMemoryBound(to: UInt8.self), maxLength: 256)
+  XCTAssertGreaterThan(read, 0)
+  guard let received = String(data: Data(bytes: b, count: read), encoding: .utf8),
+        let url = request.url
+    else { return missingGET(request) }
+
+  XCTAssertFalse(received.isEmpty)
+  let responseText = (request.httpMethod ?? "NONE") + " " + String(received.count)
+  var headers = request.allHTTPHeaderFields ?? [:]
+  headers["Content-Type"] = "text/plain"
+  headers["Content-Length"] = String(responseText.count)
+  let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
+  XCTAssertNotNil(response)
+  return (Data(responseText.utf8), response!)
+}
+
 extension URLSessionTests
 {
   func testData_Post() throws
   {
     let url = baseURL.appendingPathComponent("api")
-
-    TestURLServer.register(url: url) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssertEqual(request.httpMethod, "POST")
-      XCTAssertNil(request.httpBody)
-      XCTAssertNotNil(request.httpBodyStream)
-      if let stream = request.httpBodyStream
-      {
-        stream.open()
-        defer { stream.close() }
-        XCTAssertEqual(stream.hasBytesAvailable, true)
-
-#if swift(>=4.1)
-        let b = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 1)
-        defer { b.deallocate() }
-#else
-        let b = UnsafeMutableRawPointer.allocate(bytes: 256, alignedTo: 1)
-        defer { b.deallocate(bytes: 256, alignedTo: 1) }
-#endif
-        let read = stream.read(b.assumingMemoryBound(to: UInt8.self), maxLength: 256)
-        XCTAssertGreaterThan(read, 0)
-        if let received = String(data: Data(bytes: b, count: read), encoding: .utf8)
-        {
-          XCTAssertFalse(received.isEmpty)
-          let responseText = (request.httpMethod ?? "NONE") + " " + String(received.count)
-          var headers = request.allHTTPHeaderFields ?? [:]
-          headers["Content-Type"] = "text/plain"
-          headers["Content-Length"] = String(responseText.count)
-          let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
-          XCTAssertNotNil(response)
-          return (responseText.data(using: .utf8)!, response!)
-        }
-      }
-
-      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: request.allHTTPHeaderFields)
-      XCTAssertNotNil(response)
-      return (Data("Not Found".utf8), response!)
-    }
+    TestURLServer.register(url: url, response: handleStreamedBody(_:))
+    let session = URLSession(configuration: URLSessionTests.configuration)
 
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
-    let body = String("name=Tester&age=97&data=****").data(using: .utf8)!
+    let body = Data("name=Tester&age=97&data=****".utf8)
     request.httpBodyStream = InputStream(data: body)
     request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
     request.setValue(String(body.count), forHTTPHeaderField: "Content-Length")
 
-    let session = URLSession(configuration: URLSessionTests.configuration)
     let dataTask = session.deferredDataTask(with: request)
 
     let (data, response) = try dataTask.get()
@@ -586,52 +584,14 @@ extension URLSessionTests
   func testUploadData_OK() throws
   {
     let url = baseURL.appendingPathComponent("upload")
+    TestURLServer.register(url: url, response: handleStreamedBody(_:))
     let session = URLSession(configuration: URLSessionTests.configuration)
-
-    TestURLServer.register(url: url) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssertEqual(request.url, url)
-      XCTAssertEqual(request.httpMethod, "PUT")
-      XCTAssertNil(request.httpBody)
-      XCTAssertNotNil(request.httpBodyStream)
-      if let stream = request.httpBodyStream
-      {
-        stream.open()
-        defer { stream.close() }
-        XCTAssertEqual(stream.hasBytesAvailable, true)
-
-#if swift(>=4.1)
-        let b = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 1)
-        defer { b.deallocate() }
-#else
-        let b = UnsafeMutableRawPointer.allocate(bytes: 256, alignedTo: 1)
-        defer { b.deallocate(bytes: 256, alignedTo: 1) }
-#endif
-        let read = stream.read(b.assumingMemoryBound(to: UInt8.self), maxLength: 256)
-        XCTAssertGreaterThan(read, 0)
-        if let received = String(data: Data(bytes: b, count: read), encoding: .utf8)
-        {
-          XCTAssertFalse(received.isEmpty)
-          let responseText = (request.httpMethod ?? "NONE") + " " + String(received.count)
-          var headers = request.allHTTPHeaderFields ?? [:]
-          headers["Content-Type"] = "text/plain"
-          headers["Content-Length"] = String(responseText.count)
-          let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
-          XCTAssertNotNil(response)
-          return (Data(responseText.utf8), response!)
-        }
-      }
-
-      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: [:])
-      XCTAssertNotNil(response)
-      return(Data("Not Found".utf8), response!)
-    }
 
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
 
     let payload = "data=" + String(repeatElement("A", count: 189)) + "🦉"
-    let message = payload.data(using: .utf8)!
+    let message = Data(payload.utf8)
 
     let task = session.deferredUploadTask(with: request, fromData: message)
 
@@ -647,51 +607,14 @@ extension URLSessionTests
   func testUploadFile_OK() throws
   {
     let url = baseURL.appendingPathComponent("upload")
+    TestURLServer.register(url: url, response: handleStreamedBody(_:))
     let session = URLSession(configuration: URLSessionTests.configuration)
-
-    TestURLServer.register(url: url) {
-      request -> (Data, HTTPURLResponse) in
-      XCTAssertEqual(request.url, url)
-      XCTAssertEqual(request.httpMethod, "PUT")
-      XCTAssertNil(request.httpBody)
-      XCTAssertNotNil(request.httpBodyStream)
-      if let stream = request.httpBodyStream
-      {
-        stream.open()
-        defer { stream.close() }
-
-#if swift(>=4.1)
-        let b = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 1)
-        defer { b.deallocate() }
-#else
-        let b = UnsafeMutableRawPointer.allocate(bytes: 256, alignedTo: 1)
-        defer { b.deallocate(bytes: 256, alignedTo: 1) }
-#endif
-        let read = stream.read(b.assumingMemoryBound(to: UInt8.self), maxLength: 256)
-        XCTAssertGreaterThan(read, 0)
-        if let received = String(data: Data(bytes: b, count: read), encoding: .utf8)
-        {
-          XCTAssertFalse(received.isEmpty)
-          let responseText = (request.httpMethod ?? "NONE") + " " + String(received.count)
-          var headers = request.allHTTPHeaderFields ?? [:]
-          headers["Content-Type"] = "text/plain"
-          headers["Content-Length"] = String(responseText.count)
-          let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
-          XCTAssertNotNil(response)
-          return (Data(responseText.utf8), response!)
-        }
-      }
-
-      let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: [:])
-      XCTAssertNotNil(response)
-      return(Data("Not Found".utf8), response!)
-    }
 
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
 
     let payload = "data=" + String(repeatElement("A", count: 189)) + "🦉"
-    let message = payload.data(using: .utf8)!
+    let message = Data(payload.utf8)
 
 #if os(Linux)
     let tempDir = URL(string: "file:///tmp/")!
@@ -720,5 +643,6 @@ extension URLSessionTests
     XCTAssertEqual(i, String(payload.count))
 
     session.finishTasksAndInvalidate()
+    try FileManager.default.removeItem(at: fileURL)
   }
 }
