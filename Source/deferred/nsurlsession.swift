@@ -88,10 +88,9 @@ public extension URLSession
       if let d = data, let r = response as? HTTPURLResponse
       {
         tbd.determine(value: (d,r))
-        return
       }
-      // Probably an impossible situation
-      tbd.determine(error: URLSessionError.InvalidState)
+      else // Probably an impossible situation
+      { tbd.determine(error: URLSessionError.InvalidState) }
     }
   }
 
@@ -173,7 +172,7 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 
 extension URLSession
 {
-  private func downloadCompletion(_ tbd: TBD<(URL, FileHandle, HTTPURLResponse)>) -> (URL?, URLResponse?, Error?) -> Void
+  private func downloadCompletion(_ tbd: TBD<(URL, HTTPURLResponse)>) -> (URL?, URLResponse?, Error?) -> Void
   {
     return {
       [weak tbd] (location: URL?, response: URLResponse?, error: Error?) in
@@ -202,27 +201,22 @@ extension URLSession
       print(response.map(String.init(describing:)) ?? "no response")
 #endif
 
-      if let u = location, let r = response as? HTTPURLResponse
+      if let response = response as? HTTPURLResponse
       {
-        do {
-          let f = try FileHandle(forReadingFrom: u)
-          tbd.determine(value: (u,f,r))
-        }
-        catch {
-          // Likely an impossible situation
-          tbd.determine(error: error)
-        }
-        return
+        if let url = location
+        { tbd.determine(value: (url, response)) }
+        else
+        { tbd.determine(error: URLSessionError.ServerStatus(response.statusCode)) } // should not happen
       }
-      // Probably an impossible situation
-      tbd.determine(error: URLSessionError.InvalidState)
+      else // Probably an impossible situation
+      { tbd.determine(error: URLSessionError.InvalidState) }
     }
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   with request: URLRequest) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
+                                   with request: URLRequest) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
   {
-    let tbd = TBD<(URL, FileHandle, HTTPURLResponse)>(qos: qos)
+    let tbd = TBD<(URL, HTTPURLResponse)>(qos: qos)
 
     if let scheme = request.url?.scheme,
        scheme != "http" && scheme != "https"
@@ -236,15 +230,15 @@ extension URLSession
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   with url: URL) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
+                                   with url: URL) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
   {
     return deferredDownloadTask(qos: qos, with: URLRequest(url: url))
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   withResumeData data: Data) -> DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)>
+                                   withResumeData data: Data) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
   {
-    let tbd = TBD<(URL, FileHandle, HTTPURLResponse)>(qos: qos)
+    let tbd = TBD<(URL, HTTPURLResponse)>(qos: qos)
 
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     let task = downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))

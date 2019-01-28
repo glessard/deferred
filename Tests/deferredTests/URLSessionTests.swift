@@ -137,16 +137,21 @@ extension URLSessionTests
 
     let task = session.deferredDownloadTask(with: request)
 
-    let success = task.map {
-      (url, file, response) throws -> String in
-      defer { file.closeFile() }
+    let url = task.map {
+      (url, response) throws -> URL in
       XCTAssertEqual(response.statusCode, 200)
       guard response.statusCode == 200 else { throw URLSessionError.ServerStatus(response.statusCode) }
+      return url
+    }
+    let handle = url.map(transform: FileHandle.init(forReadingFrom:))
+    let string = handle.map {
+      file throws -> String in
+      defer { file.closeFile() }
       guard let string = String(data: file.readDataToEndOfFile(), encoding: .utf8) else { throw TestError() }
       return string
     }
 
-    let s = try success.get()
+    let s = try string.get()
     XCTAssert(s.contains("🔨"), "Failed with error")
 
     session.finishTasksAndInvalidate()
@@ -331,7 +336,7 @@ extension URLSessionTests
 
   func testDownload_DoubleCancellation() throws
   {
-    let deferred: DeferredURLSessionTask<(URL, FileHandle, HTTPURLResponse)> = {
+    let deferred: DeferredURLSessionTask<(URL, HTTPURLResponse)> = {
       let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
       let session = URLSession(configuration: .default)
       defer { session.finishTasksAndInvalidate() }
@@ -441,10 +446,11 @@ extension URLSessionTests
     let request = URLRequest(url: missingURL)
     let deferred = session.deferredDownloadTask(with: request)
 
-    let (path, handle, response) = try deferred.get()
+    let (path, response) = try deferred.get()
     XCTAssert(path.isFileURL)
-    let data = handle.readDataToEndOfFile()
-    handle.closeFile()
+    let file = try FileHandle(forReadingFrom: path)
+    defer { file.closeFile() }
+    let data = file.readDataToEndOfFile()
     XCTAssert(data.count > 0)
     XCTAssert(response.statusCode == 404)
 
