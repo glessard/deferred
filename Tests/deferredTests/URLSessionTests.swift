@@ -92,7 +92,6 @@ class URLSessionTests: XCTestCase
   {
     configuration.protocolClasses = [TestURLServer.self]
   }
-
 }
 
 //MARK: successful download requests
@@ -385,71 +384,6 @@ extension URLSessionTests
   }
 }
 
-//  func testDownload_CancelAndResume()
-//  {
-//    let url = URL(string: "")!
-//    let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
-//
-//    let deferred = session.deferredDownloadTask(url)
-//
-//    let converted = deferred.map { _ -> Result<NSData> in Result() }
-//    usleep(250_000)
-//
-//    let canceled = deferred.cancel()
-//    XCTAssert(canceled)
-//
-//    XCTAssert(deferred.error != nil)
-//    XCTAssert(converted.value == nil)
-//
-//    let recovered = converted.recover {
-//      error in
-//      switch error
-//      {
-//      case URLSessionError.InterruptedDownload(let data):
-//        return Deferred(value: data)
-//      default:
-//        return Deferred(error: error)
-//      }
-//    }
-//    if let error = recovered.error
-//    { // give up
-//      XCTFail("Download operation failed and/or could not be resumed: \(error as NSError)")
-//      session.finishTasksAndInvalidate()
-//      return
-//    }
-//
-//    let firstLength = recovered.map { data in data.length }
-//
-//    let resumed = recovered.flatMap { data in session.deferredDownloadTask(resumeData: data) }
-//    let finalLength = resumed.map {
-//      (url, handle, response) throws -> Int in
-//      defer { handle.closeFile() }
-//
-//      XCTAssert(response.statusCode == 206)
-//
-//      var ptr = Optional<AnyObject>()
-//      try url.getResourceValue(&ptr, forKey: URLFileSizeKey)
-//
-//      if let number = ptr as? NSNumber
-//      {
-//        return number.integerValue
-//      }
-//      if case let .error(error) = Result<Void>() { throw error }
-//      return -1
-//    }
-//
-//    let e = expectation(withDescription: "Large file download, paused and resumed")
-//
-//    combine(firstLength, finalLength).onValue {
-//      (l1, l2) in
-//      // print(l2)
-//      XCTAssert(l2 > l1)
-//      e.fulfill()
-//    }
-//
-//    waitForExpectations(withTimeout: 9.9) { _ in session.finishTasksAndInvalidate() }
-//  }
-
 //MARK: requests with data in HTTP body
 
 func handleStreamedBody(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
@@ -678,6 +612,89 @@ extension URLSessionTests
     catch DeferredError.invalid(let message) {
       XCTAssert(message.contains(request.url?.scheme ?? "$$"))
     }
+    session.finishTasksAndInvalidate()
+  }
+}
+
+class URLSessionResumeTests: XCTestCase
+{
+  static let largeLength = 100_000
+  static let largeURL = baseURL.appendingPathComponent("large")
+  static let largeData = Data(bytes: (0..<largeLength).map({ UInt8(truncatingIfNeeded: $0) }))
+
+  static let configuration = URLSessionConfiguration.default
+
+  override class func setUp()
+  {
+    configuration.protocolClasses = [TestURLServer.self]
+    TestURLServer.register(url: URLSessionResumeTests.largeURL, response: URLSessionResumeTests.largeGET(_:))
+  }
+
+  static func largeGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
+  {
+    XCTAssertEqual(request.url, largeURL)
+    let length = URLSessionResumeTests.largeLength
+    let data = URLSessionResumeTests.largeData
+    var headers = request.allHTTPHeaderFields ?? [:]
+    if var range = headers["Range"]
+    {
+      XCTAssert(range.starts(with: "bytes="))
+      range.removeFirst("bytes=".count)
+      let bounds = range.split(separator: "-").map(String.init).compactMap(Int.init)
+      XCTAssertFalse(bounds.isEmpty)
+      headers["Content-Length"] = String(length-bounds[0])
+      headers["Range"] = nil
+      headers["If-Range"] = nil
+      headers["Content-Range"] = "bytes \(bounds[0])-\(length-1)/\(length)"
+      let response = HTTPURLResponse(url: largeURL, statusCode: 206, httpVersion: nil, headerFields: headers)!
+      return ([.data(data[bounds[0]...])], response)
+    }
+    else
+    {
+      headers["Content-Length"] = String(length)
+      headers["Accept-Ranges"] = "bytes"
+      let formatter = DateFormatter()
+      formatter.dateFormat = "E, d MMM yyyy HH:mm:ss z"
+      formatter.timeZone = TimeZone(secondsFromGMT: 0)
+      headers["Last-Modified"] = formatter.string(from: Date() - 100_000 )
+      let cut = data.count/2 + 731
+      let response = HTTPURLResponse(url: largeURL, statusCode: 200, httpVersion: nil, headerFields: headers)!
+      return ([.data(data[0..<cut]), .wait(10.0), .data(data[cut...])], response)
+    }
+  }
+
+  func testDownload_CancelAndResume() throws
+  {
+    let session = URLSession(configuration: URLSessionResumeTests.configuration)
+    let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
+
+    DispatchQueue.global().asyncAfter(deadline: .now() + 0.2, execute: { deferred.cancel() })
+
+    let mapped = deferred.map { _ in Data() }
+    XCTAssertNotNil(mapped.error)
+    let resumeData = mapped.recover {
+      error in
+      switch error
+      {
+      case URLSessionError.InterruptedDownload(let error, let data):
+        XCTAssertEqual(error.code, .cancelled)
+        return Deferred(value: data)
+      default:
+        return Deferred(error: error)
+      }
+    }
+    let data = try resumeData.get()
+
+    let resumed = session.deferredDownloadTask(withResumeData: data)
+
+    let (file, response) = try resumed.get()
+    XCTAssertEqual(response.statusCode, 206)
+
+    let f = try FileHandle(forReadingFrom: file)
+    defer { f.closeFile() }
+    let d = f.readDataToEndOfFile()
+    XCTAssertEqual(d.count, URLSessionResumeTests.largeLength)
+
     session.finishTasksAndInvalidate()
   }
 }

@@ -122,6 +122,12 @@ extension TBDTimingTests {
     ]
 }
 
+extension URLSessionResumeTests {
+    static let __allTests = [
+        ("testDownload_CancelAndResume", testDownload_CancelAndResume),
+    ]
+}
+
 extension URLSessionTests {
     static let __allTests = [
         ("testData_Cancellation", testData_Cancellation),
@@ -156,6 +162,7 @@ public func __allTests() -> [XCTestCaseEntry] {
         testCase(DeletionTests.__allTests),
         testCase(TBDTests.__allTests),
         testCase(TBDTimingTests.__allTests),
+        testCase(URLSessionResumeTests.__allTests),
         testCase(URLSessionTests.__allTests),
     ]
 }

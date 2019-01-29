@@ -184,19 +184,20 @@ extension URLSession
 
       if let error = error
       {
-        if let error = error as? URLError, error.code == .cancelled
+        if let error = error as? URLError
         {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
           // rdar://29623544 and https://bugs.swift.org/browse/SR-3403
           let URLSessionDownloadTaskResumeData = NSURLSessionDownloadTaskResumeData
 #endif
           if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
-          { tbd.determine(error: URLSessionError.InterruptedDownload(error, data)) }
-          else
-          { tbd.determine(error: error) }
+          {
+            tbd.determine(error: URLSessionError.InterruptedDownload(error, data))
+            return
+          }
         }
-        else
-        { tbd.determine(error: error) }
+
+        tbd.determine(error: error)
         return
       }
 
