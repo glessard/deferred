@@ -661,7 +661,7 @@ class URLSessionResumeTests: XCTestCase
     }
   }
 
-  func testDownload_CancelAndResume() throws
+  func testResumeAfterCancellation() throws
   {
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
     let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
@@ -689,15 +689,58 @@ class URLSessionResumeTests: XCTestCase
 
     let resumed = session.deferredDownloadTask(withResumeData: data)
 
-    let (file, response) = try resumed.get()
+    let (url, response) = try resumed.get()
     XCTAssertEqual(response.statusCode, 206)
 
-    let f = try FileHandle(forReadingFrom: file)
-    defer { f.closeFile() }
+    let f = try FileHandle(forReadingFrom: url)
     let d = f.readDataToEndOfFile()
     XCTAssertEqual(d.count, URLSessionResumeTests.largeLength)
+#endif
 
     session.finishTasksAndInvalidate()
+  }
+
+  func testResumeWithMangledData() throws
+  {
+    let session = URLSession(configuration: URLSessionResumeTests.configuration)
+    let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
+
+    DispatchQueue.global().asyncAfter(deadline: .now() + 0.2, execute: { deferred.cancel() })
+    let mapped = deferred.map { _ in Data() }
+    XCTAssertNotNil(mapped.error)
+    let resumeData = mapped.recover {
+      error in
+      switch error
+      {
+      case URLSessionError.InterruptedDownload(let error, let data):
+        XCTAssertEqual(error.code, .cancelled)
+        return Deferred(value: data)
+      default:
+        return Deferred(error: error)
+      }
+    }
+#if os(Linux)
+    XCTAssertNotNil(resumeData.error)
+    XCTAssert(URLError.cancelled ~= resumeData.error!)
+#else
+    var data = try resumeData.get()
+    // mangle the resume data
+    data[200..<250] = data[500..<550]
+
+    // Attempt to resume the download with mangled data. It should fail.
+    let resumed = session.deferredDownloadTask(withResumeData: data)
+    do {
+      let (_, _) = try resumed.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch URLSessionError.InvalidState {
+      // URLSession called back with a nonsensical combination.
+    }
+    catch {
+      XCTAssert(false, "System behaviour has changed")
+    }
 #endif
+
+    session.finishTasksAndInvalidate()
   }
 }
