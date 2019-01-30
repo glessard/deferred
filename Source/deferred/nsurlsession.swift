@@ -232,14 +232,19 @@ extension URLSession
                                    withResumeData data: Data) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
   {
     let tbd = TBD<(URL, HTTPURLResponse)>(qos: qos)
+    let handler = downloadCompletion(tbd)
 
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    let task = downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
+    let task = downloadTask(withResumeData: data, completionHandler: handler)
     return DeferredDownloadTask(source: tbd, task: task)
-#else // swift-corelibs-foundation calls fatalError() when downloadTask(withResumeData:) is called
+#else
+    // swift-corelibs-foundation calls NSUnimplemented() as the body of downloadTask(withResumeData:)
+    // It should instead call the completion handler with URLError.unsupportedURL
     // let task = downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
-    tbd.cancel(.invalid("swift-corelibs-foundation does not support \(#function)"))
-    return DeferredDownloadTask(source: tbd, task: URLSessionDownloadTask())
+    let message = "The operation \'\(#function)\' is not supported on this platform"
+    tbd.determine(error: URLError(.unsupportedURL, userInfo: [NSLocalizedDescriptionKey: message]))
+    let task = downloadTask(with: URL(string: "invalid://data")!, completionHandler: handler)
+    return DeferredDownloadTask(source: tbd, task: task)
 #endif
   }
 }

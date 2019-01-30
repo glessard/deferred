@@ -125,6 +125,7 @@ extension TBDTimingTests {
 extension URLSessionResumeTests {
     static let __allTests = [
         ("testResumeAfterCancellation", testResumeAfterCancellation),
+        ("testResumeWithInvalidData", testResumeWithInvalidData),
         ("testResumeWithMangledData", testResumeWithMangledData),
     ]
 }
