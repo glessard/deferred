@@ -743,4 +743,34 @@ class URLSessionResumeTests: XCTestCase
 
     session.finishTasksAndInvalidate()
   }
+
+  func testResumeWithInvalidData() throws
+  {
+    let nonsense = Data(bytes: (0..<2345).map({ UInt8(truncatingIfNeeded: $0) }))
+    let session = URLSession(configuration: .default)
+    let task1 = session.deferredDownloadTask(withResumeData: nonsense)
+    do {
+      _ = try task1.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch let error as URLError {
+      XCTAssertEqual(error.code, .unsupportedURL)
+      XCTAssertNotNil(error.userInfo[NSLocalizedDescriptionKey])
+#if os(Linux)
+      XCTAssertNil(error.userInfo[NSUnderlyingErrorKey])
+#endif
+    }
+
+    let empty = Data()
+    let task2 = session.deferredDownloadTask(withResumeData: empty)
+    do {
+      _ = try task2.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch let error as URLError {
+      XCTAssertEqual(error.code, .unsupportedURL)
+    }
+
+    session.finishTasksAndInvalidate()
+  }
 }
