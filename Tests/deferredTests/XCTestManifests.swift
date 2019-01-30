@@ -122,6 +122,35 @@ extension TBDTimingTests {
     ]
 }
 
+extension URLSessionResumeTests {
+    static let __allTests = [
+        ("testDownload_CancelAndResume", testDownload_CancelAndResume),
+    ]
+}
+
+extension URLSessionTests {
+    static let __allTests = [
+        ("testData_Cancellation", testData_Cancellation),
+        ("testData_DoubleCancellation", testData_DoubleCancellation),
+        ("testData_NotFound", testData_NotFound),
+        ("testData_OK", testData_OK),
+        ("testData_Post", testData_Post),
+        ("testData_SuspendCancel", testData_SuspendCancel),
+        ("testDownload_Cancellation", testDownload_Cancellation),
+        ("testDownload_DoubleCancellation", testDownload_DoubleCancellation),
+        ("testDownload_NotFound", testDownload_NotFound),
+        ("testDownload_OK", testDownload_OK),
+        ("testDownload_SuspendCancel", testDownload_SuspendCancel),
+        ("testInvalidDataTaskURL", testInvalidDataTaskURL),
+        ("testInvalidDownloadTaskURL", testInvalidDownloadTaskURL),
+        ("testInvalidUploadTaskURL1", testInvalidUploadTaskURL1),
+        ("testInvalidUploadTaskURL2", testInvalidUploadTaskURL2),
+        ("testUploadData_Cancellation", testUploadData_Cancellation),
+        ("testUploadData_OK", testUploadData_OK),
+        ("testUploadFile_OK", testUploadFile_OK),
+    ]
+}
+
 #if !os(macOS)
 public func __allTests() -> [XCTestCaseEntry] {
     return [
@@ -133,6 +162,8 @@ public func __allTests() -> [XCTestCaseEntry] {
         testCase(DeletionTests.__allTests),
         testCase(TBDTests.__allTests),
         testCase(TBDTimingTests.__allTests),
+        testCase(URLSessionResumeTests.__allTests),
+        testCase(URLSessionTests.__allTests),
     ]
 }
 #endif
