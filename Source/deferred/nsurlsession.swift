@@ -10,18 +10,6 @@ import Dispatch
 import Outcome
 
 import Foundation
-//import struct Foundation.Data
-//import class  Foundation.FileHandle
-//import struct Foundation.URL
-//import struct Foundation.URLError
-//import struct Foundation.URLRequest
-//import class  Foundation.URLSession
-//import class  Foundation.URLSessionTask
-//import class  Foundation.URLSessionDownloadTask
-//import let    Foundation.NSURLSessionDownloadTaskResumeData
-//import class  Foundation.URLSessionUploadTask
-//import class  Foundation.URLResponse
-//import class  Foundation.HTTPURLResponse
 
 public enum URLSessionError: Error
 {
