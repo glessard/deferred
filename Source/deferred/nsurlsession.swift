@@ -10,18 +10,6 @@ import Dispatch
 import Outcome
 
 import Foundation
-//import struct Foundation.Data
-//import class  Foundation.FileHandle
-//import struct Foundation.URL
-//import struct Foundation.URLError
-//import struct Foundation.URLRequest
-//import class  Foundation.URLSession
-//import class  Foundation.URLSessionTask
-//import class  Foundation.URLSessionDownloadTask
-//import let    Foundation.NSURLSessionDownloadTaskResumeData
-//import class  Foundation.URLSessionUploadTask
-//import class  Foundation.URLResponse
-//import class  Foundation.HTTPURLResponse
 
 public enum URLSessionError: Error
 {
@@ -163,14 +151,14 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 
     let task = urlSessionTask as! URLSessionDownloadTask
 
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+#if os(Linux) && !swift(>=5.0)
+    // swift-corelibs-foundation calls NSUnimplemented() as the body of cancel(byProducingResumeData:)
+    task.cancel()
+#else
     // try to propagate the cancellation upstream
     task.cancel(byProducingResumeData: { _ in }) // Let the completion handler collect the data for resuming.
-    return true
-#else // swift-corelibs-foundation calls fatalError() when cancel(byProducingResumeData:) is called
-    task.cancel()
-    return true
 #endif
+    return true
   }
 }
 
@@ -248,10 +236,14 @@ extension URLSession
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     let task = downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
     return DeferredDownloadTask(source: tbd, task: task)
-#else // swift-corelibs-foundation calls fatalError() when downloadTask(withResumeData:) is called
+#else
+    // swift-corelibs-foundation calls NSUnimplemented() as the body of downloadTask(withResumeData:)
+    // It should instead call the completion handler with URLError.unsupportedURL
     // let task = downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
-    tbd.cancel(.invalid("swift-corelibs-foundation does not support \(#function)"))
-    return DeferredDownloadTask(source: tbd, task: URLSessionDownloadTask())
+    let message = "The operation \'\(#function)\' is not supported on this platform"
+    tbd.determine(error: URLError(.unsupportedURL, userInfo: [NSLocalizedDescriptionKey: message]))
+    let task = downloadTask(with: URL(string: "invalid://data")!, completionHandler: { (_,_,_) in })
+    return DeferredDownloadTask(source: tbd, task: task)
 #endif
   }
 }
