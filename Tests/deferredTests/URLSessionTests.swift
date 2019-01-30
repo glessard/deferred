@@ -640,7 +640,11 @@ class URLSessionResumeTests: XCTestCase
     {
       XCTAssert(range.starts(with: "bytes="))
       range.removeFirst("bytes=".count)
+#if swift(>=4.1)
       let bounds = range.split(separator: "-").map(String.init).compactMap(Int.init)
+#else
+      let bounds = range.split(separator: "-").map(String.init).flatMap(Int.init)
+#endif
       XCTAssertFalse(bounds.isEmpty)
       headers["Content-Length"] = String(length-bounds[0])
       headers["Range"] = nil
@@ -683,6 +687,10 @@ class URLSessionResumeTests: XCTestCase
         return Deferred(error: error)
       }
     }
+#if os(Linux)
+    XCTAssertNotNil(resumeData.error)
+    XCTAssert(URLError.cancelled ~= resumeData.error!)
+#else
     let data = try resumeData.get()
 
     let resumed = session.deferredDownloadTask(withResumeData: data)
@@ -696,5 +704,6 @@ class URLSessionResumeTests: XCTestCase
     XCTAssertEqual(d.count, URLSessionResumeTests.largeLength)
 
     session.finishTasksAndInvalidate()
+#endif
   }
 }
