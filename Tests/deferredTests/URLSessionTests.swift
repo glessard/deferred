@@ -13,6 +13,7 @@ import Foundation
 import deferred
 
 let baseURL = URL(string: "http://www.somewhere.com/")!
+let unavailableURL = URL(string: "http://127.0.0.1:65521/image.jpg")!
 
 public class TestURLServer: URLProtocol
 {
@@ -173,10 +174,9 @@ extension URLSessionTests
 {
   func testData_Cancellation() throws
   {
-    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
     let session = URLSession(configuration: .default)
 
-    let deferred = session.deferredDataTask(with: url)
+    let deferred = session.deferredDataTask(with: unavailableURL)
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
@@ -194,11 +194,10 @@ extension URLSessionTests
   func testData_DoubleCancellation() throws
   {
     let deferred: DeferredURLSessionTask<(Data, HTTPURLResponse)> = {
-      let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
       let session = URLSession(configuration: .default)
       defer { session.finishTasksAndInvalidate() }
 
-      return session.deferredDataTask(with: url)
+      return session.deferredDataTask(with: unavailableURL)
     }()
 
     deferred.urlSessionTask.cancel()
@@ -217,10 +216,9 @@ extension URLSessionTests
 
   func testData_SuspendCancel() throws
   {
-    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
     let session = URLSession(configuration: .default)
 
-    let deferred = session.deferredDataTask(with: url)
+    let deferred = session.deferredDataTask(with: unavailableURL)
     deferred.urlSessionTask.suspend()
     let canceled = deferred.cancel()
     XCTAssert(canceled)
@@ -238,10 +236,9 @@ extension URLSessionTests
 
   func testDownload_Cancellation() throws
   {
-    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
     let session = URLSession(configuration: .default)
 
-    let deferred = session.deferredDownloadTask(with: url)
+    let deferred = session.deferredDownloadTask(with: unavailableURL)
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
@@ -262,11 +259,10 @@ extension URLSessionTests
   func testDownload_DoubleCancellation() throws
   {
     let deferred: DeferredURLSessionTask<(URL, HTTPURLResponse)> = {
-      let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
       let session = URLSession(configuration: .default)
       defer { session.finishTasksAndInvalidate() }
 
-      return session.deferredDownloadTask(with: url)
+      return session.deferredDownloadTask(with: unavailableURL)
     }()
 
     deferred.urlSessionTask.cancel()
@@ -285,10 +281,9 @@ extension URLSessionTests
 
   func testDownload_SuspendCancel() throws
   {
-    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
     let session = URLSession(configuration: .default)
 
-    let deferred = session.deferredDownloadTask(with: url)
+    let deferred = session.deferredDownloadTask(with: unavailableURL)
     deferred.urlSessionTask.suspend()
     let canceled = deferred.cancel()
     XCTAssert(canceled)
@@ -309,10 +304,9 @@ extension URLSessionTests
 
   func testUploadData_Cancellation() throws
   {
-    let url = URL(string: "http://127.0.0.1:65521/image.jpg")!
     let session = URLSession(configuration: .default)
 
-    var request = URLRequest(url: url)
+    var request = URLRequest(url: unavailableURL)
     request.httpMethod = "POST"
 
     let data = Data("name=John Tester&age=97".utf8)
