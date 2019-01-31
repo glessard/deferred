@@ -734,10 +734,7 @@ class URLSessionResumeTests: XCTestCase
       XCTFail("succeeded incorrectly")
     }
     catch URLSessionError.InvalidState {
-      // URLSession called back with a nonsensical combination.
-    }
-    catch {
-      XCTAssert(false, "System behaviour has changed")
+      // URLSession called back with a nonsensical combination of parameters, as expected
     }
 #endif
 
@@ -753,8 +750,7 @@ class URLSessionResumeTests: XCTestCase
       _ = try task1.get()
       XCTFail("succeeded incorrectly")
     }
-    catch let error as URLError {
-      XCTAssertEqual(error.code, .unsupportedURL)
+    catch let error as URLError where (URLError.unsupportedURL ~= error) {
       XCTAssertNotNil(error.userInfo[NSLocalizedDescriptionKey])
 #if os(Linux)
       XCTAssertNil(error.userInfo[NSUnderlyingErrorKey])
@@ -767,8 +763,8 @@ class URLSessionResumeTests: XCTestCase
       _ = try task2.get()
       XCTFail("succeeded incorrectly")
     }
-    catch let error as URLError {
-      XCTAssertEqual(error.code, .unsupportedURL)
+    catch let error as URLError where (error.code == .unsupportedURL) {
+      XCTAssertNotNil(error.userInfo[NSLocalizedDescriptionKey])
     }
 
     session.finishTasksAndInvalidate()
