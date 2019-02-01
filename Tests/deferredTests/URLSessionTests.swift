@@ -627,9 +627,9 @@ class URLSessionResumeTests: XCTestCase
   static func largeGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
   {
     XCTAssertEqual(request.url, largeURL)
-    let length = URLSessionResumeTests.largeLength
     let data = URLSessionResumeTests.largeData
     var headers = request.allHTTPHeaderFields ?? [:]
+    // headers.forEach { (key, string) in print("\(key): \(string)") }
     if var range = headers["Range"]
     {
       XCTAssert(range.starts(with: "bytes="))
@@ -640,21 +640,24 @@ class URLSessionResumeTests: XCTestCase
       let bounds = range.split(separator: "-").map(String.init).flatMap(Int.init)
 #endif
       XCTAssertFalse(bounds.isEmpty)
-      headers["Content-Length"] = String(length-bounds[0])
-      headers["Range"] = nil
-      headers["If-Range"] = nil
-      headers["Content-Range"] = "bytes \(bounds[0])-\(length-1)/\(length)"
+      // let length = URLSessionResumeTests.largeLength
+      // headers["Content-Length"] = String(length-bounds[0])
+      // headers["Content-Range"] = "bytes \(bounds[0])-\(length-1)/\(length)"
+      // headers["Range"] = nil
+      // headers["If-Range"] = nil
       let response = HTTPURLResponse(url: largeURL, statusCode: 206, httpVersion: nil, headerFields: headers)!
       return ([.data(data[bounds[0]...])], response)
     }
     else
     {
-      headers["Content-Length"] = String(length)
-      headers["Accept-Ranges"] = "bytes"
+      // headers["Content-Length"] = String(URLSessionResumeTests.largeLength)
+      // headers["Accept-Ranges"] = "bytes"
       let formatter = DateFormatter()
       formatter.dateFormat = "E, d MMM yyyy HH:mm:ss z"
       formatter.timeZone = TimeZone(secondsFromGMT: 0)
       headers["Last-Modified"] = formatter.string(from: Date() - 100_000 )
+      let dumbCheckSum = data.reduce(0, { s, i in s &+ Int(i) })
+      headers["ETag"] = "\"" + String(dumbCheckSum, radix: 16) + "\""
       let cut = data.count/2 + 731
       let response = HTTPURLResponse(url: largeURL, statusCode: 200, httpVersion: nil, headerFields: headers)!
       return ([.data(data[0..<cut]), .wait(10.0), .data(data[cut...])], response)
@@ -691,10 +694,11 @@ class URLSessionResumeTests: XCTestCase
 
     let (url, response) = try resumed.get()
     XCTAssertEqual(response.statusCode, 206)
+    // response.allHeaderFields.forEach { (key, string) in print("\(key as! String): \(string)") }
 
     let f = try FileHandle(forReadingFrom: url)
     let d = f.readDataToEndOfFile()
-    XCTAssertEqual(d.count, URLSessionResumeTests.largeLength)
+    XCTAssertEqual(d, URLSessionResumeTests.largeData)
 #endif
 
     session.finishTasksAndInvalidate()
