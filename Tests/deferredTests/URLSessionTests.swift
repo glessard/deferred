@@ -691,14 +691,12 @@ class URLSessionResumeTests: XCTestCase
     let data = try resumeData.get()
 
     let resumed = session.deferredDownloadTask(withResumeData: data)
+    let (url, response) = resumed.split()
 
-    let (url, response) = try resumed.get()
-    XCTAssertEqual(response.statusCode, 206)
-    // response.allHeaderFields.forEach { (key, string) in print("\(key as! String): \(string)") }
+    XCTAssertEqual((try response.get()).statusCode, 206)
 
-    let f = try FileHandle(forReadingFrom: url)
-    let d = f.readDataToEndOfFile()
-    XCTAssertEqual(d, URLSessionResumeTests.largeData)
+    let fileData = url.map(transform: FileHandle.init(forReadingFrom:)).map(transform: { $0.readDataToEndOfFile() })
+    XCTAssertEqual(try fileData.get(), URLSessionResumeTests.largeData)
 #endif
 
     session.finishTasksAndInvalidate()
