@@ -924,6 +924,31 @@ class DeferredTests: XCTestCase
 
     d4.timeout(after: .distantFuture)
   }
+
+  func testSplit()
+  {
+    let r2v = nzRandom()
+    let d2v = Deferred(value: (r2v, String(r2v)))
+    let s2v = d2v.split()
+    XCTAssertEqual(s2v.0.value, s2v.1.value.flatMap(Int.init))
+
+    let d2e = Deferred<(Int, String)>(error: TestError(nzRandom()))
+    let s2e = d2e.split()
+    XCTAssertEqual(s2e.0.error as? TestError, s2e.1.error as? TestError)
+
+    let r3 = nzRandom()
+    let d3 = Deferred(value: (r3, Double(r3), String(r3)))
+    let s3 = d3.split()
+    XCTAssertEqual(s3.0.value.map(Double.init), s3.1.value)
+    XCTAssertEqual(s3.0.value.map(String.init), s3.2.value)
+
+    let r4 = nzRandom()
+    let d4 = Deferred(value: (r4, r4.magnitude, Double(r4), String(r4)))
+    let s4 = d4.split()
+    XCTAssertEqual(s4.0.value.map({ $0.magnitude }), s4.1.value)
+    XCTAssertEqual(s4.1.value.map(Double.init), s4.2.value.map({ $0.magnitude }))
+    XCTAssertEqual(s4.0.value.map(String.init), s4.3.value)
+  }
 }
 
 class DelayTests: XCTestCase
