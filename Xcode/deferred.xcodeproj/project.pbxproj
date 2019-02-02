@@ -49,6 +49,7 @@
 		03C599182176A18400F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
 		03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* determined.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
+		03DBD0242205039600F4B44B /* deferred-split.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DBD0232205039600F4B44B /* deferred-split.swift */; };
 		03E4DF5D21FC01E800F4B44B /* URLSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */; };
 		03E9756B20D2050100F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
 		03F2AC84217935F200F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
@@ -303,6 +304,7 @@
 		03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CurrentQoS.xcodeproj; path = CurrentQoS/Xcode/CurrentQoS.xcodeproj; sourceTree = "<group>"; };
 		03D59CB31F7B6CB900F4B44B /* determined.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = determined.swift; path = deferred/determined.swift; sourceTree = "<group>"; };
 		03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "dispatch-utilities.swift"; path = "deferred/dispatch-utilities.swift"; sourceTree = "<group>"; };
+		03DBD0232205039600F4B44B /* deferred-split.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "deferred-split.swift"; path = "deferred/deferred-split.swift"; sourceTree = "<group>"; };
 		03FD35AD1F328D4E00F4B44B /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text; name = .travis.yml; path = ../.travis.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -401,6 +403,7 @@
 				03857DB71F55C3DE00F4B44B /* deferred-timing.swift */,
 				035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */,
 				035D0C101D84A8DB00F4B44B /* deferred-parallelize.swift */,
+				03DBD0232205039600F4B44B /* deferred-split.swift */,
 				033928181F8C099700F4B44B /* deferred-first.swift */,
 				035D0C121D84A8DB00F4B44B /* nsurlsession.swift */,
 				03D59CB31F7B6CB900F4B44B /* determined.swift */,
@@ -803,6 +806,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				035D0C171D84A8DB00F4B44B /* deferred-error.swift in Sources */,
+				03DBD0242205039600F4B44B /* deferred-split.swift in Sources */,
 				03857DB81F55C3DE00F4B44B /* deferred-timing.swift in Sources */,
 				035D0C1B1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
 				035D0C1D1D84A8DB00F4B44B /* deferred.swift in Sources */,
