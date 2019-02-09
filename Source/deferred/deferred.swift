@@ -49,8 +49,8 @@ open class Deferred<Value>
   private var source: AnyObject?
 
   private var determined: Outcome<Value>?
-  private var waiters = AtomicMutableRawPointer()
-  private var stateid = AtomicInt32()
+  private var waiters: AtomicOptionalMutableRawPointer
+  private var stateid: AtomicInt32
 
   deinit
   {
@@ -67,8 +67,8 @@ open class Deferred<Value>
     self.queue = queue ?? source.queue
     self.source = source
     determined = nil
-    waiters.initialize(nil)
-    stateid.initialize(beginExecution && (source.stateid.load(.relaxed) != 0) ? 1:0)
+    waiters = AtomicOptionalMutableRawPointer(nil)
+    stateid = AtomicInt32(beginExecution && (source.stateid.load(.relaxed) != 0) ? 1:0)
   }
 
   fileprivate init(queue: DispatchQueue)
@@ -76,8 +76,8 @@ open class Deferred<Value>
     self.queue = queue
     source = nil
     determined = nil
-    waiters.initialize(nil)
-    stateid.initialize(0)
+    waiters = AtomicOptionalMutableRawPointer(nil)
+    stateid = AtomicInt32(0)
   }
 
   /// Initialize with a pre-determined `Outcome`
@@ -90,8 +90,8 @@ open class Deferred<Value>
     self.queue = queue
     source = nil
     determined = outcome
-    waiters.initialize(.determined)
-    stateid.initialize(2)
+    waiters = AtomicOptionalMutableRawPointer(.determined)
+    stateid = AtomicInt32(2)
   }
 
   @available(*, deprecated, renamed: "init(queue:outcome:)")
@@ -110,8 +110,8 @@ open class Deferred<Value>
     self.queue = queue
     source = nil
     determined = nil
-    waiters.initialize(nil)
-    stateid.initialize(1)
+    waiters = AtomicOptionalMutableRawPointer(nil)
+    stateid = AtomicInt32(1)
 
     queue.async {
       do {
