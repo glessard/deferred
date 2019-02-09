@@ -763,6 +763,11 @@ class Delay<Value>: Deferred<Value>
 
 open class TBD<Value>: Deferred<Value>
 {
+  fileprivate override init<Other>(queue: DispatchQueue?, source: Deferred<Other>, beginExecution: Bool = false)
+  { // For some reason, the Swift 5 linker fails to link the test binary if this is absent.
+    super.init(queue: queue, source: source, beginExecution: beginExecution)
+  }
+  
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
