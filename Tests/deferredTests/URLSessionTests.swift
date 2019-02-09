@@ -614,8 +614,11 @@ class URLSessionResumeTests: XCTestCase
 {
   static let largeLength = 100_000
   static let largeURL = baseURL.appendingPathComponent("large")
+#if swift(>=5.0)
+  static let largeData = Data((0..<largeLength).map({ UInt8(truncatingIfNeeded: $0) }))
+#else
   static let largeData = Data(bytes: (0..<largeLength).map({ UInt8(truncatingIfNeeded: $0) }))
-
+#endif
   static let configuration = URLSessionConfiguration.default
 
   override class func setUp()
@@ -745,7 +748,11 @@ class URLSessionResumeTests: XCTestCase
 
   func testResumeWithInvalidData() throws
   {
+#if swift(>=5.0)
+    let nonsense = Data((0..<2345).map({ UInt8(truncatingIfNeeded: $0) }))
+#else
     let nonsense = Data(bytes: (0..<2345).map({ UInt8(truncatingIfNeeded: $0) }))
+#endif
     let session = URLSession(configuration: .default)
     let task1 = session.deferredDownloadTask(withResumeData: nonsense)
     do {
