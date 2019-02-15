@@ -206,13 +206,10 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ outcome: Outcome<Value>) -> Bool
   {
-    var current = stateid.load(.relaxed)
-    repeat { // keep trying if another thread hasn't succeeded yet
-      if current == 2
-      { // another thread succeeded ahead of this one
-        return false
-      }
-    } while !stateid.loadCAS(&current, 2, .weak, .relaxed, .relaxed)
+    guard stateid.load(.relaxed) != 2 else { return false }
+    // no other call has succeeded yet
+    guard stateid.swap(2, .relaxed) != 2 else { return false }
+    // this thread has exclusive access
 
     determined = outcome
     source = nil
