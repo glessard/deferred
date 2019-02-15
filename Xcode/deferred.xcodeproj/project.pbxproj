@@ -300,6 +300,10 @@
 		03B7768920CAECFC00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03B7768E20CAECFC00F4B44B /* deferredTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = deferredTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		03B7769420CAECFC00F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		03B8179922177D8C00F4B44B /* Package@swift-4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Package@swift-4.swift"; path = "../Package@swift-4.swift"; sourceTree = "<group>"; };
+		03B817A422177DD800F4B44B /* test-script.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = "test-script.sh"; path = "../Tests/test-script.sh"; sourceTree = "<group>"; };
+		03B817A522177DD800F4B44B /* install-swift.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = "install-swift.sh"; path = "../Tests/install-swift.sh"; sourceTree = "<group>"; };
+		03B817A622177DDF00F4B44B /* generate-linuxmain.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = "generate-linuxmain.sh"; path = "../Utilities/generate-linuxmain.sh"; sourceTree = "<group>"; };
 		03BEA0DF20CF3C1200F4B44B /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = XCTestManifests.swift; path = deferredTests/XCTestManifests.swift; sourceTree = "<group>"; };
 		03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CurrentQoS.xcodeproj; path = CurrentQoS/Xcode/CurrentQoS.xcodeproj; sourceTree = "<group>"; };
 		03D59CB31F7B6CB900F4B44B /* determined.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = determined.swift; path = deferred/determined.swift; sourceTree = "<group>"; };
@@ -470,6 +474,16 @@
 			path = deferredTestTests;
 			sourceTree = "<group>";
 		};
+		03B817A322177DA600F4B44B /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				03B817A522177DD800F4B44B /* install-swift.sh */,
+				03B817A422177DD800F4B44B /* test-script.sh */,
+				03B817A622177DDF00F4B44B /* generate-linuxmain.sh */,
+			);
+			name = Scripts;
+			sourceTree = "<group>";
+		};
 		03C599102176A17500F4B44B /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -483,8 +497,10 @@
 			isa = PBXGroup;
 			children = (
 				034857621C11BD5E00F4B44B /* Package.swift */,
+				03B8179922177D8C00F4B44B /* Package@swift-4.swift */,
 				03FD35AD1F328D4E00F4B44B /* .travis.yml */,
 				0372B2DC1F8DBB2900F4B44B /* README.md */,
+				03B817A322177DA600F4B44B /* Scripts */,
 				03850ABD1C76AB2200F4B44B /* Source */,
 				03850AEA1C76ABF500F4B44B /* Tests */,
 				03B4E0631C13FF6900F4B44B /* deferred */,
