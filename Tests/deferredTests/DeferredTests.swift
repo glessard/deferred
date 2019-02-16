@@ -268,6 +268,20 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
+  func testNotifyWaiters() throws
+  {
+    let d0 = TBD<Int>()
+    let d1 = d0.map(queue: DispatchQueue.global(), transform: Int.init(_:))
+    let d2 = d0.map(transform: Int.init(_:))
+    let d3 = d0.map(queue: DispatchQueue(label: #function), transform: Int.init(_:))
+
+    d0.determine(value: nzRandom())
+    let r0 = try d0.get()
+    XCTAssertEqual(r0, try d1.get())
+    XCTAssertEqual(r0, try d2.get())
+    XCTAssertEqual(r0, try d3.get())
+  }
+
   func testMap()
   {
     let value = nzRandom()

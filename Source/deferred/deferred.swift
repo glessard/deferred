@@ -206,13 +206,10 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func determine(_ outcome: Outcome<Value>) -> Bool
   {
-    var current = stateid.load(.relaxed)
-    repeat { // keep trying if another thread hasn't succeeded yet
-      if current == 2
-      { // another thread succeeded ahead of this one
-        return false
-      }
-    } while !stateid.loadCAS(&current, 2, .weak, .relaxed, .relaxed)
+    guard stateid.load(.relaxed) != 2 else { return false }
+    // no other call has succeeded yet
+    guard stateid.swap(2, .relaxed) != 2 else { return false }
+    // this thread has exclusive access
 
     determined = outcome
     source = nil
@@ -306,11 +303,7 @@ open class Deferred<Value>
 
       // this Deferred has become determined; clean up
       waiter.deinitialize(count: 1)
-#if swift(>=4.1)
       waiter.deallocate()
-#else
-      waiter.deallocate(capacity: 1)
-#endif
     }
 
     // this Deferred is determined
@@ -763,6 +756,11 @@ class Delay<Value>: Deferred<Value>
 
 open class TBD<Value>: Deferred<Value>
 {
+  fileprivate override init<Other>(queue: DispatchQueue?, source: Deferred<Other>, beginExecution: Bool = false)
+  { // For some reason, the Swift 5 linker fails to link the test binary if this is absent.
+    super.init(queue: queue, source: source, beginExecution: beginExecution)
+  }
+  
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed

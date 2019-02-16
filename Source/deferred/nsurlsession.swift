@@ -59,7 +59,7 @@ public class DeferredURLSessionTask<Value>: Transferred<Value>
   }
 }
 
-public extension URLSession
+extension URLSession
 {
   private func dataCompletion(_ tbd: TBD<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, Error?) -> Void
   {
