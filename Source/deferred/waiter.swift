@@ -11,20 +11,14 @@ import Outcome
 
 struct Waiter<T>
 {
-  private let queue: DispatchQueue?
-  private let handler: (Outcome<T>) -> Void
+  fileprivate let queue: DispatchQueue?
+  fileprivate let handler: (Outcome<T>) -> Void
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
   init(_ queue: DispatchQueue?, _ handler: @escaping (Outcome<T>) -> Void)
   {
     self.queue = queue
     self.handler = handler
-  }
-
-  fileprivate func notify(_ queue: DispatchQueue, _ value: Outcome<T>)
-  {
-    let q = self.queue ?? queue
-    q.async { [handler = self.handler] in handler(value) }
   }
 }
 
@@ -33,12 +27,40 @@ func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waite
   var head = reverseList(tail)
   while let current = head
   {
+    guard let queue = current.pointee.queue else { break }
+
     head = current.pointee.next
+    // run on the requested queue
+    queue.async {
+      current.pointee.handler(value)
+      current.deinitialize(count: 1)
+      current.deallocate()
+    }
+  }
 
-    current.pointee.notify(queue, value)
+  if head == nil { return }
 
-    current.deinitialize(count: 1)
-    current.deallocate()
+  queue.async {
+    var head = head
+    while let current = head
+    {
+      head = current.pointee.next
+
+      if let queue = current.pointee.queue
+      { // run on the requested queue
+        queue.async {
+          current.pointee.handler(value)
+          current.deinitialize(count: 1)
+          current.deallocate()
+        }
+      }
+      else
+      { // run on the queue of the just-determined deferred
+        current.pointee.handler(value)
+        current.deinitialize(count: 1)
+        current.deallocate()
+      }
+    }
   }
 }
 

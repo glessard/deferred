@@ -57,6 +57,7 @@ extension DeferredTests {
         ("testNotify2", testNotify2),
         ("testNotify3", testNotify3),
         ("testNotify4", testNotify4),
+        ("testNotifyWaiters", testNotifyWaiters),
         ("testOptional", testOptional),
         ("testPeek", testPeek),
         ("testQoS", testQoS),
