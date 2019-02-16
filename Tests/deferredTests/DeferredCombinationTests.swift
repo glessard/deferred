@@ -243,7 +243,7 @@ class DeferredRacingTests: XCTestCase
 
   func testFirstValueEmptySequence() throws
   {
-#if swift(>=5.0)
+#if swift(>=4.2)
     let never = firstValue(EmptyCollection<Deferred<Any>>.Iterator())
 #else
     let never = firstValue(EmptyIterator<Deferred<Any>>())
@@ -338,7 +338,7 @@ class DeferredRacingTests: XCTestCase
     let first = firstDetermined(seq, cancelOthers: true)
     XCTAssertEqual(try? first.get().get(), 1)
 
-#if swift(>=5.0)
+#if swift(>=4.2)
     let never = firstValue(EmptyCollection<Deferred<Any>>.Iterator())
 #else
     let never = firstValue(EmptyIterator<Deferred<Any>>())
