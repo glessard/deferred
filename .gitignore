@@ -11,6 +11,7 @@ build/
 *.perspectivev3
 !default.perspectivev3
 xcuserdata
+xcbaselines
 *.xccheckout
 *.moved-aside
 DerivedData
@@ -21,7 +22,7 @@ DerivedData
 contents.xcworkspacedata
 
 # swiftpm
-deferred.xcodeproj
+/deferred.xcodeproj
 .build
 Packages
 Package.pins
