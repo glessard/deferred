@@ -656,8 +656,9 @@ class URLSessionResumeTests: XCTestCase
       // headers["Content-Length"] = String(URLSessionResumeTests.largeLength)
       // headers["Accept-Ranges"] = "bytes"
       let formatter = DateFormatter()
-      formatter.dateFormat = "E, d MMM yyyy HH:mm:ss z"
+      formatter.locale = Locale(identifier: "en_US_POSIX")
       formatter.timeZone = TimeZone(secondsFromGMT: 0)
+      formatter.dateFormat = "E, d MMM yyyy HH:mm:ss z"
       headers["Last-Modified"] = formatter.string(from: Date() - 100_000 )
       let dumbCheckSum = data.reduce(0, { s, i in s &+ Int(i) })
       headers["ETag"] = "\"" + String(dumbCheckSum, radix: 16) + "\""
