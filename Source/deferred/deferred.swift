@@ -31,11 +31,7 @@ private extension Int
 
   var isDetermined: Bool { return self == .determined }
   var state: Int { return self & .determining }
-}
-
-extension UnsafeMutableRawPointer
-{
-  fileprivate static let determined = UnsafeMutableRawPointer(bitPattern: 0x7)!
+  var waiters: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~0x3) }
 }
 
 /// An asynchronous computation.
@@ -60,12 +56,12 @@ open class Deferred<Value>
   private var source: AnyObject?
 
   private var determined: Outcome<Value>?
-  private var waiters: AtomicOptionalMutableRawPointer
   private var deferredState: AtomicInt
 
   deinit
   {
-    if let w = waiters.load(.acquire), w != .determined
+    let s = deferredState.load(.acquire)
+    if !s.isDetermined, let w = s.waiters
     {
       deallocateWaiters(w.assumingMemoryBound(to: Waiter<Value>.self))
     }
@@ -78,7 +74,6 @@ open class Deferred<Value>
     self.queue = queue ?? source.queue
     self.source = source
     determined = nil
-    waiters = AtomicOptionalMutableRawPointer(nil)
     deferredState = AtomicInt(beginExecution ? (source.deferredState.load(.relaxed) & .executing) : 0)
   }
 
@@ -87,7 +82,6 @@ open class Deferred<Value>
     self.queue = queue
     source = nil
     determined = nil
-    waiters = AtomicOptionalMutableRawPointer(nil)
     deferredState = AtomicInt(.waiting)
   }
 
@@ -101,7 +95,6 @@ open class Deferred<Value>
     self.queue = queue
     source = nil
     determined = outcome
-    waiters = AtomicOptionalMutableRawPointer(.determined)
     deferredState = AtomicInt(.determined)
   }
 
@@ -121,7 +114,6 @@ open class Deferred<Value>
     self.queue = queue
     source = nil
     determined = nil
-    waiters = AtomicOptionalMutableRawPointer(nil)
     deferredState = AtomicInt(.executing)
 
     queue.async {
@@ -232,8 +224,9 @@ open class Deferred<Value>
     // "acquire" ordering ensures visibility of changes to `waitQueue` from another thread.
     // Any atomic load of `waiters` that precedes a possible use of `determined`
     // *must* use memory order .acquire.
-    let waitQueue = waiters.swap(.determined, .acqrel)?.assumingMemoryBound(to: Waiter<Value>.self)
-    // precondition(waitQueue != .determined)
+    let state = deferredState.swap(.determined, .acqrel)
+    // precondition(state.isDetermined == false)
+    let waitQueue = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
     notifyWaiters(queue, waitQueue, outcome)
 
     // precondition(waiters.load() == .determined, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
@@ -295,8 +288,8 @@ open class Deferred<Value>
 
   open func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (_ outcome: Outcome<Value>) -> Void)
   {
-    var waitQueue = waiters.load(.acquire)
-    if waitQueue != .determined
+    var state = deferredState.load(.acquire)
+    if !state.isDetermined
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(queue, task))
@@ -307,16 +300,18 @@ open class Deferred<Value>
       }
 
       repeat {
-        waiter.pointee.next = waitQueue?.assumingMemoryBound(to: Waiter<Value>.self)
-        if waiters.loadCAS(&waitQueue, UnsafeMutableRawPointer(waiter), .weak, .acqrel, .acquire)
+        waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
+        let newState = Int(bitPattern: waiter) | (state & .determining)
+        if deferredState.loadCAS(&state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
         }
-      } while waitQueue != .determined
+      } while !state.isDetermined
 
       // this Deferred has become determined; clean up
       waiter.deinitialize(count: 1)
       waiter.deallocate()
+      _ = deferredState.load(.acquire)
     }
 
     // this Deferred is determined
@@ -341,16 +336,17 @@ open class Deferred<Value>
   /// - returns: a `DeferredState` that describes this `Deferred`
 
   public var state: DeferredState {
-    return (waiters.load(.acquire) != .determined) ?
-      (deferredState.load(.relaxed) == 0 ? .waiting : .executing ) :
-      (determined!.isValue ? .succeeded : .errored)
+    let state = deferredState.load(.acquire)
+    return state.isDetermined ?
+      (determined!.isValue ? .succeeded : .errored) :
+      (state.state == .waiting ? .waiting : .executing )
   }
 
   /// Query whether this `Deferred` has become determined.
   /// - returns: `true` iff this `Deferred` has become determined.
 
   public var isDetermined: Bool {
-    return waiters.load(.relaxed) == .determined
+    return deferredState.load(.relaxed).isDetermined
   }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
@@ -389,7 +385,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s determined `Outcome`
 
   public var outcome: Outcome<Value> {
-    if waiters.load(.acquire) != .determined
+    if deferredState.load(.acquire).isDetermined == false
     {
       if let current = DispatchQoS.QoSClass.current, current > queue.qos.qosClass
       { // try to boost the QoS class of the running task if it is lower than the current thread's QoS
@@ -399,7 +395,7 @@ open class Deferred<Value>
       let s = DispatchSemaphore(value: 0)
       self.enqueue(boostQoS: false, task: { _ in s.signal() })
       s.wait()
-      _ = waiters.load(.acquire)
+      _ = deferredState.load(.acquire)
     }
 
     // this Deferred is determined
@@ -431,7 +427,7 @@ open class Deferred<Value>
 
   public func peek() -> Outcome<Value>?
   {
-    if waiters.load(.acquire) == .determined
+    if deferredState.load(.acquire).isDetermined
     {
       return determined
     }
