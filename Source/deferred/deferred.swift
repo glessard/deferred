@@ -54,15 +54,16 @@ open class Deferred<Value>
   let queue: DispatchQueue
 
   private var resolved: Result<Value, Error>?
-  private var deferredState: AtomicInt
+  private var deferredState = UnsafeMutablePointer<AtomicInt>.allocate(capacity: 1)
 
   deinit
   {
-    let s = deferredState.load(.acquire)
+    let s = CAtomicsLoad(deferredState, .acquire)
     if !s.isResolved, let w = s.waiters
     {
       deallocateWaiters(w.assumingMemoryBound(to: Waiter<Value>.self))
     }
+    deferredState.deallocate()
   }
 
   // MARK: designated initializers
@@ -71,7 +72,7 @@ open class Deferred<Value>
   {
     self.queue = queue
     resolved = nil
-    deferredState = AtomicInt(.waiting)
+    CAtomicsInitialize(deferredState, .waiting)
   }
 
   /// Initialize as resolved with a `Result`
@@ -83,7 +84,7 @@ open class Deferred<Value>
   {
     self.queue = queue
     resolved = result
-    deferredState = AtomicInt(.resolved)
+    CAtomicsInitialize(deferredState, .resolved)
   }
 
   /// Initialize with a task to be computed on the specified queue
@@ -95,7 +96,7 @@ open class Deferred<Value>
   {
     self.queue = queue
     resolved = nil
-    deferredState = AtomicInt(.executing)
+    CAtomicsInitialize(deferredState, .executing)
 
     queue.async {
       do {
@@ -169,13 +170,13 @@ open class Deferred<Value>
 
   func beginExecution()
   {
-    var current = deferredState.load(.relaxed)
+    var current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
       if current & .executing != 0
       { // execution state has already been marked as begun
         return
       }
-    } while !deferredState.loadCAS(&current, current | .executing, .weak, .acqrel, .acquire)
+    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .acqrel, .acquire)
   }
 
   /// Set the `Result` of this `Deferred` and dispatch all notifications for execution.
@@ -191,10 +192,10 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func resolve(_ result: Result<Value, Error>) -> Bool
   {
-    let originalState = deferredState.load(.relaxed).state
+    let originalState = CAtomicsLoad(deferredState, .relaxed).state
     guard originalState != .resolving else { return false }
 
-    let updatedState = deferredState.fetch_or(.resolving, .acqrel).state
+    let updatedState = CAtomicsBitwiseOr(deferredState, .resolving, .acqrel).state
     guard updatedState != .resolving else { return false }
     // this thread has exclusive access
 
@@ -205,7 +206,7 @@ open class Deferred<Value>
     // "acquire" ordering ensures visibility of changes to `waitQueue` from another thread.
     // Any atomic load of `waiters` that precedes a possible use of `resolved`
     // *must* use memory order .acquire.
-    let state = deferredState.swap(.resolved, .acqrel)
+    let state = CAtomicsExchange(deferredState, .resolved, .acqrel)
     // precondition(state.isResolved == false)
     let waitQueue = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
     notifyWaiters(queue, waitQueue, result)
@@ -251,7 +252,7 @@ open class Deferred<Value>
 
   fileprivate func enqueue(source: AnyObject)
   {
-    var state = deferredState.load(.relaxed)
+    var state = CAtomicsLoad(deferredState, .acquire)
     if !state.isResolved
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
@@ -260,7 +261,7 @@ open class Deferred<Value>
       repeat {
         waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
         let newState = Int(bitPattern: waiter) | (state & .resolving)
-        if deferredState.loadCAS(&state, newState, .weak, .release, .relaxed)
+        if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
         }
@@ -295,7 +296,7 @@ open class Deferred<Value>
 
   open func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (_ result: Result<Value, Error>) -> Void)
   {
-    var state = deferredState.load(.acquire)
+    var state = CAtomicsLoad(deferredState, .acquire)
     if !state.isResolved
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
@@ -309,7 +310,7 @@ open class Deferred<Value>
       repeat {
         waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
         let newState = Int(bitPattern: waiter) | (state & .resolving)
-        if deferredState.loadCAS(&state, newState, .weak, .release, .relaxed)
+        if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
         }
@@ -318,7 +319,7 @@ open class Deferred<Value>
       // this Deferred has become resolved; clean up
       waiter.deinitialize(count: 1)
       waiter.deallocate()
-      _ = deferredState.load(.acquire)
+      _ = CAtomicsLoad(deferredState, .acquire)
     }
 
     // this Deferred is resolved
@@ -327,10 +328,10 @@ open class Deferred<Value>
   }
 
   /// Query the current state of this `Deferred`
-  /// - returns: a `DeferredState` that describes this `Deferred`
+  /// - returns: a `deferredState.pointee` that describes this `Deferred`
 
   public var state: DeferredState {
-    let state = deferredState.load(.acquire)
+    let state = CAtomicsLoad(deferredState, .acquire)
     return state.isResolved ?
       (resolved!.isValue ? .succeeded : .errored) :
       (state.state == .waiting ? .waiting : .executing )
@@ -340,7 +341,7 @@ open class Deferred<Value>
   /// - returns: `true` iff this `Deferred` has become resolved.
 
   public var isResolved: Bool {
-    return deferredState.load(.relaxed).isResolved
+    return CAtomicsLoad(deferredState, .relaxed).isResolved
   }
 
   /// Attempt to cancel this `Deferred`
@@ -379,7 +380,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s `Result`
 
   public var result: Result<Value, Error> {
-    if deferredState.load(.acquire).isResolved == false
+    if CAtomicsLoad(deferredState, .acquire).isResolved == false
     {
       if let current = DispatchQoS.QoSClass.current, current > queue.qos.qosClass
       { // try to boost the QoS class of the running task if it is lower than the current thread's QoS
@@ -389,7 +390,7 @@ open class Deferred<Value>
       let s = DispatchSemaphore(value: 0)
       self.enqueue(boostQoS: false, task: { _ in s.signal() })
       s.wait()
-      _ = deferredState.load(.acquire)
+      _ = CAtomicsLoad(deferredState, .acquire)
     }
 
     // this Deferred is resolved
@@ -419,7 +420,7 @@ open class Deferred<Value>
 
   public func peek() -> Result<Value, Error>?
   {
-    if deferredState.load(.acquire).isResolved
+    if CAtomicsLoad(deferredState, .acquire).isResolved
     {
       return resolved
     }
