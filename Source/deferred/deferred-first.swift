@@ -86,31 +86,35 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
     return Deferred(queue: queue, error: error)
   }
 
-  let count = deferreds.count
-  var determined = AtomicInt()
-  determined.initialize(1)
-
   let first = TBD<Value>(queue: queue)
+  var errors: [Deferred<Error>] = []
+#if swift(>=4.1)
+  errors.reserveCapacity(deferreds.count)
+#endif
 
   deferreds.forEach {
     deferred in
+    let e = TBD<Error>()
+    errors.append(e)
     deferred.notify {
       outcome in
       do {
         let value = try outcome.get()
         first.determine(value: value)
+        e.cancel()
       }
       catch {
-        if determined.fetch_add(1, .relaxed) == count
-        { // all the others have errored, and this one errored as well
-          first.determine(error: error)
-        }
+        e.determine(value: error)
       }
     }
     if cancelOthers { first.notify { _ in deferred.cancel() }}
   }
 
-  return first
+  let combined = combine(queue: queue, deferreds: errors)
+  combined.onValue { first.determine(error: $0.last!) }
+  first.notify { _ in combined.cancel() }
+
+  return Transferred(from: first)
 }
 
 /// Return the value of the `Deferred`s to be determined successfully out of a `Sequence`.
@@ -224,7 +228,7 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
     first.notify { _ in combined.cancel() }
   }
 
-  return first
+  return Transferred(from: first)
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
