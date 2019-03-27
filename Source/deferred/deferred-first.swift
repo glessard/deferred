@@ -188,44 +188,36 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
   let first = TBD<Value>(queue: queue)
 
   queue.async {
-    var errorTBDs: [Deferred<Error>] = []
+    var errors: [Deferred<Error>] = []
     deferreds.forEach {
       deferred in
-      let determinedError = TBD<Error>()
-      errorTBDs.append(determinedError)
+      let e = TBD<Error>()
+      errors.append(e)
       deferred.notify {
         outcome in
         do {
           let value = try outcome.get()
           first.determine(value: value)
+          e.cancel()
         }
         catch {
-          determinedError.determine(value: error)
+          e.determine(value: error)
         }
-        if cancelOthers { first.notify { _ in deferred.cancel() } }
       }
+      if cancelOthers { first.notify { _ in deferred.cancel() } }
     }
 
-    let combined = combine(queue: queue, deferreds: errorTBDs)
-    combined.notify {
-      outcome in
-      do {
-        let errors = try outcome.get()
-        if let error = errors.last
-        {
-          first.determine(error: error)
-        }
-        else
-        { // our sequence was empty
-          let error = DeferredError.invalid("cannot find first determined value from an empty set in \(#function)")
-          first.determine(error: error)
-        }
-      }
-      catch { // `combined` will get an error outcome if `first` gets an outcome first
-        first.determine(error: error)
-      }
+    if errors.isEmpty
+    { // our sequence was empty
+      let error = DeferredError.invalid("cannot find first determined value from an empty set in \(#function)")
+      first.determine(error: error)
     }
-    first.notify { _ in combined.cancel() }
+    else
+    {
+      let combined = combine(queue: queue, deferreds: errors)
+      combined.onValue { first.determine(error: $0.last!) }
+      first.notify { _ in combined.cancel() }
+    }
   }
 
   return Transferred(from: first)

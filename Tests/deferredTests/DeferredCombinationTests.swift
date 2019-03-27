@@ -249,17 +249,7 @@ class DeferredRacingTests: XCTestCase
 
   func testFirstValueSequenceError() throws
   {
-    let integers = (0..<10)
-    #if swift(>=4.2)
-    let errored = integers.dropLast().randomElement()
-    #else
-    let errored = 5
-    #endif
-    let deferreds = integers.map {
-      i -> Deferred<Int> in
-      let delayed = Deferred<Int>(value: i).delay(.milliseconds(i == errored ? 100 : 0))
-      return delayed.map { throw TestError($0) }
-    }
+    let deferreds = (0..<10).map { Deferred<Int>(error: TestError($0)) }
 
     let first = firstValue(AnySequence(deferreds))
     do {
@@ -267,7 +257,7 @@ class DeferredRacingTests: XCTestCase
       XCTFail()
     }
     catch TestError.value(let e) {
-      XCTAssert(e == integers.last, String(describing: e))
+      XCTAssertEqual(e, 9)
     }
   }
 
