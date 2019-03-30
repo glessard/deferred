@@ -6,8 +6,6 @@
 //  Copyright © 2019 Guillaume Lessard. All rights reserved.
 //
 
-import Outcome
-
 extension Deferred
 {
   public func split<T1, T2>() -> (Deferred<T1>, Deferred<T2>)
