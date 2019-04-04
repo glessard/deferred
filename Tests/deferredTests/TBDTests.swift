@@ -221,11 +221,8 @@ class TBDTests: XCTestCase
       guard (i%2 == 0) else { throw DeferredError.invalid("") }
       return i
     })
-#if swift(>=4.1)
+
     let c = deferreds.compactMap({ $0.error }).count
-#else
-    let c = deferreds.flatMap({ $0.error }).count
-#endif
     XCTAssert(c == 5)
   }
 }

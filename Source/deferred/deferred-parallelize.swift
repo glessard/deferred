@@ -66,20 +66,14 @@ extension Collection
   public func deferredMap<Value>(queue: DispatchQueue,
                                  task: @escaping (_ element: Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
-#if swift(>=4.1)
-    typealias Distance = Int
     let count = self.count
-#else
-    typealias Distance = IndexDistance
-    let count = Int(self.count)
-#endif
     let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) }
 
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {
         iteration in
         deferreds[iteration].beginExecution()
-        let index = self.index(self.startIndex, offsetBy: Distance(iteration))
+        let index = self.index(self.startIndex, offsetBy: iteration)
         do {
           let value = try task(self[index])
           deferreds[iteration].determine(value: value)

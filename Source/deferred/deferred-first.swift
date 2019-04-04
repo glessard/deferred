@@ -88,9 +88,7 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
 
   let first = TBD<Value>(queue: queue)
   var errors: [Deferred<Error>] = []
-#if swift(>=4.1)
   errors.reserveCapacity(deferreds.count)
-#endif
 
   deferreds.forEach {
     deferred in

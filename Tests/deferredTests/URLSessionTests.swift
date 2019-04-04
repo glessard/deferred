@@ -391,13 +391,8 @@ func handleStreamedBody(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPUR
   defer { stream.close() }
   XCTAssertEqual(stream.hasBytesAvailable, true)
 
-#if swift(>=4.1)
   let b = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 1)
   defer { b.deallocate() }
-#else
-  let b = UnsafeMutableRawPointer.allocate(bytes: 256, alignedTo: 1)
-  defer { b.deallocate(bytes: 256, alignedTo: 1) }
-#endif
   let read = stream.read(b.assumingMemoryBound(to: UInt8.self), maxLength: 256)
   XCTAssertGreaterThan(read, 0)
   guard let received = String(data: Data(bytes: b, count: read), encoding: .utf8),
@@ -637,11 +632,7 @@ class URLSessionResumeTests: XCTestCase
     {
       XCTAssert(range.starts(with: "bytes="))
       range.removeFirst("bytes=".count)
-#if swift(>=4.1)
       let bounds = range.split(separator: "-").map(String.init).compactMap(Int.init)
-#else
-      let bounds = range.split(separator: "-").map(String.init).flatMap(Int.init)
-#endif
       XCTAssertFalse(bounds.isEmpty)
       // let length = URLSessionResumeTests.largeLength
       // headers["Content-Length"] = String(length-bounds[0])

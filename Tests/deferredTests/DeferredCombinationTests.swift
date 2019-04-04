@@ -335,17 +335,11 @@ class DeferredCombinationTimedTests: XCTestCase
 {
   let loopTestCount = 5_000
 
-#if (!swift(>=4.1) && os(Linux))
-  var metrics: [String] { return XCTestCase.defaultPerformanceMetrics() }
-#else
-  var metrics: [XCTPerformanceMetric] { return XCTestCase.defaultPerformanceMetrics }
-#endif
-
   func testPerformanceReduce()
   {
     let iterations = loopTestCount
 
-    measureMetrics(metrics, automaticallyStartMeasuring: false) {
+    measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
       let inputs = (1...iterations).map { Deferred(value: $0) }
       self.startMeasuring()
       let c = reduce(inputs, initial: 0, combine: +)
@@ -359,7 +353,7 @@ class DeferredCombinationTimedTests: XCTestCase
   {
     let iterations = loopTestCount / 10
 
-    measureMetrics(metrics, automaticallyStartMeasuring: false) {
+    measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
       let inputs = (1...iterations).map {Deferred(value: $0) }
       self.startMeasuring()
       let accumulator = Deferred(value: 0)
@@ -379,7 +373,7 @@ class DeferredCombinationTimedTests: XCTestCase
   {
     let iterations = loopTestCount
 
-    measureMetrics(metrics, automaticallyStartMeasuring: false) {
+    measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
       let inputs = (1...iterations).map { Deferred(value: $0) }
       self.startMeasuring()
       let c = combine(inputs)

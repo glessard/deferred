@@ -37,16 +37,3 @@ extension DeferredError: CustomStringConvertible
     }
   }
 }
-
-#if !swift(>=4.1)
-public func == (a: DeferredError, b: DeferredError) -> Bool
-{
-  switch (a,b)
-  {
-  case (.canceled(let ma), .canceled(let mb)): return ma == mb
-  case (.invalid(let ma), .invalid(let mb)):   return ma == mb
-  case (.timedOut(let ma), .timedOut(let mb)): return ma == mb
-  default:                                     return false
-  }
-}
-#endif
