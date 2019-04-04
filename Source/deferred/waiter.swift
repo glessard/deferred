@@ -91,13 +91,3 @@ private func reverseList<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?) -> UnsafeM
   }
   return head
 }
-
-#if !swift(>=4.1)
-extension UnsafeMutablePointer
-{
-  internal func deallocate()
-  {
-    deallocate(capacity: 1)
-  }
-}
-#endif

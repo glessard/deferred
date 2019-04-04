@@ -16,11 +16,3 @@ enum TestError: Error, Equatable
 
   init(_ e: Int = 0) { self = .value(e) }
 }
-
-func == (l: TestError, r: TestError) -> Bool
-{
-  switch (l,r)
-  {
-  case let (.value(lv), .value(rv)): return lv == rv
-  }
-}
