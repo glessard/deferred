@@ -86,33 +86,37 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
     return Deferred(queue: queue, error: error)
   }
 
-  let first = TBD<Value>(queue: queue)
-  var errors: [Deferred<Error>] = []
-  errors.reserveCapacity(deferreds.count)
+  let first = TBD<Value>(queue: queue) {
+    f in
+    var errors: [Deferred<Error>] = []
+    errors.reserveCapacity(deferreds.count)
 
-  deferreds.forEach {
-    deferred in
-    let e = TBD<Error>()
-    errors.append(e)
-    deferred.notify {
-      outcome in
-      do {
-        let value = try outcome.get()
-        first.determine(value: value)
-        e.cancel()
+    deferreds.forEach {
+      deferred in
+      let e = TBD<Error>() {
+        e in
+        deferred.notify {
+          outcome in
+          do {
+            let value = try outcome.get()
+            f.determine(value: value)
+            e.cancel()
+          }
+          catch {
+            e.determine(value: error)
+          }
+        }
+        if cancelOthers { f.notify { _ in deferred.cancel() }}
       }
-      catch {
-        e.determine(value: error)
-      }
+      errors.append(e)
     }
-    if cancelOthers { first.notify { _ in deferred.cancel() }}
+
+    let combined = combine(queue: queue, deferreds: errors)
+    combined.onValue { f.determine(error: $0.last!) }
+    f.notify { _ in combined.cancel() }
   }
 
-  let combined = combine(queue: queue, deferreds: errors)
-  combined.onValue { first.determine(error: $0.last!) }
-  first.notify { _ in combined.cancel() }
-
-  return Transferred(from: first)
+  return first
 }
 
 /// Return the value of the `Deferred`s to be determined successfully out of a `Sequence`.
@@ -183,42 +187,45 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
                                            deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
   where S.Iterator.Element: Deferred<Value>
 {
-  let first = TBD<Value>(queue: queue)
-
-  queue.async {
-    var errors: [Deferred<Error>] = []
-    deferreds.forEach {
-      deferred in
-      let e = TBD<Error>()
-      errors.append(e)
-      deferred.notify {
-        outcome in
-        do {
-          let value = try outcome.get()
-          first.determine(value: value)
-          e.cancel()
-        }
-        catch {
-          e.determine(value: error)
-        }
+  let first = TBD<Value>(queue: queue) {
+    f in
+    queue.async {
+      var errors: [Deferred<Error>] = []
+      deferreds.forEach {
+        deferred in
+        let error = TBD<Error> {
+          e in
+          deferred.notify {
+            outcome in
+            do {
+              let value = try outcome.get()
+              f.determine(value: value)
+              e.cancel()
+            }
+            catch {
+              e.determine(value: error)
+            }
+          }
+          if cancelOthers { f.notify { _ in deferred.cancel() } }
       }
-      if cancelOthers { first.notify { _ in deferred.cancel() } }
-    }
+        errors.append(error)
+      }
 
-    if errors.isEmpty
-    { // our sequence was empty
-      let error = DeferredError.invalid("cannot find first determined value from an empty set in \(#function)")
-      first.determine(error: error)
-    }
-    else
-    {
-      let combined = combine(queue: queue, deferreds: errors)
-      combined.onValue { first.determine(error: $0.last!) }
-      first.notify { _ in combined.cancel() }
+      if errors.isEmpty
+      { // our sequence was empty
+        let error = DeferredError.invalid("cannot find first determined value from an empty set in \(#function)")
+        f.determine(error: error)
+      }
+      else
+      {
+        let combined = combine(queue: queue, deferreds: errors)
+        combined.onValue { f.determine(error: $0.last!) }
+        f.notify { _ in combined.cancel() }
+      }
     }
   }
 
-  return Transferred(from: first)
+  return first
 }
 
 /// Return the first of an array of `Deferred`s to become determined.
@@ -286,12 +293,13 @@ public func firstDetermined<Value, C: Collection>(queue: DispatchQueue,
     return Deferred(queue: queue, error: error)
   }
 
-  let first = TBD<Deferred<Value>>(queue: queue)
-
-  deferreds.forEach {
-    deferred in
-    deferred.notify { _ in first.determine(value: deferred) }
-    if cancelOthers { first.notify { _ in deferred.cancel() } }
+  let first = TBD<Deferred<Value>>(queue: queue) {
+    f in
+    deferreds.forEach {
+      deferred in
+      deferred.notify { _ in f.determine(value: deferred) }
+      if cancelOthers { f.notify { _ in deferred.cancel() } }
+    }
   }
 
   return first
@@ -353,23 +361,24 @@ public func firstDetermined<Value, S>(queue: DispatchQueue, deferreds: S,
                                       cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
   where S: Sequence, S.Iterator.Element: Deferred<Value>
 {
-  let first = TBD<Deferred<Value>>(queue: queue)
+  let first = TBD<Deferred<Value>>(queue: queue) {
+    f in
+    // We execute `Sequence.forEach` on a background thread
+    // because nothing prevents S from blocking on `Sequence.next()`
+    queue.async {
+      var subscribed = false
+      deferreds.forEach {
+        deferred in
+        subscribed = true
+        deferred.notify { _ in f.determine(value: deferred) }
+        if cancelOthers { f.notify { _ in deferred.cancel() } }
+      }
 
-  // We execute `Sequence.forEach` on a background thread
-  // because nothing prevents S from blocking on `Sequence.next()`
-  queue.async {
-    var subscribed = false
-    deferreds.forEach {
-      deferred in
-      subscribed = true
-      deferred.notify { _ in first.determine(value: deferred) }
-      if cancelOthers { first.notify { _ in deferred.cancel() } }
-    }
-
-    if !subscribed
-    {
-      let error = DeferredError.invalid("cannot find first determined from an empty set in \(#function)")
-      first.determine(error: error)
+      if !subscribed
+      {
+        let message = "cannot find first determined from an empty set in \(#function)"
+        f.determine(error: DeferredError.invalid(message))
+      }
     }
   }
 
