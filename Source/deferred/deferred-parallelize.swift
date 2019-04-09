@@ -67,19 +67,22 @@ extension Collection
                                  task: @escaping (_ element: Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
   {
     let count = self.count
-    let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) }
+    var injectors: [Injector<Value>] = []
+    injectors.reserveCapacity(count)
+    let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) { injectors.append($0) } as Deferred }
 
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {
         iteration in
-        deferreds[iteration].beginExecution()
+        let d = injectors[iteration]
+        d.beginExecution()
         let index = self.index(self.startIndex, offsetBy: iteration)
         do {
           let value = try task(self[index])
-          deferreds[iteration].determine(value: value)
+          d.determine(value: value)
         }
         catch {
-          deferreds[iteration].determine(error: error)
+          d.determine(error: error)
         }
       }
     }
