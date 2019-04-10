@@ -762,50 +762,16 @@ class Delay<Value>: Deferred<Value>
   }
 }
 
-/// A `Deferred` to be determined (`TBD`) manually.
-
-open class TBD<Value>: Deferred<Value>
+public struct Injector<Value>
 {
-  fileprivate override init<Other>(queue: DispatchQueue?, source: Deferred<Other>, beginExecution: Bool = false)
-  { // For some reason, the Swift 5 linker fails to link the test binary if this is absent.
-    super.init(queue: queue, source: source, beginExecution: beginExecution)
-  }
-  
-  /// Initialize an undetermined `Deferred`, `TBD`.
-  ///
-  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+  private weak var deferred: Deferred<Value>?
 
-  public override init(queue: DispatchQueue)
+  fileprivate init(_ deferred: Deferred<Value>)
   {
-    super.init(queue: queue)
+    self.deferred = deferred
   }
 
-  /// Initialize an undetermined `Deferred`, `TBD`.
-  ///
-  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
-
-  public convenience init(qos: DispatchQoS = .current)
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue)
-  }
-
-  /// Set the `Outcome` of this `Deferred` and dispatch all notifications for execution.
-  ///
-  /// Note that a `Deferred` can only be determined once.
-  /// On subsequent calls, `determine` will fail and return `false`.
-  /// This operation is lock-free and thread-safe.
-  ///
-  /// - parameter outcome: the intended `Outcome` for this `Deferred`
-  /// - returns: whether the call succesfully changed the state of this `Deferred`.
-
-  @discardableResult
-  open override func determine(_ outcome: Outcome<Value>) -> Bool
-  {
-    return super.determine(outcome)
-  }
-
-  /// Set the value of this `Deferred` and dispatch all notifications for execution.
+  /// Set the value of our `Deferred` and dispatch all notifications for execution.
   ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
@@ -815,12 +781,13 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  open override func determine(value: Value) -> Bool
+  public func determine(_ outcome: Outcome<Value>) -> Bool
   {
-    return determine(Outcome(value: value))
+    return deferred?.determine(outcome) ?? false
   }
 
-  /// Set the value of this `Deferred` and dispatch all notifications for execution.
+  /// Set the value of our `Deferred` and dispatch all notifications for execution.
+  ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
@@ -829,13 +796,12 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  @available(*, deprecated, renamed: "determine(value:)")
-  public final func determine(_ value: Value) -> Bool
+  public func determine(value: Value) -> Bool
   {
-    return determine(value: value)
+    return deferred?.determine(Outcome(value: value)) ?? false
   }
 
-  /// Set this `Deferred` to an error and dispatch all notifications for execution.
+  /// Set our `Deferred` to an error and dispatch all notifications for execution.
   ///
   /// Note that a `Deferred` can only be determined once.
   /// On subsequent calls, `determine` will fail and return `false`.
@@ -845,15 +811,80 @@ open class TBD<Value>: Deferred<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  open override func determine(error: Error) -> Bool
+  public func determine(error: Error) -> Bool
   {
-    return determine(Outcome(error: error))
+    return deferred?.determine(Outcome(error: error)) ?? false
   }
 
-  /// Change the state of this `TBD` from `.waiting` to `.executing`
+  /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
+  ///
+  /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
+  /// ```
+  /// Deferred<Value>(error: DeferredError.canceled(reason))
+  /// ```
+  ///
+  /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
+  /// - returns: whether the cancellation was performed successfully.
 
-  open override func beginExecution()
+  @discardableResult
+  public func cancel(_ reason: String = "") -> Bool
   {
-    super.beginExecution()
+    return determine(error: DeferredError.canceled(reason))
+  }
+
+  /// Change the state of our `Deferred` from `.waiting` to `.executing`
+
+  public func beginExecution()
+  {
+    deferred?.beginExecution()
+  }
+
+  /// Enqueue a notification to be performed asynchronously after our `Deferred` becomes determined.
+  ///
+  /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
+  /// - parameter task: a closure to be executed as a notification
+  /// - parameter outcome: the determined `Outcome` of our `Deferred`
+
+  public func notify(task: @escaping (_ outcome: Outcome<Value>) -> Void)
+  {
+    deferred?.enqueue(task: task)
+  }
+}
+
+/// A `Deferred` to be determined (`TBD`) manually.
+
+open class TBD<Value>: Deferred<Value>
+{
+  /// Initialize an undetermined `Deferred`, `TBD`.
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+
+  public init(queue: DispatchQueue, execute: (Injector<Value>) -> Void)
+  {
+    super.init(queue: queue)
+    execute(Injector(self))
+  }
+
+  /// Initialize an undetermined `Deferred`, `TBD`.
+  ///
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
+
+  public init(qos: DispatchQoS = .current, execute: (Injector<Value>) -> Void)
+  {
+    let queue = DispatchQueue(label: "tbd", qos: qos)
+    super.init(queue: queue)
+    execute(Injector(self))
+  }
+
+  public static func CreatePair(queue: DispatchQueue) -> (Injector<Value>, Deferred<Value>)
+  {
+    let d = Deferred<Value>(queue: queue)
+    return (Injector(d), d)
+  }
+
+  public static func CreatePair(qos: DispatchQoS = .current) -> (Injector<Value>, Deferred<Value>)
+  {
+    let queue = DispatchQueue(label: "tbd", qos: qos)
+    return CreatePair(queue: queue)
   }
 }
