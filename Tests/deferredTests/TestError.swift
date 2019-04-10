@@ -16,3 +16,9 @@ enum TestError: Error, Equatable
 
   init(_ e: Int = 0) { self = .value(e) }
 }
+
+func == (l: Error?, r: TestError) -> Bool
+{
+  guard let e = l as? TestError else { return false }
+  return e == r
+}

@@ -17,59 +17,59 @@ class TBDTests: XCTestCase
 {
   func testDetermine1()
   {
-    let tbd = TBD<Int>()
-    tbd.beginExecution()
+    var (i, d) = TBD<Int>.CreatePair()
+    i.beginExecution()
     let value = nzRandom()
-    XCTAssert(tbd.determine(value: value))
-    XCTAssert(tbd.isDetermined)
-    XCTAssert(tbd.value == value)
-    XCTAssert(tbd.error == nil)
+    XCTAssert(i.determine(value: value))
+    XCTAssert(d.isDetermined)
+    XCTAssert(d.value == value)
+    XCTAssert(d.error == nil)
 
-    let tbe = TBD<Void>()
-    tbe.beginExecution()
-    XCTAssert(tbe.determine(error: TestError(value)))
-    XCTAssert(tbe.isDetermined)
-    XCTAssert(tbe.value == nil)
-    XCTAssert(tbe.error as? TestError == TestError(value))
+    (i, d) = TBD<Int>.CreatePair()
+    i.beginExecution()
+    XCTAssert(i.determine(error: TestError(value)))
+    XCTAssert(d.isDetermined)
+    XCTAssert(d.value == nil)
+    XCTAssert(d.error == TestError(value))
   }
 
   func testDetermine2()
   {
-    let tbd = TBD<Int>()
-    tbd.beginExecution()
+    let (i, d) = TBD<Int>.CreatePair()
+    i.beginExecution()
     var value = nzRandom()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.01) {
       value = nzRandom()
-      XCTAssert(tbd.determine(value: value))
+      XCTAssert(i.determine(value: value))
     }
 
-    XCTAssert(tbd.isDetermined == false)
+    XCTAssert(d.isDetermined == false)
 
     // Block until tbd becomes determined
-    XCTAssert(tbd.value == value)
-    XCTAssert(tbd.error == nil)
+    XCTAssert(d.value == value)
+    XCTAssert(d.error == nil)
 
     // Try and fail to determine tbd a second time.
-    XCTAssert(tbd.determine(value: value) == false)
+    XCTAssert(i.determine(value: value) == false)
   }
 
   func testCancel() throws
   {
-    let tbd1 = TBD<Void>()
+    var (i, d) = TBD<Int>.CreatePair()
     let reason = "unused"
-    tbd1.cancel(reason)
-    XCTAssert(tbd1.value == nil)
+    i.cancel(reason)
+    XCTAssert(d.value == nil)
     do {
-      _ = try tbd1.get()
+      _ = try d.get()
       XCTFail()
     }
     catch DeferredError.canceled(let message) { XCTAssert(message == reason) }
 
     let e = expectation(description: "Cancel before setting")
-    let tbd3 = TBD<Int>()
-    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) { XCTAssert(tbd3.cancel() == true) }
-    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
-      if tbd3.determine(value: nzRandom())
+    (i, d) = TBD<Int>.CreatePair()
+    i.cancel()
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) {
+      if i.determine(value: nzRandom())
       {
         XCTFail()
       }
@@ -80,16 +80,17 @@ class TBDTests: XCTestCase
     }
 
     waitForExpectations(timeout: 1.0)
+    XCTAssertNil(d.value)
   }
 
   func testNotify1()
   {
     let value = nzRandom()
     let e1 = expectation(description: "TBD notification after determination")
-    let tbd = TBD<Int>()
-    tbd.determine(value: value)
+    let (i, d1) = TBD<Int>.CreatePair()
+    i.determine(value: value)
 
-    tbd.notify {
+    d1.notify {
       XCTAssert( $0.value == value )
       e1.fulfill()
     }
@@ -99,17 +100,17 @@ class TBDTests: XCTestCase
   func testNotify2()
   {
     let e2 = expectation(description: "TBD notification after delay")
-    let tbd = TBD<Int>()
+    let (i, d2) = TBD<Int>.CreatePair()
 
     var value = nzRandom()
-    tbd.notify {
+    d2.notify {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }
 
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 10e-6) {
       value = nzRandom()
-      XCTAssert(tbd.determine(value: value))
+      XCTAssert(i.determine(value: value))
     }
 
     waitForExpectations(timeout: 1.0)
@@ -118,7 +119,7 @@ class TBDTests: XCTestCase
   func testNotify3()
   {
     let e3 = expectation(description: "TBD never determined")
-    let d3 = TBD<Int>()
+    let d3 = TBD<Int>() { _ in }
     d3.notify {
       outcome in
       XCTAssert(outcome.error as? DeferredError == DeferredError.canceled(""))
@@ -133,18 +134,18 @@ class TBDTests: XCTestCase
   func testNotify4()
   {
     let e = expectation(description: "TBD determination chain")
-    let d1 = TBD<Int>()
-    let d2 = TBD<Int>()
+    let (t1, d1) = TBD<Int>.CreatePair()
+    let (t2, d2) = TBD<Int>.CreatePair()
     let r = nzRandom()
 
-    d1.notify(task: { d in d2.determine(d) })
+    d1.notify(task: { o in t2.determine(o) })
     d2.notify {
-      d in
-      XCTAssert(d.isValue)
-      if d.value == r { e.fulfill() }
+      o in
+      XCTAssert(o.isValue)
+      if o.value == r { e.fulfill() }
     }
 
-    d1.determine(value: r)
+    t1.determine(value: r)
 
     waitForExpectations(timeout: 0.1)
   }
@@ -152,12 +153,10 @@ class TBDTests: XCTestCase
   func testNeverDetermined()
   {
     // a Deferred that will never become determined.
-    let first = TBD<Int>()
+    let first = TBD<Int>() { _ in }
 
     let other = first.map { XCTFail(String($0)) }
     let third = other.map { XCTFail(String(describing: $0)) }
-
-    usleep(1000)
 
     XCTAssert(first.isDetermined == false)
     XCTAssert(other.isDetermined == false)

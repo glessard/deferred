@@ -200,7 +200,7 @@ extension URLSessionTests
       return session.deferredDataTask(with: unavailableURL)
     }()
 
-    deferred.urlSessionTask.cancel()
+    deferred.urlSessionTask?.cancel()
 
     do {
       let _ = try deferred.get()
@@ -219,7 +219,7 @@ extension URLSessionTests
     let session = URLSession(configuration: .default)
 
     let deferred = session.deferredDataTask(with: unavailableURL)
-    deferred.urlSessionTask.suspend()
+    deferred.urlSessionTask?.suspend()
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
@@ -265,7 +265,7 @@ extension URLSessionTests
       return session.deferredDownloadTask(with: unavailableURL)
     }()
 
-    deferred.urlSessionTask.cancel()
+    deferred.urlSessionTask?.cancel()
 
     do {
       let _ = try deferred.get()
@@ -284,7 +284,7 @@ extension URLSessionTests
     let session = URLSession(configuration: .default)
 
     let deferred = session.deferredDownloadTask(with: unavailableURL)
-    deferred.urlSessionTask.suspend()
+    deferred.urlSessionTask?.suspend()
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 

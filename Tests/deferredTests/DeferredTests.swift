@@ -270,12 +270,12 @@ class DeferredTests: XCTestCase
 
   func testNotifyWaiters() throws
   {
-    let d0 = TBD<Int>()
+    let (t0, d0) = TBD<Int>.CreatePair()
     let d1 = d0.map(queue: DispatchQueue.global(), transform: Int.init(_:))
     let d2 = d0.map(transform: Int.init(_:))
     let d3 = d0.map(queue: DispatchQueue(label: #function), transform: Int.init(_:))
 
-    d0.determine(value: nzRandom())
+    t0.determine(value: nzRandom())
     let r0 = try d0.get()
     XCTAssertEqual(r0, try d1.get())
     XCTAssertEqual(r0, try d2.get())
@@ -456,25 +456,25 @@ class DeferredTests: XCTestCase
     let d2 = badOperand1.flatten()
     XCTAssert(d2.error as? TestError == TestError(error))
 
-    let deferredValue = TBD<Deferred<Int>>()
-    let d3 = deferredValue.flatten()
+    let (t3, dv3) = TBD<Deferred<Int>>.CreatePair()
+    let d3 = dv3.flatten()
     let e3 = expectation(description: "flatten, part 3")
     d3.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e3.fulfill() })
-    deferredValue.determine(value: Deferred(value: value))
+    t3.determine(value: Deferred(value: value))
 
-    let badOperand2 = TBD<Deferred<Int>>()
-    let d4 = badOperand2.flatten()
+    let (t4, dv4) = TBD<Deferred<Int>>.CreatePair()
+    let d4 = dv4.flatten()
     let e4 = expectation(description: "flatten, part 4")
     d4.recover(transform: { Deferred(error: $0) }).onError(task: { _ in e4.fulfill() })
-    badOperand2.determine(error: TestError(error))
+    t4.determine(error: TestError(error))
 
-    let tbd = TBD<Int>()
-    let fullyDeferred = Deferred(value: tbd.delay(seconds: 0.02)).delay(seconds: 0.01)
+    let (t5, dv5) = TBD<Int>.CreatePair()
+    let fullyDeferred = Deferred(value: dv5.delay(seconds: 0.02)).delay(seconds: 0.01)
     let d5 = fullyDeferred.flatten()
     let e5 = expectation(description: "flatten, part 5")
     d5.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e5.fulfill() })
 
-    let semiDeferred = Deferred(value: tbd.delay(seconds: 0.01))
+    let semiDeferred = Deferred(value: dv5.delay(seconds: 0.01))
     let d6 = semiDeferred.flatten()
     let e6 = expectation(description: "flatten, part 6")
     d6.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e6.fulfill() })
@@ -482,7 +482,7 @@ class DeferredTests: XCTestCase
 //    let willCompile = Deferred(value: d1).flatten()
 //    let wontCompile = Deferred(value: 99).flatten()
 
-    tbd.determine(value: value)
+    t5.determine(value: value)
 
     waitForExpectations(timeout: 0.1)
   }
@@ -494,9 +494,9 @@ class DeferredTests: XCTestCase
 
     let transferred1 = Transferred(from: Deferred(value: r1))
 
-    let tbd = TBD<Int>(qos: .background)
-    let transferred2 = Transferred(from: tbd)
-    tbd.determine(value: r2)
+    let (t, d) = TBD<Int>.CreatePair(qos: .background)
+    let transferred2 = Transferred(from: d)
+    t.determine(value: r2)
 
     XCTAssert(transferred1.value == r1)
     XCTAssert(transferred2.value == r2)
@@ -528,8 +528,8 @@ class DeferredTests: XCTestCase
 
   func testApply1()
   {
-    let transform = TBD<(Int) -> Double>()
-    let operand = TBD<Int>()
+    let (t, transform) = TBD<(Int) -> Double>.CreatePair()
+    let (o, operand) = TBD<Int>.CreatePair()
     let result = operand.apply(qos: .background, transform: transform)
     let expect = expectation(description: "Applying a deferred transform to a deferred operand")
 
@@ -541,16 +541,16 @@ class DeferredTests: XCTestCase
       expect.fulfill()
     }
 
-    let g = TBD<Int>()
+    let trigger = TBD<Int>() { _ in }
 
-    g.notify { _ in
+    trigger.notify { _ in
       v1 = Int(nzRandom() & 0x7fff + 10000)
-      transform.determine(value: { i in Double(v1*i) })
+      t.determine(value: { i in Double(v1*i) })
     }
 
-    g.notify { _ in
+    trigger.notify { _ in
       v2 = Int(nzRandom() & 0x7fff + 10000)
-      operand.determine(value: v2)
+      o.determine(value: v2)
     }
 
     XCTAssertFalse(operand.isDetermined)
@@ -558,7 +558,7 @@ class DeferredTests: XCTestCase
     XCTAssertFalse(transform.isDetermined)
     XCTAssert(transform.state == .waiting)
 
-    g.determine(value: 0)
+    trigger.cancel()
     waitForExpectations(timeout: 1.0)
 
     XCTAssert(transform.state == .succeeded)
@@ -615,10 +615,10 @@ class DeferredTests: XCTestCase
 
     // result canceled before transform is determined
     let o5 = Deferred(value: value)
-    let t5 = TBD<(Int) throws -> Float>()
+    let (t5, d5) = TBD<(Int) throws -> Float>.CreatePair()
     let e5 = expectation(description: "r5")
-    let r5 = o5.apply(transform: t5)
-    combine(t5,r5).notify { _ in e5.fulfill() }
+    let r5 = o5.apply(transform: d5)
+    combine(d5, r5).notify { _ in e5.fulfill() }
     r5.cancel()
     t5.determine(value: { Float($0) })
     XCTAssert(r5.value == nil)
@@ -706,7 +706,7 @@ class DeferredTests: XCTestCase
 
   func testCancelAndNotify()
   {
-    let tbd = TBD<Int>()
+    let (_, tbd) = TBD<Int>.CreatePair()
 
     let d1 = tbd.map { $0 * 2 }
     let e1 = expectation(description: "first deferred")
@@ -731,73 +731,73 @@ class DeferredTests: XCTestCase
 
   func testCancelMap()
   {
-    let tbd = TBD<Int>()
+    let (t0, d0) = TBD<Int>.CreatePair()
 
     let e1 = expectation(description: "cancellation of Deferred.map, part 1")
-    let d1 = tbd.map { u in XCTFail(String(u)) }
+    let d1 = d0.map { u in XCTFail(String(u)) }
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectation(description: "cancellation of Deferred.map, part 2")
-    let d2 = tbd.map(transform: { u in XCTFail(String(u)) }).enqueuing(at: .background)
+    let d2 = d0.map(transform: { u in XCTFail(String(u)) }).enqueuing(at: .background)
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
-    tbd.determine(value: numericCast(nzRandom()))
+    t0.determine(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
 
   func testCancelDelay()
   {
-    let tbd = TBD<Int>()
+    let (t0, d0) = TBD<Int>.CreatePair()
 
     let e1 = expectation(description: "cancellation of Deferred.delay")
-    let d1 = tbd.delay(.milliseconds(100))
+    let d1 = d0.delay(.milliseconds(100))
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
-    tbd.determine(value: numericCast(nzRandom()))
+    t0.determine(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
 
   func testCancelBind()
   {
-    let tbd = TBD<Int>()
+    let (t0, d0) = TBD<Int>.CreatePair()
 
     let e1 = expectation(description: "cancellation of Deferred.flatMap")
-    let d1 = tbd.flatMap { Deferred(value: $0) }
+    let d1 = d0.flatMap { Deferred(value: $0) }
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectation(description: "cancellation of Deferred.recover")
-    let d2 = tbd.recover { i in Deferred(value: Int.max) }
+    let d2 = d0.recover { i in Deferred(value: Int.max) }
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
     let e3 = expectation(description: "cancellation of Deferred.flatMap, part 2")
-    let d3 = tbd.flatMap(transform: { Deferred(value: $0) }).map(transform: { Double($0) })
+    let d3 = d0.flatMap(transform: { Deferred(value: $0) }).map(transform: { Double($0) })
     d3.onError { e in e3.fulfill() }
     XCTAssert(d3.cancel() == true)
 
     let e4 = expectation(description: "cancellation of Deferred.recover, part 2")
-    let d4 = tbd.recover(transform: { e in Deferred(value: Int.min) }).map(transform: { $0/2 })
+    let d4 = d0.recover(transform: { e in Deferred(value: Int.min) }).map(transform: { $0/2 })
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
 
-    tbd.determine(value: numericCast(nzRandom()))
+    t0.determine(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
 
   func testCancelApply()
   {
-    let tbd = TBD<Int>()
+    let (t0, d0) = TBD<Int>.CreatePair()
 
     let e1 = expectation(description: "cancellation of Deferred.apply, part 1")
     let t1 = Deferred { (i: Int) throws in Double(i) }
-    let d1 = tbd.apply(transform: t1)
+    let d1 = d0.apply(transform: t1)
     d1.onError { e in e1.fulfill() }
 
     let e2 = expectation(description: "cancellation of Deferred.apply, part 2")
@@ -807,7 +807,7 @@ class DeferredTests: XCTestCase
 
     let e3 = expectation(description: "cancellation of Deferred.apply, part 3")
     let t3 = Deferred { (i: Int) in Double(i) }
-    let d3 = tbd.apply(transform: t3).map(transform: { 2*$0} )
+    let d3 = d0.apply(transform: t3).map(transform: { 2*$0} )
     d3.onError { e in e3.fulfill() }
 
     let e4 = expectation(description: "cancellation of Deferred.apply, part 4")
@@ -821,7 +821,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.cancel() == true)
     XCTAssert(d4.cancel() == true)
 
-    tbd.determine(value: numericCast(nzRandom()))
+    t0.determine(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -968,7 +968,7 @@ class DelayTests: XCTestCase
 
   func testDelayError()
   {
-    let d1 = TBD<Date>()
+    let d1 = Deferred(value: Date()).delay(until: .distantFuture)
     let d2 = d1.delay(until: .distantFuture)
     d1.cancel()
     XCTAssert(d2.value == nil)
@@ -976,7 +976,7 @@ class DelayTests: XCTestCase
 
   func testCancelDelay()
   {
-    let d1 = TBD<Date>()
+    let d1 = Deferred(value: Date()).delay(until: .distantFuture)
     let d2 = d1.delay(until: .distantFuture)
     d2.cancel()
     d1.cancel()
@@ -985,7 +985,7 @@ class DelayTests: XCTestCase
 
   func testAbandonedDelay()
   {
-    let d1 = TBD<Int>()
+    let d1 = Deferred(value: 1).delay(until: .distantFuture)
     let d2 = d1.delay(.milliseconds(500)).map(transform: { 2*$0 })
     d2.cancel()
     d1.cancel()
