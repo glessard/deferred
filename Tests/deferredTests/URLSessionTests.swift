@@ -527,7 +527,7 @@ extension URLSessionTests
 let invalidURL = URL(string: "unknown://url.scheme")!
 extension URLSessionTests
 {
-  func testInvalidDataTaskURL() throws
+  func testInvalidDataTaskURL1() throws
   {
     let request = URLRequest(url: invalidURL)
     let session = URLSession(configuration: .default)
@@ -538,6 +538,21 @@ extension URLSessionTests
     }
     catch DeferredError.invalid(let message) {
       XCTAssert(message.contains(request.url?.scheme ?? "$$"))
+    }
+    session.finishTasksAndInvalidate()
+  }
+
+  func testInvalidDataTaskURL2() throws
+  {
+    let request = URLRequest(url: URL(string: "schemeless") ?? invalidURL)
+    let session = URLSession(configuration: .default)
+    let task = session.deferredDataTask(with: request)
+    do {
+      _ = try task.get()
+      XCTFail("succeeded incorrectly")
+    }
+    catch DeferredError.invalid(let message) {
+      XCTAssert(message.contains("invalid"))
     }
     session.finishTasksAndInvalidate()
   }
