@@ -797,7 +797,7 @@ public struct Injector<Value>
   @discardableResult
   public func determine(value: Value) -> Bool
   {
-    return deferred?.determine(Outcome(value: value)) ?? false
+    return determine(Outcome(value: value))
   }
 
   /// Set our `Deferred` to an error and dispatch all notifications for execution.
@@ -812,7 +812,7 @@ public struct Injector<Value>
   @discardableResult
   public func determine(error: Error) -> Bool
   {
-    return deferred?.determine(Outcome(error: error)) ?? false
+    return determine(Outcome(error: error))
   }
 
   /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
@@ -828,7 +828,7 @@ public struct Injector<Value>
   @discardableResult
   public func cancel(_ reason: String = "") -> Bool
   {
-    return determine(error: DeferredError.canceled(reason))
+    return determine(Outcome(error: DeferredError.canceled(reason)))
   }
 
   /// Change the state of our `Deferred` from `.waiting` to `.executing`
