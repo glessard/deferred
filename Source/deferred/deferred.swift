@@ -512,8 +512,7 @@ open class Transferred<Value>: Deferred<Value>
   /// - parameter queue:     the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value will be transferred into a new instance.
 
-  //FIXME: this parameter order is weird
-  public init(from source: Deferred<Value>, on queue: DispatchQueue? = nil)
+  public init(queue: DispatchQueue? = nil, source: Deferred<Value>)
   {
     if let outcome = source.peek()
     {

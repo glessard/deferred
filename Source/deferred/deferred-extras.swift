@@ -53,7 +53,7 @@ extension Deferred
 
   public func enqueuing(on queue: DispatchQueue) -> Deferred
   {
-    return Transferred(from: self, on: queue)
+    return Transferred(queue: queue, source: self)
   }
 
   /// Get a `Deferred` that will have the same `Outcome` as `self` once determined,

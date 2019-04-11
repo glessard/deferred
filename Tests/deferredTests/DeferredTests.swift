@@ -492,10 +492,10 @@ class DeferredTests: XCTestCase
     let r1 = nzRandom()
     let r2 = nzRandom()
 
-    let transferred1 = Transferred(from: Deferred(value: r1))
+    let transferred1 = Transferred(source: Deferred(value: r1))
 
     let (t, d) = TBD<Int>.CreatePair(qos: .background)
-    let transferred2 = Transferred(from: d)
+    let transferred2 = Transferred(source: d)
     t.determine(value: r2)
 
     XCTAssert(transferred1.value == r1)
