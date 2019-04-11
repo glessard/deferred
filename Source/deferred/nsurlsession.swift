@@ -202,7 +202,7 @@ extension URLSession
         else
         { tbd.determine(error: URLSessionError.ServerStatus(response.statusCode)) } // should not happen
       }
-      else // Probably an impossible situation
+      else // can happen if resume data is corrupted; otherwise probably an impossible situation
       { tbd.determine(error: URLSessionError.InvalidState) }
     }
   }
