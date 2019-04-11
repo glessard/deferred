@@ -18,18 +18,25 @@ public enum URLSessionError: Error
   case InvalidState
 }
 
-public class DeferredURLSessionTask<Value>: Transferred<Value>
+public class DeferredURLSessionTask<Value>: TBD<Value>
 {
-  public let urlSessionTask: URLSessionTask
+  public fileprivate(set) var urlSessionTask: URLSessionTask?
 
-  init(source: TBD<Value>, task: URLSessionTask)
+  init(qos: DispatchQoS = .current, error: Error)
   {
-    urlSessionTask = task
-    super.init(from: source, on: source.queue)
+    urlSessionTask = nil
+    super.init(qos: qos) { $0.determine(error: error) }
+  }
+
+  init(qos: DispatchQoS = .current, setter: (Injector<Value>) -> URLSessionTask)
+  {
+    var t: URLSessionTask?
+    super.init(qos: qos, execute: { t = setter($0) })
+    urlSessionTask = t.unsafelyUnwrapped
   }
 
   deinit {
-    urlSessionTask.cancel()
+    urlSessionTask?.cancel()
   }
 
   @discardableResult
@@ -38,7 +45,7 @@ public class DeferredURLSessionTask<Value>: Transferred<Value>
     guard !self.isDetermined else { return false }
 
     // try to propagate the cancellation upstream
-    urlSessionTask.cancel()
+    urlSessionTask?.cancel()
     return true
   }
 
@@ -54,18 +61,27 @@ public class DeferredURLSessionTask<Value>: Transferred<Value>
 
   public override func beginExecution()
   {
-    urlSessionTask.resume()
+    urlSessionTask?.resume()
     super.beginExecution()
+  }
+}
+
+private func validateURL(_ request: URLRequest) throws
+{
+  let scheme = request.url?.scheme ?? "invalid"
+  if scheme != "http" && scheme != "https"
+  {
+    let message = "deferred does not support url scheme \"\(scheme)\""
+    throw DeferredError.invalid(message)
   }
 }
 
 extension URLSession
 {
-  private func dataCompletion(_ tbd: TBD<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, Error?) -> Void
+  private func dataCompletion(_ tbd: Injector<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, Error?) -> Void
   {
     return {
-      [weak tbd] (data: Data?, response: URLResponse?, error: Error?) in
-      guard let tbd = tbd else { return }
+      (data: Data?, response: URLResponse?, error: Error?) in
 
       if let error = error
       {
@@ -85,17 +101,14 @@ extension URLSession
   public func deferredDataTask(qos: DispatchQoS = .current,
                                with request: URLRequest) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
-
-    let scheme = request.url?.scheme
-    if scheme != "http" && scheme != "https"
-    {
-      let message = "deferred does not support url scheme \"\(scheme ?? "unknown")\""
-      tbd.determine(error: DeferredError.invalid(message))
+    do { try validateURL(request) }
+    catch {
+      return DeferredURLSessionTask(qos: qos, error: error)
     }
 
-    let task = dataTask(with: request, completionHandler: dataCompletion(tbd))
-    return DeferredURLSessionTask(source: tbd, task: task)
+    return DeferredURLSessionTask(qos: qos) {
+      dataTask(with: request, completionHandler: dataCompletion($0))
+    }
   }
 
   public func deferredDataTask(qos: DispatchQoS = .current,
@@ -107,43 +120,32 @@ extension URLSession
   public func deferredUploadTask(qos: DispatchQoS = .current,
                                  with request: URLRequest, fromData bodyData: Data) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
-
-    let scheme = request.url?.scheme
-    if scheme != "http" && scheme != "https"
-    {
-      let message = "deferred does not support url scheme \"\(scheme ?? "unknown")\""
-      tbd.determine(error: DeferredError.invalid(message))
+    do { try validateURL(request) }
+    catch {
+      return DeferredURLSessionTask(qos: qos, error: error)
     }
 
-    let task = uploadTask(with: request, from: bodyData, completionHandler: dataCompletion(tbd))
-    return DeferredURLSessionTask(source: tbd, task: task)
+    return DeferredURLSessionTask(qos: qos) {
+      uploadTask(with: request, from: bodyData, completionHandler: dataCompletion($0))
+    }
   }
 
   public func deferredUploadTask(qos: DispatchQoS = .current,
                                  with request: URLRequest, fromFile fileURL: URL) -> DeferredURLSessionTask<(Data, HTTPURLResponse)>
   {
-    let tbd = TBD<(Data, HTTPURLResponse)>(qos: qos)
-
-    let scheme = request.url?.scheme
-    if scheme != "http" && scheme != "https"
-    {
-      let message = "deferred does not support url scheme \"\(scheme ?? "unknown")\""
-      tbd.determine(error: DeferredError.invalid(message))
+    do { try validateURL(request) }
+    catch {
+      return DeferredURLSessionTask(qos: qos, error: error)
     }
 
-    let task = uploadTask(with: request, fromFile: fileURL, completionHandler: dataCompletion(tbd))
-    return DeferredURLSessionTask(source: tbd, task: task)
+    return DeferredURLSessionTask(qos: qos) {
+      uploadTask(with: request, fromFile: fileURL, completionHandler: dataCompletion($0))
+    }
   }
 }
 
 private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 {
-  init(source: TBD<Value>, task: URLSessionDownloadTask)
-  {
-    super.init(source: source, task: task)
-  }
-
   @discardableResult
   override func cancel(_ reason: String = "") -> Bool
   {
@@ -164,11 +166,10 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 
 extension URLSession
 {
-  private func downloadCompletion(_ tbd: TBD<(URL, HTTPURLResponse)>) -> (URL?, URLResponse?, Error?) -> Void
+  private func downloadCompletion(_ tbd: Injector<(URL, HTTPURLResponse)>) -> (URL?, URLResponse?, Error?) -> Void
   {
     return {
-      [weak tbd] (location: URL?, response: URLResponse?, error: Error?) in
-      guard let tbd = tbd else { return }
+      (location: URL?, response: URLResponse?, error: Error?) in
 
       if let error = error
       {
@@ -209,17 +210,14 @@ extension URLSession
   public func deferredDownloadTask(qos: DispatchQoS = .current,
                                    with request: URLRequest) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
   {
-    let tbd = TBD<(URL, HTTPURLResponse)>(qos: qos)
-
-    let scheme = request.url?.scheme
-    if scheme != "http" && scheme != "https"
-    {
-      let message = "deferred does not support url scheme \"\(scheme ?? "unknown")\""
-      tbd.determine(error: DeferredError.invalid(message))
+    do { try validateURL(request) }
+    catch {
+      return DeferredURLSessionTask(qos: qos, error: error)
     }
 
-    let task = downloadTask(with: request, completionHandler: downloadCompletion(tbd))
-    return DeferredDownloadTask(source: tbd, task: task)
+    return DeferredDownloadTask(qos: qos) {
+      downloadTask(with: request, completionHandler: downloadCompletion($0))
+    }
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
@@ -231,19 +229,17 @@ extension URLSession
   public func deferredDownloadTask(qos: DispatchQoS = .current,
                                    withResumeData data: Data) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
   {
-    let tbd = TBD<(URL, HTTPURLResponse)>(qos: qos)
-
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    let task = downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
-    return DeferredDownloadTask(source: tbd, task: task)
+    return DeferredDownloadTask(qos: qos) {
+      downloadTask(withResumeData: data, completionHandler: downloadCompletion($0))
+    }
 #else
     // swift-corelibs-foundation calls NSUnimplemented() as the body of downloadTask(withResumeData:)
     // It should instead call the completion handler with URLError.unsupportedURL
     // let task = downloadTask(withResumeData: data, completionHandler: downloadCompletion(tbd))
     let message = "The operation \'\(#function)\' is not supported on this platform"
-    tbd.determine(error: URLError(.unsupportedURL, userInfo: [NSLocalizedDescriptionKey: message]))
-    let task = downloadTask(with: URL(string: "invalid://data")!, completionHandler: { (_,_,_) in })
-    return DeferredDownloadTask(source: tbd, task: task)
+    let error = URLError(.unsupportedURL, userInfo: [NSLocalizedDescriptionKey: message])
+    return DeferredURLSessionTask(qos: qos, error: error)
 #endif
   }
 }

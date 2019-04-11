@@ -174,16 +174,19 @@ class DeferredRacingTests: XCTestCase
     let count = 10
     let lucky = Int(nzRandom()) % count
 
+    var injectors: [Injector<Int>] = []
     let deferreds = (0..<count).map {
-      i -> TBD<Int> in
+      i -> Deferred<Int> in
       let e = expectation(description: String(i))
-      let d = TBD<Int>()
-      d.notify { _ in e.fulfill() }
-      return d
+      return TBD<Int>() {
+        d in
+        d.notify { _ in e.fulfill() }
+        injectors.append(d)
+      }
     }
     let first = firstValue(deferreds, cancelOthers: true)
 
-    XCTAssert(deferreds[lucky].determine(value: lucky))
+    XCTAssert(injectors[lucky].determine(value: lucky))
     waitForExpectations(timeout: 0.1)
     XCTAssert(first.value == lucky)
 

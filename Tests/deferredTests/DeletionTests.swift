@@ -35,7 +35,7 @@ class DeletionTests: XCTestCase
     init(expectation: XCTestExpectation)
     {
       e = expectation
-      super.init(queue: DispatchQueue.global())
+      super.init(queue: .global()) { _ in }
     }
     deinit
     {
