@@ -7,7 +7,6 @@
 //
 
 import Dispatch
-import CAtomics
 
 /// Return the value of the first of an array of `Deferred`s to be determined succesfully.
 ///
