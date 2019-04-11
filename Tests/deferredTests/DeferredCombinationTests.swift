@@ -319,9 +319,9 @@ class DeferredRacingTests: XCTestCase
     XCTAssertEqual(try? first.get().get(), 1)
 
 #if swift(>=4.2)
-    let never = firstValue(EmptyCollection<Deferred<Any>>.Iterator())
+    let never = firstDetermined(EmptyCollection<Deferred<Any>>.Iterator())
 #else
-    let never = firstValue(EmptyIterator<Deferred<Any>>())
+    let never = firstDetermined(EmptyIterator<Deferred<Any>>())
 #endif
     do {
       let value = try never.get()
