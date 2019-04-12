@@ -4,6 +4,15 @@ set -e
 COMPILER_MAJOR_VERSION=`echo ${COMPILER_VERSION} | awk -F . '{print $1}'`
 TEST_OPTIONS="-c release"
 
+if [[ "$1" == "--tsan" && "$TRAVIS_OS_NAME" != "linux" ]]
+then
+  # the linux version of the thread sanitizer trips on libdispatch,
+  # therefore don't enable in on linux.
+  echo "enabling thread sanitizer"
+  TEST_OPTIONS="${TEST_OPTIONS} --sanitize=thread"
+  export TSAN_OPTIONS="suppressions=Tests/tsan-suppression"
+fi
+
 swift --version
 swift test ${TEST_OPTIONS}
 
