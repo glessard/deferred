@@ -119,7 +119,8 @@ extension TBDTests {
 
 extension TBDTimingTests {
     static let __allTests = [
-        ("testPerformanceNotificationTime", testPerformanceNotificationTime),
+        ("testPerformanceNotificationCreationTime", testPerformanceNotificationCreationTime),
+        ("testPerformanceNotificationExecutionTime", testPerformanceNotificationExecutionTime),
         ("testPerformancePropagationTime", testPerformancePropagationTime),
     ]
 }
