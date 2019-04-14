@@ -22,7 +22,7 @@ class TBDTimingTests: XCTestCase
     let iterations = propagationTestCount
     let ref = Date.distantPast
 
-    measure {
+    measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
       let (trigger, first) = TBD<(Int, Date, Date)>.CreatePair(qos: .userInitiated)
       var dt = first
       for _ in 0...iterations
@@ -33,9 +33,11 @@ class TBDTimingTests: XCTestCase
         }
       }
 
+      self.startMeasuring()
       trigger.determine(value: (0, ref, ref))
-
       let (iterations, tic, toc) = try! dt.get()
+      self.stopMeasuring()
+
       let interval = toc.timeIntervalSince(tic)
       // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per message")
       _ = interval/Double(iterations)
