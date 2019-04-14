@@ -44,21 +44,26 @@ class TBDTimingTests: XCTestCase
     }
   }
 
-  func testPerformanceNotificationTime()
+  func testPerformanceNotificationExecutionTime()
   {
     let iterations = propagationTestCount
 
-    measure {
-      let (trigger, start) = TBD<Date>.CreatePair(queue: DispatchQueue(label: "", qos: .userInitiated))
-      for _ in 0..<iterations
-      {
-        start.notify { deferred in _ = deferred.value! }
+    measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
+      let start = TBD<Date>(queue: DispatchQueue(label: "", qos: .userInitiated)) {
+        start in
+        for _ in 0..<iterations
+        {
+          start.notify { deferred in _ = deferred.value! }
+        }
+
+        self.startMeasuring()
+        start.determine(value: Date())
       }
 
       let dt = start.map { start in Date().timeIntervalSince(start) }
-      trigger.determine(value: Date())
-
       let interval = try! dt.get()
+      self.stopMeasuring()
+
       // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per notification")
       _ = interval
     }
