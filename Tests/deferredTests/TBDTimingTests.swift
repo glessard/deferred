@@ -61,4 +61,25 @@ class TBDTimingTests: XCTestCase
       _ = interval
     }
   }
+
+
+  func testPerformanceNotificationCreationTime()
+  {
+    let iterations = propagationTestCount
+
+    measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
+      _ = TBD<Int>(qos: .userInitiated) {
+        t in
+        self.startMeasuring()
+        for _ in 0...iterations
+        {
+          t.notify { outcome in _ = outcome.value }
+        }
+        self.stopMeasuring()
+
+        t.determine(value: 1)
+      }
+
+    }
+  }
 }
