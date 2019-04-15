@@ -7,7 +7,10 @@
 //
 
 import Dispatch
+
+#if !compiler(>=5.0)
 import Outcome
+#endif
 
 struct Waiter<T>
 {

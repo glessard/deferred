@@ -7,8 +7,11 @@
 //
 
 import Dispatch
-import Outcome
 import CAtomics
+
+#if !compiler(>=5.0)
+import Outcome
+#endif
 
 /// The possible states of a `Deferred`.
 ///

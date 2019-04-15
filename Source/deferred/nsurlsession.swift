@@ -7,9 +7,11 @@
 //
 
 import Dispatch
-import Outcome
-
 import Foundation
+
+#if !compiler(>=5.0)
+import Outcome
+#endif
 
 public enum URLSessionError: Error
 {
