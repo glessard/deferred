@@ -236,11 +236,7 @@ class DeferredRacingTests: XCTestCase
 
   func testFirstValueEmptySequence() throws
   {
-#if swift(>=4.2)
     let never = firstValue(EmptyCollection<Deferred<Any>>.Iterator())
-#else
-    let never = firstValue(EmptyIterator<Deferred<Any>>())
-#endif
     do {
       let value = try never.get()
       XCTFail("never.value should be nil, was \(value)")
@@ -281,11 +277,11 @@ class DeferredRacingTests: XCTestCase
     func oneBy1(_ deferreds: [Deferred<Int>]) throws
     {
       let first = firstDetermined(deferreds, cancelOthers: true)
-      #if swift(>=5.0)
+#if compiler(>=5.0)
       let index = deferreds.firstIndex(where: { d in d === first.value })
-      #else
+#else
       let index = deferreds.index(where: { d in d === first.value })
-      #endif
+#endif
       if let index = index
       {
         var d = deferreds
@@ -321,11 +317,7 @@ class DeferredRacingTests: XCTestCase
     let first = firstDetermined(seq, cancelOthers: true)
     XCTAssertEqual(try? first.get().get(), 1)
 
-#if swift(>=4.2)
     let never = firstDetermined(EmptyCollection<Deferred<Any>>.Iterator())
-#else
-    let never = firstDetermined(EmptyIterator<Deferred<Any>>())
-#endif
     do {
       let value = try never.get()
       XCTFail("never.value should be nil, was \(value)")

@@ -1,4 +1,4 @@
-// swift-tools-version:4.2
+// swift-tools-version:5.0
 
 import PackageDescription
 
@@ -9,12 +9,11 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/glessard/swift-atomics.git", from: "4.4.1"),
-    .package(url: "https://github.com/glessard/outcome.git", from: "4.1.5"),
     .package(url: "https://github.com/glessard/CurrentQoS.git", from: "1.0.0"),
   ],
   targets: [
-    .target(name: "deferred", dependencies: ["CAtomics", "Outcome", "CurrentQoS"]),
+    .target(name: "deferred", dependencies: ["CAtomics", "CurrentQoS"]),
     .testTarget(name: "deferredTests", dependencies: ["deferred"]),
   ],
-  swiftLanguageVersions: [.v4, .v4_2, .version("5")]
+  swiftLanguageVersions: [.v4, .v4_2, .v5]
 )
