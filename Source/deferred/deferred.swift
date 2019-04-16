@@ -555,47 +555,6 @@ class Flatten<Value>: Deferred<Value>
   }
 }
 
-class Recover<Value>: Deferred<Value>
-{
-  /// Initialize with a `Deferred` source and a transform to be computed in the background
-  ///
-  /// This constructor is used by `recover` -- flatMap for the `Error` path.
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose error should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.error` and whose result is represented by this `Deferred`
-  /// - parameter error:     the Error to be transformed for a new `Deferred`
-
-  init(queue: DispatchQueue?, source: Deferred<Value>, transform: @escaping (_ error: Error) throws -> Deferred<Value>)
-  {
-    super.init(queue: queue, source: source)
-
-    source.enqueue(queue: queue) {
-      [weak self] result in
-      guard let this = self else { return }
-      if this.isResolved { return }
-      this.beginExecution()
-      if let error = result.error
-      {
-        do {
-          let transformed = try transform(error)
-          transformed.notify(queue: queue) {
-            [weak this] transformed in
-            this?.resolve(transformed)
-          }
-        }
-        catch {
-          this.resolve(error: error)
-        }
-      }
-      else
-      {
-        this.resolve(result)
-      }
-    }
-  }
-}
-
 /// A `Deferred` that applies a `Deferred` transform onto its input
 
 class Apply<Value>: Deferred<Value>

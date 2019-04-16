@@ -175,7 +175,30 @@ extension Deferred
   public func recover(queue: DispatchQueue? = nil,
                       transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
   {
-    return Recover(queue: queue, source: self, transform: transform)
+    return TBD(queue: queue ?? self.queue, source: self) {
+      resolver in
+      self.enqueue(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        resolver.beginExecution()
+        if let error = result.error
+        {
+          do {
+            let transformed = try transform(error)
+            transformed.enqueue(queue: queue) { resolver.resolve($0) }
+            // ensure `transformed` lives as long as it needs to
+            resolver.notify { _ in withExtendedLifetime(transformed){} }
+          }
+          catch {
+            resolver.resolve(error: error)
+          }
+        }
+        else
+        {
+          resolver.resolve(result)
+        }
+      }
+    }
   }
 
   /// Enqueue a transform to be computed asynchronously if and when `self` becomes resolved with an error.
@@ -188,8 +211,8 @@ extension Deferred
   public func recover(qos: DispatchQoS,
                       transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    return Recover(queue: queue, source: self, transform: transform)
+    let queue = DispatchQueue(label: "deferred-recover", qos: qos)
+    return recover(queue: queue, transform: transform)
   }
 }
 
