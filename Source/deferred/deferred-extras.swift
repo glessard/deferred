@@ -53,7 +53,15 @@ extension Deferred
 
   public func enqueuing(on queue: DispatchQueue) -> Deferred
   {
-    return Transferred(queue: queue, source: self)
+    if let result = self.peek()
+    {
+      return Deferred(queue: queue, result: result)
+    }
+
+    return TBD(queue: queue, source: self) {
+      resolver in
+      self.enqueue(queue: queue, boostQoS: false, task: { resolver.resolve($0) })
+    }
   }
 
   /// Get a `Deferred` that will have the same `Result` as `self` once resolved,

@@ -463,32 +463,6 @@ open class Deferred<Value>
 }
 
 
-open class Transferred<Value>: Deferred<Value>
-{
-  /// Transfer a `Deferred` `Result` to a new `Deferred` that notifies on a new queue.
-  ///
-  /// Acts like a fast path for a Map with no transform.
-  ///
-  /// This constructor is used by `enqueuing(on:)`
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose value will be transferred into a new instance.
-
-  public init(queue: DispatchQueue? = nil, source: Deferred<Value>)
-  {
-    if let result = source.peek()
-    {
-      super.init(queue: queue ?? source.queue, result: result)
-    }
-    else
-    {
-      super.init(queue: queue ?? source.queue, source: source, beginExecution: true)
-      source.enqueue(queue: queue, boostQoS: false,
-                     task: { [weak self] result in self?.resolve(result) })
-    }
-  }
-}
-
 /// A `Deferred` with a time delay
 
 class Delay<Value>: Deferred<Value>
