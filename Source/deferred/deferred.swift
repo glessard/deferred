@@ -834,6 +834,10 @@ public struct Resolver<Value>
     deferred?.beginExecution()
   }
 
+  /// Query whether the underlying `Deferred` still exists and is also unresolved
+
+  public var needsResolution: Bool { return deferred?.isResolved == false }
+
   /// Enqueue a notification to be performed asynchronously after our `Deferred` becomes resolved.
   ///
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
