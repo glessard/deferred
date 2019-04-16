@@ -449,54 +449,6 @@ open class Deferred<Value>
   public var qos: DispatchQoS { return self.queue.qos }
 }
 
-
-/// A `Deferred` with a time delay
-
-class Delay<Value>: Deferred<Value>
-{
-  /// Initialize with a `Deferred` source and a time after which this `Deferred` may become resolved.
-  ///
-  /// The resolution could be delayed further if `source` has not become resolved yet,
-  /// but it will not happen earlier than the time referred to by `until`.
-  ///
-  /// This constructor is used by `delay`
-  ///
-  /// - parameter queue:  the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source: the `Deferred` whose value should be delayed
-  /// - parameter until:  the target time until which the resolution of this `Deferred` will be delayed
-
-  init(queue: DispatchQueue?, source: Deferred<Value>, until time: DispatchTime)
-  {
-    super.init(queue: queue, source: source)
-
-    source.enqueue(queue: queue, boostQoS: false) {
-      [weak self] result in
-      guard let this = self, (this.isResolved == false) else { return }
-
-      if result.isError
-      {
-        this.resolve(result)
-        return
-      }
-
-      this.beginExecution()
-      if time == .distantFuture { return }
-      // enqueue block only if can get executed
-      if time > .now()
-      {
-        this.queue.asyncAfter(deadline: time) {
-          [weak this] in
-          this?.resolve(result)
-        }
-      }
-      else
-      {
-        this.resolve(result)
-      }
-    }
-  }
-}
-
 public struct Resolver<Value>
 {
   private weak var deferred: Deferred<Value>?

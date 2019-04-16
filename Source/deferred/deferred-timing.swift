@@ -50,7 +50,34 @@ extension Deferred
   public func delay(queue: DispatchQueue? = nil, until time: DispatchTime) -> Deferred
   {
     guard time > .now() else { return self }
-    return Delay(queue: queue, source: self, until: time)
+
+    return TBD(queue: queue ?? self.queue, source: self) {
+      resolver in
+      self.enqueue(queue: queue, boostQoS: false) {
+        result in
+        guard resolver.needsResolution else { return }
+
+        if result.isError
+        { // don't honor the time delay for the error case
+          resolver.resolve(result)
+          return
+        }
+
+        resolver.beginExecution()
+        if time == .distantFuture { return }
+        // enqueue block only if it can get executed
+        if time > .now()
+        {
+          self.queue.asyncAfter(deadline: time) {
+            resolver.resolve(result)
+          }
+        }
+        else
+        {
+          resolver.resolve(result)
+        }
+      }
+    }
   }
 }
 
