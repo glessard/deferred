@@ -60,6 +60,7 @@ extension Deferred
 
     return TBD(queue: queue, source: self) {
       resolver in
+      if self.state == .executing { resolver.beginExecution() }
       self.enqueue(queue: queue, boostQoS: false, task: { resolver.resolve($0) })
     }
   }
@@ -248,6 +249,7 @@ extension Deferred
         {
           return TBD(queue: queue ?? self.queue, source: deferred) {
             resolver in
+            if deferred.state == .executing { resolver.beginExecution() }
             deferred.enqueue(queue: queue) { resolver.resolve($0) }
           }
         }
@@ -270,6 +272,7 @@ extension Deferred
           }
           else
           {
+            if deferred.state == .executing { resolver.beginExecution() }
             deferred.enqueue(queue: queue) { resolver.resolve($0) }
             // ensure `deferred` lives as long as it needs to
             resolver.notify { _ in withExtendedLifetime(deferred){} }
