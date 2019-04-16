@@ -174,19 +174,19 @@ class DeferredRacingTests: XCTestCase
     let count = 10
     let lucky = Int(nzRandom()) % count
 
-    var injectors: [Resolver<Int>] = []
+    var resolvers: [Resolver<Int>] = []
     let deferreds = (0..<count).map {
       i -> Deferred<Int> in
       let e = expectation(description: String(i))
       return TBD<Int>() {
         d in
         d.notify { _ in e.fulfill() }
-        injectors.append(d)
+        resolvers.append(d)
       }
     }
     let first = firstValue(deferreds, cancelOthers: true)
 
-    XCTAssert(injectors[lucky].determine(value: lucky))
+    XCTAssert(resolvers[lucky].resolve(value: lucky))
     waitForExpectations(timeout: 0.1)
     XCTAssert(first.value == lucky)
 
@@ -204,7 +204,7 @@ class DeferredRacingTests: XCTestCase
   {
     let zero = firstValue(queue: DispatchQueue.global(), deferreds: Array<Deferred<Void>>())
     do {
-      _ = try zero.outcome.get()
+      _ = try zero.result.get()
       XCTFail()
     }
     catch DeferredError.invalid(let m) {
@@ -218,7 +218,7 @@ class DeferredRacingTests: XCTestCase
 
     let first = firstValue(deferreds)
     do {
-      _ = try first.outcome.get()
+      _ = try first.result.get()
       XCTFail()
     }
     catch TestError.value(let e) {
@@ -236,11 +236,7 @@ class DeferredRacingTests: XCTestCase
 
   func testFirstValueEmptySequence() throws
   {
-#if swift(>=4.2)
     let never = firstValue(EmptyCollection<Deferred<Any>>.Iterator())
-#else
-    let never = firstValue(EmptyIterator<Deferred<Any>>())
-#endif
     do {
       let value = try never.get()
       XCTFail("never.value should be nil, was \(value)")
@@ -256,7 +252,7 @@ class DeferredRacingTests: XCTestCase
 
     let first = firstValue(AnySequence(deferreds))
     do {
-      _ = try first.outcome.get()
+      _ = try first.result.get()
       XCTFail()
     }
     catch TestError.value(let e) {
@@ -264,7 +260,7 @@ class DeferredRacingTests: XCTestCase
     }
   }
 
-  func testFirstDeterminedCollection() throws
+  func testFirstResolvedFromCollections() throws
   {
     let count = 10
 
@@ -280,12 +276,12 @@ class DeferredRacingTests: XCTestCase
 
     func oneBy1(_ deferreds: [Deferred<Int>]) throws
     {
-      let first = firstDetermined(deferreds, cancelOthers: true)
-      #if swift(>=5.0)
+      let first = firstResolved(deferreds, cancelOthers: true)
+#if compiler(>=5.0)
       let index = deferreds.firstIndex(where: { d in d === first.value })
-      #else
+#else
       let index = deferreds.index(where: { d in d === first.value })
-      #endif
+#endif
       if let index = index
       {
         var d = deferreds
@@ -307,7 +303,7 @@ class DeferredRacingTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testFirstDeterminedSequence() throws
+  func testFirstResolvedFromSequences() throws
   {
     let seq = { () -> AnyIterator<Deferred<Int>> in
       var c = 10
@@ -318,14 +314,10 @@ class DeferredRacingTests: XCTestCase
       }
     }()
 
-    let first = firstDetermined(seq, cancelOthers: true)
+    let first = firstResolved(seq, cancelOthers: true)
     XCTAssertEqual(try? first.get().get(), 1)
 
-#if swift(>=4.2)
-    let never = firstDetermined(EmptyCollection<Deferred<Any>>.Iterator())
-#else
-    let never = firstDetermined(EmptyIterator<Deferred<Any>>())
-#endif
+    let never = firstResolved(EmptyCollection<Deferred<Any>>.Iterator())
     do {
       let value = try never.get()
       XCTFail("never.value should be nil, was \(value)")

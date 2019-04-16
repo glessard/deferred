@@ -1,4 +1,4 @@
-// swift-tools-version:4.1
+// swift-tools-version:4.2
 
 import PackageDescription
 
@@ -16,5 +16,5 @@ let package = Package(
     .target(name: "deferred", dependencies: ["CAtomics", "Outcome", "CurrentQoS"]),
     .testTarget(name: "deferredTests", dependencies: ["deferred"]),
   ],
-  swiftLanguageVersions: [4,5]
+  swiftLanguageVersions: [.v4, .v4_2, .version("5")]
 )

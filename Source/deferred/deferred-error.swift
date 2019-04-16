@@ -24,7 +24,7 @@ extension DeferredError: CustomStringConvertible
     {
     case .canceled(let message):
       return message.isEmpty ?
-        "Deferred was canceled before an outcome became available" :
+        "Deferred was canceled before a result became available" :
         "Deferred canceled: \(message)"
     case .invalid(let message):
       return message.isEmpty ?
@@ -32,7 +32,7 @@ extension DeferredError: CustomStringConvertible
         "Deferred invalid: \(message)"
     case .timedOut(let message):
       return message.isEmpty ?
-        "Deferred operation timed out before an outcome became available" :
+        "Deferred operation timed out before a result became available" :
         "Deferred operation timed out: \(message)"
     }
   }

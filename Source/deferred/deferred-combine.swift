@@ -12,7 +12,7 @@ import Dispatch
 
 /// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
 ///
-/// The combined `Deferred` will become determined after every input `Deferred` is determined.
+/// The combined `Deferred` will become resolved after every input `Deferred` is resolved.
 ///
 /// The combined `Deferred` will use a new queue at the requested QoS.
 ///
@@ -32,7 +32,7 @@ public func combine<Value, C: Collection>(qos: DispatchQoS,
 
 /// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
 ///
-/// The combined `Deferred` will become determined after every input `Deferred` is determined.
+/// The combined `Deferred` will become resolved after every input `Deferred` is resolved.
 ///
 /// The combined `Deferred` will use a new queue at the current QoS.
 ///
@@ -49,7 +49,7 @@ public func combine<Value, C: Collection>(_ deferreds: C) -> Deferred<[Value]>
 
 /// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
 ///
-/// The combined `Deferred` will become determined after every input `Deferred` is determined.
+/// The combined `Deferred` will become resolved after every input `Deferred` is resolved.
 ///
 /// The combined `Deferred` will use the supplied queue.
 ///
@@ -72,7 +72,7 @@ public func combine<Value, C: Collection>(queue: DispatchQueue,
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
 ///
-/// The combined `Deferred` will become determined after every input `Deferred` has become determined.
+/// The combined `Deferred` will become resolved after every input `Deferred` has become resolved.
 ///
 /// The combined `Deferred` will use a new queue at the requested (or current) QoS.
 ///
@@ -92,7 +92,7 @@ public func combine<Value, S: Sequence>(qos: DispatchQoS = .current,
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
 ///
-/// The combined `Deferred` will become determined after every input `Deferred` is determined.
+/// The combined `Deferred` will become resolved after every input `Deferred` is resolved.
 ///
 /// The combined `Deferred` will use a new queue at the current QoS.
 ///
@@ -109,7 +109,7 @@ public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
 
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
 ///
-/// The combined `Deferred` will become determined after every input `Deferred` is determined.
+/// The combined `Deferred` will become resolved after every input `Deferred` is resolved.
 ///
 /// The combined `Deferred` will use the supplied queue.
 ///
@@ -330,7 +330,7 @@ public func reduce<S: Sequence, T, U>(queue: DispatchQueue,
 
 /// Combine two `Deferred` into one.
 ///
-/// The returned `Deferred` will become determined after both inputs are determined.
+/// The returned `Deferred` will become resolved after both inputs are resolved.
 ///
 /// If either of the elements resolves to an error, the combined `Deferred` will be an error.
 ///
@@ -347,7 +347,7 @@ public func combine<T1,T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(
 
 /// Combine three `Deferred` into one.
 ///
-/// The returned `Deferred` will become determined after all inputs are determined.
+/// The returned `Deferred` will become resolved after all inputs are resolved.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will be an error.
 ///
@@ -365,7 +365,7 @@ public func combine<T1,T2,T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Defe
 
 /// Combine four `Deferred` into one.
 ///
-/// The returned `Deferred` will become determined after all inputs are determined.
+/// The returned `Deferred` will become resolved after all inputs are resolved.
 ///
 /// If any of the elements resolves to an error, the combined `Deferred` will be an error.
 ///

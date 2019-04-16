@@ -80,7 +80,7 @@ class DeferredTests: XCTestCase
     let value = 1
     let d = Deferred(value: value)
     XCTAssert(d.value == value)
-    XCTAssert(d.isDetermined)
+    XCTAssert(d.isResolved)
   }
 
   func testPeek()
@@ -91,13 +91,13 @@ class DeferredTests: XCTestCase
 
     let d2 = d1.delay(until: .distantFuture)
     XCTAssert(d2.peek() == nil)
-    XCTAssert(d2.isDetermined == false)
+    XCTAssert(d2.isResolved == false)
 
     _ = d2.cancel(.timedOut(""))
 
     XCTAssert(d2.peek() != nil)
     XCTAssert(d2.peek()?.error as? DeferredError == DeferredError.timedOut(""))
-    XCTAssert(d2.isDetermined)
+    XCTAssert(d2.isResolved)
   }
 
   func testValueBlocks()
@@ -189,16 +189,16 @@ class DeferredTests: XCTestCase
 
     XCTAssert(d.state == .executing)
     XCTAssert(m.state == .waiting)
-    XCTAssertFalse(d.state.isDetermined)
-    XCTAssertFalse(m.state.isDetermined)
+    XCTAssertFalse(d.state.isResolved)
+    XCTAssertFalse(m.state.isResolved)
 
     s.signal()
     waitForExpectations(timeout: 0.1)
 
     XCTAssert(d.state == .succeeded)
-    XCTAssert(d.state.isDetermined)
+    XCTAssert(d.state.isResolved)
     XCTAssert(m.state == .errored)
-    XCTAssert(m.state.isDetermined)
+    XCTAssert(m.state.isResolved)
   }
 
 
@@ -236,8 +236,8 @@ class DeferredTests: XCTestCase
       return 42
     }
     d3.notify {
-      outcome in
-      guard let e = outcome.error,
+      result in
+      guard let e = result.error,
             let deferredErr = e as? DeferredError,
             case .canceled = deferredErr
       else
@@ -275,7 +275,7 @@ class DeferredTests: XCTestCase
     let d2 = d0.map(transform: Int.init(_:))
     let d3 = d0.map(queue: DispatchQueue(label: #function), transform: Int.init(_:))
 
-    t0.determine(value: nzRandom())
+    t0.resolve(value: nzRandom())
     let r0 = try d0.get()
     XCTAssertEqual(r0, try d1.get())
     XCTAssertEqual(r0, try d2.get())
@@ -460,13 +460,13 @@ class DeferredTests: XCTestCase
     let d3 = dv3.flatten()
     let e3 = expectation(description: "flatten, part 3")
     d3.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e3.fulfill() })
-    t3.determine(value: Deferred(value: value))
+    t3.resolve(value: Deferred(value: value))
 
     let (t4, dv4) = TBD<Deferred<Int>>.CreatePair()
     let d4 = dv4.flatten()
     let e4 = expectation(description: "flatten, part 4")
     d4.recover(transform: { Deferred(error: $0) }).onError(task: { _ in e4.fulfill() })
-    t4.determine(error: TestError(error))
+    t4.resolve(error: TestError(error))
 
     let (t5, dv5) = TBD<Int>.CreatePair()
     let fullyDeferred = Deferred(value: dv5.delay(seconds: 0.02)).delay(seconds: 0.01)
@@ -482,7 +482,7 @@ class DeferredTests: XCTestCase
 //    let willCompile = Deferred(value: d1).flatten()
 //    let wontCompile = Deferred(value: 99).flatten()
 
-    t5.determine(value: value)
+    t5.resolve(value: value)
 
     waitForExpectations(timeout: 0.1)
   }
@@ -496,7 +496,7 @@ class DeferredTests: XCTestCase
 
     let (t, d) = TBD<Int>.CreatePair(qos: .background)
     let transferred2 = Transferred(source: d)
-    t.determine(value: r2)
+    t.resolve(value: r2)
 
     XCTAssert(transferred1.value == r1)
     XCTAssert(transferred2.value == r2)
@@ -536,8 +536,8 @@ class DeferredTests: XCTestCase
     var v1 = 0
     var v2 = 0
     result.notify {
-      outcome in
-      XCTAssert(outcome.value == (Double(v1*v2)))
+      result in
+      XCTAssert(result.value == (Double(v1*v2)))
       expect.fulfill()
     }
 
@@ -545,17 +545,17 @@ class DeferredTests: XCTestCase
 
     trigger.notify { _ in
       v1 = Int(nzRandom() & 0x7fff + 10000)
-      t.determine(value: { i in Double(v1*i) })
+      t.resolve(value: { i in Double(v1*i) })
     }
 
     trigger.notify { _ in
       v2 = Int(nzRandom() & 0x7fff + 10000)
-      o.determine(value: v2)
+      o.resolve(value: v2)
     }
 
-    XCTAssertFalse(operand.isDetermined)
+    XCTAssertFalse(operand.isResolved)
     XCTAssert(operand.state == .waiting)
-    XCTAssertFalse(transform.isDetermined)
+    XCTAssertFalse(transform.isResolved)
     XCTAssert(transform.state == .waiting)
 
     trigger.cancel()
@@ -613,14 +613,14 @@ class DeferredTests: XCTestCase
     XCTAssert(r4.value == nil)
     XCTAssert(r4.error as? TestError == TestError(error))
 
-    // result canceled before transform is determined
+    // result canceled before transform is resolved
     let o5 = Deferred(value: value)
     let (t5, d5) = TBD<(Int) throws -> Float>.CreatePair()
     let e5 = expectation(description: "r5")
     let r5 = o5.apply(transform: d5)
     combine(d5, r5).notify { _ in e5.fulfill() }
     r5.cancel()
-    t5.determine(value: { Float($0) })
+    t5.resolve(value: { Float($0) })
     XCTAssert(r5.value == nil)
     XCTAssert(r5.error as? DeferredError == DeferredError.canceled(""))
 
@@ -743,7 +743,7 @@ class DeferredTests: XCTestCase
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 
-    t0.determine(value: numericCast(nzRandom()))
+    t0.resolve(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -757,7 +757,7 @@ class DeferredTests: XCTestCase
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
-    t0.determine(value: numericCast(nzRandom()))
+    t0.resolve(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -786,7 +786,7 @@ class DeferredTests: XCTestCase
     d4.onError { e in e4.fulfill() }
     XCTAssert(d4.cancel() == true)
 
-    t0.determine(value: numericCast(nzRandom()))
+    t0.resolve(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -821,7 +821,7 @@ class DeferredTests: XCTestCase
     XCTAssert(d3.cancel() == true)
     XCTAssert(d4.cancel() == true)
 
-    t0.determine(value: numericCast(nzRandom()))
+    t0.resolve(value: numericCast(nzRandom()))
 
     waitForExpectations(timeout: 1.0)
   }
@@ -914,7 +914,7 @@ class DeferredTests: XCTestCase
 
     let t3 = 0.05
     let d3 = Deferred(value: DispatchTime.now()).delay(seconds: t3)
-    let e3 = expectation(description: "Timeout test 3: determine before timeout")
+    let e3 = expectation(description: "Timeout test 3: resolve before timeout")
     d3.onValue { time in if time + t3 <= .now() { e3.fulfill() } }
     d3.onError { _ in XCTFail() }
     d3.timeout(seconds: 5*t3)
@@ -989,16 +989,16 @@ class DelayTests: XCTestCase
     let d2 = d1.delay(.milliseconds(500)).map(transform: { 2*$0 })
     d2.cancel()
     d1.cancel()
-    XCTAssert(d2.outcome.isError)
-    XCTAssert(d1.outcome.isError)
+    XCTAssert(d2.result.isError)
+    XCTAssert(d1.result.isError)
   }
 
   func testSourceSlowerThanDelay()
   {
     let d1 = Deferred(value: nzRandom()).delay(.milliseconds(100))
     let d2 = d1.delay(until: .now() + .microseconds(100))
-    XCTAssert(d1.outcome.value == d2.outcome.value)
-    XCTAssert(d2.outcome.isValue)
+    XCTAssert(d1.result.value == d2.result.value)
+    XCTAssert(d2.result.isValue)
   }
 
   func testDistantFuture()

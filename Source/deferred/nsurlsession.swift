@@ -7,8 +7,6 @@
 //
 
 import Dispatch
-import Outcome
-
 import Foundation
 
 public enum URLSessionError: Error
@@ -25,7 +23,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   init(qos: DispatchQoS = .current, error: Error)
   {
     urlSessionTask = nil
-    super.init(qos: qos) { $0.determine(error: error) }
+    super.init(qos: qos) { $0.resolve(error: error) }
   }
 
   init(qos: DispatchQoS = .current, execute: (Resolver<Value>) -> URLSessionTask)
@@ -42,7 +40,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   @discardableResult
   public override func cancel(_ reason: String = "") -> Bool
   {
-    guard !self.isDetermined else { return false }
+    guard !self.isResolved else { return false }
 
     // try to propagate the cancellation upstream
     urlSessionTask?.cancel()
@@ -50,7 +48,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   }
 
   public override func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true,
-                               task: @escaping (Outcome<Value>) -> Void)
+                               task: @escaping (Result<Value, Error>) -> Void)
   {
     if state == .waiting
     {
@@ -85,16 +83,16 @@ extension URLSession
 
       if let error = error
       {
-        resolver.determine(error: error)
+        resolver.resolve(error: error)
         return
       }
 
       if let d = data, let r = response as? HTTPURLResponse
       {
-        resolver.determine(value: (d,r))
+        resolver.resolve(value: (d,r))
       }
       else // Probably an impossible situation
-      { resolver.determine(error: URLSessionError.InvalidState) }
+      { resolver.resolve(error: URLSessionError.InvalidState) }
     }
   }
 
@@ -149,7 +147,7 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
   @discardableResult
   override func cancel(_ reason: String = "") -> Bool
   {
-    guard !self.isDetermined else { return false }
+    guard !self.isResolved else { return false }
 
     let task = urlSessionTask as! URLSessionDownloadTask
 
@@ -181,12 +179,12 @@ extension URLSession
 #endif
           if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
           {
-            resolver.determine(error: URLSessionError.InterruptedDownload(error, data))
+            resolver.resolve(error: URLSessionError.InterruptedDownload(error, data))
             return
           }
         }
 
-        resolver.determine(error: error)
+        resolver.resolve(error: error)
         return
       }
 
@@ -198,12 +196,12 @@ extension URLSession
       if let response = response as? HTTPURLResponse
       {
         if let url = location
-        { resolver.determine(value: (url, response)) }
+        { resolver.resolve(value: (url, response)) }
         else
-        { resolver.determine(error: URLSessionError.ServerStatus(response.statusCode)) } // should not happen
+        { resolver.resolve(error: URLSessionError.ServerStatus(response.statusCode)) } // should not happen
       }
       else // can happen if resume data is corrupted; otherwise probably an impossible situation
-      { resolver.determine(error: URLSessionError.InvalidState) }
+      { resolver.resolve(error: URLSessionError.InvalidState) }
     }
   }
 

@@ -22,8 +22,8 @@ extension DeferredCombinationTimedTests {
 
 extension DeferredRacingTests {
     static let __allTests = [
-        ("testFirstDeterminedCollection", testFirstDeterminedCollection),
-        ("testFirstDeterminedSequence", testFirstDeterminedSequence),
+        ("testFirstResolvedFromCollections", testFirstResolvedFromCollections),
+        ("testFirstResolvedFromSequences", testFirstResolvedFromSequences),
         ("testFirstValueCollection", testFirstValueCollection),
         ("testFirstValueCollectionError", testFirstValueCollectionError),
         ("testFirstValueEmptyCollection", testFirstValueEmptyCollection),
@@ -103,9 +103,7 @@ extension DeletionTests {
 extension TBDTests {
     static let __allTests = [
         ("testCancel", testCancel),
-        ("testDetermine1", testDetermine1),
-        ("testDetermine2", testDetermine2),
-        ("testNeverDetermined", testNeverDetermined),
+        ("testNeverResolved", testNeverResolved),
         ("testNotify1", testNotify1),
         ("testNotify2", testNotify2),
         ("testNotify3", testNotify3),
@@ -114,6 +112,8 @@ extension TBDTests {
         ("testParallel2", testParallel2),
         ("testParallel3", testParallel3),
         ("testParallel4", testParallel4),
+        ("testResolve1", testResolve1),
+        ("testResolve2", testResolve2),
     ]
 }
 

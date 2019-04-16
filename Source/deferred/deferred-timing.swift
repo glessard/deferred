@@ -16,9 +16,9 @@ import Dispatch
 
 extension Deferred
 {
-  /// Return a `Deferred` whose determination will occur at least a number of seconds from the time of evaluation.
+  /// Return a `Deferred` whose resolution will occur at least a number of seconds from the time of evaluation.
   ///
-  /// Note that a cancellation or error will result in early determination.
+  /// Note that a cancellation or error will result in early resolution.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
@@ -28,9 +28,9 @@ extension Deferred
     return self.delay(queue: queue, until: .now() + delay)
   }
 
-  /// Return a `Deferred` whose determination will occur at the earliest`delay` from the time of evaluation.
+  /// Return a `Deferred` whose resolution will occur at the earliest`delay` from the time of evaluation.
   ///
-  /// Note that a cancellation or error will result in early determination.
+  /// Note that a cancellation or error will result in early resolution.
   ///
   /// - parameter delay: a time interval, as `DispatchTimeInterval`
   /// - returns: a `Deferred` reference
@@ -40,9 +40,9 @@ extension Deferred
     return self.delay(queue: queue, until: .now() + delay)
   }
 
-  /// Return a `Deferred` whose determination will occur after a given timestamp.
+  /// Return a `Deferred` whose resolution will occur after a given timestamp.
   ///
-  /// Note that a cancellation or error will result in early determination.
+  /// Note that a cancellation or error will result in early resolution.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
@@ -54,13 +54,13 @@ extension Deferred
   }
 }
 
-// MARK: maximum time until a `Deferred` becomes determined
+// MARK: maximum time until a `Deferred` becomes resolved
 
 extension Deferred
 {
-  /// Ensure this `Deferred` will be determined by the given deadline.
+  /// Ensure this `Deferred` will be resolved by the given deadline.
   ///
-  /// If `self` has not become determined before the timeout expires, `self` will be canceled.
+  /// If `self` has not become resolved before the timeout expires, `self` will be canceled.
   ///
   /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
@@ -72,9 +72,9 @@ extension Deferred
     return self.timeout(after: .now() + seconds, reason: reason)
   }
 
-  /// Ensure this `Deferred` will be determined by the given deadline.
+  /// Ensure this `Deferred` will be resolved by the given deadline.
   ///
-  /// If `self` has not become determined before the timeout expires, `self` will be canceled.
+  /// If `self` has not become resolved before the timeout expires, `self` will be canceled.
   ///
   /// - parameter timeout: a time interval
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
@@ -86,9 +86,9 @@ extension Deferred
     return self.timeout(after: .now() + timeout, reason: reason)
   }
 
-  /// Ensure this `Deferred` will be determined by the given deadline.
+  /// Ensure this `Deferred` will be resolved by the given deadline.
   ///
-  /// If `self` has not become determined before the timeout expires, `self` will be canceled.
+  /// If `self` has not become resolved before the timeout expires, `self` will be canceled.
   ///
   /// - parameter deadline: a timestamp used as a deadline
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
@@ -97,7 +97,7 @@ extension Deferred
   @discardableResult
   public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred
   {
-    if isDetermined { return self }
+    if self.isResolved { return self }
 
     if deadline < .now()
     {
