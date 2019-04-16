@@ -42,7 +42,7 @@ private extension Int
 /// A `Deferred` that becomes resolved, will henceforth always be resolved: it can no longer mutate.
 ///
 /// The `get()` function will return the value of the computation's `Result` (or throw an `Error`),
-/// blocking until it becomes available. If the outcome of the computation is known when `get()` is called,
+/// blocking until it becomes available. If the result of the computation is known when `get()` is called,
 /// it will return immediately.
 /// The properties `value` and `error` are convenient non-throwing (but blocking) wrappers  for the `get()` method.
 ///
@@ -87,20 +87,14 @@ open class Deferred<Value>
   /// Initialize with to a resolved `Result`
   ///
   /// - parameter queue: the dispatch queue upon which to execute future notifications for this `Deferred`
-  /// - parameter outcome: the `Result` of this `Deferred`
+  /// - parameter result: the `Result` of this `Deferred`
 
-  public init(queue: DispatchQueue, outcome: Result<Value, Error>)
+  public init(queue: DispatchQueue, result: Result<Value, Error>)
   {
     self.queue = queue
     source = nil
-    resolved = outcome
+    resolved = result
     deferredState = AtomicInt(.resolved)
-  }
-
-  @available(*, deprecated, renamed: "init(queue:outcome:)")
-  public convenience init(queue: DispatchQueue, result: Result<Value, Error>)
-  {
-    self.init(queue: queue, outcome: result)
   }
 
   /// Initialize with a computation task to be performed on the specified queue
@@ -157,7 +151,7 @@ open class Deferred<Value>
 
   public convenience init(queue: DispatchQueue, value: Value)
   {
-    self.init(queue: queue, outcome: Result<Value, Error>(value: value))
+    self.init(queue: queue, result: Result<Value, Error>(value: value))
   }
 
   /// Initialize with an Error
@@ -178,7 +172,7 @@ open class Deferred<Value>
 
   public convenience init(queue: DispatchQueue, error: Error)
   {
-    self.init(queue: queue, outcome: Result<Value, Error>(error: error))
+    self.init(queue: queue, result: Result<Value, Error>(error: error))
   }
 
   // MARK: state changes / resolve
@@ -202,11 +196,11 @@ open class Deferred<Value>
   /// On subsequent calls, `resolve` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
   ///
-  /// - parameter outcome: the intended `Result` to resolve this `Deferred`
+  /// - parameter result: the intended `Result` to resolve this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  fileprivate func resolve(_ outcome: Result<Value, Error>) -> Bool
+  fileprivate func resolve(_ result: Result<Value, Error>) -> Bool
   {
     let originalState = deferredState.load(.relaxed).state
     guard originalState != .resolving else { return false }
@@ -215,7 +209,7 @@ open class Deferred<Value>
     guard updatedState != .resolving else { return false }
     // this thread has exclusive access
 
-    resolved = outcome
+    resolved = result
     source = nil
 
     // This atomic swap operation uses memory order .acqrel.
@@ -226,7 +220,7 @@ open class Deferred<Value>
     let state = deferredState.swap(.resolved, .acqrel)
     // precondition(state.isResolved == false)
     let waitQueue = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
-    notifyWaiters(queue, waitQueue, outcome)
+    notifyWaiters(queue, waitQueue, result)
 
     // precondition(waiters.load() == .resolved, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
 
@@ -272,7 +266,7 @@ open class Deferred<Value>
   /// Multiple threads can call this method at once; they will succeed in turn.
   ///
   /// Before `resolve()` has been called, the effect of `enqueue()` is to add the closure
-  /// to a list of closures to be called once this `Deferred` has a resolved outcome.
+  /// to a list of closures to be called once this `Deferred` has a resolved result.
   ///
   /// After `resolve()` has been called, the effect of `enqueue()` is to immediately
   /// enqueue the closure for execution.
@@ -283,9 +277,9 @@ open class Deferred<Value>
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
   /// - parameter boostQoS: whether `enqueue` should attempt to boost the QoS if `queue.qos` is higher than `self.qos`; defaults to `true`
   /// - parameter task: a closure to be executed after `self` becomes resolved.
-  /// - parameter outcome: the resolved `Result` of `self`
+  /// - parameter result: the resolved `Result` of `self`
 
-  open func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (_ outcome: Result<Value, Error>) -> Void)
+  open func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (_ result: Result<Value, Error>) -> Void)
   {
     var state = deferredState.load(.acquire)
     if !state.isResolved
@@ -315,7 +309,7 @@ open class Deferred<Value>
 
     // this Deferred is resolved
     let q = queue ?? self.queue
-    q.async(execute: { [outcome = resolved!] in task(outcome) })
+    q.async(execute: { [result = resolved!] in task(result) })
   }
 
   /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes resolved.
@@ -324,11 +318,11 @@ open class Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
   /// - parameter task: a closure to be executed as a notification
-  /// - parameter outcome: the resolved `Result` of `self`
+  /// - parameter result: the resolved `Result` of `self`
 
-  public func notify(queue: DispatchQueue? = nil, task: @escaping (_ outcome: Result<Value, Error>) -> Void)
+  public func notify(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
   {
-    enqueue(queue: queue, task: { outcome in withExtendedLifetime(self) { task(outcome) } })
+    enqueue(queue: queue, task: { result in withExtendedLifetime(self) { task(result) } })
   }
 
   /// Query the current state of this `Deferred`
@@ -383,7 +377,7 @@ open class Deferred<Value>
   ///
   /// - returns: this `Deferred`'s resolved `Result`
 
-  public var outcome: Result<Value, Error> {
+  public var result: Result<Value, Error> {
     if deferredState.load(.acquire).isResolved == false
     {
       if let current = DispatchQoS.QoSClass.current, current > queue.qos.qosClass
@@ -401,9 +395,6 @@ open class Deferred<Value>
     return resolved!
   }
 
-  @available(*, deprecated, renamed: "outcome")
-  public var result: Result<Value, Error> { return self.outcome }
-
   /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
   ///
   /// If the `Deferred` is resolved with an `Error`, that `Error` is thrown.
@@ -415,7 +406,7 @@ open class Deferred<Value>
 
   public func get() throws -> Value
   {
-    return try outcome.get()
+    return try result.get()
   }
 
   /// Get this `Deferred`'s `Result` if has been resolved, `nil` otherwise.
@@ -443,7 +434,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s resolved value, or `nil`
 
   public var value: Value? {
-    return outcome.value
+    return result.value
   }
 
   /// Get this `Deferred`'s error state, blocking if necessary until it becomes resolved.
@@ -456,7 +447,7 @@ open class Deferred<Value>
   /// - returns: this `Deferred`'s resolved error state, or `nil`
 
   public var error: Error? {
-    return outcome.error
+    return result.error
   }
 
   /// Get the QoS of this `Deferred`'s queue
@@ -476,7 +467,7 @@ class Map<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose outcome is represented by this `Deferred`
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
   init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Value)
@@ -484,12 +475,12 @@ class Map<Value>: Deferred<Value>
     super.init(queue: queue, source: source)
 
     source.enqueue(queue: queue) {
-      [weak self] outcome in
+      [weak self] result in
       guard let this = self else { return }
       if this.isResolved { return }
       this.beginExecution()
       do {
-        let value = try outcome.get()
+        let value = try result.get()
         let transformed = try transform(value)
         this.resolve(value: transformed)
       }
@@ -513,15 +504,15 @@ open class Transferred<Value>: Deferred<Value>
 
   public init(queue: DispatchQueue? = nil, source: Deferred<Value>)
   {
-    if let outcome = source.peek()
+    if let result = source.peek()
     {
-      super.init(queue: queue ?? source.queue, outcome: outcome)
+      super.init(queue: queue ?? source.queue, result: result)
     }
     else
     {
       super.init(queue: queue ?? source.queue, source: source, beginExecution: true)
       source.enqueue(queue: queue, boostQoS: false,
-                     task: { [weak self] outcome in self?.resolve(outcome) })
+                     task: { [weak self] result in self?.resolve(result) })
     }
   }
 }
@@ -539,14 +530,14 @@ class Flatten<Value>: Deferred<Value>
 
   init(queue: DispatchQueue? = nil, source: Deferred<Deferred<Value>>)
   {
-    if let outcome = source.peek()
+    if let result = source.peek()
     {
       let mine = queue ?? source.queue
       do {
-        let deferred = try outcome.get()
-        if let outcome = deferred.peek()
+        let deferred = try result.get()
+        if let result = deferred.peek()
         {
-          super.init(queue: mine, outcome: outcome)
+          super.init(queue: mine, result: result)
         }
         else
         {
@@ -555,19 +546,19 @@ class Flatten<Value>: Deferred<Value>
         }
       }
       catch {
-        super.init(queue: mine, outcome: Result<Value, Error>(error: error))
+        super.init(queue: mine, result: Result<Value, Error>(error: error))
       }
       return
     }
 
     super.init(queue: queue, source: source)
     source.enqueue(queue: queue) {
-      [weak self] outcome in
+      [weak self] result in
       do {
-        let deferred = try outcome.get()
-        if let outcome = deferred.peek()
+        let deferred = try result.get()
+        if let result = deferred.peek()
         {
-          self?.resolve(outcome)
+          self?.resolve(result)
         }
         else
         {
@@ -600,7 +591,7 @@ class Bind<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose outcome is represented by this `Deferred`
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
   init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Deferred<Value>)
@@ -608,12 +599,12 @@ class Bind<Value>: Deferred<Value>
     super.init(queue: queue, source: source)
 
     source.enqueue(queue: queue) {
-      [weak self] outcome in
+      [weak self] result in
       guard let this = self else { return }
       if this.isResolved { return }
       this.beginExecution()
       do {
-        let value = try outcome.get()
+        let value = try result.get()
         let transformed = try transform(value)
         transformed.notify(queue: queue) {
           [weak this] transformed in
@@ -635,7 +626,7 @@ class Recover<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose error should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.error` and whose outcome is represented by this `Deferred`
+  /// - parameter transform: the transform to be applied to `source.error` and whose result is represented by this `Deferred`
   /// - parameter error:     the Error to be transformed for a new `Deferred`
 
   init(queue: DispatchQueue?, source: Deferred<Value>, transform: @escaping (_ error: Error) throws -> Deferred<Value>)
@@ -643,11 +634,11 @@ class Recover<Value>: Deferred<Value>
     super.init(queue: queue, source: source)
 
     source.enqueue(queue: queue) {
-      [weak self] outcome in
+      [weak self] result in
       guard let this = self else { return }
       if this.isResolved { return }
       this.beginExecution()
-      if let error = outcome.error
+      if let error = result.error
       {
         do {
           let transformed = try transform(error)
@@ -662,7 +653,7 @@ class Recover<Value>: Deferred<Value>
       }
       else
       {
-        this.resolve(outcome)
+        this.resolve(result)
       }
     }
   }
@@ -678,7 +669,7 @@ class Apply<Value>: Deferred<Value>
   ///
   /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose outcome is represented by this `Deferred`
+  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
   /// - parameter value:     the value to be transformed for a new `Deferred`
 
   init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: Deferred<(_ value: U) throws -> Value>)
@@ -686,11 +677,11 @@ class Apply<Value>: Deferred<Value>
     super.init(queue: queue, source: source)
 
     source.enqueue(queue: queue) {
-      [weak self] outcome in
+      [weak self] result in
       guard let this = self else { return }
       if this.isResolved { return }
       do {
-        let value = try outcome.get()
+        let value = try result.get()
         transform.notify(queue: queue) {
           [weak this] transform in
           guard let this = this else { return }
@@ -733,12 +724,12 @@ class Delay<Value>: Deferred<Value>
     super.init(queue: queue, source: source)
 
     source.enqueue(queue: queue, boostQoS: false) {
-      [weak self] outcome in
+      [weak self] result in
       guard let this = self, (this.isResolved == false) else { return }
 
-      if outcome.isError
+      if result.isError
       {
-        this.resolve(outcome)
+        this.resolve(result)
         return
       }
 
@@ -749,12 +740,12 @@ class Delay<Value>: Deferred<Value>
       {
         this.queue.asyncAfter(deadline: time) {
           [weak this] in
-          this?.resolve(outcome)
+          this?.resolve(result)
         }
       }
       else
       {
-        this.resolve(outcome)
+        this.resolve(result)
       }
     }
   }
@@ -779,9 +770,9 @@ public struct Resolver<Value>
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
-  public func resolve(_ outcome: Result<Value, Error>) -> Bool
+  public func resolve(_ result: Result<Value, Error>) -> Bool
   {
-    return deferred?.resolve(outcome) ?? false
+    return deferred?.resolve(result) ?? false
   }
 
   /// Set the value of our `Deferred` and dispatch all notifications for execution.
@@ -841,9 +832,9 @@ public struct Resolver<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
   /// - parameter task: a closure to be executed as a notification
-  /// - parameter outcome: the resolved `Result` of our `Deferred`
+  /// - parameter result: the resolved `Result` of our `Deferred`
 
-  public func notify(task: @escaping (_ outcome: Result<Value, Error>) -> Void)
+  public func notify(task: @escaping (_ result: Result<Value, Error>) -> Void)
   {
     deferred?.enqueue(task: task)
   }
