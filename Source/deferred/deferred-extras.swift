@@ -218,7 +218,7 @@ extension Deferred
 
 extension Deferred
 {
-  /// Flatten a Deferred-of-a-Deferred<Value> to a Deferred<Value>.
+  /// Flatten a `Deferred<Deferred<Value>>` to a `Deferred<Value>`
   ///
   /// In the right conditions, acts like a fast path for a flatMap with no transform.
   ///
@@ -228,7 +228,50 @@ extension Deferred
   public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other>
     where Value == Deferred<Other>
   {
-    return Flatten(queue: queue, source: self)
+    if let result = self.peek()
+    {
+      do {
+        let deferred = try result.get()
+        if let result = deferred.peek()
+        {
+          return Deferred<Other>(queue: queue ?? self.queue, result: result)
+        }
+        else
+        {
+          return TBD(queue: queue ?? self.queue, source: deferred) {
+            resolver in
+            deferred.enqueue(queue: queue) { resolver.resolve($0) }
+          }
+        }
+      }
+      catch {
+        return Deferred<Other>(queue: queue ?? self.queue, error: error)
+      }
+    }
+
+    return TBD(queue: queue ?? self.queue, source: self) {
+      resolver in
+      self.enqueue(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        do {
+          let deferred = try result.get()
+          if let result = deferred.peek()
+          {
+            resolver.resolve(result)
+          }
+          else
+          {
+            deferred.enqueue(queue: queue) { resolver.resolve($0) }
+            // ensure `deferred` lives as long as it needs to
+            resolver.notify { _ in withExtendedLifetime(deferred){} }
+          }
+        }
+        catch {
+          resolver.resolve(error: error)
+        }
+      }
+    }
   }
 }
 
