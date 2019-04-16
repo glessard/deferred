@@ -47,7 +47,7 @@
 		03BBDB1021EFDBBF00F4B44B /* URLSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */; };
 		03BBDB1821EFDBDD00F4B44B /* nsurlsession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C121D84A8DB00F4B44B /* nsurlsession.swift */; };
 		03C599182176A18400F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
-		03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* determined.swift */; };
+		03D59CB41F7B6CB900F4B44B /* outcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* outcome.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
 		03DBD0242205039600F4B44B /* deferred-split.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DBD0232205039600F4B44B /* deferred-split.swift */; };
 		03E4DF5D21FC01E800F4B44B /* URLSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */; };
@@ -281,7 +281,7 @@
 		03B817A622177DDF00F4B44B /* generate-linuxmain.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = "generate-linuxmain.sh"; path = "../Utilities/generate-linuxmain.sh"; sourceTree = "<group>"; };
 		03BEA0DF20CF3C1200F4B44B /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = XCTestManifests.swift; path = deferredTests/XCTestManifests.swift; sourceTree = "<group>"; };
 		03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CurrentQoS.xcodeproj; path = CurrentQoS/Xcode/CurrentQoS.xcodeproj; sourceTree = "<group>"; };
-		03D59CB31F7B6CB900F4B44B /* determined.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = determined.swift; path = deferred/determined.swift; sourceTree = "<group>"; };
+		03D59CB31F7B6CB900F4B44B /* outcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = outcome.swift; path = deferred/outcome.swift; sourceTree = "<group>"; };
 		03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "dispatch-utilities.swift"; path = "deferred/dispatch-utilities.swift"; sourceTree = "<group>"; };
 		03DBD0232205039600F4B44B /* deferred-split.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "deferred-split.swift"; path = "deferred/deferred-split.swift"; sourceTree = "<group>"; };
 		03FD35AD1F328D4E00F4B44B /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text; name = .travis.yml; path = ../.travis.yml; sourceTree = "<group>"; };
@@ -382,7 +382,7 @@
 				03DBD0232205039600F4B44B /* deferred-split.swift */,
 				033928181F8C099700F4B44B /* deferred-first.swift */,
 				035D0C121D84A8DB00F4B44B /* nsurlsession.swift */,
-				03D59CB31F7B6CB900F4B44B /* determined.swift */,
+				03D59CB31F7B6CB900F4B44B /* outcome.swift */,
 				035D0C141D84A8DB00F4B44B /* waiter.swift */,
 				03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */,
 			);
@@ -795,7 +795,7 @@
 				035D0C1B1D84A8DB00F4B44B /* deferred-parallelize.swift in Sources */,
 				035D0C1D1D84A8DB00F4B44B /* deferred.swift in Sources */,
 				03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */,
-				03D59CB41F7B6CB900F4B44B /* determined.swift in Sources */,
+				03D59CB41F7B6CB900F4B44B /* outcome.swift in Sources */,
 				035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */,
 				03BBDB1821EFDBDD00F4B44B /* nsurlsession.swift in Sources */,
 				035D0C191D84A8DB00F4B44B /* deferred-extras.swift in Sources */,
