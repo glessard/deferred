@@ -761,7 +761,7 @@ class Delay<Value>: Deferred<Value>
   }
 }
 
-public struct Injector<Value>
+public struct Resolver<Value>
 {
   private weak var deferred: Deferred<Value>?
 
@@ -858,30 +858,30 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public init(queue: DispatchQueue, execute: (Injector<Value>) -> Void)
+  public init(queue: DispatchQueue, execute: (Resolver<Value>) -> Void)
   {
     super.init(queue: queue)
-    execute(Injector(self))
+    execute(Resolver(self))
   }
 
   /// Initialize an undetermined `Deferred`, `TBD`.
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public init(qos: DispatchQoS = .current, execute: (Injector<Value>) -> Void)
+  public init(qos: DispatchQoS = .current, execute: (Resolver<Value>) -> Void)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
     super.init(queue: queue)
-    execute(Injector(self))
+    execute(Resolver(self))
   }
 
-  public static func CreatePair(queue: DispatchQueue) -> (Injector<Value>, Deferred<Value>)
+  public static func CreatePair(queue: DispatchQueue) -> (Resolver<Value>, Deferred<Value>)
   {
     let d = Deferred<Value>(queue: queue)
-    return (Injector(d), d)
+    return (Resolver(d), d)
   }
 
-  public static func CreatePair(qos: DispatchQoS = .current) -> (Injector<Value>, Deferred<Value>)
+  public static func CreatePair(qos: DispatchQoS = .current) -> (Resolver<Value>, Deferred<Value>)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
     return CreatePair(queue: queue)

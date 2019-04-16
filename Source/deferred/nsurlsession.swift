@@ -28,10 +28,10 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     super.init(qos: qos) { $0.determine(error: error) }
   }
 
-  init(qos: DispatchQoS = .current, setter: (Injector<Value>) -> URLSessionTask)
+  init(qos: DispatchQoS = .current, execute: (Resolver<Value>) -> URLSessionTask)
   {
     var t: URLSessionTask?
-    super.init(qos: qos, execute: { t = setter($0) })
+    super.init(qos: qos, execute: { t = execute($0) })
     urlSessionTask = t.unsafelyUnwrapped
   }
 
@@ -78,23 +78,23 @@ private func validateURL(_ request: URLRequest) throws
 
 extension URLSession
 {
-  private func dataCompletion(_ tbd: Injector<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, Error?) -> Void
+  private func dataCompletion(_ resolver: Resolver<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, Error?) -> Void
   {
     return {
       (data: Data?, response: URLResponse?, error: Error?) in
 
       if let error = error
       {
-        tbd.determine(error: error)
+        resolver.determine(error: error)
         return
       }
 
       if let d = data, let r = response as? HTTPURLResponse
       {
-        tbd.determine(value: (d,r))
+        resolver.determine(value: (d,r))
       }
       else // Probably an impossible situation
-      { tbd.determine(error: URLSessionError.InvalidState) }
+      { resolver.determine(error: URLSessionError.InvalidState) }
     }
   }
 
@@ -166,7 +166,7 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 
 extension URLSession
 {
-  private func downloadCompletion(_ tbd: Injector<(URL, HTTPURLResponse)>) -> (URL?, URLResponse?, Error?) -> Void
+  private func downloadCompletion(_ resolver: Resolver<(URL, HTTPURLResponse)>) -> (URL?, URLResponse?, Error?) -> Void
   {
     return {
       (location: URL?, response: URLResponse?, error: Error?) in
@@ -181,12 +181,12 @@ extension URLSession
 #endif
           if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
           {
-            tbd.determine(error: URLSessionError.InterruptedDownload(error, data))
+            resolver.determine(error: URLSessionError.InterruptedDownload(error, data))
             return
           }
         }
 
-        tbd.determine(error: error)
+        resolver.determine(error: error)
         return
       }
 
@@ -198,12 +198,12 @@ extension URLSession
       if let response = response as? HTTPURLResponse
       {
         if let url = location
-        { tbd.determine(value: (url, response)) }
+        { resolver.determine(value: (url, response)) }
         else
-        { tbd.determine(error: URLSessionError.ServerStatus(response.statusCode)) } // should not happen
+        { resolver.determine(error: URLSessionError.ServerStatus(response.statusCode)) } // should not happen
       }
       else // can happen if resume data is corrupted; otherwise probably an impossible situation
-      { tbd.determine(error: URLSessionError.InvalidState) }
+      { resolver.determine(error: URLSessionError.InvalidState) }
     }
   }
 
