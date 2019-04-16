@@ -34,7 +34,7 @@ class TBDTimingTests: XCTestCase
       }
 
       self.startMeasuring()
-      trigger.determine(value: (0, ref, ref))
+      trigger.resolve(value: (0, ref, ref))
       let (iterations, tic, toc) = try! dt.get()
       self.stopMeasuring()
 
@@ -57,7 +57,7 @@ class TBDTimingTests: XCTestCase
         }
 
         self.startMeasuring()
-        start.determine(value: Date())
+        start.resolve(value: Date())
       }
 
       let dt = start.map { start in Date().timeIntervalSince(start) }
@@ -84,7 +84,7 @@ class TBDTimingTests: XCTestCase
         }
         self.stopMeasuring()
 
-        t.determine(value: 1)
+        t.resolve(value: 1)
       }
 
     }

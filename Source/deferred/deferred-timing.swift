@@ -97,7 +97,7 @@ extension Deferred
   @discardableResult
   public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred
   {
-    if isDetermined { return self }
+    if self.isResolved { return self }
 
     if deadline < .now()
     {

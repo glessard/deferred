@@ -79,10 +79,10 @@ extension Collection
         let index = self.index(self.startIndex, offsetBy: iteration)
         do {
           let value = try task(self[index])
-          d.determine(value: value)
+          d.resolve(value: value)
         }
         catch {
-          d.determine(error: error)
+          d.resolve(error: error)
         }
       }
     }

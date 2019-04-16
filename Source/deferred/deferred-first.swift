@@ -98,11 +98,11 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
           outcome in
           do {
             let value = try outcome.get()
-            f.determine(value: value)
+            f.resolve(value: value)
             e.cancel()
           }
           catch {
-            e.determine(value: error)
+            e.resolve(value: error)
           }
         }
         if cancelOthers { f.notify { _ in deferred.cancel() }}
@@ -111,7 +111,7 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
     }
 
     let combined = combine(queue: queue, deferreds: errors)
-    combined.onValue { f.determine(error: $0.last!) }
+    combined.onValue { f.resolve(error: $0.last!) }
     f.notify { _ in combined.cancel() }
   }
 
@@ -198,11 +198,11 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
             outcome in
             do {
               let value = try outcome.get()
-              f.determine(value: value)
+              f.resolve(value: value)
               e.cancel()
             }
             catch {
-              e.determine(value: error)
+              e.resolve(value: error)
             }
           }
           if cancelOthers { f.notify { _ in deferred.cancel() } }
@@ -213,12 +213,12 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
       if errors.isEmpty
       { // our sequence was empty
         let error = DeferredError.invalid("cannot find first determined value from an empty set in \(#function)")
-        f.determine(error: error)
+        f.resolve(error: error)
       }
       else
       {
         let combined = combine(queue: queue, deferreds: errors)
-        combined.onValue { f.determine(error: $0.last!) }
+        combined.onValue { f.resolve(error: $0.last!) }
         f.notify { _ in combined.cancel() }
       }
     }
@@ -296,7 +296,7 @@ public func firstDetermined<Value, C: Collection>(queue: DispatchQueue,
     f in
     deferreds.forEach {
       deferred in
-      deferred.notify { _ in f.determine(value: deferred) }
+      deferred.notify { _ in f.resolve(value: deferred) }
       if cancelOthers { f.notify { _ in deferred.cancel() } }
     }
   }
@@ -369,14 +369,14 @@ public func firstDetermined<Value, S>(queue: DispatchQueue, deferreds: S,
       deferreds.forEach {
         deferred in
         subscribed = true
-        deferred.notify { _ in f.determine(value: deferred) }
+        deferred.notify { _ in f.resolve(value: deferred) }
         if cancelOthers { f.notify { _ in deferred.cancel() } }
       }
 
       if !subscribed
       {
         let message = "cannot find first determined from an empty set in \(#function)"
-        f.determine(error: DeferredError.invalid(message))
+        f.resolve(error: DeferredError.invalid(message))
       }
     }
   }

@@ -20,15 +20,15 @@ class TBDTests: XCTestCase
     var (i, d) = TBD<Int>.CreatePair()
     i.beginExecution()
     let value = nzRandom()
-    XCTAssert(i.determine(value: value))
-    XCTAssert(d.isDetermined)
+    XCTAssert(i.resolve(value: value))
+    XCTAssert(d.isResolved)
     XCTAssert(d.value == value)
     XCTAssert(d.error == nil)
 
     (i, d) = TBD<Int>.CreatePair()
     i.beginExecution()
-    XCTAssert(i.determine(error: TestError(value)))
-    XCTAssert(d.isDetermined)
+    XCTAssert(i.resolve(error: TestError(value)))
+    XCTAssert(d.isResolved)
     XCTAssert(d.value == nil)
     XCTAssert(d.error == TestError(value))
   }
@@ -40,17 +40,17 @@ class TBDTests: XCTestCase
     var value = nzRandom()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.01) {
       value = nzRandom()
-      XCTAssert(i.determine(value: value))
+      XCTAssert(i.resolve(value: value))
     }
 
-    XCTAssert(d.isDetermined == false)
+    XCTAssert(d.isResolved == false)
 
     // Block until tbd becomes determined
     XCTAssert(d.value == value)
     XCTAssert(d.error == nil)
 
     // Try and fail to determine tbd a second time.
-    XCTAssert(i.determine(value: value) == false)
+    XCTAssert(i.resolve(value: value) == false)
   }
 
   func testCancel() throws
@@ -69,7 +69,7 @@ class TBDTests: XCTestCase
     (i, d) = TBD<Int>.CreatePair()
     i.cancel()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) {
-      if i.determine(value: nzRandom())
+      if i.resolve(value: nzRandom())
       {
         XCTFail()
       }
@@ -88,7 +88,7 @@ class TBDTests: XCTestCase
     let value = nzRandom()
     let e1 = expectation(description: "TBD notification after determination")
     let (i, d1) = TBD<Int>.CreatePair()
-    i.determine(value: value)
+    i.resolve(value: value)
 
     d1.notify {
       XCTAssert( $0.value == value )
@@ -110,7 +110,7 @@ class TBDTests: XCTestCase
 
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 10e-6) {
       value = nzRandom()
-      XCTAssert(i.determine(value: value))
+      XCTAssert(i.resolve(value: value))
     }
 
     waitForExpectations(timeout: 1.0)
@@ -138,14 +138,14 @@ class TBDTests: XCTestCase
     let (t2, d2) = TBD<Int>.CreatePair()
     let r = nzRandom()
 
-    d1.notify(task: { o in t2.determine(o) })
+    d1.notify(task: { o in t2.resolve(o) })
     d2.notify {
       o in
       XCTAssert(o.isValue)
       if o.value == r { e.fulfill() }
     }
 
-    t1.determine(value: r)
+    t1.resolve(value: r)
 
     waitForExpectations(timeout: 0.1)
   }
@@ -158,9 +158,9 @@ class TBDTests: XCTestCase
     let other = first.map { XCTFail(String($0)) }
     let third = other.map { XCTFail(String(describing: $0)) }
 
-    XCTAssert(first.isDetermined == false)
-    XCTAssert(other.isDetermined == false)
-    XCTAssert(third.isDetermined == false)
+    XCTAssert(first.isResolved == false)
+    XCTAssert(other.isResolved == false)
+    XCTAssert(third.isResolved == false)
 
     first.cancel()
 
