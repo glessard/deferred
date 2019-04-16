@@ -39,18 +39,18 @@ private extension Int
 
 /// An asynchronous computation.
 ///
-/// A `Deferred` starts out undetermined, in the `.waiting` state.
-/// It may then enter the `.executing` state, and may eventually become determined,
+/// A `Deferred` starts out unresolved, in the `.waiting` state.
+/// It may then enter the `.executing` state, and may eventually become resolved,
 /// either having `.succeeded` or `.errored`.
 ///
-/// A `Deferred` that becomes determined, will henceforth always be determined: it can no longer mutate.
+/// A `Deferred` that becomes resolved, will henceforth always be resolved: it can no longer mutate.
 ///
 /// The `get()` function will return the value of the computation's `Outcome` (or throw an `Error`),
 /// blocking until it becomes available. If the outcome of the computation is known when `get()` is called,
 /// it will return immediately.
 /// The properties `value` and `error` are convenient non-throwing (but blocking) wrappers  for the `get()` method.
 ///
-/// Closures supplied to the `enqueue` function will be called after the `Deferred` has become determined.
+/// Closures supplied to the `enqueue` function will be called after the `Deferred` has become resolved.
 /// The functions `map`, `flatMap`, `notify` and others are wrappers that add functionality to the `enqueue` function.
 
 open class Deferred<Value>
@@ -88,7 +88,7 @@ open class Deferred<Value>
     deferredState = AtomicInt(.waiting)
   }
 
-  /// Initialize with a pre-determined `Outcome`
+  /// Initialize with to a resolved `Outcome`
   ///
   /// - parameter queue: the dispatch queue upon which to execute future notifications for this `Deferred`
   /// - parameter outcome: the `Outcome` of this `Deferred`
@@ -143,7 +143,7 @@ open class Deferred<Value>
     self.init(queue: queue, task: task)
   }
 
-  /// Initialize to an already determined state
+  /// Initialize to an already resolved state
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
   /// - parameter value: the value of this `Deferred`
@@ -154,7 +154,7 @@ open class Deferred<Value>
     self.init(queue: queue, value: value)
   }
 
-  /// Initialize to an already determined state
+  /// Initialize to an already resolved state
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
   /// - parameter value: the value of this `Deferred`
@@ -185,7 +185,7 @@ open class Deferred<Value>
     self.init(queue: queue, outcome: Outcome(error: error))
   }
 
-  // MARK: state changes / determine
+  // MARK: state changes / resolve
 
   /// Change the state of this `Deferred` from `.waiting` to `.executing`
 
@@ -202,11 +202,11 @@ open class Deferred<Value>
 
   /// Set the `Outcome` of this `Deferred` and dispatch all notifications for execution.
   ///
-  /// Note that a `Deferred` can only be determined once.
-  /// On subsequent calls, `determine` will fail and return `false`.
+  /// Note that a `Deferred` can only be resolved once.
+  /// On subsequent calls, `resolve` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
   ///
-  /// - parameter outcome: the intended `Outcome` to determine this `Deferred`
+  /// - parameter outcome: the intended `Outcome` to resolve this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
   @discardableResult
@@ -223,9 +223,9 @@ open class Deferred<Value>
     source = nil
 
     // This atomic swap operation uses memory order .acqrel.
-    // "release" ordering ensures visibility of changes to `determined` above to another thread.
+    // "release" ordering ensures visibility of changes to `resolved` above to another thread.
     // "acquire" ordering ensures visibility of changes to `waitQueue` from another thread.
-    // Any atomic load of `waiters` that precedes a possible use of `determined`
+    // Any atomic load of `waiters` that precedes a possible use of `resolved`
     // *must* use memory order .acquire.
     let state = deferredState.swap(.resolved, .acqrel)
     // precondition(state.isResolved == false)
@@ -234,14 +234,14 @@ open class Deferred<Value>
 
     // precondition(waiters.load() == .resolved, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
 
-    // The outcome has been determined
+    // This `Deferred` has been resolved
     return true
   }
 
   /// Set the value of this `Deferred` and dispatch all notifications for execution.
   ///
-  /// Note that a `Deferred` can only be determined once.
-  /// On subsequent calls, `determine` will fail and return `false`.
+  /// Note that a `Deferred` can only be resolved once.
+  /// On subsequent calls, `resolve` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
   ///
   /// - parameter value: the intended value for this `Deferred`
@@ -286,8 +286,8 @@ open class Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
   /// - parameter boostQoS: whether `enqueue` should attempt to boost the QoS if `queue.qos` is higher than `self.qos`; defaults to `true`
-  /// - parameter task: a closure to be executed after `self` becomes determined.
-  /// - parameter outcome: the determined `Outcome` of `self`
+  /// - parameter task: a closure to be executed after `self` becomes resolved.
+  /// - parameter outcome: the resolved `Outcome` of `self`
 
   open func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (_ outcome: Outcome<Value>) -> Void)
   {
@@ -322,13 +322,13 @@ open class Deferred<Value>
     q.async(execute: { [outcome = resolved!] in task(outcome) })
   }
 
-  /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes determined.
+  /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes resolved.
   ///
   /// The enqueued closure will extend the lifetime of `self` until `task` completes.
   ///
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
   /// - parameter task: a closure to be executed as a notification
-  /// - parameter outcome: the determined `Outcome` of `self`
+  /// - parameter outcome: the resolved `Outcome` of `self`
 
   public func notify(queue: DispatchQueue? = nil, task: @escaping (_ outcome: Outcome<Value>) -> Void)
   {
@@ -345,8 +345,8 @@ open class Deferred<Value>
       (state.state == .waiting ? .waiting : .executing )
   }
 
-  /// Query whether this `Deferred` has become determined.
-  /// - returns: `true` iff this `Deferred` has become determined.
+  /// Query whether this `Deferred` has become resolved.
+  /// - returns: `true` iff this `Deferred` has become resolved.
 
   public var isResolved: Bool {
     return deferredState.load(.relaxed).isResolved
@@ -379,13 +379,13 @@ open class Deferred<Value>
     return resolve(error: error)
   }
 
-  /// Get this `Deferred`'s determined `Outcome`, blocking if necessary until it exists.
+  /// Get this `Deferred`'s resolved `Outcome`, blocking if necessary until it exists.
   ///
-  /// When called on a `Deferred` that is already determined, this call is non-blocking.
+  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
   ///
-  /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
+  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
   ///
-  /// - returns: this `Deferred`'s determined `Outcome`
+  /// - returns: this `Deferred`'s resolved `Outcome`
 
   public var outcome: Outcome<Value> {
     if deferredState.load(.acquire).isResolved == false
@@ -408,25 +408,25 @@ open class Deferred<Value>
   @available(*, deprecated, renamed: "outcome")
   public var result: Outcome<Value> { return self.outcome }
 
-  /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
+  /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
   ///
-  /// If the `Deferred` is determined with an `Error`, that `Error` is thrown.
+  /// If the `Deferred` is resolved with an `Error`, that `Error` is thrown.
   ///
-  /// When called on a `Deferred` that is already determined, this call is non-blocking.
-  /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
+  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
+  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
   ///
-  /// - returns: this `Deferred`'s determined value, or a thrown `Error`
+  /// - returns: this `Deferred`'s resolved value, or a thrown `Error`
 
   public func get() throws -> Value
   {
     return try outcome.get()
   }
 
-  /// Get this `Deferred`'s `Outcome` if has been determined, `nil` otherwise.
+  /// Get this `Deferred`'s `Outcome` if has been resolved, `nil` otherwise.
   ///
   /// This call is non-blocking and wait-free.
   ///
-  /// - returns: this `Deferred`'s determined `Outcome`, or `nil`
+  /// - returns: this `Deferred`'s resolved `Outcome`, or `nil`
 
   public func peek() -> Outcome<Value>?
   {
@@ -437,27 +437,27 @@ open class Deferred<Value>
     return nil
   }
 
-  /// Get this `Deferred`'s value, blocking if necessary until it becomes determined.
+  /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
   ///
-  /// If the `Deferred` is determined with an `Error`, return nil.
+  /// If the `Deferred` is resolved with an `Error`, return nil.
   ///
-  /// When called on a `Deferred` that is already determined, this call is non-blocking.
-  /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
+  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
+  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
   ///
-  /// - returns: this `Deferred`'s determined value, or `nil`
+  /// - returns: this `Deferred`'s resolved value, or `nil`
 
   public var value: Value? {
     return outcome.value
   }
 
-  /// Get this `Deferred`'s error state, blocking if necessary until it becomes determined.
+  /// Get this `Deferred`'s error state, blocking if necessary until it becomes resolved.
   ///
-  /// If the `Deferred` is determined with a `Value`, return nil.
+  /// If the `Deferred` is resolved with a `Value`, return nil.
   ///
-  /// When called on a `Deferred` that is already determined, this call is non-blocking.
-  /// When called on a `Deferred` that is not determined, this call blocks the executing thread.
+  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
+  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
   ///
-  /// - returns: this `Deferred`'s determined error state, or `nil`
+  /// - returns: this `Deferred`'s resolved error state, or `nil`
 
   public var error: Error? {
     return outcome.error
@@ -721,16 +721,16 @@ class Apply<Value>: Deferred<Value>
 
 class Delay<Value>: Deferred<Value>
 {
-  /// Initialize with a `Deferred` source and a time after which this `Deferred` may become determined.
+  /// Initialize with a `Deferred` source and a time after which this `Deferred` may become resolved.
   ///
-  /// The determination could be delayed further if `source` has not become determined yet,
+  /// The resolution could be delayed further if `source` has not become resolved yet,
   /// but it will not happen earlier than the time referred to by `until`.
   ///
   /// This constructor is used by `delay`
   ///
   /// - parameter queue:  the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
   /// - parameter source: the `Deferred` whose value should be delayed
-  /// - parameter until:  the target time until which the determination of this `Deferred` will be delayed
+  /// - parameter until:  the target time until which the resolution of this `Deferred` will be delayed
 
   init(queue: DispatchQueue?, source: Deferred<Value>, until time: DispatchTime)
   {
@@ -775,8 +775,8 @@ public struct Resolver<Value>
 
   /// Set the value of our `Deferred` and dispatch all notifications for execution.
   ///
-  /// Note that a `Deferred` can only be determined once.
-  /// On subsequent calls, `determine` will fail and return `false`.
+  /// Note that a `Deferred` can only be resolved once.
+  /// On subsequent calls, `resolve` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
   ///
   /// - parameter value: the intended value for this `Deferred`
@@ -790,8 +790,8 @@ public struct Resolver<Value>
 
   /// Set the value of our `Deferred` and dispatch all notifications for execution.
   ///
-  /// Note that a `Deferred` can only be determined once.
-  /// On subsequent calls, `determine` will fail and return `false`.
+  /// Note that a `Deferred` can only be resolved once.
+  /// On subsequent calls, `resolve` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
   ///
   /// - parameter value: the intended value for this `Deferred`
@@ -805,8 +805,8 @@ public struct Resolver<Value>
 
   /// Set our `Deferred` to an error and dispatch all notifications for execution.
   ///
-  /// Note that a `Deferred` can only be determined once.
-  /// On subsequent calls, `determine` will fail and return `false`.
+  /// Note that a `Deferred` can only be resolved once.
+  /// On subsequent calls, `resolve` will fail and return `false`.
   /// This operation is lock-free and thread-safe.
   ///
   /// - parameter error: the intended error for this `Deferred`
@@ -841,11 +841,11 @@ public struct Resolver<Value>
     deferred?.beginExecution()
   }
 
-  /// Enqueue a notification to be performed asynchronously after our `Deferred` becomes determined.
+  /// Enqueue a notification to be performed asynchronously after our `Deferred` becomes resolved.
   ///
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
   /// - parameter task: a closure to be executed as a notification
-  /// - parameter outcome: the determined `Outcome` of our `Deferred`
+  /// - parameter outcome: the resolved `Outcome` of our `Deferred`
 
   public func notify(task: @escaping (_ outcome: Outcome<Value>) -> Void)
   {
@@ -853,11 +853,11 @@ public struct Resolver<Value>
   }
 }
 
-/// A `Deferred` to be determined (`TBD`) manually.
+/// A `Deferred` to be resolved (`TBD`) manually.
 
 open class TBD<Value>: Deferred<Value>
 {
-  /// Initialize an undetermined `Deferred`, `TBD`.
+  /// Initialize an unresolved `Deferred`, `TBD`.
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
@@ -867,7 +867,7 @@ open class TBD<Value>: Deferred<Value>
     execute(Resolver(self))
   }
 
-  /// Initialize an undetermined `Deferred`, `TBD`.
+  /// Initialize an unresolved `Deferred`, `TBD`.
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
