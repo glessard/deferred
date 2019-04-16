@@ -121,8 +121,8 @@ class TBDTests: XCTestCase
     let e3 = expectation(description: "TBD never resolved")
     let d3 = TBD<Int>() { _ in }
     d3.notify {
-      outcome in
-      XCTAssert(outcome.error as? DeferredError == DeferredError.canceled(""))
+      result in
+      XCTAssert(result.error as? DeferredError == DeferredError.canceled(""))
     }
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
       // This will trigger the `XCWaitCompletionHandler` in the `waitForExpectationsWithTimeout` call below.

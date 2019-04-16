@@ -80,7 +80,7 @@ class TBDTimingTests: XCTestCase
         self.startMeasuring()
         for _ in 0...iterations
         {
-          t.notify { outcome in _ = outcome.value }
+          t.notify { result in _ = result.value }
         }
         self.stopMeasuring()
 

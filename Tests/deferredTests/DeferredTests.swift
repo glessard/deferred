@@ -236,8 +236,8 @@ class DeferredTests: XCTestCase
       return 42
     }
     d3.notify {
-      outcome in
-      guard let e = outcome.error,
+      result in
+      guard let e = result.error,
             let deferredErr = e as? DeferredError,
             case .canceled = deferredErr
       else
@@ -536,8 +536,8 @@ class DeferredTests: XCTestCase
     var v1 = 0
     var v2 = 0
     result.notify {
-      outcome in
-      XCTAssert(outcome.value == (Double(v1*v2)))
+      result in
+      XCTAssert(result.value == (Double(v1*v2)))
       expect.fulfill()
     }
 
@@ -989,16 +989,16 @@ class DelayTests: XCTestCase
     let d2 = d1.delay(.milliseconds(500)).map(transform: { 2*$0 })
     d2.cancel()
     d1.cancel()
-    XCTAssert(d2.outcome.isError)
-    XCTAssert(d1.outcome.isError)
+    XCTAssert(d2.result.isError)
+    XCTAssert(d1.result.isError)
   }
 
   func testSourceSlowerThanDelay()
   {
     let d1 = Deferred(value: nzRandom()).delay(.milliseconds(100))
     let d2 = d1.delay(until: .now() + .microseconds(100))
-    XCTAssert(d1.outcome.value == d2.outcome.value)
-    XCTAssert(d2.outcome.isValue)
+    XCTAssert(d1.result.value == d2.result.value)
+    XCTAssert(d2.result.isValue)
   }
 
   func testDistantFuture()

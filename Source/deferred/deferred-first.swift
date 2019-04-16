@@ -95,9 +95,9 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
       let e = TBD<Error>() {
         e in
         deferred.notify {
-          outcome in
+          result in
           do {
-            let value = try outcome.get()
+            let value = try result.get()
             f.resolve(value: value)
             e.cancel()
           }
@@ -195,9 +195,9 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
         let error = TBD<Error> {
           e in
           deferred.notify {
-            outcome in
+            result in
             do {
-              let value = try outcome.get()
+              let value = try result.get()
               f.resolve(value: value)
               e.cancel()
             }

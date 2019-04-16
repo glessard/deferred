@@ -204,7 +204,7 @@ class DeferredRacingTests: XCTestCase
   {
     let zero = firstValue(queue: DispatchQueue.global(), deferreds: Array<Deferred<Void>>())
     do {
-      _ = try zero.outcome.get()
+      _ = try zero.result.get()
       XCTFail()
     }
     catch DeferredError.invalid(let m) {
@@ -218,7 +218,7 @@ class DeferredRacingTests: XCTestCase
 
     let first = firstValue(deferreds)
     do {
-      _ = try first.outcome.get()
+      _ = try first.result.get()
       XCTFail()
     }
     catch TestError.value(let e) {
@@ -252,7 +252,7 @@ class DeferredRacingTests: XCTestCase
 
     let first = firstValue(AnySequence(deferreds))
     do {
-      _ = try first.outcome.get()
+      _ = try first.result.get()
       XCTFail()
     }
     catch TestError.value(let e) {
