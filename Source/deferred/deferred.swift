@@ -315,19 +315,6 @@ open class Deferred<Value>
     q.async(execute: { [result = resolved!] in task(result) })
   }
 
-  /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes resolved.
-  ///
-  /// The enqueued closure will extend the lifetime of this `Deferred` until `task` completes.
-  ///
-  /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
-  /// - parameter task: a closure to be executed as a notification
-  /// - parameter result: the `Result` of this `Deferred`
-
-  public func notify(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
-  {
-    enqueue(queue: queue, task: { result in withExtendedLifetime(self) { task(result) } })
-  }
-
   /// Query the current state of this `Deferred`
   /// - returns: a `DeferredState` that describes this `Deferred`
 

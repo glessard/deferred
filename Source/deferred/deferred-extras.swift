@@ -14,9 +14,26 @@ import Dispatch
 
 extension Deferred
 {
+  // MARK: notify: execute a task when this `deferred` becomes resolved
+
+  /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes resolved.
+  ///
+  /// This function will extend the lifetime of this `Deferred` until `task` completes.
+  ///
+  /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
+  /// - parameter task: a closure to be executed as a notification
+  /// - parameter result: the `Result` of this `Deferred`
+
+  public func notify(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
+  {
+    enqueue(queue: queue, task: { result in withExtendedLifetime(self) { task(result) } })
+  }
+
   // MARK: onValue: execute a task when (and only when) a computation succeeds
 
   /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes resolved with a value
+  ///
+  /// This function will extend the lifetime of this `Deferred` until `task` completes.
   ///
   /// - parameter queue: the `DispatchQueue` on which to execute the notification; defaults to `self`'s queue.
   /// - parameter task: the closure to be enqueued
@@ -30,6 +47,8 @@ extension Deferred
   // MARK: onError: execute a task when (and only when) a computation fails
 
   /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes resolved with an error
+  ///
+  /// This function will extend the lifetime of this `Deferred` until `task` completes.
   ///
   /// - parameter queue: the `DispatchQueue` on which to execute the notification; defaults to `self`'s queue.
   /// - parameter task: the closure to be enqueued
