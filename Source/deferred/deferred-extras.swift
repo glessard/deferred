@@ -314,7 +314,7 @@ extension Deferred
   }
 }
 
-// MARK: apply: asynchronously transform a `Deferred` into another
+// MARK: apply: modify this `Deferred`'s value using a `Deferred` transform
 
 extension Deferred
 {
@@ -328,7 +328,34 @@ extension Deferred
   public func apply<Other>(queue: DispatchQueue? = nil,
                            transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
   {
-    return Apply<Other>(queue: queue, source: self, transform: transform)
+    return TBD(queue: queue ?? self.queue, source: self) {
+      resolver in
+      self.enqueue(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        do {
+          let value = try result.get()
+          transform.enqueue(queue: queue) {
+            transform in
+            guard resolver.needsResolution else { return }
+            resolver.beginExecution()
+            do {
+              let transform = try transform.get()
+              let transformed = try transform(value)
+              resolver.resolve(value: transformed)
+            }
+            catch {
+              resolver.resolve(error: error)
+            }
+          }
+          // ensure `transform` lives as long as it needs to
+          resolver.notify { _ in withExtendedLifetime(transform){} }
+        }
+        catch {
+          resolver.resolve(error: error)
+        }
+      }
+    }
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become resolved.
@@ -341,8 +368,8 @@ extension Deferred
   public func apply<Other>(qos: DispatchQoS,
                            transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    return Apply<Other>(queue: queue, source: self, transform: transform)
+    let queue = DispatchQueue(label: "deferred-apply", qos: qos)
+    return apply(queue: queue, transform: transform)
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become resolved.
@@ -357,10 +384,10 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(queue: DispatchQueue? = nil,
-                                 transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
   {
     let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
-    return Apply<Other>(queue: queue, source: self, transform: retransform)
+    return apply(queue: queue, transform: retransform)
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` and `transform` become resolved.
@@ -375,11 +402,10 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(qos: DispatchQoS,
-                                 transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
     let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
-    return Apply<Other>(queue: queue, source: self, transform: retransform)
+    return apply(qos: qos, transform: retransform)
   }
 }
 
