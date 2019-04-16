@@ -8,24 +8,20 @@
 
 import Dispatch
 
-#if !compiler(>=5.0)
-import Outcome
-#endif
-
 struct Waiter<T>
 {
   fileprivate let queue: DispatchQueue?
-  fileprivate let handler: (Outcome<T>) -> Void
+  fileprivate let handler: (Result<T, Error>) -> Void
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
-  init(_ queue: DispatchQueue?, _ handler: @escaping (Outcome<T>) -> Void)
+  init(_ queue: DispatchQueue?, _ handler: @escaping (Result<T, Error>) -> Void)
   {
     self.queue = queue
     self.handler = handler
   }
 }
 
-func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ value: Outcome<T>)
+func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ value: Result<T, Error>)
 {
   var head = reverseList(tail)
   while let current = head

@@ -9,10 +9,6 @@
 import Dispatch
 import Foundation
 
-#if !compiler(>=5.0)
-import Outcome
-#endif
-
 public enum URLSessionError: Error
 {
   case ServerStatus(Int)
@@ -52,7 +48,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   }
 
   public override func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true,
-                               task: @escaping (Outcome<Value>) -> Void)
+                               task: @escaping (Result<Value, Error>) -> Void)
   {
     if state == .waiting
     {

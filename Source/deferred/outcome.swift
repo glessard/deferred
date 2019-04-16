@@ -7,8 +7,6 @@
 
 #if compiler(>=5.0)
 
-public typealias Outcome<Value> = Swift.Result<Value, Swift.Error>
-
 extension Result where Failure == Swift.Error
 {
   @inlinable
@@ -51,6 +49,8 @@ extension Result where Failure == Swift.Error
 #else
 
 import Outcome
+
+public typealias Result<Value, Error> = Outcome<Value>
 
 @available(*, deprecated, renamed: "Outcome")
 public typealias Determined = Outcome
