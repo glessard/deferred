@@ -84,7 +84,22 @@ extension Deferred
   public func map<Other>(queue: DispatchQueue? = nil,
                          transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
   {
-    return Map<Other>(queue: queue, source: self, transform: transform)
+    return TBD(queue: queue ?? self.queue, source: self) {
+      resolver in
+      self.enqueue(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        resolver.beginExecution()
+        do {
+          let value = try result.get()
+          let transformed = try transform(value)
+          resolver.resolve(value: transformed)
+        }
+        catch {
+          resolver.resolve(error: error)
+        }
+      }
+    }
   }
 
   /// Enqueue a transform to be computed asynchronously after `self` becomes resolved, creating a new `Deferred`
@@ -97,8 +112,8 @@ extension Deferred
   public func map<Other>(qos: DispatchQoS,
                          transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    return Map<Other>(queue: queue, source: self, transform: transform)
+    let queue = DispatchQueue(label: "deferred-map", qos: qos)
+    return map(queue: queue, transform: transform)
   }
 }
 

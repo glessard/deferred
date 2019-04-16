@@ -463,40 +463,6 @@ open class Deferred<Value>
 }
 
 
-/// A mapped `Deferred`
-
-class Map<Value>: Deferred<Value>
-{
-  /// Initialize with a `Deferred` source and a transform to be computed in the background
-  ///
-  /// This constructor is used by `map`
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
-  /// - parameter value:     the value to be transformed for a new `Deferred`
-
-  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Value)
-  {
-    super.init(queue: queue, source: source)
-
-    source.enqueue(queue: queue) {
-      [weak self] result in
-      guard let this = self else { return }
-      if this.isResolved { return }
-      this.beginExecution()
-      do {
-        let value = try result.get()
-        let transformed = try transform(value)
-        this.resolve(value: transformed)
-      }
-      catch {
-        this.resolve(error: error)
-      }
-    }
-  }
-}
-
 open class Transferred<Value>: Deferred<Value>
 {
   /// Transfer a `Deferred` `Result` to a new `Deferred` that notifies on a new queue.
