@@ -15,7 +15,7 @@ import deferred
 
 class TBDTests: XCTestCase
 {
-  func testDetermine1()
+  func testResolve1()
   {
     var (i, d) = TBD<Int>.CreatePair()
     i.beginExecution()
@@ -33,7 +33,7 @@ class TBDTests: XCTestCase
     XCTAssert(d.error == TestError(value))
   }
 
-  func testDetermine2()
+  func testResolve2()
   {
     let (i, d) = TBD<Int>.CreatePair()
     i.beginExecution()
@@ -45,11 +45,11 @@ class TBDTests: XCTestCase
 
     XCTAssert(d.isResolved == false)
 
-    // Block until tbd becomes determined
+    // Block until tbd becomes resolved
     XCTAssert(d.value == value)
     XCTAssert(d.error == nil)
 
-    // Try and fail to determine tbd a second time.
+    // Try and fail to resolve tbd a second time.
     XCTAssert(i.resolve(value: value) == false)
   }
 
@@ -86,7 +86,7 @@ class TBDTests: XCTestCase
   func testNotify1()
   {
     let value = nzRandom()
-    let e1 = expectation(description: "TBD notification after determination")
+    let e1 = expectation(description: "TBD notification after resolution")
     let (i, d1) = TBD<Int>.CreatePair()
     i.resolve(value: value)
 
@@ -118,7 +118,7 @@ class TBDTests: XCTestCase
 
   func testNotify3()
   {
-    let e3 = expectation(description: "TBD never determined")
+    let e3 = expectation(description: "TBD never resolved")
     let d3 = TBD<Int>() { _ in }
     d3.notify {
       outcome in
@@ -133,7 +133,7 @@ class TBDTests: XCTestCase
 
   func testNotify4()
   {
-    let e = expectation(description: "TBD determination chain")
+    let e = expectation(description: "TBD resolution chain")
     let (t1, d1) = TBD<Int>.CreatePair()
     let (t2, d2) = TBD<Int>.CreatePair()
     let r = nzRandom()
@@ -150,9 +150,9 @@ class TBDTests: XCTestCase
     waitForExpectations(timeout: 0.1)
   }
 
-  func testNeverDetermined()
+  func testNeverResolved()
   {
-    // a Deferred that will never become determined.
+    // a Deferred that will never become resolved.
     let first = TBD<Int>() { _ in }
 
     let other = first.map { XCTFail(String($0)) }
@@ -192,9 +192,9 @@ class TBDTests: XCTestCase
     }
 
     let combined = combine(arrays)
-    let determined = combined.map { $0.flatMap({$0}) }
+    let resolved = combined.map { $0.flatMap({$0}) }
 
-    let value = try determined.get()
+    let value = try resolved.get()
     XCTAssert(value.count == count*count)
     value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
   }

@@ -260,7 +260,7 @@ class DeferredRacingTests: XCTestCase
     }
   }
 
-  func testFirstDeterminedCollection() throws
+  func testFirstResolvedFromCollections() throws
   {
     let count = 10
 
@@ -276,7 +276,7 @@ class DeferredRacingTests: XCTestCase
 
     func oneBy1(_ deferreds: [Deferred<Int>]) throws
     {
-      let first = firstDetermined(deferreds, cancelOthers: true)
+      let first = firstResolved(deferreds, cancelOthers: true)
 #if compiler(>=5.0)
       let index = deferreds.firstIndex(where: { d in d === first.value })
 #else
@@ -303,7 +303,7 @@ class DeferredRacingTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testFirstDeterminedSequence() throws
+  func testFirstResolvedFromSequences() throws
   {
     let seq = { () -> AnyIterator<Deferred<Int>> in
       var c = 10
@@ -314,10 +314,10 @@ class DeferredRacingTests: XCTestCase
       }
     }()
 
-    let first = firstDetermined(seq, cancelOthers: true)
+    let first = firstResolved(seq, cancelOthers: true)
     XCTAssertEqual(try? first.get().get(), 1)
 
-    let never = firstDetermined(EmptyCollection<Deferred<Any>>.Iterator())
+    let never = firstResolved(EmptyCollection<Deferred<Any>>.Iterator())
     do {
       let value = try never.get()
       XCTFail("never.value should be nil, was \(value)")

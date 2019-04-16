@@ -613,7 +613,7 @@ class DeferredTests: XCTestCase
     XCTAssert(r4.value == nil)
     XCTAssert(r4.error as? TestError == TestError(error))
 
-    // result canceled before transform is determined
+    // result canceled before transform is resolved
     let o5 = Deferred(value: value)
     let (t5, d5) = TBD<(Int) throws -> Float>.CreatePair()
     let e5 = expectation(description: "r5")
@@ -914,7 +914,7 @@ class DeferredTests: XCTestCase
 
     let t3 = 0.05
     let d3 = Deferred(value: DispatchTime.now()).delay(seconds: t3)
-    let e3 = expectation(description: "Timeout test 3: determine before timeout")
+    let e3 = expectation(description: "Timeout test 3: resolve before timeout")
     d3.onValue { time in if time + t3 <= .now() { e3.fulfill() } }
     d3.onError { _ in XCTFail() }
     d3.timeout(seconds: 5*t3)

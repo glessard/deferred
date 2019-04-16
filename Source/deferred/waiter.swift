@@ -58,7 +58,7 @@ func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waite
         }
       }
       else
-      { // run on the queue of the just-determined deferred
+      { // run on the queue of the just-resolved deferred
         current.pointee.handler(value)
         current.deinitialize(count: 1)
         current.deallocate()
