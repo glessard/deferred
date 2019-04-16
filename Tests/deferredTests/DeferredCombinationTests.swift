@@ -174,7 +174,7 @@ class DeferredRacingTests: XCTestCase
     let count = 10
     let lucky = Int(nzRandom()) % count
 
-    var injectors: [Injector<Int>] = []
+    var injectors: [Resolver<Int>] = []
     let deferreds = (0..<count).map {
       i -> Deferred<Int> in
       let e = expectation(description: String(i))
