@@ -76,10 +76,10 @@ open class Deferred<Value>
     deferredState = AtomicInt(beginExecution ? (source.deferredState.load(.relaxed) & .executing) : 0)
   }
 
-  fileprivate init(queue: DispatchQueue)
+  fileprivate init(queue: DispatchQueue, source: AnyObject? = nil)
   {
     self.queue = queue
-    source = nil
+    self.source = source
     resolved = nil
     deferredState = AtomicInt(.waiting)
   }
@@ -854,9 +854,9 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public init(queue: DispatchQueue, execute: (Resolver<Value>) -> Void)
+  public init(queue: DispatchQueue, source: AnyObject? = nil, execute: (Resolver<Value>) -> Void)
   {
-    super.init(queue: queue)
+    super.init(queue: queue, source: source)
     execute(Resolver(self))
   }
 
@@ -864,10 +864,10 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public init(qos: DispatchQoS = .current, execute: (Resolver<Value>) -> Void)
+  public init(qos: DispatchQoS = .current, source: AnyObject? = nil, execute: (Resolver<Value>) -> Void)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
-    super.init(queue: queue)
+    super.init(queue: queue, source: source)
     execute(Resolver(self))
   }
 
