@@ -256,7 +256,6 @@
 		0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TBDTimingTests.swift; path = DeferredTests/TBDTimingTests.swift; sourceTree = "<group>"; };
 		0366AE541DF0FEC400F4B44B /* TestError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TestError.swift; path = DeferredTests/TestError.swift; sourceTree = "<group>"; };
 		0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = URLSessionTests.swift; path = DeferredTests/URLSessionTests.swift; sourceTree = "<group>"; };
-		0372B2DC1F8DBB2900F4B44B /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		0374DFB01DFF5BD800F4B44B /* nzRandom.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nzRandom.swift; path = DeferredTests/nzRandom.swift; sourceTree = "<group>"; };
 		038147591E4138BA00F4B44B /* DeletionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeletionTests.swift; path = deferredTests/DeletionTests.swift; sourceTree = "<group>"; };
 		03857DB71F55C3DE00F4B44B /* deferred-timing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "deferred-timing.swift"; path = "deferred/deferred-timing.swift"; sourceTree = "<group>"; };
@@ -472,7 +471,6 @@
 				034857621C11BD5E00F4B44B /* Package.swift */,
 				03B8179922177D8C00F4B44B /* Package@swift-4.swift */,
 				03FD35AD1F328D4E00F4B44B /* .travis.yml */,
-				0372B2DC1F8DBB2900F4B44B /* README.md */,
 				03B817A322177DA600F4B44B /* Scripts */,
 				03850ABD1C76AB2200F4B44B /* Source */,
 				03850AEA1C76ABF500F4B44B /* Tests */,
