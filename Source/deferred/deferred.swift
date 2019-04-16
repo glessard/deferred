@@ -68,14 +68,6 @@ open class Deferred<Value>
 
   // MARK: designated initializers
 
-  fileprivate init<Other>(queue: DispatchQueue?, source: Deferred<Other>, beginExecution: Bool = false)
-  {
-    self.queue = queue ?? source.queue
-    self.source = source
-    resolved = nil
-    deferredState = AtomicInt(beginExecution ? (source.deferredState.load(.relaxed) & .executing) : 0)
-  }
-
   fileprivate init(queue: DispatchQueue, source: AnyObject? = nil)
   {
     self.queue = queue
