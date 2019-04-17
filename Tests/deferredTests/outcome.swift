@@ -2,7 +2,7 @@
 //  outcome.swift
 //  deferred
 //
-//  Created by Guillaume Lessard on 9/19/18.
+//  Created by Guillaume Lessard on 4/17/19.
 //
 
 #if compiler(>=5.0)
@@ -39,14 +39,5 @@ extension Result where Failure == Swift.Error
     return false
   }
 }
-
-#else
-
-import Outcome
-
-public typealias Result<Value, Error> = Outcome<Value>
-
-@available(*, deprecated, renamed: "Outcome")
-public typealias Determined = Outcome
 
 #endif
