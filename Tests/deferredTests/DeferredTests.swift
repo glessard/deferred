@@ -487,15 +487,15 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 0.1)
   }
 
-  func testTransfer()
+  func testEnqueuing()
   {
     let r1 = nzRandom()
     let r2 = nzRandom()
 
-    let transferred1 = Transferred(source: Deferred(value: r1))
+    let transferred1 = Deferred(value: r1).enqueuing(on: DispatchQueue.global())
 
     let (t, d) = TBD<Int>.CreatePair(qos: .background)
-    let transferred2 = Transferred(source: d)
+    let transferred2 = d.enqueuing(at: .userInitiated, serially: false)
     t.resolve(value: r2)
 
     XCTAssert(transferred1.value == r1)

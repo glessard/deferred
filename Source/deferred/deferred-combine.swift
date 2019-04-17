@@ -325,7 +325,7 @@ public func reduce<S: Sequence, T, U>(queue: DispatchQueue,
     }
   }
 
-  return Flatten(reduced)
+  return reduced.flatten()
 }
 
 /// Combine two `Deferred` into one.

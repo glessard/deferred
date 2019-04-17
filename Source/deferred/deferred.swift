@@ -68,18 +68,10 @@ open class Deferred<Value>
 
   // MARK: designated initializers
 
-  fileprivate init<Other>(queue: DispatchQueue?, source: Deferred<Other>, beginExecution: Bool = false)
-  {
-    self.queue = queue ?? source.queue
-    self.source = source
-    resolved = nil
-    deferredState = AtomicInt(beginExecution ? (source.deferredState.load(.relaxed) & .executing) : 0)
-  }
-
-  fileprivate init(queue: DispatchQueue)
+  fileprivate init(queue: DispatchQueue, source: AnyObject? = nil)
   {
     self.queue = queue
-    source = nil
+    self.source = source
     resolved = nil
     deferredState = AtomicInt(.waiting)
   }
@@ -315,19 +307,6 @@ open class Deferred<Value>
     q.async(execute: { [result = resolved!] in task(result) })
   }
 
-  /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes resolved.
-  ///
-  /// The enqueued closure will extend the lifetime of this `Deferred` until `task` completes.
-  ///
-  /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
-  /// - parameter task: a closure to be executed as a notification
-  /// - parameter result: the `Result` of this `Deferred`
-
-  public func notify(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
-  {
-    enqueue(queue: queue, task: { result in withExtendedLifetime(self) { task(result) } })
-  }
-
   /// Query the current state of this `Deferred`
   /// - returns: a `DeferredState` that describes this `Deferred`
 
@@ -462,301 +441,6 @@ open class Deferred<Value>
   public var qos: DispatchQoS { return self.queue.qos }
 }
 
-
-/// A mapped `Deferred`
-
-class Map<Value>: Deferred<Value>
-{
-  /// Initialize with a `Deferred` source and a transform to be computed in the background
-  ///
-  /// This constructor is used by `map`
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
-  /// - parameter value:     the value to be transformed for a new `Deferred`
-
-  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Value)
-  {
-    super.init(queue: queue, source: source)
-
-    source.enqueue(queue: queue) {
-      [weak self] result in
-      guard let this = self else { return }
-      if this.isResolved { return }
-      this.beginExecution()
-      do {
-        let value = try result.get()
-        let transformed = try transform(value)
-        this.resolve(value: transformed)
-      }
-      catch {
-        this.resolve(error: error)
-      }
-    }
-  }
-}
-
-open class Transferred<Value>: Deferred<Value>
-{
-  /// Transfer a `Deferred` `Result` to a new `Deferred` that notifies on a new queue.
-  ///
-  /// Acts like a fast path for a Map with no transform.
-  ///
-  /// This constructor is used by `enqueuing(on:)`
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose value will be transferred into a new instance.
-
-  public init(queue: DispatchQueue? = nil, source: Deferred<Value>)
-  {
-    if let result = source.peek()
-    {
-      super.init(queue: queue ?? source.queue, result: result)
-    }
-    else
-    {
-      super.init(queue: queue ?? source.queue, source: source, beginExecution: true)
-      source.enqueue(queue: queue, boostQoS: false,
-                     task: { [weak self] result in self?.resolve(result) })
-    }
-  }
-}
-
-class Flatten<Value>: Deferred<Value>
-{
-  /// Flatten a Deferred<Deferred<Value>> to a Deferred<Value>.
-  ///
-  /// In the right conditions, acts like a fast path for a flatMap with no transform.
-  ///
-  /// This constructor is used by `flatten()`
-  ///
-  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `source.queue` if `nil`
-  /// - parameter source: the `Deferred` whose value will be transferred into a new instance.
-
-  init(queue: DispatchQueue? = nil, source: Deferred<Deferred<Value>>)
-  {
-    if let result = source.peek()
-    {
-      let mine = queue ?? source.queue
-      do {
-        let deferred = try result.get()
-        if let result = deferred.peek()
-        {
-          super.init(queue: mine, result: result)
-        }
-        else
-        {
-          super.init(queue: mine, source: deferred, beginExecution: true)
-          deferred.enqueue(queue: mine, boostQoS: false, task: { [weak self] in self?.resolve($0) })
-        }
-      }
-      catch {
-        super.init(queue: mine, result: Result<Value, Error>(error: error))
-      }
-      return
-    }
-
-    super.init(queue: queue, source: source)
-    source.enqueue(queue: queue) {
-      [weak self] result in
-      do {
-        let deferred = try result.get()
-        if let result = deferred.peek()
-        {
-          self?.resolve(result)
-        }
-        else
-        {
-          deferred.notify(queue: queue, task: { [weak self] in self?.resolve($0) })
-        }
-      }
-      catch {
-        self?.resolve(error: error)
-      }
-    }
-  }
-
-  /// Flatten a Deferred<Deferred<Value>> to a Deferred<Value>.
-  ///
-  /// In the right conditions, acts like a fast path for a flatMap with no transform.
-  ///
-  /// - parameter source: the `Deferred` whose value will be transferred into a new instance.
-
-  convenience init(_ source: Deferred<Deferred<Value>>)
-  {
-    self.init(queue: nil, source: source)
-  }
-}
-
-class Bind<Value>: Deferred<Value>
-{
-  /// Initialize with a `Deferred` source and a transform to be computed in the background
-  ///
-  /// This constructor is used by `flatMap`
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
-  /// - parameter value:     the value to be transformed for a new `Deferred`
-
-  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: @escaping (_ value: U) throws -> Deferred<Value>)
-  {
-    super.init(queue: queue, source: source)
-
-    source.enqueue(queue: queue) {
-      [weak self] result in
-      guard let this = self else { return }
-      if this.isResolved { return }
-      this.beginExecution()
-      do {
-        let value = try result.get()
-        let transformed = try transform(value)
-        transformed.notify(queue: queue) {
-          [weak this] transformed in
-          this?.resolve(transformed)
-        }
-      }
-      catch {
-        this.resolve(error: error)
-      }
-    }
-  }
-}
-
-class Recover<Value>: Deferred<Value>
-{
-  /// Initialize with a `Deferred` source and a transform to be computed in the background
-  ///
-  /// This constructor is used by `recover` -- flatMap for the `Error` path.
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose error should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.error` and whose result is represented by this `Deferred`
-  /// - parameter error:     the Error to be transformed for a new `Deferred`
-
-  init(queue: DispatchQueue?, source: Deferred<Value>, transform: @escaping (_ error: Error) throws -> Deferred<Value>)
-  {
-    super.init(queue: queue, source: source)
-
-    source.enqueue(queue: queue) {
-      [weak self] result in
-      guard let this = self else { return }
-      if this.isResolved { return }
-      this.beginExecution()
-      if let error = result.error
-      {
-        do {
-          let transformed = try transform(error)
-          transformed.notify(queue: queue) {
-            [weak this] transformed in
-            this?.resolve(transformed)
-          }
-        }
-        catch {
-          this.resolve(error: error)
-        }
-      }
-      else
-      {
-        this.resolve(result)
-      }
-    }
-  }
-}
-
-/// A `Deferred` that applies a `Deferred` transform onto its input
-
-class Apply<Value>: Deferred<Value>
-{
-  /// Initialize with a `Deferred` source and a transform to be computed in the background
-  ///
-  /// This constructor is used by `apply`
-  ///
-  /// - parameter queue:     the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source:    the `Deferred` whose value should be used as the input for the transform
-  /// - parameter transform: the transform to be applied to `source.value` and whose result is represented by this `Deferred`
-  /// - parameter value:     the value to be transformed for a new `Deferred`
-
-  init<U>(queue: DispatchQueue?, source: Deferred<U>, transform: Deferred<(_ value: U) throws -> Value>)
-  {
-    super.init(queue: queue, source: source)
-
-    source.enqueue(queue: queue) {
-      [weak self] result in
-      guard let this = self else { return }
-      if this.isResolved { return }
-      do {
-        let value = try result.get()
-        transform.notify(queue: queue) {
-          [weak this] transform in
-          guard let this = this else { return }
-          if this.isResolved { return }
-          this.beginExecution()
-          do {
-            let transform = try transform.get()
-            let transformed = try transform(value)
-            this.resolve(value: transformed)
-          }
-          catch {
-            this.resolve(error: error)
-          }
-        }
-      }
-      catch {
-        this.resolve(error: error)
-      }
-    }
-  }
-}
-
-/// A `Deferred` with a time delay
-
-class Delay<Value>: Deferred<Value>
-{
-  /// Initialize with a `Deferred` source and a time after which this `Deferred` may become resolved.
-  ///
-  /// The resolution could be delayed further if `source` has not become resolved yet,
-  /// but it will not happen earlier than the time referred to by `until`.
-  ///
-  /// This constructor is used by `delay`
-  ///
-  /// - parameter queue:  the `DispatchQueue` onto which the computation should be enqueued; use `source.queue` if `nil`
-  /// - parameter source: the `Deferred` whose value should be delayed
-  /// - parameter until:  the target time until which the resolution of this `Deferred` will be delayed
-
-  init(queue: DispatchQueue?, source: Deferred<Value>, until time: DispatchTime)
-  {
-    super.init(queue: queue, source: source)
-
-    source.enqueue(queue: queue, boostQoS: false) {
-      [weak self] result in
-      guard let this = self, (this.isResolved == false) else { return }
-
-      if result.isError
-      {
-        this.resolve(result)
-        return
-      }
-
-      this.beginExecution()
-      if time == .distantFuture { return }
-      // enqueue block only if can get executed
-      if time > .now()
-      {
-        this.queue.asyncAfter(deadline: time) {
-          [weak this] in
-          this?.resolve(result)
-        }
-      }
-      else
-      {
-        this.resolve(result)
-      }
-    }
-  }
-}
-
 public struct Resolver<Value>
 {
   private weak var deferred: Deferred<Value>?
@@ -834,6 +518,10 @@ public struct Resolver<Value>
     deferred?.beginExecution()
   }
 
+  /// Query whether the underlying `Deferred` still exists and is also unresolved
+
+  public var needsResolution: Bool { return deferred?.isResolved == false }
+
   /// Enqueue a notification to be performed asynchronously after our `Deferred` becomes resolved.
   ///
   /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
@@ -854,9 +542,9 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public init(queue: DispatchQueue, execute: (Resolver<Value>) -> Void)
+  public init(queue: DispatchQueue, source: AnyObject? = nil, execute: (Resolver<Value>) -> Void)
   {
-    super.init(queue: queue)
+    super.init(queue: queue, source: source)
     execute(Resolver(self))
   }
 
@@ -864,10 +552,10 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public init(qos: DispatchQoS = .current, execute: (Resolver<Value>) -> Void)
+  public init(qos: DispatchQoS = .current, source: AnyObject? = nil, execute: (Resolver<Value>) -> Void)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
-    super.init(queue: queue)
+    super.init(queue: queue, source: source)
     execute(Resolver(self))
   }
 
