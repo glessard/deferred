@@ -215,7 +215,8 @@ open class Deferred<Value>
     let waitQueue = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
     notifyWaiters(queue, waitQueue, result)
 
-    // precondition(waiters.load() == .resolved, "waiters.pointer has incorrect value \(String(describing: waiters.load()))")
+    // precondition(deferredState.load(.relaxed) == .resolved,
+    //              "deferredState has incorrect value \(String(deferredState.load(.relaxed), radix: 16))")
 
     // This `Deferred` has been resolved
     return true
