@@ -175,8 +175,7 @@ extension Deferred
           else
           {
             transformed.enqueue(queue: queue) { resolver.resolve($0) }
-            // ensure `transformed` lives as long as it needs to
-            resolver.notify { _ in withExtendedLifetime(transformed, {}) }
+            resolver.retainSource(transformed)
           }
         }
         catch {
@@ -227,8 +226,7 @@ extension Deferred
             else
             {
               transformed.enqueue(queue: queue) { resolver.resolve($0) }
-              // ensure `transformed` lives as long as it needs to
-              resolver.notify { _ in withExtendedLifetime(transformed, {}) }
+              resolver.retainSource(transformed)
             }
           }
           catch {
@@ -289,8 +287,7 @@ extension Deferred
         resolver in
         if deferred.state == .executing { resolver.beginExecution() }
         deferred.enqueue(queue: queue) { resolver.resolve($0) }
-        // ensure `deferred` lives as long as it needs to
-        resolver.notify { _ in withExtendedLifetime(deferred, {}) }
+        resolver.retainSource(deferred)
       }
     }
 
@@ -316,8 +313,7 @@ extension Deferred
 
         if deferred.state == .executing { resolver.beginExecution() }
         deferred.enqueue(queue: queue) { resolver.resolve($0) }
-        // ensure `deferred` lives as long as it needs to
-        resolver.notify { _ in withExtendedLifetime(deferred, {}) }
+        resolver.retainSource(deferred)
       }
     }
   }
@@ -449,8 +445,7 @@ extension Deferred
           else
           {
             transform.enqueue(queue: queue) { applyTransform(value, $0, resolver) }
-            // ensure `transform` lives as long as it needs to
-            resolver.notify { _ in withExtendedLifetime(transform, {}) }
+            resolver.retainSource(transform)
           }
         }
         catch {
