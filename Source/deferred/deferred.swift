@@ -533,6 +533,11 @@ public struct Resolver<Value>
   {
     deferred?.enqueue(task: task)
   }
+
+  public func retainSource(_ object: AnyObject)
+  {
+    deferred?.enqueue(task: { _ in withExtendedLifetime(object, {}) } )
+  }
 }
 
 /// A `Deferred` to be resolved (`TBD`) manually.
