@@ -87,10 +87,14 @@ class DeletionTests: XCTestCase
   {
     class ProofOfLife {}
 
-    let deferred: Deferred<Void> = {
+    let deferred = TBD<Void>(qos: .utility) {
+      resolver in
       let proof = ProofOfLife()
+      resolver.notify(task: { _ in withExtendedLifetime(proof, {}) })
 
-      let longTask = Deferred<Void> {
+      let e = expectation(description: "cooperative cancellation")
+
+      let longTask = Deferred<Void>(qos: .userInitiated) {
         [weak proof] in
         while proof != nil
         {
@@ -100,16 +104,17 @@ class DeletionTests: XCTestCase
         print()
         throw TestError()
       }
-      let e = expectation(description: "cooperative cancellation")
-      longTask.onError { _ in e.fulfill() }
 
-      return longTask.map(transform: { $0 }).validate(predicate: { withExtendedLifetime(proof){ true } })
-    }()
-
-    let e = expectation(description: "observed cancellation")
-    deferred.notify { if $0.error as? DeferredError == DeferredError.timedOut("") { e.fulfill() } }
+      longTask.enqueue {
+        result in
+        if result.error != nil { e.fulfill() }
+        resolver.resolve(result)
+      }
+    }
 
     deferred.timeout(seconds: 0.1)
     waitForExpectations(timeout: 1.0)
+
+    XCTAssert(deferred.error as? DeferredError == DeferredError.timedOut(""))
   }
 }

@@ -734,12 +734,12 @@ class DeferredTests: XCTestCase
     let (t0, d0) = TBD<Int>.CreatePair()
 
     let e1 = expectation(description: "cancellation of Deferred.map, part 1")
-    let d1 = d0.map { u in XCTFail(String(u)) }
+    let d1 = d0.map { XCTFail(String($0)) }
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
     let e2 = expectation(description: "cancellation of Deferred.map, part 2")
-    let d2 = d0.map(transform: { u in XCTFail(String(u)) }).enqueuing(at: .background)
+    let d2 = d0.map(transform: { $0+1 }).map(transform: { XCTFail(String($0)) })
     d2.onError { e in e2.fulfill() }
     XCTAssert(d2.cancel() == true)
 

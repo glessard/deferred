@@ -26,7 +26,7 @@ extension Deferred
 
   public func notify(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
   {
-    enqueue(queue: queue, task: { result in withExtendedLifetime(self) { task(result) } })
+    enqueue(queue: queue, task: { result in withExtendedLifetime(self, { task(result) }) })
   }
 
   // MARK: onValue: execute a task when (and only when) a computation succeeds
@@ -168,9 +168,16 @@ extension Deferred
         do {
           let value = try result.get()
           let transformed = try transform(value)
-          transformed.enqueue(queue: queue) { resolver.resolve($0) }
-          // ensure `transformed` lives as long as it needs to
-          resolver.notify { _ in withExtendedLifetime(transformed){} }
+          if let transformed = transformed.peek()
+          {
+            resolver.resolve(transformed)
+          }
+          else
+          {
+            transformed.enqueue(queue: queue) { resolver.resolve($0) }
+            // ensure `transformed` lives as long as it needs to
+            resolver.notify { _ in withExtendedLifetime(transformed, {}) }
+          }
         }
         catch {
           resolver.resolve(error: error)
@@ -213,9 +220,16 @@ extension Deferred
         {
           do {
             let transformed = try transform(error)
-            transformed.enqueue(queue: queue) { resolver.resolve($0) }
-            // ensure `transformed` lives as long as it needs to
-            resolver.notify { _ in withExtendedLifetime(transformed){} }
+            if let transformed = transformed.peek()
+            {
+              resolver.resolve(transformed)
+            }
+            else
+            {
+              transformed.enqueue(queue: queue) { resolver.resolve($0) }
+              // ensure `transformed` lives as long as it needs to
+              resolver.notify { _ in withExtendedLifetime(transformed, {}) }
+            }
           }
           catch {
             resolver.resolve(error: error)
@@ -294,7 +308,7 @@ extension Deferred
             if deferred.state == .executing { resolver.beginExecution() }
             deferred.enqueue(queue: queue) { resolver.resolve($0) }
             // ensure `deferred` lives as long as it needs to
-            resolver.notify { _ in withExtendedLifetime(deferred){} }
+            resolver.notify { _ in withExtendedLifetime(deferred, {}) }
           }
         }
         catch {
@@ -401,6 +415,22 @@ extension Deferred
   public func apply<Other>(queue: DispatchQueue? = nil,
                            transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
   {
+    func resolve(_ value: Value,
+                 _ transform: (Result<(Value) throws -> Other, Error>),
+                 _ resolver: Resolver<Other>)
+    {
+      guard resolver.needsResolution else { return }
+      resolver.beginExecution()
+      do {
+        let transform = try transform.get()
+        let transformed = try transform(value)
+        resolver.resolve(value: transformed)
+      }
+      catch {
+        resolver.resolve(error: error)
+      }
+    }
+
     return TBD(queue: queue ?? self.queue, source: self) {
       resolver in
       self.enqueue(queue: queue) {
@@ -408,21 +438,18 @@ extension Deferred
         guard resolver.needsResolution else { return }
         do {
           let value = try result.get()
-          transform.enqueue(queue: queue) {
-            transform in
-            guard resolver.needsResolution else { return }
-            resolver.beginExecution()
-            do {
-              let transform = try transform.get()
-              let transformed = try transform(value)
-              resolver.resolve(value: transformed)
-            }
-            catch {
-              resolver.resolve(error: error)
-            }
+          if let transform = transform.peek()
+          {
+            resolve(value, transform, resolver)
           }
-          // ensure `transform` lives as long as it needs to
-          resolver.notify { _ in withExtendedLifetime(transform){} }
+          else
+          {
+            transform.enqueue(queue: queue) {
+              resolve(value, $0, resolver)
+            }
+            // ensure `transform` lives as long as it needs to
+            resolver.notify { _ in withExtendedLifetime(transform, {}) }
+          }
         }
         catch {
           resolver.resolve(error: error)
