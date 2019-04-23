@@ -18,11 +18,10 @@ public enum URLSessionError: Error
 
 public class DeferredURLSessionTask<Value>: TBD<Value>
 {
-  public fileprivate(set) var urlSessionTask: URLSessionTask?
+  public private(set) weak var urlSessionTask: URLSessionTask? = nil
 
   init(qos: DispatchQoS = .current, error: Error)
   {
-    urlSessionTask = nil
     super.init(qos: qos) { $0.resolve(error: error) }
   }
 
@@ -197,8 +196,8 @@ extension URLSession
       {
         if let url = location
         { resolver.resolve(value: (url, response)) }
-        else
-        { resolver.resolve(error: URLSessionError.ServerStatus(response.statusCode)) } // should not happen
+        else // should not happen
+        { resolver.resolve(error: URLSessionError.ServerStatus(response.statusCode)) }
       }
       else // can happen if resume data is corrupted; otherwise probably an impossible situation
       { resolver.resolve(error: URLSessionError.InvalidState) }
