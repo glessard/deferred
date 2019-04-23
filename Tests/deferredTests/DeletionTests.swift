@@ -85,36 +85,27 @@ class DeletionTests: XCTestCase
 
   func testLongTaskCancellation()
   {
-    class ProofOfLife {}
-
-    let deferred = TBD<Void>(qos: .utility) {
-      resolver in
-      let proof = ProofOfLife()
-      resolver.notify(task: { _ in withExtendedLifetime(proof, {}) })
-
+    func longTask(resolver: Resolver<Void>)
+    {
       let e = expectation(description: "cooperative cancellation")
-
-      let longTask = Deferred<Void>(qos: .userInitiated) {
-        [weak proof] in
-        while proof != nil
+      DispatchQueue.global(qos: .userInitiated).async {
+        while resolver.needsResolution
         {
           Thread.sleep(until: Date() + 0.01)
           print(".", terminator: "")
         }
         print()
-        throw TestError()
-      }
-
-      longTask.enqueue {
-        result in
-        if result.error != nil { e.fulfill() }
-        resolver.resolve(result)
+        e.fulfill()
+        resolver.resolve(error: TestError())
       }
     }
+
+    let deferred = TBD<Void>(qos: .utility, task: longTask).map(transform: { () in nzRandom() })
 
     deferred.timeout(seconds: 0.1)
     waitForExpectations(timeout: 1.0)
 
+    deferred.cancel()
     XCTAssert(deferred.error as? DeferredError == DeferredError.timedOut(""))
   }
 }
