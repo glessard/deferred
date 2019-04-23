@@ -543,21 +543,21 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public init(queue: DispatchQueue, source: AnyObject? = nil, execute: (Resolver<Value>) -> Void)
+  public init(queue: DispatchQueue, source: AnyObject? = nil, task: (Resolver<Value>) -> Void)
   {
     super.init(queue: queue, source: source)
-    execute(Resolver(self))
+    task(Resolver(self))
   }
 
   /// Initialize an unresolved `Deferred`, `TBD`.
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public init(qos: DispatchQoS = .current, source: AnyObject? = nil, execute: (Resolver<Value>) -> Void)
+  public init(qos: DispatchQoS = .current, source: AnyObject? = nil, task: (Resolver<Value>) -> Void)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
     super.init(queue: queue, source: source)
-    execute(Resolver(self))
+    task(Resolver(self))
   }
 
   public static func CreatePair(queue: DispatchQueue) -> (Resolver<Value>, Deferred<Value>)
