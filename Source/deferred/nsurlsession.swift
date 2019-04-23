@@ -25,10 +25,10 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     super.init(qos: qos) { $0.resolve(error: error) }
   }
 
-  init(qos: DispatchQoS = .current, execute: (Resolver<Value>) -> URLSessionTask)
+  init(qos: DispatchQoS = .current, task: (Resolver<Value>) -> URLSessionTask)
   {
     var t: URLSessionTask?
-    super.init(qos: qos, execute: { t = execute($0) })
+    super.init(qos: qos, task: { t = task($0) })
     urlSessionTask = t.unsafelyUnwrapped
   }
 
