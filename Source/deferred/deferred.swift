@@ -254,6 +254,29 @@ open class Deferred<Value>
     return resolve(Result<Value, Error>(error: error))
   }
 
+  fileprivate func enqueue(source: AnyObject)
+  {
+    var state = deferredState.load(.relaxed)
+    if !state.isResolved
+    {
+      let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
+      waiter.initialize(to: Waiter(source: source))
+
+      repeat {
+        waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
+        let newState = Int(bitPattern: waiter) | (state & .resolving)
+        if deferredState.loadCAS(&state, newState, .weak, .release, .relaxed)
+        { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
+          return
+        }
+      } while !state.isResolved
+
+      // this Deferred has become resolved; clean up
+      waiter.deinitialize(count: 1)
+      waiter.deallocate()
+    }
+  }
+
   // MARK: public interface
 
   /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes resolved.
@@ -536,7 +559,7 @@ public struct Resolver<Value>
 
   public func retainSource(_ object: AnyObject)
   {
-    deferred?.enqueue(task: { _ in withExtendedLifetime(object, {}) } )
+    deferred?.enqueue(source: object)
   }
 }
 
