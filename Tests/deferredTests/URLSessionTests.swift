@@ -681,17 +681,18 @@ class URLSessionResumeTests: XCTestCase
 
     DispatchQueue.global().asyncAfter(deadline: .now() + 0.2, execute: { deferred.cancel() })
 
-    let mapped = deferred.map { _ in Data() }
-    XCTAssertNotNil(mapped.error)
-    let resumeData = mapped.recover {
-      error in
-      switch error
-      {
-      case URLSessionError.InterruptedDownload(let error, let data):
-        XCTAssertEqual(error.code, .cancelled)
-        return Deferred(value: data)
-      default:
-        return Deferred(error: error)
+    let resumeData = TBD<Data> {
+      resolver in
+      deferred.enqueue {
+        result in
+        switch result.error
+        {
+        case URLSessionError.InterruptedDownload(let error, let data)?:
+          XCTAssertEqual(error.code, .cancelled)
+          resolver.resolve(value: data)
+        default:
+          resolver.resolve(error: result.error ?? DeferredError.canceled("Failed to cancel?"))
+        }
       }
     }
 #if os(Linux)
@@ -718,17 +719,19 @@ class URLSessionResumeTests: XCTestCase
     let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
 
     DispatchQueue.global().asyncAfter(deadline: .now() + 0.2, execute: { deferred.cancel() })
-    let mapped = deferred.map { _ in Data() }
-    XCTAssertNotNil(mapped.error)
-    let resumeData = mapped.recover {
-      error in
-      switch error
-      {
-      case URLSessionError.InterruptedDownload(let error, let data):
-        XCTAssertEqual(error.code, .cancelled)
-        return Deferred(value: data)
-      default:
-        return Deferred(error: error)
+
+    let resumeData = TBD<Data> {
+      resolver in
+      deferred.enqueue {
+        result in
+        switch result.error
+        {
+        case URLSessionError.InterruptedDownload(let error, let data)?:
+          XCTAssertEqual(error.code, .cancelled)
+          resolver.resolve(value: data)
+        default:
+          resolver.resolve(error: result.error ?? DeferredError.canceled("Failed to cancel?"))
+        }
       }
     }
 #if os(Linux)
