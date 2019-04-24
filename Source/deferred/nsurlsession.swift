@@ -9,11 +9,11 @@
 import Dispatch
 import Foundation
 
-public enum URLSessionError: Error
+public enum URLSessionError: Error, Equatable
 {
-  case ServerStatus(Int)
-  case InterruptedDownload(URLError, Data)
-  case InvalidState
+  case serverStatus(Int)
+  case interruptedDownload(URLError, Data)
+  case invalidState
 }
 
 public class DeferredURLSessionTask<Value>: TBD<Value>
@@ -37,7 +37,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   }
 
   @discardableResult
-  public override func cancel(_ reason: String = "") -> Bool
+  public override func cancel(_ error: DeferredError) -> Bool
   {
     guard !self.isResolved else { return false }
 
@@ -91,7 +91,7 @@ extension URLSession
         resolver.resolve(value: (d,r))
       }
       else // Probably an impossible situation
-      { resolver.resolve(error: URLSessionError.InvalidState) }
+      { resolver.resolve(error: URLSessionError.invalidState) }
     }
   }
 
@@ -144,7 +144,7 @@ extension URLSession
 private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 {
   @discardableResult
-  override func cancel(_ reason: String = "") -> Bool
+  public override func cancel(_ error: DeferredError) -> Bool
   {
     guard !self.isResolved else { return false }
 
@@ -178,7 +178,7 @@ extension URLSession
 #endif
           if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
           {
-            resolver.resolve(error: URLSessionError.InterruptedDownload(error, data))
+            resolver.resolve(error: URLSessionError.interruptedDownload(error, data))
             return
           }
         }
@@ -197,10 +197,10 @@ extension URLSession
         if let url = location
         { resolver.resolve(value: (url, response)) }
         else // should not happen
-        { resolver.resolve(error: URLSessionError.ServerStatus(response.statusCode)) }
+        { resolver.resolve(error: URLSessionError.serverStatus(response.statusCode)) }
       }
       else // can happen if resume data is corrupted; otherwise probably an impossible situation
-      { resolver.resolve(error: URLSessionError.InvalidState) }
+      { resolver.resolve(error: URLSessionError.invalidState) }
     }
   }
 

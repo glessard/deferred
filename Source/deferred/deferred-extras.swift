@@ -272,23 +272,25 @@ extension Deferred
   {
     if let result = self.peek()
     {
+      let deferred: Deferred<Other>
       do {
-        let deferred = try result.get()
-        if let result = deferred.peek()
-        {
-          return Deferred<Other>(queue: queue ?? self.queue, result: result)
-        }
-        else
-        {
-          return TBD(queue: queue ?? self.queue, source: deferred) {
-            resolver in
-            if deferred.state == .executing { resolver.beginExecution() }
-            deferred.enqueue(queue: queue) { resolver.resolve($0) }
-          }
-        }
+        deferred = try result.get()
       }
       catch {
         return Deferred<Other>(queue: queue ?? self.queue, error: error)
+      }
+
+      if let result = deferred.peek()
+      {
+        return Deferred<Other>(queue: queue ?? self.queue, result: result)
+      }
+
+      return TBD(queue: queue ?? self.queue, source: deferred) {
+        resolver in
+        if deferred.state == .executing { resolver.beginExecution() }
+        deferred.enqueue(queue: queue) { resolver.resolve($0) }
+        // ensure `deferred` lives as long as it needs to
+        resolver.notify { _ in withExtendedLifetime(deferred, {}) }
       }
     }
 
@@ -297,23 +299,25 @@ extension Deferred
       self.enqueue(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
+        let deferred: Deferred<Other>
         do {
-          let deferred = try result.get()
-          if let result = deferred.peek()
-          {
-            resolver.resolve(result)
-          }
-          else
-          {
-            if deferred.state == .executing { resolver.beginExecution() }
-            deferred.enqueue(queue: queue) { resolver.resolve($0) }
-            // ensure `deferred` lives as long as it needs to
-            resolver.notify { _ in withExtendedLifetime(deferred, {}) }
-          }
+          deferred = try result.get()
         }
         catch {
           resolver.resolve(error: error)
+          return
         }
+
+        if let result = deferred.peek()
+        {
+          resolver.resolve(result)
+          return
+        }
+
+        if deferred.state == .executing { resolver.beginExecution() }
+        deferred.enqueue(queue: queue) { resolver.resolve($0) }
+        // ensure `deferred` lives as long as it needs to
+        resolver.notify { _ in withExtendedLifetime(deferred, {}) }
       }
     }
   }
@@ -415,9 +419,9 @@ extension Deferred
   public func apply<Other>(queue: DispatchQueue? = nil,
                            transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
   {
-    func resolve(_ value: Value,
-                 _ transform: (Result<(Value) throws -> Other, Error>),
-                 _ resolver: Resolver<Other>)
+    func applyTransform(_ value: Value,
+                        _ transform: (Result<(Value) throws -> Other, Error>),
+                        _ resolver: Resolver<Other>)
     {
       guard resolver.needsResolution else { return }
       resolver.beginExecution()
@@ -440,13 +444,11 @@ extension Deferred
           let value = try result.get()
           if let transform = transform.peek()
           {
-            resolve(value, transform, resolver)
+            applyTransform(value, transform, resolver)
           }
           else
           {
-            transform.enqueue(queue: queue) {
-              resolve(value, $0, resolver)
-            }
+            transform.enqueue(queue: queue) { applyTransform(value, $0, resolver) }
             // ensure `transform` lives as long as it needs to
             resolver.notify { _ in withExtendedLifetime(transform, {}) }
           }
