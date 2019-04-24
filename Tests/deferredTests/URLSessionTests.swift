@@ -624,11 +624,7 @@ class URLSessionResumeTests: XCTestCase
 {
   static let largeLength = 100_000
   static let largeURL = baseURL.appendingPathComponent("large")
-#if swift(>=5.0)
   static let largeData = Data((0..<largeLength).map({ UInt8(truncatingIfNeeded: $0) }))
-#else
-  static let largeData = Data(bytes: (0..<largeLength).map({ UInt8(truncatingIfNeeded: $0) }))
-#endif
   static let configuration = URLSessionConfiguration.default
 
   override class func setUp()
@@ -668,7 +664,7 @@ class URLSessionResumeTests: XCTestCase
       headers["Last-Modified"] = formatter.string(from: Date() - 100_000 )
       let dumbCheckSum = data.reduce(0, { s, i in s &+ Int(i) })
       headers["ETag"] = "\"" + String(dumbCheckSum, radix: 16) + "\""
-      let cut = data.count/2 + 731
+      let cut = Int.random(in: (data.count/3...2*(data.count/3)))
       let response = HTTPURLResponse(url: largeURL, statusCode: 200, httpVersion: nil, headerFields: headers)!
       return ([.data(data[0..<cut]), .wait(10.0), .data(data[cut...])], response)
     }
@@ -677,23 +673,22 @@ class URLSessionResumeTests: XCTestCase
   func testResumeAfterCancellation() throws
   {
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
-    let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
-
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.2, execute: { deferred.cancel() })
 
     let resumeData = TBD<Data> {
       resolver in
-      deferred.enqueue {
-        result in
-        switch result.error
+      let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
+      deferred.onError {
+        error in
+        switch error
         {
-        case URLSessionError.interruptedDownload(let error, let data)?:
+        case URLSessionError.interruptedDownload(let error, let data):
           XCTAssertEqual(error.code, .cancelled)
           resolver.resolve(value: data)
         default:
-          resolver.resolve(error: result.error ?? DeferredError.canceled("Failed to cancel?"))
+          resolver.resolve(error: error)
         }
       }
+      deferred.timeout(seconds: 0.2)
     }
 #if os(Linux)
     XCTAssertNotNil(resumeData.error)
@@ -704,9 +699,9 @@ class URLSessionResumeTests: XCTestCase
     let resumed = session.deferredDownloadTask(withResumeData: data)
     let (url, response) = resumed.split()
 
-    XCTAssertEqual((try response.get()).statusCode, 206)
+    XCTAssertEqual(response.value?.statusCode, 206)
 
-    let fileData = url.map(transform: FileHandle.init(forReadingFrom:)).map(transform: { $0.readDataToEndOfFile() })
+    let fileData = url.map(transform: { try FileHandle(forReadingFrom: $0).readDataToEndOfFile() })
     XCTAssertEqual(try fileData.get(), URLSessionResumeTests.largeData)
 #endif
 
@@ -716,23 +711,22 @@ class URLSessionResumeTests: XCTestCase
   func testResumeWithMangledData() throws
   {
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
-    let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
-
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.2, execute: { deferred.cancel() })
 
     let resumeData = TBD<Data> {
       resolver in
-      deferred.enqueue {
-        result in
-        switch result.error
+      let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
+      deferred.onError {
+        error in
+        switch error
         {
-        case URLSessionError.interruptedDownload(let error, let data)?:
+        case URLSessionError.interruptedDownload(let error, let data):
           XCTAssertEqual(error.code, .cancelled)
           resolver.resolve(value: data)
         default:
-          resolver.resolve(error: result.error ?? DeferredError.canceled("Failed to cancel?"))
+          resolver.resolve(error: error)
         }
       }
+      deferred.timeout(seconds: 0.2)
     }
 #if os(Linux)
     XCTAssertNotNil(resumeData.error)
@@ -744,46 +738,49 @@ class URLSessionResumeTests: XCTestCase
 
     // Attempt to resume the download with mangled data. It should fail.
     let resumed = session.deferredDownloadTask(withResumeData: data)
-    do {
-      let (_, _) = try resumed.get()
-      XCTFail("succeeded incorrectly")
-    }
-    catch URLSessionError.invalidState {
+    switch resumed.error
+    {
+    case URLSessionError.invalidState?:
       // URLSession called back with a nonsensical combination of parameters, as expected
+      break
+    case let error?: throw error
+    case nil: XCTFail("succeeded incorrectly")
     }
 #endif
 
     session.finishTasksAndInvalidate()
   }
 
-  func testResumeWithInvalidData() throws
+  func testResumeWithNonsenseData() throws
   {
-#if swift(>=5.0)
-    let nonsense = Data((0..<2345).map({ UInt8(truncatingIfNeeded: $0) }))
-#else
-    let nonsense = Data(bytes: (0..<2345).map({ UInt8(truncatingIfNeeded: $0) }))
-#endif
+    let nonsense = Data((0..<2345).map { UInt8.random(in: 0...UInt8(truncatingIfNeeded: $0)) })
+
     let session = URLSession(configuration: .default)
     let task1 = session.deferredDownloadTask(withResumeData: nonsense)
-    do {
-      _ = try task1.get()
-      XCTFail("succeeded incorrectly")
-    }
-    catch let error as URLError where (URLError.unsupportedURL ~= error) {
-      XCTAssertNotNil(error.userInfo[NSLocalizedDescriptionKey])
+    switch task1.error
+    {
+    case URLError.unsupportedURL?:
+      XCTAssertNotNil((task1.error as? URLError)?.errorUserInfo[NSLocalizedDescriptionKey])
 #if os(Linux)
-      XCTAssertNil(error.userInfo[NSUnderlyingErrorKey])
+      XCTAssertNil((task1.error as? URLError)?.errorUserInfo[NSUnderlyingErrorKey])
 #endif
+    case let error?: throw error
+    case nil: XCTFail("succeeded incorrectly")
     }
 
-    let empty = Data()
-    let task2 = session.deferredDownloadTask(withResumeData: empty)
-    do {
-      _ = try task2.get()
-      XCTFail("succeeded incorrectly")
-    }
-    catch let error as URLError where (error.code == .unsupportedURL) {
-      XCTAssertNotNil(error.userInfo[NSLocalizedDescriptionKey])
+    session.finishTasksAndInvalidate()
+  }
+
+  func testResumeWithEmptyData() throws
+  {
+    let session = URLSession(configuration: .default)
+    let task = session.deferredDownloadTask(withResumeData: Data())
+    switch task.error
+    {
+    case URLError.unsupportedURL?:
+      XCTAssertNotNil((task.error as? URLError)?.errorUserInfo[NSLocalizedDescriptionKey])
+    case let error?: throw error
+    case nil: XCTFail("succeeded incorrectly")
     }
 
     session.finishTasksAndInvalidate()
