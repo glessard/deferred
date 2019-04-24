@@ -69,14 +69,7 @@ class TBDTests: XCTestCase
     (i, d) = TBD<Int>.CreatePair()
     i.cancel()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) {
-      if i.resolve(value: nzRandom())
-      {
-        XCTFail()
-      }
-      else
-      {
-        e.fulfill()
-      }
+      i.resolve(value: nzRandom()) ?  XCTFail() : e.fulfill()
     }
 
     waitForExpectations(timeout: 1.0)
@@ -125,10 +118,10 @@ class TBDTests: XCTestCase
       XCTAssert(result.error as? DeferredError == DeferredError.canceled(""))
     }
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
-      // This will trigger the `XCWaitCompletionHandler` in the `waitForExpectationsWithTimeout` call below.
+      // This will trigger the completion handler at the `waitForExpectations` call below.
       e3.fulfill()
     }
-    waitForExpectations(timeout: 1.0) { _ in d3.cancel() }
+    waitForExpectations(timeout: 1.0, handler: { _ in d3.cancel() })
   }
 
   func testNotify4()
