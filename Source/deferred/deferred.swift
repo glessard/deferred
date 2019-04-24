@@ -336,7 +336,7 @@ open class Deferred<Value>
   /// - returns: whether the cancellation was performed successfully.
 
   @discardableResult
-  open func cancel(_ reason: String = "") -> Bool
+  public final func cancel(_ reason: String = "") -> Bool
   {
     return cancel(.canceled(reason))
   }

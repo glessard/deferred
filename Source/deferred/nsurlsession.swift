@@ -37,7 +37,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   }
 
   @discardableResult
-  public override func cancel(_ reason: String = "") -> Bool
+  public override func cancel(_ error: DeferredError) -> Bool
   {
     guard !self.isResolved else { return false }
 
@@ -144,7 +144,7 @@ extension URLSession
 private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 {
   @discardableResult
-  override func cancel(_ reason: String = "") -> Bool
+  public override func cancel(_ error: DeferredError) -> Bool
   {
     guard !self.isResolved else { return false }
 
