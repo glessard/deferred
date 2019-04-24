@@ -124,7 +124,7 @@ extension URLSessionTests
     let success = task.map {
       (data, response) throws -> String in
       XCTAssertEqual(response.statusCode, 200)
-      guard response.statusCode == 200 else { throw URLSessionError.ServerStatus(response.statusCode) }
+      guard response.statusCode == 200 else { throw URLSessionError.serverStatus(response.statusCode) }
       guard let string = String(data: data, encoding: .utf8) else { throw TestError() }
       return string
     }
@@ -149,7 +149,7 @@ extension URLSessionTests
     let url = task.map {
       (url, response) throws -> URL in
       XCTAssertEqual(response.statusCode, 200)
-      guard response.statusCode == 200 else { throw URLSessionError.ServerStatus(response.statusCode) }
+      guard response.statusCode == 200 else { throw URLSessionError.serverStatus(response.statusCode) }
       return url
     }
     let handle = url.map(transform: FileHandle.init(forReadingFrom:))
@@ -249,7 +249,7 @@ extension URLSessionTests
     catch let error as URLError {
       XCTAssertEqual(error.code, .cancelled)
     }
-    catch URLSessionError.InterruptedDownload(let error, _) {
+    catch URLSessionError.interruptedDownload(let error, _) {
       XCTAssertEqual(error.code, .cancelled)
     }
 
@@ -295,7 +295,7 @@ extension URLSessionTests
     catch let error as URLError {
       XCTAssertEqual(error.code, .cancelled)
     }
-    catch URLSessionError.InterruptedDownload(let error, _) {
+    catch URLSessionError.interruptedDownload(let error, _) {
       XCTAssertEqual(error.code, .cancelled)
     }
 
@@ -687,7 +687,7 @@ class URLSessionResumeTests: XCTestCase
         result in
         switch result.error
         {
-        case URLSessionError.InterruptedDownload(let error, let data)?:
+        case URLSessionError.interruptedDownload(let error, let data)?:
           XCTAssertEqual(error.code, .cancelled)
           resolver.resolve(value: data)
         default:
@@ -726,7 +726,7 @@ class URLSessionResumeTests: XCTestCase
         result in
         switch result.error
         {
-        case URLSessionError.InterruptedDownload(let error, let data)?:
+        case URLSessionError.interruptedDownload(let error, let data)?:
           XCTAssertEqual(error.code, .cancelled)
           resolver.resolve(value: data)
         default:
@@ -748,7 +748,7 @@ class URLSessionResumeTests: XCTestCase
       let (_, _) = try resumed.get()
       XCTFail("succeeded incorrectly")
     }
-    catch URLSessionError.InvalidState {
+    catch URLSessionError.invalidState {
       // URLSession called back with a nonsensical combination of parameters, as expected
     }
 #endif
