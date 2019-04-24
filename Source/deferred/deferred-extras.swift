@@ -415,9 +415,9 @@ extension Deferred
   public func apply<Other>(queue: DispatchQueue? = nil,
                            transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
   {
-    func resolve(_ value: Value,
-                 _ transform: (Result<(Value) throws -> Other, Error>),
-                 _ resolver: Resolver<Other>)
+    func applyTransform(_ value: Value,
+                        _ transform: (Result<(Value) throws -> Other, Error>),
+                        _ resolver: Resolver<Other>)
     {
       guard resolver.needsResolution else { return }
       resolver.beginExecution()
@@ -440,13 +440,11 @@ extension Deferred
           let value = try result.get()
           if let transform = transform.peek()
           {
-            resolve(value, transform, resolver)
+            applyTransform(value, transform, resolver)
           }
           else
           {
-            transform.enqueue(queue: queue) {
-              resolve(value, $0, resolver)
-            }
+            transform.enqueue(queue: queue) { applyTransform(value, $0, resolver) }
             // ensure `transform` lives as long as it needs to
             resolver.notify { _ in withExtendedLifetime(transform, {}) }
           }
