@@ -77,10 +77,11 @@ extension Deferred
       return Deferred(queue: queue, result: result)
     }
 
-    return TBD(queue: queue, source: self) {
+    return TBD(queue: queue) {
       resolver in
       if self.state == .executing { resolver.beginExecution() }
       self.enqueue(queue: queue, boostQoS: false, task: { resolver.resolve($0) })
+      resolver.retainSource(self)
     }
   }
 
@@ -112,7 +113,7 @@ extension Deferred
   public func map<Other>(queue: DispatchQueue? = nil,
                          transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
   {
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -127,6 +128,7 @@ extension Deferred
           resolver.resolve(error: error)
         }
       }
+      resolver.retainSource(self)
     }
   }
 
@@ -159,7 +161,7 @@ extension Deferred
   public func flatMap<Other>(queue: DispatchQueue? = nil,
                              transform: @escaping (_ value: Value) throws -> Deferred<Other>) -> Deferred<Other>
   {
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -182,6 +184,7 @@ extension Deferred
           resolver.resolve(error: error)
         }
       }
+      resolver.retainSource(self)
     }
   }
 
@@ -209,7 +212,7 @@ extension Deferred
   public func recover(queue: DispatchQueue? = nil,
                       transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
   {
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -238,6 +241,7 @@ extension Deferred
           resolver.resolve(result)
         }
       }
+      resolver.retainSource(self)
     }
   }
 
@@ -283,7 +287,7 @@ extension Deferred
         return Deferred<Other>(queue: queue ?? self.queue, result: result)
       }
 
-      return TBD(queue: queue ?? self.queue, source: deferred) {
+      return TBD(queue: queue ?? self.queue) {
         resolver in
         if deferred.state == .executing { resolver.beginExecution() }
         deferred.enqueue(queue: queue) { resolver.resolve($0) }
@@ -291,7 +295,7 @@ extension Deferred
       }
     }
 
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -315,6 +319,7 @@ extension Deferred
         deferred.enqueue(queue: queue) { resolver.resolve($0) }
         resolver.retainSource(deferred)
       }
+      resolver.retainSource(self)
     }
   }
 }
@@ -431,7 +436,7 @@ extension Deferred
       }
     }
 
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -452,6 +457,7 @@ extension Deferred
           resolver.resolve(error: error)
         }
       }
+      resolver.retainSource(self)
     }
   }
 

@@ -51,7 +51,7 @@ extension Deferred
   {
     guard time > .now() else { return self }
 
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue, boostQoS: false) {
         result in
@@ -77,6 +77,7 @@ extension Deferred
           resolver.resolve(result)
         }
       }
+      resolver.retainSource(self)
     }
   }
 }

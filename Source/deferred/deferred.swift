@@ -52,7 +52,6 @@ private extension Int
 open class Deferred<Value>
 {
   let queue: DispatchQueue
-  private var source: AnyObject?
 
   private var resolved: Result<Value, Error>?
   private var deferredState: AtomicInt
@@ -68,10 +67,9 @@ open class Deferred<Value>
 
   // MARK: designated initializers
 
-  fileprivate init(queue: DispatchQueue, source: AnyObject? = nil)
+  fileprivate init(queue: DispatchQueue)
   {
     self.queue = queue
-    self.source = source
     resolved = nil
     deferredState = AtomicInt(.waiting)
   }
@@ -84,7 +82,6 @@ open class Deferred<Value>
   public init(queue: DispatchQueue, result: Result<Value, Error>)
   {
     self.queue = queue
-    source = nil
     resolved = result
     deferredState = AtomicInt(.resolved)
   }
@@ -97,7 +94,6 @@ open class Deferred<Value>
   public init(queue: DispatchQueue, task: @escaping () throws -> Value)
   {
     self.queue = queue
-    source = nil
     resolved = nil
     deferredState = AtomicInt(.executing)
 
@@ -203,7 +199,6 @@ open class Deferred<Value>
     // this thread has exclusive access
 
     resolved = result
-    source = nil
 
     // This atomic swap operation uses memory order .acqrel.
     // "release" ordering ensures visibility of changes to `resolved` above to another thread.
@@ -571,9 +566,9 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public init(queue: DispatchQueue, source: AnyObject? = nil, task: (Resolver<Value>) -> Void)
+  public init(queue: DispatchQueue, task: (Resolver<Value>) -> Void)
   {
-    super.init(queue: queue, source: source)
+    super.init(queue: queue)
     task(Resolver(self))
   }
 
@@ -581,10 +576,10 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public init(qos: DispatchQoS = .current, source: AnyObject? = nil, task: (Resolver<Value>) -> Void)
+  public init(qos: DispatchQoS = .current, task: (Resolver<Value>) -> Void)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
-    super.init(queue: queue, source: source)
+    super.init(queue: queue)
     task(Resolver(self))
   }
 
