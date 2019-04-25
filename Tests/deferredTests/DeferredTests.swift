@@ -37,7 +37,7 @@ class DeferredTests: XCTestCase
       return (3*d).description
     }
 
-    result3.notify { print("Result 3 is: \($0.value!)") }
+    result3.onResult { print("Result 3 is: \($0.value!)") }
 
     let result4 = combine(result1, result2)
 
@@ -185,7 +185,7 @@ class DeferredTests: XCTestCase
 
     let d = Deferred(task: { s.wait(timeout: .now() + 1.0) })
     let m = d.map(transform: { r throws -> Void in if r == .success { throw DeferredError.invalid("") } })
-    m.notify { _ in e.fulfill() }
+    m.onResult { _ in e.fulfill() }
 
     XCTAssert(d.state == .executing)
     XCTAssert(m.state == .waiting)
@@ -202,58 +202,46 @@ class DeferredTests: XCTestCase
   }
 
 
-  func testNotify1()
+  func testOnResolution1()
   {
     let value = nzRandom()
     let e1 = expectation(description: "Pre-set Deferred")
     let d1 = Deferred(value: value)
-    d1.notify {
-      XCTAssert( $0.value == value )
+    d1.onResult {
+      result in
+      XCTAssertEqual(result.value, value)
       e1.fulfill()
     }
     waitForExpectations(timeout: 1.0)
   }
 
-  func testNotify2()
+  func testOnResolution2()
   {
     let value = nzRandom()
     let e2 = expectation(description: "Properly Deferred")
     let d1 = Deferred(qos: .background, value: value)
     let d2 = d1.delay(.milliseconds(100))
-    d2.notify(queue: DispatchQueue(label: "Test", qos: .utility)) {
-      XCTAssert( $0.value == value )
+    d2.onResult(queue: DispatchQueue(label: "Test", qos: .utility)) {
+      result in
+      XCTAssertEqual(result.value, value)
       e2.fulfill()
     }
     waitForExpectations(timeout: 1.0)
   }
 
-  func testNotify3()
+  func testOnResolution3()
   {
-    let e3 = expectation(description: "Deferred forever")
-    let d3 = Deferred<Int> {
-      let s3 = DispatchSemaphore(value: 0)
-      s3.wait()
-      return 42
-    }
-    d3.notify {
+    let e3 = expectation(description: "Pre-set Deferred Error")
+    let d3 = Deferred<Int>(error: DeferredError.canceled(""))
+    d3.onResult {
       result in
-      guard let e = result.error,
-            let deferredErr = e as? DeferredError,
-            case .canceled = deferredErr
-      else
-      {
-        XCTFail()
-        return
-      }
-    }
-    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.2) {
+      XCTAssertEqual(result.error as? DeferredError, DeferredError.canceled(""))
       e3.fulfill()
     }
-
-    waitForExpectations(timeout: 1.0) { _ in d3.cancel() }
+    waitForExpectations(timeout: 1.0)
   }
 
-  func testNotify4()
+  func testOnValueAndOnError()
   {
     let d4 = Deferred(value: nzRandom())
     let e4 = expectation(description: "Test onValue()")
@@ -535,7 +523,7 @@ class DeferredTests: XCTestCase
 
     var v1 = 0
     var v2 = 0
-    result.notify {
+    result.onResult {
       result in
       XCTAssert(result.value == (Double(v1*v2)))
       expect.fulfill()
@@ -543,12 +531,12 @@ class DeferredTests: XCTestCase
 
     let trigger = TBD<Int>() { _ in }
 
-    trigger.notify { _ in
+    trigger.onResult { _ in
       v1 = Int(nzRandom() & 0x7fff + 10000)
       t.resolve(value: { i in Double(v1*i) })
     }
 
-    trigger.notify { _ in
+    trigger.onResult { _ in
       v2 = Int(nzRandom() & 0x7fff + 10000)
       o.resolve(value: v2)
     }
@@ -574,7 +562,7 @@ class DeferredTests: XCTestCase
     let t1 = Deferred { i throws in Double(value*i) }
     let e1 = expectation(description: "r1")
     let r1 = o1.apply(qos: .utility, transform: t1)
-    r1.notify { _ in e1.fulfill() }
+    r1.onResult { _ in e1.fulfill() }
     XCTAssert(r1.value == Double(value*value))
     XCTAssert(r1.error == nil)
 
@@ -583,7 +571,7 @@ class DeferredTests: XCTestCase
     let t2 = Deferred { (i:Int) throws -> Float in XCTFail(); return Float(i) }
     let e2 = expectation(description: "r2")
     let r2 = o2.apply(transform: t2)
-    r2.notify { _ in e2.fulfill() }
+    r2.onResult { _ in e2.fulfill() }
     XCTAssert(r2.value == nil)
     XCTAssert(r2.error as? TestError == TestError(error))
 
@@ -600,7 +588,7 @@ class DeferredTests: XCTestCase
     let t3 = Deferred<(Int) throws -> Float>(error: TestError(error))
     let e3 = expectation(description: "r3")
     let r3 = o3.apply(transform: t3)
-    r3.notify { _ in e3.fulfill() }
+    r3.onResult { _ in e3.fulfill() }
     XCTAssert(r3.value == nil)
     XCTAssert(r3.error as? TestError == TestError(error))
 
@@ -609,7 +597,7 @@ class DeferredTests: XCTestCase
     let t4 = Deferred { (i:Int) throws -> Float in throw TestError(error) }
     let e4 = expectation(description: "r4")
     let r4 = o4.apply(transform: t4)
-    r4.notify { _ in e4.fulfill() }
+    r4.onResult { _ in e4.fulfill() }
     XCTAssert(r4.value == nil)
     XCTAssert(r4.error as? TestError == TestError(error))
 
@@ -618,7 +606,7 @@ class DeferredTests: XCTestCase
     let (t5, d5) = TBD<(Int) throws -> Float>.CreatePair()
     let e5 = expectation(description: "r5")
     let r5 = o5.apply(transform: d5)
-    combine(d5, r5).notify { _ in e5.fulfill() }
+    combine(d5, r5).onResult { _ in e5.fulfill() }
     r5.cancel()
     t5.resolve(value: { Float($0) })
     XCTAssert(r5.value == nil)
@@ -648,7 +636,7 @@ class DeferredTests: XCTestCase
 
     let e2 = expectation(description: "e2")
     let q2 = qb.enqueuing(at: .background, serially: true)
-    q2.notify { _ in e2.fulfill() }
+    q2.onResult { _ in e2.fulfill() }
 
     let e3 = expectation(description: "e3")
     let q3 = q2.map(qos: .userInitiated) {
@@ -711,7 +699,7 @@ class DeferredTests: XCTestCase
     let d1 = tbd.map { $0 * 2 }
     let e1 = expectation(description: "first deferred")
     d1.onValue { _ in XCTFail() }
-    d1.notify  { r in XCTAssert(r.error != nil) }
+    d1.onResult  { r in XCTAssert(r.error != nil) }
     d1.onError {
       if $0 as? DeferredError == DeferredError.canceled("test") { e1.fulfill() }
     }
@@ -719,7 +707,7 @@ class DeferredTests: XCTestCase
     let d2 = d1.map  { $0 + 100 }
     let e2 = expectation(description: "second deferred")
     d2.onValue { _ in XCTFail() }
-    d2.notify  { r in XCTAssert(r.error != nil) }
+    d2.onResult  { r in XCTAssert(r.error != nil) }
     d2.onError {
       if $0 as? DeferredError == DeferredError.canceled("test") { e2.fulfill() }
     }

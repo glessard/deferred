@@ -24,7 +24,7 @@ extension Deferred
   /// - parameter task: a closure to be executed as a notification
   /// - parameter result: the `Result` of this `Deferred`
 
-  public func notify(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
+  public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
   {
     enqueue(queue: queue, task: { result in withExtendedLifetime(self, { task(result) }) })
   }
@@ -41,7 +41,7 @@ extension Deferred
 
   public func onValue(queue: DispatchQueue? = nil, task: @escaping (_ value: Value) -> Void)
   {
-    notify(queue: queue, task: { $0.value.map(task) })
+    onResult(queue: queue, task: { $0.value.map(task) })
   }
 
   // MARK: onError: execute a task when (and only when) a computation fails
@@ -56,7 +56,7 @@ extension Deferred
 
   public func onError(queue: DispatchQueue? = nil, task: @escaping (_ error: Error) -> Void)
   {
-    notify(queue: queue, task: { $0.error.map(task) })
+    onResult(queue: queue, task: { $0.error.map(task) })
   }
 }
 

@@ -24,7 +24,7 @@ class DeferredCombinationTests: XCTestCase
       if i > 0 { return a+i }
       throw TestError(a)
     }
-    c.notify { _ in e.fulfill() }
+    c.onResult { _ in e.fulfill() }
 
     XCTAssert(c.value == nil)
     XCTAssert(c.error != nil)
