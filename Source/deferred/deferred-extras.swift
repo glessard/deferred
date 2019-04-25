@@ -366,14 +366,8 @@ extension Deferred
   public static func Retrying(_ attempts: Int, qos: DispatchQoS = .current,
                               task: @escaping () throws -> Deferred) -> Deferred
   {
-    guard attempts > 0 else
-    {
-      let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
-      return Deferred<Value>(qos: qos, error: error)
-    }
-
-    let deferred = Deferred<Deferred>(qos: qos, task: task).flatten()
-    return Deferred.Retrying(attempts-1, deferred, task: task)
+    let queue = DispatchQueue(label: "retrying", qos: qos)
+    return Deferred.Retrying(attempts, queue: queue, task: task)
   }
 
   /// Initialize a `Deferred` with a computation task to be performed in the background
@@ -387,14 +381,12 @@ extension Deferred
   public static func Retrying(_ attempts: Int, queue: DispatchQueue,
                               task: @escaping () throws -> Deferred) -> Deferred
   {
-    guard attempts > 0 else
-    {
-      let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
-      return Deferred<Value>(queue: queue, error: error)
-    }
+    let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
+    let deferred = Deferred<Value>(queue: queue, error: error)
 
-    let deferred = Deferred<Deferred>(queue: queue, task: task).flatten()
-    return Deferred.Retrying(attempts-1, deferred, task: task)
+    if attempts < 1 { return deferred }
+
+    return Deferred.Retrying(attempts, deferred, task: task)
   }
 
   private static func Retrying(_ attempts: Int, _ deferred: Deferred, task: @escaping () throws -> Deferred) -> Deferred
