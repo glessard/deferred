@@ -26,7 +26,7 @@ extension Deferred
 
   public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
   {
-    enqueue(queue: queue, task: { result in withExtendedLifetime(self, { task(result) }) })
+    notify(queue: queue, handler: { result in withExtendedLifetime(self, { task(result) }) })
   }
 
   // MARK: onValue: execute a task when (and only when) a computation succeeds
@@ -80,7 +80,7 @@ extension Deferred
     return TBD(queue: queue) {
       resolver in
       if self.state == .executing { resolver.beginExecution() }
-      self.enqueue(queue: queue, boostQoS: false, task: { resolver.resolve($0) })
+      self.notify(queue: queue, boostQoS: false, handler: { resolver.resolve($0) })
       resolver.retainSource(self)
     }
   }
@@ -115,7 +115,7 @@ extension Deferred
   {
     return TBD(queue: queue ?? self.queue) {
       resolver in
-      self.enqueue(queue: queue) {
+      self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
         resolver.beginExecution()
@@ -163,7 +163,7 @@ extension Deferred
   {
     return TBD(queue: queue ?? self.queue) {
       resolver in
-      self.enqueue(queue: queue) {
+      self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
         resolver.beginExecution()
@@ -176,7 +176,7 @@ extension Deferred
           }
           else
           {
-            transformed.enqueue(queue: queue) { resolver.resolve($0) }
+            transformed.notify(queue: queue) { resolver.resolve($0) }
             resolver.retainSource(transformed)
           }
         }
@@ -214,7 +214,7 @@ extension Deferred
   {
     return TBD(queue: queue ?? self.queue) {
       resolver in
-      self.enqueue(queue: queue) {
+      self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
         resolver.beginExecution()
@@ -228,7 +228,7 @@ extension Deferred
             }
             else
             {
-              transformed.enqueue(queue: queue) { resolver.resolve($0) }
+              transformed.notify(queue: queue) { resolver.resolve($0) }
               resolver.retainSource(transformed)
             }
           }
@@ -290,14 +290,14 @@ extension Deferred
       return TBD(queue: queue ?? self.queue) {
         resolver in
         if deferred.state == .executing { resolver.beginExecution() }
-        deferred.enqueue(queue: queue) { resolver.resolve($0) }
+        deferred.notify(queue: queue) { resolver.resolve($0) }
         resolver.retainSource(deferred)
       }
     }
 
     return TBD(queue: queue ?? self.queue) {
       resolver in
-      self.enqueue(queue: queue) {
+      self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
         let deferred: Deferred<Other>
@@ -316,7 +316,7 @@ extension Deferred
         }
 
         if deferred.state == .executing { resolver.beginExecution() }
-        deferred.enqueue(queue: queue) { resolver.resolve($0) }
+        deferred.notify(queue: queue) { resolver.resolve($0) }
         resolver.retainSource(deferred)
       }
       resolver.retainSource(self)
@@ -430,7 +430,7 @@ extension Deferred
 
     return TBD(queue: queue ?? self.queue) {
       resolver in
-      self.enqueue(queue: queue) {
+      self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
         do {
@@ -441,7 +441,7 @@ extension Deferred
           }
           else
           {
-            transform.enqueue(queue: queue) { applyTransform(value, $0, resolver) }
+            transform.notify(queue: queue) { applyTransform(value, $0, resolver) }
             resolver.retainSource(transform)
           }
         }

@@ -293,13 +293,13 @@ open class Deferred<Value>
   /// - parameter task: a closure to be executed after `self` becomes resolved.
   /// - parameter result: the `Result` of `self`
 
-  open func enqueue(queue: DispatchQueue? = nil, boostQoS: Bool = true, task: @escaping (_ result: Result<Value, Error>) -> Void)
+  open func notify(queue: DispatchQueue? = nil, boostQoS: Bool = true, handler: @escaping (_ result: Result<Value, Error>) -> Void)
   {
     var state = deferredState.load(.acquire)
     if !state.isResolved
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
-      waiter.initialize(to: Waiter(queue, task))
+      waiter.initialize(to: Waiter(queue, handler))
 
       if boostQoS, let qos = queue?.qos, qos > self.queue.qos
       { // try to raise `self.queue`'s QoS if the notification needs to execute at a higher QoS
@@ -323,7 +323,7 @@ open class Deferred<Value>
 
     // this Deferred is resolved
     let q = queue ?? self.queue
-    q.async(execute: { [result = resolved!] in task(result) })
+    q.async(execute: { [result = resolved!] in handler(result) })
   }
 
   /// Query the current state of this `Deferred`
@@ -387,7 +387,7 @@ open class Deferred<Value>
                     flags: [.enforceQoS, .barrier], execute: {})
       }
       let s = DispatchSemaphore(value: 0)
-      self.enqueue(boostQoS: false, task: { _ in s.signal() })
+      self.notify(boostQoS: false, handler: { _ in s.signal() })
       s.wait()
       _ = deferredState.load(.acquire)
     }
@@ -547,9 +547,9 @@ public struct Resolver<Value>
   /// - parameter task: a closure to be executed as a notification
   /// - parameter result: the `Result` to which our `Deferred` was resolved
 
-  public func notify(task: @escaping (_ result: Result<Value, Error>) -> Void)
+  public func notify(handler: @escaping (_ result: Result<Value, Error>) -> Void)
   {
-    deferred?.enqueue(task: task)
+    deferred?.notify(handler: handler)
   }
 
   public func retainSource(_ object: AnyObject)

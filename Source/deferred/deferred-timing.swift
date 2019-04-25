@@ -53,7 +53,7 @@ extension Deferred
 
     return TBD(queue: queue ?? self.queue) {
       resolver in
-      self.enqueue(queue: queue, boostQoS: false) {
+      self.notify(queue: queue, boostQoS: false) {
         result in
         guard resolver.needsResolution else { return }
 
