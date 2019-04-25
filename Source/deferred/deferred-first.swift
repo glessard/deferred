@@ -28,7 +28,7 @@ import Dispatch
 
 public func firstValue<Value, C: Collection>(qos: DispatchQoS,
                                              deferreds: C, cancelOthers: Bool = false) -> Deferred<Value>
-  where C.Iterator.Element: Deferred<Value>
+  where C.Element: Deferred<Value>
 {
   let queue = DispatchQueue(label: "first-collection", qos: qos)
   return firstValue(queue: queue, deferreds: deferreds, cancelOthers: cancelOthers)
@@ -52,7 +52,7 @@ public func firstValue<Value, C: Collection>(qos: DispatchQoS,
 /// - returns: a new `Deferred`, using a queue at the current QoS class.
 
 public func firstValue<Value, C: Collection>(_ deferreds: C, cancelOthers: Bool = false) -> Deferred<Value>
-  where C.Iterator.Element: Deferred<Value>
+  where C.Element: Deferred<Value>
 {
   return firstValue(qos: .current, deferreds: deferreds, cancelOthers: cancelOthers)
 }
@@ -77,7 +77,7 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, cancelOthers: Bool 
 
 public func firstValue<Value, C: Collection>(queue: DispatchQueue,
                                              deferreds: C, cancelOthers: Bool = false) -> Deferred<Value>
-  where C.Iterator.Element: Deferred<Value>
+  where C.Element: Deferred<Value>
 {
   if deferreds.isEmpty
   {
@@ -137,7 +137,7 @@ public func firstValue<Value, C: Collection>(queue: DispatchQueue,
 
 public func firstValue<Value, S: Sequence>(qos: DispatchQoS,
                                            deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
-  where S.Iterator.Element: Deferred<Value>
+  where S.Element: Deferred<Value>
 {
   let queue = DispatchQueue(label: "first-sequence", qos: qos)
   return firstValue(queue: queue, deferreds: deferreds, cancelOthers: cancelOthers)
@@ -160,7 +160,7 @@ public func firstValue<Value, S: Sequence>(qos: DispatchQoS,
 /// - returns: a new `Deferred`, using a queue at the current QoS class.
 
 public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
-  where S.Iterator.Element: Deferred<Value>
+  where S.Element: Deferred<Value>
 {
   return firstValue(qos: .current, deferreds: deferreds, cancelOthers: cancelOthers)
 }
@@ -184,7 +184,7 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = 
 
 public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
                                            deferreds: S, cancelOthers: Bool = false) -> Deferred<Value>
-  where S.Iterator.Element: Deferred<Value>
+  where S.Element: Deferred<Value>
 {
   let first = TBD<Value>(queue: queue) {
     f in
@@ -243,7 +243,7 @@ public func firstValue<Value, S: Sequence>(queue: DispatchQueue,
 
 public func firstResolved<Value, C: Collection>(qos: DispatchQoS,
                                                   deferreds: C, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where C.Iterator.Element: Deferred<Value>
+  where C.Element: Deferred<Value>
 {
   let queue = DispatchQueue(label: "first-collection", qos: qos)
   return firstResolved(queue: queue, deferreds: deferreds, cancelOthers: cancelOthers)
@@ -263,7 +263,7 @@ public func firstResolved<Value, C: Collection>(qos: DispatchQoS,
 /// - returns: a new `Deferred`, using a queue at the current QoS class.
 
 public func firstResolved<Value, C: Collection>(_ deferreds: C, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where C.Iterator.Element: Deferred<Value>
+  where C.Element: Deferred<Value>
 {
   return firstResolved(qos: .current, deferreds: deferreds, cancelOthers: cancelOthers)
 }
@@ -284,7 +284,7 @@ public func firstResolved<Value, C: Collection>(_ deferreds: C, cancelOthers: Bo
 
 public func firstResolved<Value, C: Collection>(queue: DispatchQueue,
                                                   deferreds: C, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where C.Iterator.Element: Deferred<Value>
+  where C.Element: Deferred<Value>
 {
   if deferreds.count == 0
   {
@@ -319,7 +319,7 @@ public func firstResolved<Value, C: Collection>(queue: DispatchQueue,
 
 public func firstResolved<Value, S: Sequence>(qos: DispatchQoS,
                                                 deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where S.Iterator.Element: Deferred<Value>
+  where S.Element: Deferred<Value>
 {
   let queue = DispatchQueue(label: "first-sequence", qos: qos)
   return firstResolved(queue: queue, deferreds: deferreds, cancelOthers: cancelOthers)
@@ -338,7 +338,7 @@ public func firstResolved<Value, S: Sequence>(qos: DispatchQoS,
 /// - returns: a new `Deferred`, using a queue at the current QoS class.
 
 public func firstResolved<Value, S: Sequence>(_ deferreds: S, cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-where S.Iterator.Element: Deferred<Value>
+where S.Element: Deferred<Value>
 {
   return firstResolved(qos: .current, deferreds: deferreds, cancelOthers: cancelOthers)
 }
@@ -358,7 +358,7 @@ where S.Iterator.Element: Deferred<Value>
 
 public func firstResolved<Value, S>(queue: DispatchQueue, deferreds: S,
                                       cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where S: Sequence, S.Iterator.Element: Deferred<Value>
+  where S: Sequence, S.Element: Deferred<Value>
 {
   let first = TBD<Deferred<Value>>(queue: queue) {
     f in
