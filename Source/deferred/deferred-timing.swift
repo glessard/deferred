@@ -68,7 +68,7 @@ extension Deferred
         // enqueue block only if it can get executed
         if time > .now()
         {
-          self.queue.asyncAfter(deadline: time) {
+          (queue ?? self.queue).asyncAfter(deadline: time) {
             resolver.resolve(result)
           }
         }
