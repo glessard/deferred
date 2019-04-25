@@ -77,10 +77,11 @@ extension Deferred
       return Deferred(queue: queue, result: result)
     }
 
-    return TBD(queue: queue, source: self) {
+    return TBD(queue: queue) {
       resolver in
       if self.state == .executing { resolver.beginExecution() }
       self.enqueue(queue: queue, boostQoS: false, task: { resolver.resolve($0) })
+      resolver.retainSource(self)
     }
   }
 
@@ -112,7 +113,7 @@ extension Deferred
   public func map<Other>(queue: DispatchQueue? = nil,
                          transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
   {
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -127,6 +128,7 @@ extension Deferred
           resolver.resolve(error: error)
         }
       }
+      resolver.retainSource(self)
     }
   }
 
@@ -159,7 +161,7 @@ extension Deferred
   public func flatMap<Other>(queue: DispatchQueue? = nil,
                              transform: @escaping (_ value: Value) throws -> Deferred<Other>) -> Deferred<Other>
   {
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -175,14 +177,14 @@ extension Deferred
           else
           {
             transformed.enqueue(queue: queue) { resolver.resolve($0) }
-            // ensure `transformed` lives as long as it needs to
-            resolver.notify { _ in withExtendedLifetime(transformed, {}) }
+            resolver.retainSource(transformed)
           }
         }
         catch {
           resolver.resolve(error: error)
         }
       }
+      resolver.retainSource(self)
     }
   }
 
@@ -210,7 +212,7 @@ extension Deferred
   public func recover(queue: DispatchQueue? = nil,
                       transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
   {
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -227,8 +229,7 @@ extension Deferred
             else
             {
               transformed.enqueue(queue: queue) { resolver.resolve($0) }
-              // ensure `transformed` lives as long as it needs to
-              resolver.notify { _ in withExtendedLifetime(transformed, {}) }
+              resolver.retainSource(transformed)
             }
           }
           catch {
@@ -240,6 +241,7 @@ extension Deferred
           resolver.resolve(result)
         }
       }
+      resolver.retainSource(self)
     }
   }
 
@@ -285,16 +287,15 @@ extension Deferred
         return Deferred<Other>(queue: queue ?? self.queue, result: result)
       }
 
-      return TBD(queue: queue ?? self.queue, source: deferred) {
+      return TBD(queue: queue ?? self.queue) {
         resolver in
         if deferred.state == .executing { resolver.beginExecution() }
         deferred.enqueue(queue: queue) { resolver.resolve($0) }
-        // ensure `deferred` lives as long as it needs to
-        resolver.notify { _ in withExtendedLifetime(deferred, {}) }
+        resolver.retainSource(deferred)
       }
     }
 
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -316,9 +317,9 @@ extension Deferred
 
         if deferred.state == .executing { resolver.beginExecution() }
         deferred.enqueue(queue: queue) { resolver.resolve($0) }
-        // ensure `deferred` lives as long as it needs to
-        resolver.notify { _ in withExtendedLifetime(deferred, {}) }
+        resolver.retainSource(deferred)
       }
+      resolver.retainSource(self)
     }
   }
 }
@@ -435,7 +436,7 @@ extension Deferred
       }
     }
 
-    return TBD(queue: queue ?? self.queue, source: self) {
+    return TBD(queue: queue ?? self.queue) {
       resolver in
       self.enqueue(queue: queue) {
         result in
@@ -449,14 +450,14 @@ extension Deferred
           else
           {
             transform.enqueue(queue: queue) { applyTransform(value, $0, resolver) }
-            // ensure `transform` lives as long as it needs to
-            resolver.notify { _ in withExtendedLifetime(transform, {}) }
+            resolver.retainSource(transform)
           }
         }
         catch {
           resolver.resolve(error: error)
         }
       }
+      resolver.retainSource(self)
     }
   }
 

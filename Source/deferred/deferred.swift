@@ -52,7 +52,6 @@ private extension Int
 open class Deferred<Value>
 {
   let queue: DispatchQueue
-  private var source: AnyObject?
 
   private var resolved: Result<Value, Error>?
   private var deferredState: AtomicInt
@@ -68,10 +67,9 @@ open class Deferred<Value>
 
   // MARK: designated initializers
 
-  fileprivate init(queue: DispatchQueue, source: AnyObject? = nil)
+  fileprivate init(queue: DispatchQueue)
   {
     self.queue = queue
-    self.source = source
     resolved = nil
     deferredState = AtomicInt(.waiting)
   }
@@ -84,7 +82,6 @@ open class Deferred<Value>
   public init(queue: DispatchQueue, result: Result<Value, Error>)
   {
     self.queue = queue
-    source = nil
     resolved = result
     deferredState = AtomicInt(.resolved)
   }
@@ -97,7 +94,6 @@ open class Deferred<Value>
   public init(queue: DispatchQueue, task: @escaping () throws -> Value)
   {
     self.queue = queue
-    source = nil
     resolved = nil
     deferredState = AtomicInt(.executing)
 
@@ -203,7 +199,6 @@ open class Deferred<Value>
     // this thread has exclusive access
 
     resolved = result
-    source = nil
 
     // This atomic swap operation uses memory order .acqrel.
     // "release" ordering ensures visibility of changes to `resolved` above to another thread.
@@ -252,6 +247,29 @@ open class Deferred<Value>
   fileprivate func resolve(error: Error) -> Bool
   {
     return resolve(Result<Value, Error>(error: error))
+  }
+
+  fileprivate func enqueue(source: AnyObject)
+  {
+    var state = deferredState.load(.relaxed)
+    if !state.isResolved
+    {
+      let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
+      waiter.initialize(to: Waiter(source: source))
+
+      repeat {
+        waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
+        let newState = Int(bitPattern: waiter) | (state & .resolving)
+        if deferredState.loadCAS(&state, newState, .weak, .release, .relaxed)
+        { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
+          return
+        }
+      } while !state.isResolved
+
+      // this Deferred has become resolved; clean up
+      waiter.deinitialize(count: 1)
+      waiter.deallocate()
+    }
   }
 
   // MARK: public interface
@@ -533,6 +551,11 @@ public struct Resolver<Value>
   {
     deferred?.enqueue(task: task)
   }
+
+  public func retainSource(_ object: AnyObject)
+  {
+    deferred?.enqueue(source: object)
+  }
 }
 
 /// A `Deferred` to be resolved (`TBD`) manually.
@@ -543,9 +566,9 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public init(queue: DispatchQueue, source: AnyObject? = nil, task: (Resolver<Value>) -> Void)
+  public init(queue: DispatchQueue, task: (Resolver<Value>) -> Void)
   {
-    super.init(queue: queue, source: source)
+    super.init(queue: queue)
     task(Resolver(self))
   }
 
@@ -553,10 +576,10 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public init(qos: DispatchQoS = .current, source: AnyObject? = nil, task: (Resolver<Value>) -> Void)
+  public init(qos: DispatchQoS = .current, task: (Resolver<Value>) -> Void)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
-    super.init(queue: queue, source: source)
+    super.init(queue: queue)
     task(Resolver(self))
   }
 

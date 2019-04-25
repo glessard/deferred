@@ -10,28 +10,45 @@ import Dispatch
 
 struct Waiter<T>
 {
-  fileprivate let queue: DispatchQueue?
-  fileprivate let handler: (Result<T, Error>) -> Void
+  fileprivate let waiter: WaiterType<T>
   var next: UnsafeMutablePointer<Waiter<T>>? = nil
 
   init(_ queue: DispatchQueue?, _ handler: @escaping (Result<T, Error>) -> Void)
   {
-    self.queue = queue
-    self.handler = handler
+    waiter = .notification(queue, handler)
   }
+
+  init(source: AnyObject)
+  {
+    waiter = .datasource(source)
+  }
+}
+
+private enum WaiterType<T>
+{
+  case notification(DispatchQueue?, (Result<T, Error>) -> Void)
+  case datasource(AnyObject)
 }
 
 func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ value: Result<T, Error>)
 {
   var head = reverseList(tail)
-  while let current = head
+  loop: while let current = head
   {
-    guard let queue = current.pointee.queue else { break }
-
-    head = current.pointee.next
-    // run on the requested queue
-    queue.async {
-      current.pointee.handler(value)
+    switch current.pointee.waiter
+    {
+    case .notification(nil, _):
+      break loop
+    case .notification(let queue?, let handler):
+      head = current.pointee.next
+      // execute handler on the requested queue
+      queue.async {
+        handler(value)
+        current.deinitialize(count: 1)
+        current.deallocate()
+      }
+    case .datasource:
+      head = current.pointee.next
       current.deinitialize(count: 1)
       current.deallocate()
     }
@@ -39,23 +56,26 @@ func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waite
 
   if head == nil { return }
 
+  // continue running on the queue of the just-resolved deferred
   queue.async {
     var head = head
     while let current = head
     {
       head = current.pointee.next
 
-      if let queue = current.pointee.queue
-      { // run on the requested queue
+      switch current.pointee.waiter
+      {
+      case .notification(let queue?, let handler):
+        // execute handler on the requested queue
         queue.async {
-          current.pointee.handler(value)
+          handler(value)
           current.deinitialize(count: 1)
           current.deallocate()
         }
-      }
-      else
-      { // run on the queue of the just-resolved deferred
-        current.pointee.handler(value)
+      case .notification(nil, let handler):
+        handler(value)
+        fallthrough
+      case .datasource:
         current.deinitialize(count: 1)
         current.deallocate()
       }
