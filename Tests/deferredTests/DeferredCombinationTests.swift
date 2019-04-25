@@ -167,6 +167,19 @@ class DeferredCombinationTests: XCTestCase
   }
 }
 
+private class DeallocTBD: TBD<Int>
+{
+  let e: XCTestExpectation
+  init(_ expectation: XCTestExpectation, task: (Resolver<Int>) -> Void = { _ in })
+  {
+    e = expectation
+    super.init(task: task)
+  }
+  deinit {
+    e.fulfill()
+  }
+}
+
 class DeferredRacingTests: XCTestCase
 {
   func testFirstValueCollection() throws
