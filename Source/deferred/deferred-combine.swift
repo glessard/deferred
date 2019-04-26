@@ -24,7 +24,7 @@ import Dispatch
 
 public func combine<Value, C: Collection>(qos: DispatchQoS,
                                           deferreds: C) -> Deferred<[Value]>
-  where C.Iterator.Element == Deferred<Value>
+  where C.Element == Deferred<Value>
 {
   let queue = DispatchQueue(label: "reduce-collection", qos: qos)
   return combine(queue: queue, deferreds: deferreds)
@@ -42,7 +42,7 @@ public func combine<Value, C: Collection>(qos: DispatchQoS,
 /// - returns: a new `Deferred`
 
 public func combine<Value, C: Collection>(_ deferreds: C) -> Deferred<[Value]>
-  where C.Iterator.Element == Deferred<Value>
+  where C.Element == Deferred<Value>
 {
   return combine(qos: .current, deferreds: deferreds)
 }
@@ -61,7 +61,7 @@ public func combine<Value, C: Collection>(_ deferreds: C) -> Deferred<[Value]>
 
 public func combine<Value, C: Collection>(queue: DispatchQueue,
                                           deferreds: C) -> Deferred<[Value]>
-  where C.Iterator.Element == Deferred<Value>
+  where C.Element == Deferred<Value>
 {
   var combined = [Value]()
   combined.reserveCapacity(numericCast(deferreds.count))
@@ -84,7 +84,7 @@ public func combine<Value, C: Collection>(queue: DispatchQueue,
 
 public func combine<Value, S: Sequence>(qos: DispatchQoS = .current,
                                         deferreds: S) -> Deferred<[Value]>
-  where S.Iterator.Element == Deferred<Value>
+  where S.Element == Deferred<Value>
 {
   let queue = DispatchQueue(label: "reduce-collection", qos: qos)
   return combine(queue: queue, deferreds: deferreds)
@@ -102,7 +102,7 @@ public func combine<Value, S: Sequence>(qos: DispatchQoS = .current,
 /// - returns: a new `Deferred`
 
 public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
-  where S.Iterator.Element == Deferred<Value>
+  where S.Element == Deferred<Value>
 {
   return combine(qos: .current, deferreds: deferreds)
 }
@@ -121,7 +121,7 @@ public func combine<Value, S: Sequence>(_ deferreds: S) -> Deferred<[Value]>
 
 public func combine<Value, S: Sequence>(queue: DispatchQueue,
                                         deferreds: S) -> Deferred<[Value]>
-  where S.Iterator.Element == Deferred<Value>
+  where S.Element == Deferred<Value>
 {
   var combined = [Value]()
 
@@ -154,7 +154,7 @@ public func combine<Value, S: Sequence>(queue: DispatchQueue,
 public func reduce<C: Collection, T, U>(qos: DispatchQoS,
                                         deferreds: C, initial: U,
                                         combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where C.Iterator.Element == Deferred<T>
+  where C.Element == Deferred<T>
 {
   let queue = DispatchQueue(label: "reduce-collection", qos: qos)
   return reduce(queue: queue, deferreds: deferreds, initial: initial, combine: combine)
@@ -183,7 +183,7 @@ public func reduce<C: Collection, T, U>(qos: DispatchQoS,
 
 public func reduce<C: Collection, T, U>(_ deferreds: C, initial: U,
                                         combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where C.Iterator.Element == Deferred<T>
+  where C.Element == Deferred<T>
 {
   return reduce(qos: .current, deferreds: deferreds, initial: initial, combine: combine)
 }
@@ -213,7 +213,7 @@ public func reduce<C: Collection, T, U>(_ deferreds: C, initial: U,
 public func reduce<C: Collection, T, U>(queue: DispatchQueue,
                                         deferreds: C, initial: U,
                                         combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where C.Iterator.Element == Deferred<T>
+  where C.Element == Deferred<T>
 {
   let reduced = deferreds.reduce(Deferred(queue: queue, value: initial)) {
     (accumulator, deferred) in
@@ -251,7 +251,7 @@ public func reduce<C: Collection, T, U>(queue: DispatchQueue,
 public func reduce<S: Sequence, T, U>(qos: DispatchQoS,
                                       deferreds: S, initial: U,
                                       combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where S.Iterator.Element == Deferred<T>
+  where S.Element == Deferred<T>
 {
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
   return reduce(queue: queue, deferreds: deferreds, initial: initial, combine: combine)
@@ -281,7 +281,7 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS,
 
 public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U,
                                       combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where S.Iterator.Element == Deferred<T>
+  where S.Element == Deferred<T>
 {
   return reduce(qos: .current, deferreds: deferreds, initial: initial, combine: combine)
 }
@@ -312,7 +312,7 @@ public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U,
 public func reduce<S: Sequence, T, U>(queue: DispatchQueue,
                                       deferreds: S, initial: U,
                                       combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where S.Iterator.Element == Deferred<T>
+  where S.Element == Deferred<T>
 {
   // We execute `Sequence.reduce` asynchronously because
   // nothing prevents S from blocking on `Sequence.next()`

@@ -50,7 +50,7 @@ extension Collection
   /// - parameter element: an element to transform into a new `Deferred`
 
   public func deferredMap<Value>(qos: DispatchQoS = .current,
-                                 task: @escaping (_ element: Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+                                 task: @escaping (_ element: Self.Element) throws -> Value) -> [Deferred<Value>]
   {
     let queue = DispatchQueue(label: "deferred-map", qos: qos)
     return deferredMap(queue: queue, task: task)
@@ -64,12 +64,12 @@ extension Collection
   /// - parameter element: an element to transform into a new `Deferred`
 
   public func deferredMap<Value>(queue: DispatchQueue,
-                                 task: @escaping (_ element: Self.Iterator.Element) throws -> Value) -> [Deferred<Value>]
+                                 task: @escaping (_ element: Self.Element) throws -> Value) -> [Deferred<Value>]
   {
     let count = self.count
     var resolvers: [Resolver<Value>] = []
     resolvers.reserveCapacity(count)
-    let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue) { resolvers.append($0) } as Deferred }
+    let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue, task: { resolvers.append($0) }) as Deferred }
 
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {

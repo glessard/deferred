@@ -76,27 +76,27 @@ class TBDTests: XCTestCase
     XCTAssertNil(d.value)
   }
 
-  func testNotify1()
+  func testOnResolution1()
   {
     let value = nzRandom()
     let e1 = expectation(description: "TBD notification after resolution")
     let (i, d1) = TBD<Int>.CreatePair()
     i.resolve(value: value)
 
-    d1.notify {
+    d1.onResult {
       XCTAssert( $0.value == value )
       e1.fulfill()
     }
     waitForExpectations(timeout: 1.0)
   }
 
-  func testNotify2()
+  func testOnResolution2()
   {
     let e2 = expectation(description: "TBD notification after delay")
     let (i, d2) = TBD<Int>.CreatePair()
 
     var value = nzRandom()
-    d2.notify {
+    d2.onResult {
       XCTAssert( $0.value == value )
       e2.fulfill()
     }
@@ -109,11 +109,11 @@ class TBDTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testNotify3()
+  func testOnResolution3()
   {
     let e3 = expectation(description: "TBD never resolved")
     let d3 = TBD<Int>() { _ in }
-    d3.notify {
+    d3.onResult {
       result in
       XCTAssert(result.error as? DeferredError == DeferredError.canceled(""))
     }
@@ -124,15 +124,15 @@ class TBDTests: XCTestCase
     waitForExpectations(timeout: 1.0, handler: { _ in d3.cancel() })
   }
 
-  func testNotify4()
+  func testOnResolution4()
   {
     let e = expectation(description: "TBD resolution chain")
     let (t1, d1) = TBD<Int>.CreatePair()
     let (t2, d2) = TBD<Int>.CreatePair()
     let r = nzRandom()
 
-    d1.notify(task: { o in t2.resolve(o) })
-    d2.notify {
+    d1.onResult(task: { o in t2.resolve(o) })
+    d2.onResult {
       o in
       XCTAssert(o.isValue)
       if o.value == r { e.fulfill() }

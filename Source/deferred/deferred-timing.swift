@@ -53,7 +53,7 @@ extension Deferred
 
     return TBD(queue: queue ?? self.queue) {
       resolver in
-      self.enqueue(queue: queue, boostQoS: false) {
+      self.notify(queue: queue, boostQoS: false) {
         result in
         guard resolver.needsResolution else { return }
 
@@ -68,7 +68,7 @@ extension Deferred
         // enqueue block only if it can get executed
         if time > .now()
         {
-          self.queue.asyncAfter(deadline: time) {
+          (queue ?? self.queue).asyncAfter(deadline: time) {
             resolver.resolve(result)
           }
         }
@@ -134,7 +134,7 @@ extension Deferred
     else if deadline != .distantFuture
     {
       let queue = DispatchQueue(label: "timeout", qos: qos)
-      queue.asyncAfter(deadline: deadline) { self.cancel(.timedOut(reason)) }
+      queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(.timedOut(reason)) }
     }
     return self
   }
