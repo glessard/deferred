@@ -17,8 +17,34 @@ enum TestError: Error, Equatable
   init(_ e: Int = 0) { self = .value(e) }
 }
 
-func == (l: Error?, r: TestError) -> Bool
+func == <E: Error & Equatable>(lhs: Error?, rhs: E) -> Bool
 {
-  guard let e = l as? TestError else { return false }
-  return e == r
+  if let e = lhs as? E
+  {
+    return e == rhs
+  }
+  return false
+}
+
+func == <E: Error & Equatable>(lhs: E, rhs: Error?) -> Bool
+{
+  return rhs == lhs
+}
+
+
+import XCTest
+
+func XCTAssertEqual<E: Error & Equatable>(_ error: Error?, _ target: E,
+                                          _ message: @autoclosure () -> String = "",
+                                          file: StaticString = #file, line: UInt = #line)
+{
+  if let e = error as? E
+  {
+    XCTAssertEqual(e, target, message(), file: file, line: line)
+  }
+  else
+  {
+    let d = error.map(String.init(describing:))
+    XCTAssertEqual(d, String(describing: target), message(), file: file, line: line)
+  }
 }
