@@ -414,6 +414,84 @@ class DeferredRacingTests: XCTestCase
 
     XCTAssertEqual(try f.get(), e)
   }
+
+  func testSelectFirstResolved1()
+  {
+    let e1 = expectation(description: #function + "1")
+    let e2 = expectation(description: #function + "2")
+    let r2 = nzRandom()
+    var t2: Resolver<Int>! = nil
+
+    let (s1, s2) = firstResolved(DeallocTBD(e1) { _ in },
+                                 DeallocTBD(e2) { t2 = $0 },
+                                 canceling: true)
+    s1.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
+    s2.notify { XCTAssertEqual($0.value, r2) }
+
+    t2.resolve(value: r2)
+
+    waitForExpectations(timeout: 0.1)
+  }
+
+  func testSelectFirstResolved2()
+  {
+    let r = nzRandom()
+    let e1 = expectation(description: #function)
+    var r2: Resolver<Double>! = nil
+
+    let (s1, s2) = firstResolved(Deferred(value: r), TBD<Double>(qos: .utility) { r2 = $0 })
+    s1.notify { XCTAssertEqual($0.value, r) }
+    s1.notify { _ in e1.fulfill() }
+    s2.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
+
+    waitForExpectations(timeout: 0.1)
+    XCTAssertEqual(r2.needsResolution, false)
+  }
+
+  func testSelectFirstValue1()
+  {
+    let d1 = TBD<Int>() { _ in }
+    let (t2, d2) = TBD<Double>.CreatePair(qos: .utility)
+
+    let e2 = expectation(description: #function)
+
+    let (s1, s2) = firstValue(d1, d2, canceling: true)
+    s1.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
+    s2.notify { $0.value.map { _ in e2.fulfill() } }
+
+    t2.resolve(value: .pi)
+
+    waitForExpectations(timeout: 0.1)
+    XCTAssertEqual(d1.error, DeferredError.notSelected)
+  }
+
+  func testSelectFirstValue2()
+  {
+    let r = Double(nzRandom())
+    let e1 = expectation(description: #function + "1")
+    let e2 = expectation(description: #function + "2")
+
+    let (s1, s2) = firstValue(Deferred(value: r), DeallocTBD(e2))
+    s1.onValue { XCTAssertEqual($0, r) }
+    s1.notify { _ in e1.fulfill() }
+    s2.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
+
+    waitForExpectations(timeout: 0.1)
+  }
+
+  func testSelectFirstValue3()
+  {
+    let r1 = nzRandom()
+    let r2 = nzRandom()
+    let e2 = expectation(description: #function)
+
+    let (s1, s2) = firstValue(Deferred<Int>(error: TestError(r1)),
+                              DeallocTBD(e2, task: { $0.resolve(error: TestError(r2)) }))
+    s1.notify { XCTAssertEqual($0.error, TestError(r1)) }
+    s2.notify { XCTAssertEqual($0.error, TestError(r2)) }
+
+    waitForExpectations(timeout: 0.1)
+  }
 }
 
 class DeferredCombinationTimedTests: XCTestCase

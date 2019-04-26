@@ -33,6 +33,11 @@ extension DeferredRacingTests {
         ("testFirstValueEmptySequence", testFirstValueEmptySequence),
         ("testFirstValueSequence", testFirstValueSequence),
         ("testFirstValueSequenceError", testFirstValueSequenceError),
+        ("testSelectFirstResolved1", testSelectFirstResolved1),
+        ("testSelectFirstResolved2", testSelectFirstResolved2),
+        ("testSelectFirstValue1", testSelectFirstValue1),
+        ("testSelectFirstValue2", testSelectFirstValue2),
+        ("testSelectFirstValue3", testSelectFirstValue3),
     ]
 }
 
