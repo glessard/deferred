@@ -184,38 +184,33 @@ class DeferredRacingTests: XCTestCase
 {
   func testFirstValueCollection() throws
   {
-    let count = 10
-    let lucky = Int(nzRandom()) % count
-
-    var resolvers: [Resolver<Int>] = []
-    let deferreds = (0..<count).map {
-      i -> Deferred<Int> in
-      let e = expectation(description: String(i))
-      return TBD<Int>() {
-        d in
-        d.notify { _ in e.fulfill() }
-        resolvers.append(d)
+    func resolution(_ c: Int) -> ([Resolver<Int>], Deferred<Int>)
+    {
+      var r = [Resolver<Int>]()
+      var d = [Deferred<Int>]()
+      for i in 0...c
+      {
+        let tbd = DeallocTBD(self.expectation(description: String(i)), task: { r.append($0) })
+        d.append(tbd.validate(predicate: {$0 == i}))
       }
+      return (r, firstValue(d, qos: .utility).timeout(seconds: 0.2))
     }
-    let first = firstValue(deferreds, cancelOthers: true)
 
+    let count = 10
+    let (resolvers, first) = resolution(count)
+
+    let lucky = Int.random(in: 1..<count)
+    XCTAssert(resolvers[count].resolve(error: TestError(count)))
     XCTAssert(resolvers[lucky].resolve(value: lucky))
     waitForExpectations(timeout: 0.1)
-    XCTAssert(first.value == lucky)
 
-    try deferreds.forEach {
-      d in
-      do {
-        let value = try d.get()
-        XCTAssert(value == lucky)
-      }
-      catch DeferredError.canceled(let s) { XCTAssert(s == "") }
-    }
+    XCTAssertEqual(first.value, lucky)
+    for r in resolvers { XCTAssertFalse(r.needsResolution) }
   }
 
   func testFirstValueEmptyCollection() throws
   {
-    let zero = firstValue(queue: DispatchQueue.global(), deferreds: Array<Deferred<Void>>())
+    let zero = firstValue(Array<Deferred<Void>>(), queue: DispatchQueue.global())
     do {
       _ = try zero.result.get()
       XCTFail()
@@ -227,24 +222,47 @@ class DeferredRacingTests: XCTestCase
 
   func testFirstValueCollectionError() throws
   {
-    let deferreds = (0..<10).map { Deferred<Int>(error: TestError($0)) }
+    func noValue(_ c: Int) -> Deferred<Int>
+    {
+      let deferreds = (0..<c).map {
+        i -> Deferred<Int> in
+        let e = expectation(description: String(i))
+        return DeallocTBD(e, task: { $0.resolve(error: TestError(i)) })
+      }
 
-    let first = firstValue(deferreds)
-    do {
-      _ = try first.result.get()
-      XCTFail()
+      return firstValue(deferreds, cancelOthers: true)
     }
-    catch TestError.value(let e) {
-      XCTAssertEqual(e, 9)
-    }
+
+    let count = 10
+    let first = noValue(count)
+    XCTAssertEqual(first.error, TestError(count-1))
+
+    waitForExpectations(timeout: 0.1)
   }
 
   func testFirstValueSequence() throws
   {
-    let one = firstValue(queue: DispatchQueue.global(),
-                         deferreds: AnySequence([Deferred(value: 10), Deferred(error: TestError(10))]),
-                         cancelOthers: true)
-    XCTAssert(one.value == 10)
+    func resolution(_ c: Int) -> ([Resolver<Int>], Deferred<Int>)
+    {
+      var r = [Resolver<Int>]()
+      var d = [Deferred<Int>]()
+      for i in 0...c
+      {
+        let tbd = DeallocTBD(self.expectation(description: String(i)), task: { r.append($0) })
+        d.append(tbd.validate(predicate: {$0 == i}))
+      }
+      return (r, firstValue(d.makeIterator(), cancelOthers: true).timeout(seconds: 0.2))
+    }
+
+    let count = 10
+    let (resolvers, first) = resolution(count)
+
+    let lucky = Int.random(in: 1..<count)
+    XCTAssert(resolvers[count].resolve(error: TestError(count)))
+    XCTAssert(resolvers[lucky].resolve(value: lucky))
+    waitForExpectations(timeout: 0.1)
+
+    XCTAssertEqual(first.value, lucky)
   }
 
   func testFirstValueEmptySequence() throws
@@ -261,16 +279,21 @@ class DeferredRacingTests: XCTestCase
 
   func testFirstValueSequenceError() throws
   {
-    let deferreds = (0..<10).map { Deferred<Int>(error: TestError($0)) }
+    func noValue(_ c: Int) -> Deferred<Int>
+    {
+      let deferreds = (0..<c).map {
+        i -> Deferred<Int> in
+        let e = expectation(description: String(i))
+        return DeallocTBD(e, task: { $0.resolve(error: TestError(i)) })
+      }
+      return firstValue(deferreds.makeIterator())
+    }
 
-    let first = firstValue(AnySequence(deferreds))
-    do {
-      _ = try first.result.get()
-      XCTFail()
-    }
-    catch TestError.value(let e) {
-      XCTAssertEqual(e, 9)
-    }
+    let count = 10
+    let first = noValue(count)
+    XCTAssertEqual(first.error, TestError(count-1))
+
+    waitForExpectations(timeout: 0.1)
   }
 
   func testFirstResolvedCollection1() throws
