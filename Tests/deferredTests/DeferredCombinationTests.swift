@@ -336,7 +336,7 @@ class DeferredRacingTests: XCTestCase
           if result.value == i { e.fulfill() }
           else if result.error != nil
           {
-            XCTAssertEqual(result.error, DeferredError.canceled(""))
+            XCTAssertEqual(result.error, DeferredError.notSelected)
             e.fulfill()
           }
         }
