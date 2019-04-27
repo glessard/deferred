@@ -15,6 +15,7 @@ public enum DeferredError: Error, Equatable
   case canceled(String)
   case invalid(String)
   case timedOut(String)
+  case notSelected // not selected in a race between multiple deferreds
 }
 
 extension DeferredError: CustomStringConvertible
@@ -34,6 +35,8 @@ extension DeferredError: CustomStringConvertible
       return message.isEmpty ?
         "Deferred operation timed out before a result became available" :
         "Deferred operation timed out: \(message)"
+    case .notSelected:
+      return "Deferred was canceled when another got resolved more quickly"
     }
   }
 }
