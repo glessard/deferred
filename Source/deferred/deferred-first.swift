@@ -84,7 +84,7 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, queue: DispatchQueu
         }
         if cancelOthers
         {
-          f.notify { _ in deferred.cancel() }
+          f.notify { _ in deferred.cancel(.notSelected) }
         }
         else
         {
@@ -167,7 +167,7 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, queue: DispatchQueue,
           }
           if cancelOthers
           {
-            f.notify { _ in deferred.cancel() }
+            f.notify { _ in deferred.cancel(.notSelected) }
           }
           else
           {
@@ -251,7 +251,7 @@ public func firstResolved<Value, C: Collection>(_ deferreds: C, queue: DispatchQ
       }
       if cancelOthers
       {
-        resolver.notify { _ in deferred.cancel() }
+        resolver.notify { _ in deferred.cancel(.notSelected) }
       }
       else
       {
@@ -319,7 +319,7 @@ public func firstResolved<Value, S>(_ deferreds: S, queue: DispatchQueue,
         }
         if cancelOthers
         {
-          resolver.notify { _ in deferred.cancel() }
+          resolver.notify { _ in deferred.cancel(.notSelected) }
         }
         else
         {

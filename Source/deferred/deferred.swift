@@ -527,7 +527,18 @@ public struct Resolver<Value>
   @discardableResult
   public func cancel(_ reason: String = "") -> Bool
   {
-    return resolve(Result<Value, Error>(error: DeferredError.canceled(reason)))
+    return cancel(DeferredError.canceled(reason))
+  }
+
+  /// Attempt to cancel the `Deferred` represented by this `Resolver`
+  ///
+  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
+  /// - returns: whether the cancellation was performed successfully.
+
+  @discardableResult
+  public func cancel(_ error: DeferredError) -> Bool
+  {
+    return resolve(Result<Value, Error>(error: error))
   }
 
   /// Change the state of our `Deferred` from `.waiting` to `.executing`
