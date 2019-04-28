@@ -750,7 +750,7 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testCancelBind()
+  func testCancelFlatMap()
   {
     let (t0, d0) = TBD<Int>.CreatePair()
 
@@ -759,15 +759,24 @@ class DeferredTests: XCTestCase
     d1.onError { e in e1.fulfill() }
     XCTAssert(d1.cancel() == true)
 
-    let e2 = expectation(description: "cancellation of Deferred.recover")
-    let d2 = d0.recover { i in Deferred(value: Int.max) }
-    d2.onError { e in e2.fulfill() }
-    XCTAssert(d2.cancel() == true)
-
     let e3 = expectation(description: "cancellation of Deferred.flatMap, part 2")
     let d3 = d0.flatMap(transform: { Deferred(value: $0) }).map(transform: { Double($0) })
     d3.onError { e in e3.fulfill() }
     XCTAssert(d3.cancel() == true)
+
+    t0.resolve(value: numericCast(nzRandom()))
+
+    waitForExpectations(timeout: 1.0)
+  }
+
+  func testCancelRecover()
+  {
+    let (t0, d0) = TBD<Int>.CreatePair()
+
+    let e2 = expectation(description: "cancellation of Deferred.recover")
+    let d2 = d0.recover { i in Deferred(value: Int.max) }
+    d2.onError { e in e2.fulfill() }
+    XCTAssert(d2.cancel() == true)
 
     let e4 = expectation(description: "cancellation of Deferred.recover, part 2")
     let d4 = d0.recover(transform: { e in Deferred(value: Int.min) }).map(transform: { $0/2 })
@@ -864,6 +873,7 @@ class DeferredTests: XCTestCase
       .invalid(customMessage),
       .timedOut(""),
       .timedOut(customMessage),
+      .notSelected
     ]
 
     let strings = errors.map(String.init(describing: ))
