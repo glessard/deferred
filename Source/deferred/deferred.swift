@@ -562,9 +562,9 @@ public struct Resolver<Value>
   /// - parameter task: a closure to be executed as a notification
   /// - parameter result: the `Result` to which our `Deferred` was resolved
 
-  public func notify(handler: @escaping (_ result: Result<Value, Error>) -> Void)
+  public func notify(handler: @escaping () -> Void)
   {
-    deferred?.notify(handler: handler)
+    deferred?.notify(handler: { _ in handler() })
   }
 
   public func retainSource(_ object: AnyObject)

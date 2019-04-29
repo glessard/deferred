@@ -53,7 +53,7 @@ class TBDTimingTests: XCTestCase
         start in
         for _ in 0..<iterations
         {
-          start.notify { deferred in _ = deferred.value! }
+          start.notify {}
         }
 
         self.startMeasuring()
@@ -80,7 +80,7 @@ class TBDTimingTests: XCTestCase
         self.startMeasuring()
         for _ in 0...iterations
         {
-          t.notify { result in _ = result.value }
+          t.notify {}
         }
         self.stopMeasuring()
 
