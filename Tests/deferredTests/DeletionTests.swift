@@ -83,7 +83,7 @@ class DeletionTests: XCTestCase
     waitForExpectations(timeout: 0.1)
   }
 
-  func testLongTaskCancellation()
+  func testLongTaskCancellation1()
   {
     let e = expectation(description: #function)
 
@@ -107,6 +107,35 @@ class DeletionTests: XCTestCase
     waitForExpectations(timeout: 1.0)
 
     deferred.cancel()
+    XCTAssertEqual(deferred.error, DeferredError.timedOut(""))
+  }
+
+  func testLongTaskCancellation2()
+  {
+    let e = expectation(description: #function)
+
+    let deferred = TBD<Void>(qos: .utility) {
+      resolver in
+      func segmentedTask()
+      {
+        if resolver.needsResolution
+        {
+          print(".", terminator: "")
+          let queue = DispatchQueue.global(qos: resolver.qos.qosClass)
+          queue.asyncAfter(deadline: .now() + 0.01, execute: segmentedTask)
+          return
+        }
+
+        print()
+        e.fulfill()
+      }
+
+      segmentedTask()
+    }
+
+    deferred.timeout(seconds: 0.1)
+    waitForExpectations(timeout: 1.0)
+
     XCTAssertEqual(deferred.error, DeferredError.timedOut(""))
   }
 }
