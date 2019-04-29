@@ -548,6 +548,10 @@ public struct Resolver<Value>
     deferred?.beginExecution()
   }
 
+  /// Query the Quality-of-Service used by this `Resolver`'s underlying `Deferred`
+
+  public var qos: DispatchQoS { return deferred?.queue.qos ?? .unspecified }
+
   /// Query whether the underlying `Deferred` still exists and is also unresolved
 
   public var needsResolution: Bool { return deferred?.isResolved == false }
