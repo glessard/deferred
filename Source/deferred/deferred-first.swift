@@ -84,7 +84,7 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, queue: DispatchQueu
         }
         if cancelOthers
         {
-          f.notify { _ in deferred.cancel(.notSelected) }
+          f.notify { deferred.cancel(.notSelected) }
         }
         else
         {
@@ -96,7 +96,7 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, queue: DispatchQueu
 
     let combined = combine(queue: queue, deferreds: errors)
     combined.notify { if let e = $0.value { f.resolve(error: e.last!) } }
-    f.notify { _ in combined.cancel() }
+    f.notify { combined.cancel() }
   }
 }
 
@@ -167,7 +167,7 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, queue: DispatchQueue,
           }
           if cancelOthers
           {
-            f.notify { _ in deferred.cancel(.notSelected) }
+            f.notify { deferred.cancel(.notSelected) }
           }
           else
           {
@@ -186,7 +186,7 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, queue: DispatchQueue,
       {
         let combined = combine(queue: queue, deferreds: errors)
         combined.notify { if let e = $0.value { f.resolve(error: e.last!) } }
-        f.notify { _ in combined.cancel() }
+        f.notify { combined.cancel() }
       }
     }
   }
@@ -251,7 +251,7 @@ public func firstResolved<Value, C: Collection>(_ deferreds: C, queue: DispatchQ
       }
       if cancelOthers
       {
-        resolver.notify { _ in deferred.cancel(.notSelected) }
+        resolver.notify { deferred.cancel(.notSelected) }
       }
       else
       {
@@ -319,7 +319,7 @@ public func firstResolved<Value, S>(_ deferreds: S, queue: DispatchQueue,
         }
         if cancelOthers
         {
-          resolver.notify { _ in deferred.cancel(.notSelected) }
+          resolver.notify { deferred.cancel(.notSelected) }
         }
         else
         {

@@ -83,12 +83,13 @@ class DeletionTests: XCTestCase
     waitForExpectations(timeout: 0.1)
   }
 
-  func testLongTaskCancellation()
+  func testLongTaskCancellation1()
   {
+    let e = expectation(description: #function)
+
     func longTask(resolver: Resolver<Void>)
     {
-      let e = expectation(description: "cooperative cancellation")
-      DispatchQueue.global(qos: .userInitiated).async {
+      DispatchQueue.global(qos: .default).async {
         while resolver.needsResolution
         {
           Thread.sleep(until: Date() + 0.01)
@@ -100,12 +101,41 @@ class DeletionTests: XCTestCase
       }
     }
 
-    let deferred = TBD<Void>(qos: .utility, task: longTask).map(transform: { () in nzRandom() })
+    let deferred = TBD<Void>(task: longTask).enqueuing(at: .userInitiated)
 
     deferred.timeout(seconds: 0.1)
     waitForExpectations(timeout: 1.0)
 
     deferred.cancel()
-    XCTAssert(deferred.error as? DeferredError == DeferredError.timedOut(""))
+    XCTAssertEqual(deferred.error, DeferredError.timedOut(""))
+  }
+
+  func testLongTaskCancellation2()
+  {
+    let e = expectation(description: #function)
+
+    let deferred = TBD<Void>(qos: .utility) {
+      resolver in
+      func segmentedTask()
+      {
+        if resolver.needsResolution
+        {
+          print(".", terminator: "")
+          let queue = DispatchQueue.global(qos: resolver.qos.qosClass)
+          queue.asyncAfter(deadline: .now() + 0.01, execute: segmentedTask)
+          return
+        }
+
+        print()
+        e.fulfill()
+      }
+
+      segmentedTask()
+    }
+
+    deferred.timeout(seconds: 0.1)
+    waitForExpectations(timeout: 1.0)
+
+    XCTAssertEqual(deferred.error, DeferredError.timedOut(""))
   }
 }

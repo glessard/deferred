@@ -100,7 +100,8 @@ extension DeletionTests {
         ("testDeallocTBD3", testDeallocTBD3),
         ("testDeallocTBD4", testDeallocTBD4),
         ("testDelayedDeallocDeferred", testDelayedDeallocDeferred),
-        ("testLongTaskCancellation", testLongTaskCancellation),
+        ("testLongTaskCancellation1", testLongTaskCancellation1),
+        ("testLongTaskCancellation2", testLongTaskCancellation2),
     ]
 }
 
