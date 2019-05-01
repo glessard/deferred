@@ -150,7 +150,7 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
 
     let task = urlSessionTask as! URLSessionDownloadTask
 
-#if os(Linux) && !swift(>=5.0)
+#if os(Linux) && !compiler(>=5.0)
     // swift-corelibs-foundation calls NSUnimplemented() as the body of cancel(byProducingResumeData:)
     task.cancel()
 #else
