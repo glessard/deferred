@@ -11,10 +11,6 @@ import UIKit
 import deferred
 import CAtomics
 
-#if !swift(>=4.2)
-extension UIApplication { typealias LaunchOptionsKey = UIApplicationLaunchOptionsKey }
-#endif
-
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
@@ -23,17 +19,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
   {
-    let tbd = TBD<Bool>()
-    tbd.onValue { assert($0) }
+    let tbd = TBD<Bool>() {
+      resolver in
+      var b = AtomicBool(false)
 
-    var b = AtomicBool()
-    b.store(true, .release)
-    tbd.determine(value: b.load(.acquire))
+      DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
+        resolver.resolve(value: b.load(.acquire))
+      }
+
+      b.store(true, .relaxed)
+    }
 
     let c = DispatchQoS.current
     assert(c.qosClass == DispatchQoS.userInteractive.qosClass)
 
-    return tbd.outcome.value!
+    tbd.onValue { assert($0) }
+
+    return tbd.value!
   }
 
   func applicationWillResignActive(_ application: UIApplication) {
