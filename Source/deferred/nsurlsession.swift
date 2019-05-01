@@ -168,21 +168,18 @@ extension URLSession
     return {
       (location: URL?, response: URLResponse?, error: Error?) in
 
-      if let error = error
-      {
-        if let error = error as? URLError
-        {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-          // rdar://29623544 and https://bugs.swift.org/browse/SR-3403
-          let URLSessionDownloadTaskResumeData = NSURLSessionDownloadTaskResumeData
+      // rdar://29623544 and https://bugs.swift.org/browse/SR-3403
+      let URLSessionDownloadTaskResumeData = NSURLSessionDownloadTaskResumeData
 #endif
-          if let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
-          {
-            resolver.resolve(error: URLSessionError.interruptedDownload(error, data))
-            return
-          }
-        }
-
+      if let error = error as? URLError,
+         let data = error.userInfo[URLSessionDownloadTaskResumeData] as? Data
+      {
+        resolver.resolve(error: URLSessionError.interruptedDownload(error, data))
+        return
+      }
+      else if let error = error
+      {
         resolver.resolve(error: error)
         return
       }
