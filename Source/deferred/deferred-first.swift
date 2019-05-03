@@ -429,6 +429,57 @@ public func firstResolved<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ 
   return (o1, o2, o3)
 }
 
+public func firstResolved<T1, T2, T3, T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>,
+                                          canceling: Bool = false) -> (Deferred<T1>, Deferred<T2>, Deferred<T3>, Deferred<T4>)
+{
+  let (r1, o1) = TBD<T1>.CreatePair(queue: d1.queue)
+  let (r2, o2) = TBD<T2>.CreatePair(queue: d2.queue)
+  let (r3, o3) = TBD<T3>.CreatePair(queue: d3.queue)
+  let (r4, o4) = TBD<T4>.CreatePair(queue: d4.queue)
+
+  // find which input gets resolved first
+  let selected = TBD<ObjectIdentifier>() {
+    resolver in
+    d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
+    d2.notify { [id = ObjectIdentifier(d2)] _ in resolver.resolve(value: id) }
+    d3.notify { [id = ObjectIdentifier(d3)] _ in resolver.resolve(value: id) }
+    d4.notify { [id = ObjectIdentifier(d4)] _ in resolver.resolve(value: id) }
+  }
+
+  selected.notify {
+    result in
+    if canceling
+    { // attempt to cancel the unresolved inputs
+      d1.cancel(.notSelected)
+      d2.cancel(.notSelected)
+      d3.cancel(.notSelected)
+      d4.cancel(.notSelected)
+    }
+
+    switch result.value
+    { // transfer the result to the selected output
+    case d1: r1.resolve(d1.result)
+    case d2: r2.resolve(d2.result)
+    case d3: r3.resolve(d3.result)
+    case d4: r4.resolve(d4.result)
+    default: fatalError()
+    }
+
+    // cancel the remaining unresolved outputs
+    r1.cancel(.notSelected)
+    r2.cancel(.notSelected)
+    r3.cancel(.notSelected)
+    r4.cancel(.notSelected)
+  }
+
+  // ensure `selected` lasts as long as it will be useful
+  r1.retainSource(selected)
+  r2.retainSource(selected)
+  r3.retainSource(selected)
+  r4.retainSource(selected)
+  return (o1, o2, o3, o4)
+}
+
 private func resolveValue<T>(_ resolver: Resolver<ObjectIdentifier>,
                              _ deferred: Deferred<T>) -> Deferred<Error>
 {
@@ -555,4 +606,68 @@ public func firstValue<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3:
   r2.retainSource(selected)
   r3.retainSource(selected)
   return (o1, o2, o3)
+}
+
+public func firstValue<T1, T2, T3, T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>,
+                                       canceling: Bool = false) -> (Deferred<T1>, Deferred<T2>, Deferred<T3>, Deferred<T4>)
+{
+  let (r1, o1) = TBD<T1>.CreatePair(queue: d1.queue)
+  let (r2, o2) = TBD<T2>.CreatePair(queue: d2.queue)
+  let (r3, o3) = TBD<T3>.CreatePair(queue: d3.queue)
+  let (r4, o4) = TBD<T4>.CreatePair(queue: d4.queue)
+
+  // find which input first gets a value
+  let selected = TBD<ObjectIdentifier>() {
+    resolver in
+    let errors = [
+      resolveValue(resolver, d1),
+      resolveValue(resolver, d2),
+      resolveValue(resolver, d3),
+      resolveValue(resolver, d4),
+      ]
+
+    // figure out whether all inputs got errors
+    let combined = combine(qos: .utility, deferreds: errors)
+    combined.notify { if $0.isValue { resolver.resolve(error: DeferredError.notSelected) } }
+    resolver.notify { combined.cancel() }
+  }
+
+  selected.notify {
+    result in
+    if canceling
+    { // attempt to cancel any unresolved inputs
+      d1.cancel(.notSelected)
+      d2.cancel(.notSelected)
+      d3.cancel(.notSelected)
+      d4.cancel(.notSelected)
+    }
+
+    switch result.value
+    { // transfer the value-containing result to the selected output
+    case d1?: r1.resolve(d1.result)
+    case d2?: r2.resolve(d2.result)
+    case d3?: r3.resolve(d3.result)
+    case d4?: r4.resolve(d4.result)
+    case nil:
+      // all inputs got errors, so transfer them to the outputs
+      d1.error.map { _ = r1.resolve(error: $0) }
+      d2.error.map { _ = r2.resolve(error: $0) }
+      d3.error.map { _ = r3.resolve(error: $0) }
+      d4.error.map { _ = r4.resolve(error: $0) }
+    default: fatalError()
+    }
+
+    // cancel the remaining unresolved outputs
+    r1.cancel(.notSelected)
+    r2.cancel(.notSelected)
+    r3.cancel(.notSelected)
+    r4.cancel(.notSelected)
+  }
+
+  // ensure `selected` lasts as long as it will be useful
+  r1.retainSource(selected)
+  r2.retainSource(selected)
+  r3.retainSource(selected)
+  r4.retainSource(selected)
+  return (o1, o2, o3, o4)
 }

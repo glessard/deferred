@@ -35,10 +35,13 @@ extension DeferredSelectionTests {
         ("testFirstValueSequenceError", testFirstValueSequenceError),
         ("testSelectFirstResolvedBinary1", testSelectFirstResolvedBinary1),
         ("testSelectFirstResolvedBinary2", testSelectFirstResolvedBinary2),
+        ("testSelectFirstResolvedQuaternary", testSelectFirstResolvedQuaternary),
         ("testSelectFirstResolvedTernary", testSelectFirstResolvedTernary),
         ("testSelectFirstValueBinary1", testSelectFirstValueBinary1),
         ("testSelectFirstValueBinary2", testSelectFirstValueBinary2),
         ("testSelectFirstValueBinary3", testSelectFirstValueBinary3),
+        ("testSelectFirstValueQuaternary1", testSelectFirstValueQuaternary1),
+        ("testSelectFirstValueQuaternary2", testSelectFirstValueQuaternary2),
         ("testSelectFirstValueTernary1", testSelectFirstValueTernary1),
         ("testSelectFirstValueTernary2", testSelectFirstValueTernary2),
     ]

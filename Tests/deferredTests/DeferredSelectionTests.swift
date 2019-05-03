@@ -312,6 +312,24 @@ class DeferredSelectionTests: XCTestCase
     XCTAssertEqual(s3.error, DeferredError.notSelected)
   }
 
+  func testSelectFirstResolvedQuaternary()
+  {
+    let r1 = nzRandom()
+    let d2 = Deferred(value: "C").delay(.milliseconds(5))
+
+    let (s1, s2, s3, s4) = firstResolved(Deferred<Int>(error: TestError(r1)),
+                                         d2,
+                                         TBD<Double>(),
+                                         TBD<Void>(),
+                                         canceling: true)
+
+    XCTAssertEqual(s1.error, TestError(r1))
+    XCTAssertEqual(d2.error, DeferredError.notSelected)
+    XCTAssertEqual(s2.error, DeferredError.notSelected)
+    XCTAssertEqual(s3.error, DeferredError.notSelected)
+    XCTAssertEqual(s4.error, DeferredError.notSelected)
+  }
+
   func testSelectFirstValueBinary1()
   {
     let d1 = TBD<Double>()
@@ -383,5 +401,41 @@ class DeferredSelectionTests: XCTestCase
     XCTAssertEqual(s1.error, TestError(r1))
     XCTAssertEqual(s2.error, TestError(r2))
     XCTAssertEqual(s3.error, TestError(r3))
+  }
+
+  func testSelectFirstValueQuaternary1()
+  {
+    let r = nzRandom()
+    let t3 = TBD<Double>()
+
+    let (s1, s2, s3, s4) = firstValue(Deferred<Void>(error: TestError(r)),
+                                      Deferred(value: r),
+                                      t3,
+                                      TBD<Int>(),
+                                      canceling: true)
+
+    XCTAssertEqual(s1.error, DeferredError.notSelected)
+    XCTAssertEqual(s2.value, r)
+    XCTAssertEqual(t3.error, DeferredError.notSelected)
+    XCTAssertEqual(s3.error, DeferredError.notSelected)
+    XCTAssertEqual(s4.error, DeferredError.notSelected)
+  }
+
+  func testSelectFirstValueQuaternary2()
+  {
+    let r1 = nzRandom()
+    let r2 = nzRandom()
+    let r3 = nzRandom()
+    let r4 = nzRandom()
+
+    let (s1, s2, s3, s4) = firstValue(Deferred<Float>(error: TestError(r1)),
+                                      Deferred<Void>(error: TestError(r2)),
+                                      Deferred<Int>(error: TestError(r3)),
+                                      Deferred<Double>(error: TestError(r4)))
+
+    XCTAssertEqual(s1.error, TestError(r1))
+    XCTAssertEqual(s2.error, TestError(r2))
+    XCTAssertEqual(s3.error, TestError(r3))
+    XCTAssertEqual(s4.error, TestError(r4))
   }
 }
