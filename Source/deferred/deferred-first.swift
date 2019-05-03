@@ -370,7 +370,7 @@ public func firstResolved<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
     { // transfer the result to the selected output
     case d1: r1.resolve(d1.result)
     case d2: r2.resolve(d2.result)
-    default: fatalError(#function)
+    default: fatalError()
     }
 
     // cancel the remaining unresolved output
@@ -413,7 +413,7 @@ public func firstResolved<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ 
     case d1: r1.resolve(d1.result)
     case d2: r2.resolve(d2.result)
     case d3: r3.resolve(d3.result)
-    default: fatalError(#function)
+    default: fatalError()
     }
 
     // cancel the remaining unresolved outputs
@@ -486,7 +486,7 @@ public func firstValue<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
       // all inputs got errors, so transfer them to the outputs
       d1.error.map { _ = r1.resolve(error: $0) }
       d2.error.map { _ = r2.resolve(error: $0) }
-    default: fatalError(#function)
+    default: fatalError()
     }
 
     // cancel the remaining unresolved outputs
@@ -541,7 +541,7 @@ public func firstValue<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3:
       d1.error.map { _ = r1.resolve(error: $0) }
       d2.error.map { _ = r2.resolve(error: $0) }
       d3.error.map { _ = r3.resolve(error: $0) }
-    default: fatalError(#function)
+    default: fatalError()
     }
 
     // cancel the remaining unresolved outputs
