@@ -33,11 +33,14 @@ extension DeferredSelectionTests {
         ("testFirstValueEmptySequence", testFirstValueEmptySequence),
         ("testFirstValueSequence", testFirstValueSequence),
         ("testFirstValueSequenceError", testFirstValueSequenceError),
-        ("testSelectFirstResolved1", testSelectFirstResolved1),
-        ("testSelectFirstResolved2", testSelectFirstResolved2),
-        ("testSelectFirstValue1", testSelectFirstValue1),
-        ("testSelectFirstValue2", testSelectFirstValue2),
-        ("testSelectFirstValue3", testSelectFirstValue3),
+        ("testSelectFirstResolvedBinary1", testSelectFirstResolvedBinary1),
+        ("testSelectFirstResolvedBinary2", testSelectFirstResolvedBinary2),
+        ("testSelectFirstResolvedTernary", testSelectFirstResolvedTernary),
+        ("testSelectFirstValueBinary1", testSelectFirstValueBinary1),
+        ("testSelectFirstValueBinary2", testSelectFirstValueBinary2),
+        ("testSelectFirstValueBinary3", testSelectFirstValueBinary3),
+        ("testSelectFirstValueTernary1", testSelectFirstValueTernary1),
+        ("testSelectFirstValueTernary2", testSelectFirstValueTernary2),
     ]
 }
 
