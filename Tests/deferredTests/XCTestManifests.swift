@@ -20,7 +20,7 @@ extension DeferredCombinationTimedTests {
     ]
 }
 
-extension DeferredRacingTests {
+extension DeferredSelectionTests {
     static let __allTests = [
         ("testFirstResolvedCollection1", testFirstResolvedCollection1),
         ("testFirstResolvedCollection2", testFirstResolvedCollection2),
@@ -173,7 +173,7 @@ public func __allTests() -> [XCTestCaseEntry] {
     return [
         testCase(DeferredCombinationTests.__allTests),
         testCase(DeferredCombinationTimedTests.__allTests),
-        testCase(DeferredRacingTests.__allTests),
+        testCase(DeferredSelectionTests.__allTests),
         testCase(DeferredTests.__allTests),
         testCase(DelayTests.__allTests),
         testCase(DeletionTests.__allTests),
