@@ -27,9 +27,11 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
 
   init(qos: DispatchQoS = .current, task: (Resolver<Value>) -> URLSessionTask)
   {
-    var t: URLSessionTask?
-    super.init(qos: qos, task: { t = task($0) })
-    urlSessionTask = t.unsafelyUnwrapped
+    var resolver: Resolver<Value>!
+    super.init(qos: qos, task: { resolver = $0 })
+    let task = task(resolver)
+    urlSessionTask = task
+    resolver.retainSource(task)
   }
 
   deinit {
@@ -146,9 +148,7 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
   @discardableResult
   public override func cancel(_ error: DeferredError) -> Bool
   {
-    guard !self.isResolved else { return false }
-
-    let task = urlSessionTask as! URLSessionDownloadTask
+    guard !self.isResolved, let task = urlSessionTask as? URLSessionDownloadTask else { return false }
 
 #if os(Linux) && !compiler(>=5.0)
     // swift-corelibs-foundation calls NSUnimplemented() as the body of cancel(byProducingResumeData:)
