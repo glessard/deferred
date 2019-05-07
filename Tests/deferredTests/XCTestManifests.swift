@@ -20,7 +20,7 @@ extension DeferredCombinationTimedTests {
     ]
 }
 
-extension DeferredRacingTests {
+extension DeferredSelectionTests {
     static let __allTests = [
         ("testFirstResolvedCollection1", testFirstResolvedCollection1),
         ("testFirstResolvedCollection2", testFirstResolvedCollection2),
@@ -33,6 +33,17 @@ extension DeferredRacingTests {
         ("testFirstValueEmptySequence", testFirstValueEmptySequence),
         ("testFirstValueSequence", testFirstValueSequence),
         ("testFirstValueSequenceError", testFirstValueSequenceError),
+        ("testSelectFirstResolvedBinary1", testSelectFirstResolvedBinary1),
+        ("testSelectFirstResolvedBinary2", testSelectFirstResolvedBinary2),
+        ("testSelectFirstResolvedQuaternary", testSelectFirstResolvedQuaternary),
+        ("testSelectFirstResolvedTernary", testSelectFirstResolvedTernary),
+        ("testSelectFirstValueBinary1", testSelectFirstValueBinary1),
+        ("testSelectFirstValueBinary2", testSelectFirstValueBinary2),
+        ("testSelectFirstValueBinary3", testSelectFirstValueBinary3),
+        ("testSelectFirstValueQuaternary1", testSelectFirstValueQuaternary1),
+        ("testSelectFirstValueQuaternary2", testSelectFirstValueQuaternary2),
+        ("testSelectFirstValueTernary1", testSelectFirstValueTernary1),
+        ("testSelectFirstValueTernary2", testSelectFirstValueTernary2),
     ]
 }
 
@@ -168,7 +179,7 @@ public func __allTests() -> [XCTestCaseEntry] {
     return [
         testCase(DeferredCombinationTests.__allTests),
         testCase(DeferredCombinationTimedTests.__allTests),
-        testCase(DeferredRacingTests.__allTests),
+        testCase(DeferredSelectionTests.__allTests),
         testCase(DeferredTests.__allTests),
         testCase(DelayTests.__allTests),
         testCase(DeletionTests.__allTests),
