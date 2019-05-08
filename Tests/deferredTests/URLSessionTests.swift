@@ -23,7 +23,7 @@ public class TestURLServer: URLProtocol
 
   public enum Chunk
   {
-    case data(Data), wait(TimeInterval)
+    case data(Data), wait(TimeInterval), fail(Error)
   }
 
   static func register(url: URL, response: @escaping Response)
@@ -55,6 +55,11 @@ public class TestURLServer: URLProtocol
         }
       case .wait(let interval):
         queue.asyncAfter(deadline: .now() + interval) {
+          self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
+        }
+      case .fail(let error):
+        queue.async {
+          self.client?.urlProtocol(self, didFailWithError: error)
           self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
         }
       }
