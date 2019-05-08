@@ -11,7 +11,6 @@ import Foundation
 
 public enum URLSessionError: Error, Equatable
 {
-  case serverStatus(Int)
   case interruptedDownload(URLError, Data)
   case invalidState
 }
@@ -84,13 +83,18 @@ extension URLSession
 
       if let error = error
       {
+        // note that response isn't necessarily `nil` here,
+        // but does it ever contain anything that's not in the Error?
         resolver.resolve(error: error)
         return
       }
 
-      if let d = data, let r = response as? HTTPURLResponse
+      if let r = response as? HTTPURLResponse
       {
-        resolver.resolve(value: (d,r))
+        if let d = data
+        { resolver.resolve(value: (d,r)) }
+        else
+        { resolver.resolve(error: URLSessionError.invalidState) }
       }
       else // Probably an impossible situation
       { resolver.resolve(error: URLSessionError.invalidState) }
@@ -180,6 +184,8 @@ extension URLSession
       }
       else if let error = error
       {
+        // note that response isn't necessarily `nil` here,
+        // but does it ever contain anything that's not in the Error?
         resolver.resolve(error: error)
         return
       }
@@ -194,7 +200,7 @@ extension URLSession
         if let url = location
         { resolver.resolve(value: (url, response)) }
         else // should not happen
-        { resolver.resolve(error: URLSessionError.serverStatus(response.statusCode)) }
+        { resolver.resolve(error: URLSessionError.invalidState) }
       }
       else // can happen if resume data is corrupted; otherwise probably an impossible situation
       { resolver.resolve(error: URLSessionError.invalidState) }

@@ -129,7 +129,7 @@ extension URLSessionTests
     let success = task.map {
       (data, response) throws -> String in
       XCTAssertEqual(response.statusCode, 200)
-      guard response.statusCode == 200 else { throw URLSessionError.serverStatus(response.statusCode) }
+      guard response.statusCode == 200 else { throw TestError(response.statusCode) }
       guard let string = String(data: data, encoding: .utf8) else { throw TestError() }
       return string
     }
@@ -154,7 +154,7 @@ extension URLSessionTests
     let url = task.map {
       (url, response) throws -> URL in
       XCTAssertEqual(response.statusCode, 200)
-      guard response.statusCode == 200 else { throw URLSessionError.serverStatus(response.statusCode) }
+      guard response.statusCode == 200 else { throw TestError(response.statusCode) }
       return url
     }
     let handle = url.map(transform: FileHandle.init(forReadingFrom:))
