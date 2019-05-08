@@ -383,6 +383,51 @@ extension URLSessionTests
   }
 }
 
+//MARK: request fails (not through cancellation) after some of the data is received
+
+let failURL = baseURL.appendingPathComponent("fail-after-a-while")
+func partialGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
+{
+  XCTAssertEqual(request.url, failURL)
+  XCTAssertEqual(request.httpMethod, "GET")
+  let sizable = 2500
+  let data = Data((0..<sizable).map({ UInt8(truncatingIfNeeded: $0) }))
+  var headers = request.allHTTPHeaderFields ?? [:]
+  headers["Content-Length"] = String(data.count)
+  let response = HTTPURLResponse(url: failURL, statusCode: 200, httpVersion: nil, headerFields: headers)
+  XCTAssert(data.count > 0)
+  XCTAssertNotNil(response)
+  let cut = Int.random(in: (data.count/2..<data.count))
+  let error = URLError(.networkConnectionLost, userInfo: [
+    "cut": cut,
+    NSURLErrorFailingURLStringErrorKey: failURL.absoluteString,
+    NSLocalizedDescriptionKey: "dropped",
+    NSURLErrorFailingURLErrorKey: failURL,
+    ])
+  return ([.data(data[0..<cut]), .wait(0.02), .fail(error)], response!)
+}
+
+extension URLSessionTests
+{
+  func testData_Partial() throws
+  {
+    TestURLServer.register(url: failURL, response: partialGET(_:))
+    let request = URLRequest(url: failURL)
+    let session = URLSession(configuration: URLSessionTests.configuration)
+
+    let task = session.deferredDataTask(with: request)
+
+    do {
+      let (data, response) = try task.get()
+      _ = data.count
+      _ = response.statusCode
+    }
+    catch let error as URLError where error.code == .networkConnectionLost {
+      XCTAssertNotNil(error.userInfo[NSURLErrorFailingURLStringErrorKey])
+    }
+  }
+}
+
 //MARK: requests with data in HTTP body
 
 func handleStreamedBody(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)

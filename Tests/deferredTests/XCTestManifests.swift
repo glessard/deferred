@@ -156,6 +156,7 @@ extension URLSessionTests {
         ("testData_DoubleCancellation", testData_DoubleCancellation),
         ("testData_NotFound", testData_NotFound),
         ("testData_OK", testData_OK),
+        ("testData_Partial", testData_Partial),
         ("testData_Post", testData_Post),
         ("testData_SuspendCancel", testData_SuspendCancel),
         ("testDownload_Cancellation", testDownload_Cancellation),
