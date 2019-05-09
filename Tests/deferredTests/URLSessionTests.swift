@@ -23,7 +23,7 @@ public class TestURLServer: URLProtocol
 
   public enum Chunk
   {
-    case data(Data), wait(TimeInterval)
+    case data(Data), wait(TimeInterval), fail(Error)
   }
 
   static func register(url: URL, response: @escaping Response)
@@ -55,6 +55,11 @@ public class TestURLServer: URLProtocol
         }
       case .wait(let interval):
         queue.asyncAfter(deadline: .now() + interval) {
+          self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
+        }
+      case .fail(let error):
+        queue.async {
+          self.client?.urlProtocol(self, didFailWithError: error)
           self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
         }
       }
@@ -124,7 +129,7 @@ extension URLSessionTests
     let success = task.map {
       (data, response) throws -> String in
       XCTAssertEqual(response.statusCode, 200)
-      guard response.statusCode == 200 else { throw URLSessionError.serverStatus(response.statusCode) }
+      guard response.statusCode == 200 else { throw TestError(response.statusCode) }
       guard let string = String(data: data, encoding: .utf8) else { throw TestError() }
       return string
     }
@@ -149,7 +154,7 @@ extension URLSessionTests
     let url = task.map {
       (url, response) throws -> URL in
       XCTAssertEqual(response.statusCode, 200)
-      guard response.statusCode == 200 else { throw URLSessionError.serverStatus(response.statusCode) }
+      guard response.statusCode == 200 else { throw TestError(response.statusCode) }
       return url
     }
     let handle = url.map(transform: FileHandle.init(forReadingFrom:))
