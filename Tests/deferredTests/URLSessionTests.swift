@@ -43,14 +43,21 @@ public class TestURLServer: URLProtocol
 
   private func dispatchNextChunk(queue: DispatchQueue, chunks: [Chunk])
   {
+#if (os(macOS) || os(iOS) || os(tvOS) || os(watchOS))
+    if #available(iOS 10, macOS 10.12, tvOS 10, watchOS 3, *)
+    {
+      dispatchPrecondition(condition: .onQueue(queue))
+    }
+#endif
+
     if let chunk = chunks.first
     {
       let chunks = chunks.dropFirst()
       switch chunk
       {
       case .data(let data):
+        self.client?.urlProtocol(self, didLoad: data)
         queue.async {
-          self.client?.urlProtocol(self, didLoad: data)
           self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
         }
       case .wait(let interval):
@@ -58,8 +65,8 @@ public class TestURLServer: URLProtocol
           self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
         }
       case .fail(let error):
+        self.client?.urlProtocol(self, didFailWithError: error)
         queue.async {
-          self.client?.urlProtocol(self, didFailWithError: error)
           self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
         }
       }
@@ -79,7 +86,9 @@ public class TestURLServer: URLProtocol
       let queue = DispatchQueue(label: "url-protocol", qos: .background)
 
       client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-      dispatchNextChunk(queue: queue, chunks: chunks)
+      queue.async {
+        self.dispatchNextChunk(queue: queue, chunks: chunks)
+      }
     }
     else
     {
