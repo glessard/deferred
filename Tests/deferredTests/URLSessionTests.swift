@@ -17,13 +17,12 @@ let unavailableURL = URL(string: "http://127.0.0.1:65521/image.jpg")!
 
 public class TestURLServer: URLProtocol
 {
-  typealias Chunks = [Chunk]
-  typealias Response = (URLRequest) -> (Chunks, HTTPURLResponse)
+  typealias Response = (URLRequest) -> ([Command], HTTPURLResponse)
   static private var testURLs: [URL: Response] = [:]
 
-  public enum Chunk
+  public enum Command
   {
-    case data(Data), wait(TimeInterval), fail(Error)
+    case load(Data), wait(TimeInterval), fail(Error), finishLoading
   }
 
   static func register(url: URL, response: @escaping Response)
@@ -41,7 +40,8 @@ public class TestURLServer: URLProtocol
     return request
   }
 
-  private func dispatchNextChunk(queue: DispatchQueue, chunks: [Chunk])
+  private func dispatchNextCommand<Commands>(queue: DispatchQueue, chunks: Commands)
+    where Commands: Collection, Commands.Element == Command
   {
 #if (os(macOS) || os(iOS) || os(tvOS) || os(watchOS))
     if #available(iOS 10, macOS 10.12, tvOS 10, watchOS 3, *)
@@ -50,29 +50,22 @@ public class TestURLServer: URLProtocol
     }
 #endif
 
-    if let chunk = chunks.first
+    switch chunks.first ?? .finishLoading
     {
-      let chunks = chunks.dropFirst()
-      switch chunk
-      {
-      case .data(let data):
-        self.client?.urlProtocol(self, didLoad: data)
-        queue.async {
-          self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
-        }
-      case .wait(let interval):
-        queue.asyncAfter(deadline: .now() + interval) {
-          self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
-        }
-      case .fail(let error):
-        self.client?.urlProtocol(self, didFailWithError: error)
-        queue.async {
-          self.dispatchNextChunk(queue: queue, chunks: Array(chunks))
-        }
+    case .load(let data):
+      client?.urlProtocol(self, didLoad: data)
+      queue.async {
+        [chunks = chunks.dropFirst()] in
+        self.dispatchNextCommand(queue: queue, chunks: chunks)
       }
-    }
-    else
-    {
+    case .wait(let interval):
+      queue.asyncAfter(deadline: .now() + interval) {
+        [chunks = chunks.dropFirst()] in
+        self.dispatchNextCommand(queue: queue, chunks: chunks)
+      }
+    case .fail(let error):
+      client?.urlProtocol(self, didFailWithError: error)
+    case .finishLoading:
       client?.urlProtocolDidFinishLoading(self)
     }
   }
@@ -80,14 +73,14 @@ public class TestURLServer: URLProtocol
   public override func startLoading()
   {
     if let url = request.url,
-       let data = TestURLServer.testURLs[url]
+       let response = TestURLServer.testURLs[url]
     {
-      let (chunks, response) = data(request)
+      let (chunks, response) = response(request)
       let queue = DispatchQueue(label: "url-protocol", qos: .background)
 
       client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
       queue.async {
-        self.dispatchNextChunk(queue: queue, chunks: chunks)
+        self.dispatchNextCommand(queue: queue, chunks: chunks)
       }
     }
     else
@@ -112,7 +105,7 @@ class URLSessionTests: XCTestCase
 //MARK: successful download requests
 
 let textURL = baseURL.appendingPathComponent("text")
-func simpleGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
+func simpleGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
 {
   XCTAssert(request.url == textURL)
   let data = Data("Text with a 🔨".utf8)
@@ -122,7 +115,7 @@ func simpleGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse
   let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: headers)
   XCTAssert(data.count > 0)
   XCTAssertNotNil(response)
-  return ([.data(data)], response!)
+  return ([.load(data), .finishLoading], response!)
 }
 
 extension URLSessionTests
@@ -344,11 +337,11 @@ extension URLSessionTests
 //MARK: requests to missing URLs
 
 let missingURL = baseURL.appendingPathComponent("404")
-func missingGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
+func missingGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
 {
   let response = HTTPURLResponse(url: missingURL, statusCode: 404, httpVersion: nil, headerFields: [:])
   XCTAssertNotNil(response)
-  return ([.data(Data("Not Found".utf8))], response!)
+  return ([.load(Data("Not Found".utf8)), .finishLoading], response!)
 }
 
 extension URLSessionTests
@@ -395,7 +388,7 @@ extension URLSessionTests
 //MARK: request fails (not through cancellation) after some of the data is received
 
 let failURL = baseURL.appendingPathComponent("fail-after-a-while")
-func partialGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
+func partialGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
 {
   XCTAssertEqual(request.url, failURL)
   XCTAssertEqual(request.httpMethod, "GET")
@@ -413,7 +406,7 @@ func partialGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLRespons
     NSLocalizedDescriptionKey: "dropped",
     NSURLErrorFailingURLErrorKey: failURL,
   ])
-  return ([.data(data[0..<cut]), .wait(0.02), .fail(error)], response!)
+  return ([.load(data[0..<cut]), .wait(0.02), .fail(error)], response!)
 }
 
 extension URLSessionTests
@@ -439,7 +432,7 @@ extension URLSessionTests
 
 //MARK: requests with data in HTTP body
 
-func handleStreamedBody(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
+func handleStreamedBody(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
 {
   XCTAssertNil(request.httpBody)
   XCTAssertNotNil(request.httpBodyStream)
@@ -465,10 +458,10 @@ func handleStreamedBody(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPUR
   headers["Content-Length"] = String(responseText.count)
   let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)
   XCTAssertNotNil(response)
-  return ([.data(Data(responseText.utf8))], response!)
+  return ([.load(Data(responseText.utf8)), .finishLoading], response!)
 }
 
-func handleLinuxUploadProblem(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
+func handleLinuxUploadProblem(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
 {
   XCTAssertNil(request.httpBody)
   // On Linux as of core-foundation 4.2, upload tasks do not seem to
@@ -692,7 +685,7 @@ class URLSessionResumeTests: XCTestCase
     TestURLServer.register(url: URLSessionResumeTests.largeURL, response: URLSessionResumeTests.largeGET(_:))
   }
 
-  static func largeGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLResponse)
+  static func largeGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
   {
     XCTAssertEqual(request.url, largeURL)
     let data = URLSessionResumeTests.largeData
@@ -710,7 +703,7 @@ class URLSessionResumeTests: XCTestCase
       // headers["Range"] = nil
       // headers["If-Range"] = nil
       let response = HTTPURLResponse(url: largeURL, statusCode: 206, httpVersion: nil, headerFields: headers)!
-      return ([.data(data[bounds[0]...])], response)
+      return ([.load(data[bounds[0]...]), .finishLoading], response)
     }
     else
     {
@@ -725,7 +718,7 @@ class URLSessionResumeTests: XCTestCase
       headers["ETag"] = "\"" + String(dumbCheckSum, radix: 16) + "\""
       let cut = Int.random(in: (data.count/3...2*(data.count/3)))
       let response = HTTPURLResponse(url: largeURL, statusCode: 200, httpVersion: nil, headerFields: headers)!
-      return ([.data(data[0..<cut]), .wait(10.0), .data(data[cut...])], response)
+      return ([.load(data[0..<cut]), .wait(10.0), .load(data[cut...]), .finishLoading], response)
     }
   }
 
