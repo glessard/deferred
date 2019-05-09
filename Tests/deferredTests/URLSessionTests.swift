@@ -412,7 +412,7 @@ func partialGET(_ request: URLRequest) -> ([TestURLServer.Chunk], HTTPURLRespons
     NSURLErrorFailingURLStringErrorKey: failURL.absoluteString,
     NSLocalizedDescriptionKey: "dropped",
     NSURLErrorFailingURLErrorKey: failURL,
-    ])
+  ])
   return ([.data(data[0..<cut]), .wait(0.02), .fail(error)], response!)
 }
 
