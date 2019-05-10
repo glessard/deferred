@@ -24,10 +24,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       var b = AtomicBool(false)
 
       DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
-        resolver.resolve(value: b.load(.acquire))
+        resolver.resolve(value: CAtomicsLoad(&b, .acquire))
       }
 
-      b.store(true, .relaxed)
+      CAtomicsStore(&b, true, .relaxed)
     }
 
     let c = DispatchQoS.current
