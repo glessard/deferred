@@ -315,7 +315,7 @@ class DeferredSelectionTests: XCTestCase
   func testSelectFirstResolvedQuaternary()
   {
     let r1 = nzRandom()
-    let d2 = Deferred(value: "C").delay(.milliseconds(5))
+    let d2 = TBD<String>()
 
     let (s1, s2, s3, s4) = firstResolved(Deferred<Int>(error: TestError(r1)),
                                          d2,
