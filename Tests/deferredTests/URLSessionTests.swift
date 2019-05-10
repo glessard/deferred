@@ -388,7 +388,8 @@ extension URLSessionTests
 //MARK: request fails (not through cancellation) after some of the data is received
 
 let failURL = baseURL.appendingPathComponent("fail-after-a-while")
-func partialGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
+
+func incompleteGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
 {
   XCTAssertEqual(request.url, failURL)
   XCTAssertEqual(request.httpMethod, "GET")
@@ -400,17 +401,40 @@ func partialGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLRespo
   XCTAssert(data.count > 0)
   XCTAssertNotNil(response)
   let cut = Int.random(in: (data.count/2..<data.count))
+  return ([.load(data[0..<cut]), .wait(0.02)], response!)
+}
+
+func partialGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
+{
+  let (commands, response) = incompleteGET(request)
+  guard case let .load(data) = commands.first! else { fatalError() }
+
   let error = URLError(.networkConnectionLost, userInfo: [
-    "cut": cut,
+    "cut": data.count,
     NSURLErrorFailingURLStringErrorKey: failURL.absoluteString,
     NSLocalizedDescriptionKey: "dropped",
     NSURLErrorFailingURLErrorKey: failURL,
   ])
-  return ([.load(data[0..<cut]), .wait(0.02), .fail(error)], response!)
+  return (commands + [.fail(error)], response)
 }
 
 extension URLSessionTests
 {
+  func testData_Incomplete() throws
+  {
+    TestURLServer.register(url: failURL, response: incompleteGET(_:))
+    let request = URLRequest(url: failURL)
+    let session = URLSession(configuration: URLSessionTests.configuration)
+
+    let task = session.deferredDataTask(with: request)
+
+    let (data, response) = try task.get()
+    XCTAssertEqual(response.statusCode, 200)
+    XCTAssertNotEqual(response.allHeaderFields["Content-Length"] as? String, String(data.count))
+
+    session.finishTasksAndInvalidate()
+  }
+
   func testData_Partial() throws
   {
     TestURLServer.register(url: failURL, response: partialGET(_:))
@@ -427,6 +451,8 @@ extension URLSessionTests
     catch let error as URLError where error.code == .networkConnectionLost {
       XCTAssertNotNil(error.userInfo[NSURLErrorFailingURLStringErrorKey])
     }
+
+    session.finishTasksAndInvalidate()
   }
 }
 
