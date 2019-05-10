@@ -693,7 +693,7 @@ class URLSessionResumeTests: XCTestCase
           resolver.resolve(error: error)
         }
       }
-      deferred.timeout(seconds: 0.2)
+      deferred.timeout(seconds: 0.5)
     }
 #if os(Linux)
     XCTAssertNotNil(resumeData.error)
@@ -731,7 +731,7 @@ class URLSessionResumeTests: XCTestCase
           resolver.resolve(error: error)
         }
       }
-      deferred.timeout(seconds: 0.2)
+      deferred.timeout(seconds: 0.5)
     }
 #if os(Linux)
     XCTAssertNotNil(resumeData.error)
