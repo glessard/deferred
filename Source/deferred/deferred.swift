@@ -304,7 +304,7 @@ open class Deferred<Value>
 
       if boostQoS, let qos = queue?.qos, qos > self.queue.qos
       { // try to raise `self.queue`'s QoS if the notification needs to execute at a higher QoS
-        self.queue.async(qos: qos, flags: [.enforceQoS], execute: {})
+        self.queue.async(qos: qos, flags: [.enforceQoS, .barrier], execute: {})
       }
 
       repeat {
