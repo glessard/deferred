@@ -28,6 +28,7 @@
 		038CB65920DC639400F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
 		038CB65A20DC63A500F4B44B /* CAtomics.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		038CB65D20DC63CB00F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
+		0393E8CD2285E7FE00F4B44B /* DeferredSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CB9823227BBECD00F4B44B /* DeferredSelectionTests.swift */; };
 		039E18411DFF621300F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */; };
 		03B4337120CAF2C600F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */; };
@@ -62,20 +63,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		030A0C7F20CB48DF00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 030110EF1B4B896700F4B44B;
-			remoteInfo = Atomics;
-		};
-		030A0C8120CB48DF00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 030110F91B4B896700F4B44B;
-			remoteInfo = AtomicsTests;
-		};
 		03110CEA20D2065900F4B44B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 03E60E231AAA571100F4B44B /* Project object */;
@@ -152,6 +139,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 031CA35C20DBDCAD00F4B44B;
 			remoteInfo = CAtomics;
+		};
+		0393E8D32285E7FE00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 031CA33E20DBDC0400F4B44B;
+			remoteInfo = SwiftAtomics;
+		};
+		0393E8D52285E7FE00F4B44B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 031CA34720DBDC0400F4B44B;
+			remoteInfo = SwiftAtomicsTests;
 		};
 		03B4E0781C14003C00F4B44B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -349,8 +350,8 @@
 		030A0C7920CB48DF00F4B44B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				030A0C8020CB48DF00F4B44B /* Atomics.framework */,
-				030A0C8220CB48DF00F4B44B /* AtomicsTests.xctest */,
+				0393E8D42285E7FE00F4B44B /* SwiftAtomics.framework */,
+				0393E8D62285E7FE00F4B44B /* SwiftAtomicsTests.xctest */,
 				038CB64F20DC636D00F4B44B /* CAtomics.framework */,
 				038CB65120DC636D00F4B44B /* CAtomicsTests.xctest */,
 				038CB65320DC636D00F4B44B /* AtomicsTestApp.app */,
@@ -668,20 +669,6 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		030A0C8020CB48DF00F4B44B /* Atomics.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = Atomics.framework;
-			remoteRef = 030A0C7F20CB48DF00F4B44B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		030A0C8220CB48DF00F4B44B /* AtomicsTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = AtomicsTests.xctest;
-			remoteRef = 030A0C8120CB48DF00F4B44B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		0358CBDA2153107C00F4B44B /* Outcome.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
@@ -722,6 +709,20 @@
 			fileType = wrapper.cfbundle;
 			path = AtomicsTestAppTests.xctest;
 			remoteRef = 038CB65420DC636D00F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0393E8D42285E7FE00F4B44B /* SwiftAtomics.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = SwiftAtomics.framework;
+			remoteRef = 0393E8D32285E7FE00F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		0393E8D62285E7FE00F4B44B /* SwiftAtomicsTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = SwiftAtomicsTests.xctest;
+			remoteRef = 0393E8D52285E7FE00F4B44B /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		03C599152176A17600F4B44B /* CurrentQoS.framework */ = {
@@ -848,6 +849,7 @@
 				03B7769D20CAED1C00F4B44B /* DeletionTests.swift in Sources */,
 				03B4337120CAF2C600F4B44B /* TBDTimingTests.swift in Sources */,
 				03D951E32267B24900F4B44B /* outcome.swift in Sources */,
+				0393E8CD2285E7FE00F4B44B /* DeferredSelectionTests.swift in Sources */,
 				03B776A220CAED1C00F4B44B /* TestError.swift in Sources */,
 				03B7769C20CAED1C00F4B44B /* DeferredCombinationTests.swift in Sources */,
 			);
