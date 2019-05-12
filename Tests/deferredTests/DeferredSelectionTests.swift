@@ -51,7 +51,7 @@ class DeferredSelectionTests: XCTestCase
     let lucky = Int.random(in: 1..<count)
     XCTAssert(resolvers[count].resolve(error: TestError(count)))
     XCTAssert(resolvers[lucky].resolve(value: lucky))
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
 
     XCTAssertEqual(first.value, lucky)
     for r in resolvers { XCTAssertFalse(r.needsResolution) }
@@ -86,7 +86,7 @@ class DeferredSelectionTests: XCTestCase
     let first = noValue(count)
     XCTAssertEqual(first.error, TestError(count-1))
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testFirstValueSequence() throws
@@ -109,7 +109,7 @@ class DeferredSelectionTests: XCTestCase
     let lucky = Int.random(in: 1..<count)
     XCTAssert(resolvers[count].resolve(error: TestError(count)))
     XCTAssert(resolvers[lucky].resolve(value: lucky))
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
 
     XCTAssertEqual(first.value, lucky)
   }
@@ -142,7 +142,7 @@ class DeferredSelectionTests: XCTestCase
     let first = noValue(count)
     XCTAssertEqual(first.error, TestError(count-1))
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testFirstResolvedCollection1() throws
@@ -165,7 +165,7 @@ class DeferredSelectionTests: XCTestCase
     let e = Int.random(in: 1..<count)
     r[e].resolve(value: e)
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
 
     XCTAssertEqual(try f.get(), e)
   }
@@ -200,7 +200,7 @@ class DeferredSelectionTests: XCTestCase
     let e = Int.random(in: 1..<count)
     r[e].resolve(value: e)
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
 
     XCTAssertEqual(try f.get(), e)
   }
@@ -259,7 +259,7 @@ class DeferredSelectionTests: XCTestCase
     let e = Int.random(in: 1..<count)
     r[e].resolve(value: e)
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
 
     XCTAssertEqual(try f.get(), e)
   }
@@ -279,7 +279,7 @@ class DeferredSelectionTests: XCTestCase
 
     t2.resolve(value: r2)
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testSelectFirstResolvedBinary2()
@@ -292,7 +292,7 @@ class DeferredSelectionTests: XCTestCase
     s1.notify { XCTAssertEqual($0.value, r1) }
     s2.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
     XCTAssertEqual(r2.needsResolution, false)
   }
 
@@ -342,7 +342,7 @@ class DeferredSelectionTests: XCTestCase
 
     r2.resolve(value: nzRandom())
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
     XCTAssertEqual(d1.error, DeferredError.notSelected)
   }
 
@@ -355,7 +355,7 @@ class DeferredSelectionTests: XCTestCase
     s1.onValue { XCTAssertEqual($0, r1) }
     s2.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testSelectFirstValueBinary3()
@@ -369,7 +369,7 @@ class DeferredSelectionTests: XCTestCase
     s1.notify { XCTAssertEqual($0.error, TestError(r1)) }
     s2.notify { XCTAssertEqual($0.error, TestError(r2)) }
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testSelectFirstValueTernary1()

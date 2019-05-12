@@ -140,7 +140,7 @@ class TBDTests: XCTestCase
 
     t1.resolve(value: r)
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testNeverResolved()

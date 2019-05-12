@@ -127,7 +127,7 @@ class DeferredTests: XCTestCase
       e.fulfill()
     }
 
-    waitForExpectations(timeout: 2.0) { _ in s.signal() }
+    waitForExpectations(timeout: 1.0) { _ in s.signal() }
   }
 
   func testValueUnblocks()
@@ -158,7 +158,7 @@ class DeferredTests: XCTestCase
       s.signal()
     }
 
-    waitForExpectations(timeout: 2.0)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testGet() throws
@@ -193,7 +193,7 @@ class DeferredTests: XCTestCase
     XCTAssertFalse(m.state.isResolved)
 
     s.signal()
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
 
     XCTAssert(d.state == .succeeded)
     XCTAssert(d.state.isResolved)
@@ -472,7 +472,7 @@ class DeferredTests: XCTestCase
 
     t5.resolve(value: value)
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testEnqueuing()
@@ -1013,7 +1013,7 @@ class DelayTests: XCTestCase
 
     let e1 = expectation(description: "immediate")
     d1.onValue { _ in e1.fulfill() }
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
 
     d2.cancel()
   }

@@ -25,7 +25,7 @@ class DeletionTests: XCTestCase
       witness = delayed.map { e.fulfill() }
     }
 
-    waitForExpectations(timeout: 0.5)
+    waitForExpectations(timeout: 1.0)
     _ = witness.value
   }
 
@@ -49,7 +49,7 @@ class DeletionTests: XCTestCase
       _ = DeallocTBD(expectation: expectation(description: "will dealloc tbd 1"))
     }
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testDeallocTBD2()
@@ -60,7 +60,7 @@ class DeletionTests: XCTestCase
       tbd.cancel()
     }
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testDeallocTBD3()
@@ -69,7 +69,7 @@ class DeletionTests: XCTestCase
       DeallocTBD(expectation: expectation(description: "will dealloc tbd 3")).cancel()
     }
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testDeallocTBD4()
@@ -80,7 +80,7 @@ class DeletionTests: XCTestCase
     }()
     mapped.cancel()
 
-    waitForExpectations(timeout: 0.1)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testLongTaskCancellation1()
