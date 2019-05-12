@@ -12,7 +12,7 @@ let package = Package(
     .package(url: "https://github.com/glessard/CurrentQoS.git", from: "1.1.0"),
   ],
   targets: [
-    .target(name: "deferred", dependencies: ["CAtomics", "CurrentQoS"]),
+    .target(name: "deferred", dependencies: ["SwiftAtomics", "CurrentQoS"]),
     .testTarget(name: "deferredTests", dependencies: ["deferred"]),
   ],
   swiftLanguageVersions: [.v4, .v4_2, .v5]

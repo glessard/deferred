@@ -2,7 +2,7 @@
 set -e
 
 COMPILER_MAJOR_VERSION=`echo ${COMPILER_VERSION} | awk -F . '{print $1}'`
-TEST_OPTIONS="-c release"
+TEST_OPTIONS="-c release -Xcc -mcx16"
 
 if [[ "$1" == "--tsan" && "$TRAVIS_OS_NAME" != "linux" ]]
 then
