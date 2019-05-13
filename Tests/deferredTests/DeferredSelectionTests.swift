@@ -209,10 +209,10 @@ class DeferredSelectionTests: XCTestCase
   {
     func sequence() -> AnyIterator<Deferred<Int>>
     {
-      var delay = 1
+      var delay = 1000
       var deferreds = (1...3).map {
         i -> Deferred<Int> in
-        defer { delay *= 10 }
+        defer { delay /= 10 }
         let e = expectation(description: String(i))
         return DeallocTBD(e) { $0.resolve(value: delay) }
       }
@@ -225,8 +225,8 @@ class DeferredSelectionTests: XCTestCase
     }
 
     let first = firstResolved(sequence(), cancelOthers: true).flatten()
-    XCTAssertEqual(try? first.get(), 1)
-    waitForExpectations(timeout: 0.1)
+    XCTAssertEqual(try? first.get(), 10)
+    waitForExpectations(timeout: 1.0)
   }
 
   func testFirstResolvedSequence2() throws
