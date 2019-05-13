@@ -42,7 +42,7 @@ class DeferredSelectionTests: XCTestCase
         let tbd = DeallocTBD(self.expectation(description: String(i)), task: { r.append($0) })
         d.append(tbd.validate(predicate: {$0 == i}))
       }
-      return (r, firstValue(d, qos: .utility).timeout(seconds: 0.2))
+      return (r, firstValue(d, qos: .utility))
     }
 
     let count = 10
@@ -100,7 +100,7 @@ class DeferredSelectionTests: XCTestCase
         let tbd = DeallocTBD(self.expectation(description: String(i)), task: { r.append($0) })
         d.append(tbd.validate(predicate: {$0 == i}))
       }
-      return (r, firstValue(d.makeIterator(), cancelOthers: true).timeout(seconds: 0.2))
+      return (r, firstValue(d.makeIterator(), cancelOthers: true))
     }
 
     let count = 10
@@ -156,7 +156,7 @@ class DeferredSelectionTests: XCTestCase
         let tbd = DeallocTBD(self.expectation(description: String(i)), task: { r.append($0) })
         d.append(tbd)
       }
-      return (r, firstResolved(d, qos: .utility, cancelOthers: false).flatten().timeout(seconds: 0.2))
+      return (r, firstResolved(d, qos: .utility, cancelOthers: false).flatten())
     }
 
     let count = 10
@@ -191,7 +191,7 @@ class DeferredSelectionTests: XCTestCase
         }
         d.append(tbd)
       }
-      return (r, firstResolved(d, qos: .utility, cancelOthers: true).flatten().timeout(seconds: 0.2))
+      return (r, firstResolved(d, qos: .utility, cancelOthers: true).flatten())
     }
 
     let count = 10
@@ -250,7 +250,7 @@ class DeferredSelectionTests: XCTestCase
         let tbd = DeallocTBD(self.expectation(description: String(i)), task: { r.append($0) }).validate(predicate: {$0 == i})
         d.append(tbd)
       }
-      return (r, firstResolved(d.makeIterator(), qos: .utility).flatten().timeout(seconds: 0.2))
+      return (r, firstResolved(d.makeIterator(), qos: .utility).flatten())
     }
 
     let count = 10
