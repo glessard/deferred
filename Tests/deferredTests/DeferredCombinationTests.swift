@@ -169,7 +169,7 @@ class DeferredCombinationTests: XCTestCase
 
 class DeferredCombinationTimedTests: XCTestCase
 {
-  let loopTestCount = 4_000
+  let loopTestCount = 2_000
 
   func testPerformanceReduce()
   {
