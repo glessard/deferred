@@ -250,7 +250,13 @@ open class Deferred<Value>
     return resolve(Result<Value, Error>(error: error))
   }
 
-  fileprivate func enqueue(source: AnyObject)
+  /// Keep a strong reference to `source` until this `Deferred` has been resolved.
+  ///
+  /// The implication here is that `source` is needed as an input to `self`.
+  ///
+  /// - parameter source: a reference to keep alive until this `Deferred` is resolved.
+
+  fileprivate func retainSource(_ source: AnyObject)
   {
     var state = CAtomicsLoad(deferredState, .acquire)
     if !state.isResolved
@@ -470,7 +476,7 @@ public struct Resolver<Value>
     self.deferred = deferred
   }
 
-  /// Set the value of our `Deferred` and dispatch all notifications for execution.
+  /// Resolve the underlying `Deferred` and execute all of its notifications.
   ///
   /// Note that a `Deferred` can only be resolved once.
   /// On subsequent calls, `resolve` will fail and return `false`.
@@ -485,7 +491,7 @@ public struct Resolver<Value>
     return deferred?.resolve(result) ?? false
   }
 
-  /// Set the value of our `Deferred` and dispatch all notifications for execution.
+  /// Resolve the underlying `Deferred` with a value, and execute all of its notifications.
   ///
   /// Note that a `Deferred` can only be resolved once.
   /// On subsequent calls, `resolve` will fail and return `false`.
@@ -500,7 +506,7 @@ public struct Resolver<Value>
     return resolve(Result<Value, Error>(value: value))
   }
 
-  /// Set our `Deferred` to an error and dispatch all notifications for execution.
+  /// Resolve the underlying `Deferred` with an error, and execute all of its notifications.
   ///
   /// Note that a `Deferred` can only be resolved once.
   /// On subsequent calls, `resolve` will fail and return `false`.
@@ -515,7 +521,7 @@ public struct Resolver<Value>
     return resolve(Result<Value, Error>(error: error))
   }
 
-  /// Attempt to cancel the current operation, and report on whether cancellation happened successfully.
+  /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
   ///
   /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
   /// ```
@@ -531,7 +537,7 @@ public struct Resolver<Value>
     return cancel(DeferredError.canceled(reason))
   }
 
-  /// Attempt to cancel the `Deferred` represented by this `Resolver`
+  /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
   ///
   /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
   /// - returns: whether the cancellation was performed successfully.
@@ -542,7 +548,7 @@ public struct Resolver<Value>
     return resolve(Result<Value, Error>(error: error))
   }
 
-  /// Change the state of our `Deferred` from `.waiting` to `.executing`
+  /// Change the state of the underlying `Deferred` from `.waiting` to `.executing`
 
   public func beginExecution()
   {
@@ -568,9 +574,15 @@ public struct Resolver<Value>
     deferred?.notify(handler: { _ in handler() })
   }
 
-  public func retainSource(_ object: AnyObject)
+  /// Keep a strong reference to `source` until this `Deferred` has been resolved.
+  ///
+  /// The implication here is that `source` is needed as an input to `self`.
+  ///
+  /// - parameter source: a reference to keep alive until this `Deferred` is resolved.
+
+  public func retainSource(_ source: AnyObject)
   {
-    deferred?.enqueue(source: object)
+    deferred?.retainSource(source)
   }
 }
 
@@ -599,11 +611,19 @@ open class TBD<Value>: Deferred<Value>
     task(Resolver(self))
   }
 
+  /// Obtain an unresolved `Deferred` with a paired `Resolver`
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+
   public static func CreatePair(queue: DispatchQueue) -> (Resolver<Value>, Deferred<Value>)
   {
     let d = Deferred<Value>(queue: queue)
     return (Resolver(d), d)
   }
+
+  /// Obtain an unresolved `Deferred` with a paired `Resolver`
+  ///
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
   public static func CreatePair(qos: DispatchQoS = .current) -> (Resolver<Value>, Deferred<Value>)
   {
