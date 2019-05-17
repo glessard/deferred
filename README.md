@@ -1,8 +1,8 @@
 # deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=master)](https://travis-ci.org/glessard/deferred)
-A library to help you transfer data, including eventual errors, between asynchronous blocks in Swift.
-Deferred is fast and lock-free.
+An asynchronous `Result`, fast and lock-free.
 
-`Deferred<T>` allows you to chain closures together. A `Deferred` starts with an undetermined value. At some later time its value may become determined, after which the value can no longer change. Until the value becomes determined, computations that depend on it will be saved for future execution using a lock-free, thread-safe algorithm. The results of these computations are also represented by `Deferred` instances.  Thrown errors are propagated effortlessly along chains of `Deferred` instances.
+`Deferred<T>` allows you to chain closures together. A `Deferred` starts with an indeterminate, *unresolved* value. At some later time it may become *resolved*. Its value is then immutable for as long as that particular `Deferred` instance exists.
+Until a `Deferred` becomes resolved, computations that depend on it can be saved for future execution using a lock-free, thread-safe algorithm. The results of these computations are also represented by `Deferred` instances. Errors thrown at any point in a `Deferred` context are propagated effortlessly.
 
 `Deferred` started out as an approximation of OCaml's module [Deferred](https://ocaml.janestreet.com/ocaml-core/111.25.00/doc/async_kernel/#Deferred).
 
@@ -22,6 +22,6 @@ let operand = Deferred(value: 6).delay(seconds: 0.1) // Deferred<Int>
 let result = operand.apply(transform: transform)     // Deferred<Double>
 print(result.value!)                                 // 42.0
 ```
-The `result` property of `Deferred` (and its adjuncts, `value` , `error` and `get()`) will block the current thread until the `Deferred` becomes determined. The rest of `Deferred` is lock-free.
+The `result` property of `Deferred` (and its adjuncts, `value` , `error` and `get()`) will block the current thread until its `Deferred` becomes resolved. The rest of `Deferred` is lock-free.
 
 `Deferred` can run its closure on a specified `DispatchQueue`, or at the requested `DispatchQoS`. The `notify`, `map`, `flatMap`, `apply` and `recover` methods also have these options. By default, closures will be scheduled on a queue created at the current quality-of-service (qos) class.
