@@ -53,6 +53,16 @@ class TBDTests: XCTestCase
     XCTAssert(i.resolve(value: value) == false)
   }
 
+  func testResolverWithoutTBD()
+  {
+    let r = TBD<Int>.CreatePair().resolver
+
+    XCTAssertEqual(r.needsResolution, false)
+    XCTAssertEqual(r.resolve(value: .max), false)
+    XCTAssertEqual(r.cancel(), false)
+    XCTAssertEqual(r.qos, .unspecified)
+  }
+
   func testCancel() throws
   {
     var (i, d) = TBD<Int>.CreatePair()
