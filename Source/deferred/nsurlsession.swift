@@ -34,7 +34,10 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   }
 
   deinit {
-    urlSessionTask?.cancel()
+    if let state = urlSessionTask?.state
+    { // only signal the task if necessary
+      if state == .running || state == .suspended { urlSessionTask?.cancel() }
+    }
   }
 
   @discardableResult
