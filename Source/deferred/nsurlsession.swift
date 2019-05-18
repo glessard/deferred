@@ -43,10 +43,13 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   @discardableResult
   public override func cancel(_ error: DeferredError) -> Bool
   {
-    guard !self.isResolved else { return false }
+    guard !self.isResolved, let task = urlSessionTask else { return false }
+
+    let state = task.state
+    guard state == .running || state == .suspended else { return false }
 
     // try to propagate the cancellation upstream
-    urlSessionTask?.cancel()
+    task.cancel()
     return true
   }
 
@@ -157,12 +160,16 @@ private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
   {
     guard !self.isResolved, let task = urlSessionTask as? URLSessionDownloadTask else { return false }
 
+    let state = task.state
+    guard state == .running || state == .suspended else { return false }
+
 #if os(Linux) && !compiler(>=5.0)
     // swift-corelibs-foundation calls NSUnimplemented() as the body of cancel(byProducingResumeData:)
     task.cancel()
 #else
-    // try to propagate the cancellation upstream
-    task.cancel(byProducingResumeData: { _ in }) // Let the completion handler collect the data for resuming.
+    // try to propagate the cancellation upstream,
+    // and let the other completion handler gather the resume data.
+    task.cancel(byProducingResumeData: { _ in })
 #endif
     return true
   }
