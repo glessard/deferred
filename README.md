@@ -1,4 +1,4 @@
-# deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=master)](https://travis-ci.org/glessard/deferred)
+# Deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=master)](https://travis-ci.org/glessard/deferred)
 An asynchronous `Result`, fast and lock-free.
 
 `Deferred<T>` allows you to chain closures together. A `Deferred` starts with an indeterminate, *unresolved* value. At some later time it may become *resolved*. Its value is then immutable for as long as that particular `Deferred` instance exists.
@@ -25,3 +25,40 @@ print(result.value!)                                 // 42.0
 The `result` property of `Deferred` (and its adjuncts, `value` , `error` and `get()`) will block the current thread until its `Deferred` becomes resolved. The rest of `Deferred` is lock-free.
 
 `Deferred` can run its closure on a specified `DispatchQueue`, or at the requested `DispatchQoS`. The `notify`, `map`, `flatMap`, `apply` and `recover` methods also have these options. By default, closures will be scheduled on a queue created at the current quality-of-service (qos) class.
+
+
+### Long computations, cancellations and timeouts
+
+Long background computations that support cancellation and timeout can be implemented easily by using the `TBD<T>` subclass of `Deferred<T>`. Its constructor takes a closure whose parameter is a `Resolver`. `Resolver` allows your code to monitor the state of the `Deferred` it's working to resolve, as well as (of course) resolve it.
+
+    let bigComputation = TBD<Double> {
+      resolver in
+      DispatchQueue.global(qos: .utility).async {
+        var progress = 1
+        let start = Date()
+        while true
+        { // loop until we have the answer, checking from time to time
+          // whether the answer is still needed.
+          guard resolver.needsResolution else { break }
+
+          Thread.sleep(until: start + Double(progress)*0.01) // work hard
+          progress += 1
+          if progress > 10
+          {
+            resolver.resolve(value: .pi)
+            break
+          }
+        }
+      }
+    }
+
+    let timeout = Bool.random() ? 0.1 : 1.0
+    do {
+      let pi = try bigComputation.timeout(seconds: timeout, reason: String(timeout)).get()
+      assert(pi == .pi)
+    }
+    catch DeferredError.timedOut(let message) {
+      assert(message == String(timeout))
+    }
+
+In the above example, the computation works hard to compute the ratio of a circle's circumference to its radius. A timeout is set randomly to either too short or long enough; 
