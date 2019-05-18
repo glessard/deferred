@@ -615,7 +615,7 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public static func CreatePair(queue: DispatchQueue) -> (Resolver<Value>, Deferred<Value>)
+  public static func CreatePair(queue: DispatchQueue) -> (resolver: Resolver<Value>, deferred: Deferred<Value>)
   {
     let d = Deferred<Value>(queue: queue)
     return (Resolver(d), d)
@@ -625,7 +625,7 @@ open class TBD<Value>: Deferred<Value>
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public static func CreatePair(qos: DispatchQoS = .current) -> (Resolver<Value>, Deferred<Value>)
+  public static func CreatePair(qos: DispatchQoS = .current) -> (resolver: Resolver<Value>, deferred: Deferred<Value>)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
     return CreatePair(queue: queue)

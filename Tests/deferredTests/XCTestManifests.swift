@@ -130,6 +130,7 @@ extension TBDTests {
         ("testParallel4", testParallel4),
         ("testResolve1", testResolve1),
         ("testResolve2", testResolve2),
+        ("testResolverWithoutTBD", testResolverWithoutTBD),
     ]
 }
 
