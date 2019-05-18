@@ -69,31 +69,40 @@ class DeletionTests: XCTestCase
     waitForExpectations(timeout: 1.0)
   }
 
-  func testLongTaskCancellation1()
+  func testLongTaskCancellation1() throws
   {
-    let e = expectation(description: #function)
-
-    func longTask(resolver: Resolver<Void>)
+    func bigComputation() -> Deferred<Double>
     {
-      DispatchQueue.global(qos: .default).async {
-        while resolver.needsResolution
-        {
-          Thread.sleep(until: Date() + 0.01)
-          print(".", terminator: "")
+      let e = expectation(description: #function)
+      return DeallocTBD<Double>(e) {
+        resolver in
+        DispatchQueue.global(qos: .utility).async {
+          var progress = 0
+          repeat {
+            guard resolver.needsResolution else { return }
+            Thread.sleep(until: Date() + 0.01) // work hard
+            print(".", terminator: "")
+            progress += 1
+          } while progress < 20
+          resolver.resolve(value: .pi)
         }
-        print()
-        e.fulfill()
-        resolver.resolve(error: TestError())
       }
     }
 
-    let deferred = TBD<Void>(task: longTask).enqueuing(at: .userInitiated)
+    let validated = bigComputation().validate(predicate: { $0 > 3.14159 && $0 < 3.14160 })
+    let timeout = 0.1
+    validated.timeout(seconds: timeout, reason: String(timeout))
 
-    deferred.timeout(seconds: 0.1)
     waitForExpectations(timeout: 1.0)
 
-    deferred.cancel()
-    XCTAssertEqual(deferred.error, DeferredError.timedOut(""))
+    do {
+      let pi = try validated.get()
+      print(" ", pi)
+    }
+    catch DeferredError.timedOut(let message) {
+      print()
+      XCTAssertEqual(message, String(timeout))
+    }
   }
 
   func testLongTaskCancellation2()
