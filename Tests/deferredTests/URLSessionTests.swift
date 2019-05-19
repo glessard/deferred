@@ -755,24 +755,31 @@ class URLSessionResumeTests: XCTestCase
     let resumeData = TBD<Data> {
       resolver in
       let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
-      deferred.onError {
-        error in
-        switch error
-        {
-        case URLSessionError.interruptedDownload(let error, let data):
+      deferred.notify {
+        result in
+        do {
+          let url = try result.get().0
+          let data = try FileHandle(forReadingFrom: url).readDataToEndOfFile()
+          resolver.resolve(value: data)
+        }
+        catch URLSessionError.interruptedDownload(let error, let data) {
           XCTAssertEqual(error.code, .cancelled)
           resolver.resolve(value: data)
-        default:
+        }
+        catch {
           resolver.resolve(error: error)
         }
       }
       deferred.timeout(seconds: 0.5)
+      resolver.retainSource(deferred)
     }
 #if os(Linux)
+    XCTAssertNil(resumeData.value, "download did not time out")
     XCTAssertNotNil(resumeData.error)
     XCTAssert(URLError.cancelled ~= resumeData.error!)
 #else
     let data = try resumeData.get()
+    XCTAssertNotEqual(data, URLSessionResumeTests.largeData, "download did not time out")
 
     let resumed = session.deferredDownloadTask(withResumeData: data)
     let (url, response) = resumed.split()
