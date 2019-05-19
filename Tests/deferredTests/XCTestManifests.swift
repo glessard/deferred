@@ -186,6 +186,8 @@ extension URLSessionResumeTests {
         ("testResumeWithEmptyData", testResumeWithEmptyData),
         ("testResumeWithMangledData", testResumeWithMangledData),
         ("testResumeWithNonsenseData", testResumeWithNonsenseData),
+        ("testURLRequestTimeout1", testURLRequestTimeout1),
+        ("testURLRequestTimeout2", testURLRequestTimeout2),
     ]
 }
 

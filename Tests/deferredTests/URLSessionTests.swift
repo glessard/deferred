@@ -802,6 +802,62 @@ class URLSessionResumeTests: XCTestCase
     session.finishTasksAndInvalidate()
   }
 
+  func testURLRequestTimeout1() throws
+  { // time out a URL request via session configuration
+#if os(Linux)
+    print("this test does not succeed due to a corelibs-foundation bug")
+#else
+    URLSessionResumeTests.configuration.timeoutIntervalForRequest = 1.0
+    let session = URLSession(configuration: URLSessionResumeTests.configuration)
+
+    let deferred = TBD<(URL, HTTPURLResponse)> {
+      resolver in
+      let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
+      deferred.notify { resolver.resolve($0) }
+      resolver.retainSource(deferred)
+    }
+
+    do {
+      let _ = try deferred.get()
+    }
+    catch URLSessionError.interruptedDownload(let error, let data) {
+      XCTAssertEqual(error.code, .timedOut)
+      XCTAssertNotEqual(data.count, 0)
+    }
+    catch let error as URLError where error.code == .timedOut {
+      print(error, error.errorUserInfo)
+    }
+#endif
+  }
+
+  func testURLRequestTimeout2() throws
+  { // time out a URL request via request configuration
+#if os(Linux)
+    print("this test does not succeed due to a corelibs-foundation bug")
+#else
+    let session = URLSession(configuration: URLSessionResumeTests.configuration)
+
+    let deferred = TBD<(URL, HTTPURLResponse)> {
+      resolver in
+      let request = URLRequest(url: URLSessionResumeTests.largeURL, timeoutInterval: 0.5)
+      let deferred = session.deferredDownloadTask(with: request)
+      deferred.notify { resolver.resolve($0) }
+      resolver.retainSource(deferred)
+    }
+
+    do {
+      let _ = try deferred.get()
+    }
+    catch URLSessionError.interruptedDownload(let error, let data) {
+      XCTAssertEqual(error.code, .timedOut)
+      XCTAssertNotEqual(data.count, 0)
+    }
+    catch let error as URLError where error.code == .timedOut {
+      print(error, error.errorUserInfo)
+    }
+#endif
+  }
+
   func testResumeWithMangledData() throws
   {
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
