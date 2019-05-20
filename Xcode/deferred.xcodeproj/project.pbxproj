@@ -24,6 +24,7 @@
 		0366AE5C1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */; };
 		0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
 		03857DB81F55C3DE00F4B44B /* deferred-timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03857DB71F55C3DE00F4B44B /* deferred-timing.swift */; };
+		038C1A5A229343C000F4B44B /* DeallocTBD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038C1A59229343C000F4B44B /* DeallocTBD.swift */; };
 		038CB65620DC637600F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
 		038CB65920DC639400F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
 		038CB65A20DC63A500F4B44B /* CAtomics.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -263,6 +264,7 @@
 		0374DFB01DFF5BD800F4B44B /* nzRandom.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nzRandom.swift; path = DeferredTests/nzRandom.swift; sourceTree = "<group>"; };
 		038147591E4138BA00F4B44B /* DeletionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeletionTests.swift; path = deferredTests/DeletionTests.swift; sourceTree = "<group>"; };
 		03857DB71F55C3DE00F4B44B /* deferred-timing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "deferred-timing.swift"; path = "deferred/deferred-timing.swift"; sourceTree = "<group>"; };
+		038C1A59229343C000F4B44B /* DeallocTBD.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeallocTBD.swift; path = deferredTests/DeallocTBD.swift; sourceTree = "<group>"; };
 		039E18431DFF77F900F4B44B /* LinuxMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
 		03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredCombinationTests.swift; path = deferredTests/DeferredCombinationTests.swift; sourceTree = "<group>"; };
 		03B4E0641C13FF6900F4B44B /* deferred.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deferred.h; sourceTree = "<group>"; };
@@ -408,6 +410,7 @@
 				0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */,
 				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
 				0366AE541DF0FEC400F4B44B /* TestError.swift */,
+				038C1A59229343C000F4B44B /* DeallocTBD.swift */,
 				0374DFB01DFF5BD800F4B44B /* nzRandom.swift */,
 				03D951DA2267B20400F4B44B /* outcome.swift */,
 				03BEA0DF20CF3C1200F4B44B /* XCTestManifests.swift */,
@@ -817,6 +820,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */,
+				038C1A5A229343C000F4B44B /* DeallocTBD.swift in Sources */,
 				03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */,
 				03BBDB1021EFDBBF00F4B44B /* URLSessionTests.swift in Sources */,
 				0366AE5C1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */,

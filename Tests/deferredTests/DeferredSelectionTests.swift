@@ -11,19 +11,6 @@ import Dispatch
 
 import deferred
 
-private class DeallocTBD: TBD<Int>
-{
-  let e: XCTestExpectation
-  init(_ expectation: XCTestExpectation, task: (Resolver<Int>) -> Void = { _ in })
-  {
-    e = expectation
-    super.init(task: task)
-  }
-  deinit {
-    e.fulfill()
-  }
-}
-
 extension TBD
 {
   convenience init() { self.init(task: { _ in }) }
@@ -271,8 +258,8 @@ class DeferredSelectionTests: XCTestCase
     let r2 = nzRandom()
     var t2: Resolver<Int>! = nil
 
-    let (s1, s2) = firstResolved(DeallocTBD(e1),
-                                 DeallocTBD(e2) { t2 = $0 },
+    let (s1, s2) = firstResolved(DeallocTBD<Double>(e1),
+                                 DeallocTBD<Int>(e2) { t2 = $0 },
                                  canceling: true)
     s1.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
     s2.notify { XCTAssertEqual($0.value, r2) }
@@ -336,7 +323,7 @@ class DeferredSelectionTests: XCTestCase
     let e2 = expectation(description: #function)
     var r2: Resolver<Int>!
 
-    let (s1, s2) = firstValue(d1, DeallocTBD(e2, task: { r2 = $0 }), canceling: true)
+    let (s1, s2) = firstValue(d1, DeallocTBD<Int>(e2, task: { r2 = $0 }), canceling: true)
     s1.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
     s2.notify { XCTAssertNotNil($0.value) }
 
@@ -351,7 +338,7 @@ class DeferredSelectionTests: XCTestCase
     let r1 = Double(nzRandom())
     let e2 = expectation(description: #function)
 
-    let (s1, s2) = firstValue(Deferred(value: r1), DeallocTBD(e2))
+    let (s1, s2) = firstValue(Deferred(value: r1), DeallocTBD<Int>(e2))
     s1.onValue { XCTAssertEqual($0, r1) }
     s2.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }
 
@@ -365,7 +352,7 @@ class DeferredSelectionTests: XCTestCase
     let e2 = expectation(description: #function)
 
     let (s1, s2) = firstValue(Deferred<Int>(error: TestError(r1)),
-                              DeallocTBD(e2, task: { $0.resolve(error: TestError(r2)) }))
+                              DeallocTBD<Void>(e2, task: { $0.resolve(error: TestError(r2)) }))
     s1.notify { XCTAssertEqual($0.error, TestError(r1)) }
     s2.notify { XCTAssertEqual($0.error, TestError(r2)) }
 
