@@ -29,36 +29,50 @@ The `result` property of `Deferred` (and its adjuncts, `value` , `error` and `ge
 
 ### Long computations, cancellations and timeouts
 
-Long background computations that support cancellation and timeout can be implemented easily by using the `TBD<T>` subclass of `Deferred<T>`. Its constructor takes a closure whose parameter is a `Resolver`. `Resolver` allows your code to monitor the state of the `Deferred` it's working to resolve, as well as (of course) resolve it.
+Long background computations that support cancellation and timeout can be implemented easily by using the `TBD<T>` subclass of `Deferred<T>`. Its constructor takes a closure whose parameter is a `Resolver`. `Resolver` allows your code be a data source of `Deferred` it's associated with, as well as monitor the state of its `Deferred`.
 
-    let bigComputation = TBD<Double> {
-      resolver in
-      DispatchQueue.global(qos: .utility).async {
-        var progress = 1
-        let start = Date()
-        while true
-        { // loop until we have the answer, checking from time to time
-          // whether the answer is still needed.
-          guard resolver.needsResolution else { break }
-
-          Thread.sleep(until: start + Double(progress)*0.01) // work hard
-          progress += 1
-          if progress > 10
-          {
-            resolver.resolve(value: .pi)
-            break
-          }
+    func bigComputation() -> Deferred<Double>
+    {
+      return TBD<Double> {
+        resolver in
+        DispatchQueue.global(qos: .utility).async {
+          var progress = 0
+          repeat {
+            guard resolver.needsResolution else { return }
+            Thread.sleep(until: Date() + 0.01) // work hard
+            print(".", terminator: "")
+            progress += 1
+          } while progress < 20
+          resolver.resolve(value: .pi)
         }
       }
     }
 
-    let timeout = Bool.random() ? 0.1 : 1.0
+    let validated = bigComputation().validate(predicate: { $0 > 3.14159 && $0 < 3.14160 })
+    let timeout = 0.1
+    validated.timeout(seconds: timeout, reason: String(timeout))
+
     do {
-      let pi = try bigComputation.timeout(seconds: timeout, reason: String(timeout)).get()
-      assert(pi == .pi)
+      let pi = try validated.get()
+      print(" ", pi)
     }
     catch DeferredError.timedOut(let message) {
-      assert(message == String(timeout))
+      print()
+      XCTAssertEqual(message, String(timeout))
     }
 
-In the above example, the computation works hard to compute the ratio of a circle's circumference to its radius. A timeout is set randomly to either too short or long enough; 
+In the above example, our code works hard to compute the ratio of a circle's circumference to its radius, then performs a rough validation of the output by comparing it with a known approximation. Finally, the  Note that the `Deferred` object performing the computation is not retained directly by this user code. Yet, when the timeout is triggered the computation is correctly abandoned and the object is deallocated. General cancellation can be performed in a similar manner.
+
+`Deferred` is carefully written to support cancellation by leveraging reference counting. In every case, when a new `Deferred` is returned by a function from the package, that returned reference is the only strong reference in existence. This allows cancellation to work properly for entire chains of transformation, even if it is applied to the final link of the chain.
+
+### Using `Deferred` in a project
+
+With the swift package manager, add the following to your package manifest's dependencies:
+
+    .package(url: "https://github.com/glessard/deferred.git", from: "5.0.0")
+
+To integrate in an Xcode project, tools such as `Accio` and `xspm` are good options. The repository contains a project with an example iOS target that is manually assembled. It requires some git submodules to be loaded using the command `git submodule update --init`.
+
+#### License
+
+This library is released under the MIT License. See LICENSE for details.
