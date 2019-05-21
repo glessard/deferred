@@ -1,6 +1,6 @@
 //
 //  deferred-combine.swift
-//  async-deferred
+//  deferred
 //
 //  Created by Guillaume Lessard on 06/11/2015.
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.

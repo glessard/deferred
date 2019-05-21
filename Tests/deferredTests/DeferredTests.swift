@@ -1,6 +1,6 @@
 //
 //  DeferredTests.swift
-//  async-deferred-tests
+//  deferred-tests
 //
 //  Created by Guillaume Lessard on 2015-07-10.
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
