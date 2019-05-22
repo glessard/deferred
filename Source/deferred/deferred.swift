@@ -26,17 +26,11 @@ private extension Int
   static let waiting =   0x0
   static let executing = 0x1
   static let resolved =  0x3
-  private static let stateMask = 0x3
+}
 
-  init(_ pointer: UnsafeMutableRawPointer, tag: Int)
-  {
-    self = Int(bitPattern: pointer) | (tag & .stateMask)
-  }
-
+private extension TaggedOptionalMutableRawPointer
+{
   var isResolved: Bool { return tag == .resolved }
-
-  var tag: Int { return self & .stateMask }
-  var ptr: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
 }
 
 /// An asynchronous computation.
@@ -59,13 +53,13 @@ open class Deferred<Value>
 {
   let queue: DispatchQueue
 
-  private var deferredState = UnsafeMutablePointer<AtomicInt>.allocate(capacity: 1)
+  private var deferredState = UnsafeMutablePointer<AtomicTaggedOptionalMutableRawPointer>.allocate(capacity: 1)
 
   /// Get a pointer to a `Result` for a resolved `Deferred`.
   /// `state` must have been read with `.acquire` memory ordering in order
   /// to safely see all the changes from the thread that resolved this `Deferred`.
 
-  private func resolvedPointer(from state: Int) -> UnsafeMutablePointer<Result<Value, Error>>?
+  private func resolvedPointer(from state: TaggedOptionalMutableRawPointer) -> UnsafeMutablePointer<Result<Value, Error>>?
   {
     guard state.isResolved else { return nil }
     return state.ptr?.assumingMemoryBound(to: Result<Value, Error>.self)
@@ -75,7 +69,7 @@ open class Deferred<Value>
   /// `state` must have been read with `.acquire` memory ordering in order
   /// to safely see all the changes from the thread that last enqueued a `Waiter`.
 
-  private func waiterQueue(from state: Int) -> UnsafeMutablePointer<Waiter<Value>>?
+  private func waiterQueue(from state: TaggedOptionalMutableRawPointer) -> UnsafeMutablePointer<Waiter<Value>>?
   {
     if state.isResolved { return nil }
     return state.ptr?.assumingMemoryBound(to: Waiter<Value>.self)
@@ -101,7 +95,7 @@ open class Deferred<Value>
   fileprivate init(queue: DispatchQueue)
   {
     self.queue = queue
-    CAtomicsInitialize(deferredState, .waiting)
+    CAtomicsInitialize(deferredState, TaggedOptionalMutableRawPointer(nil, tag: .waiting))
   }
 
   /// Initialize as resolved with a `Result`
@@ -114,7 +108,7 @@ open class Deferred<Value>
     self.queue = queue
     let resolved = UnsafeMutablePointer<Result<Value, Error>>.allocate(capacity: 1)
     resolved.initialize(to: result)
-    CAtomicsInitialize(deferredState, Int(resolved, tag: .resolved))
+    CAtomicsInitialize(deferredState, TaggedOptionalMutableRawPointer(resolved, tag: .resolved))
   }
 
   /// Initialize with a task to be computed on the specified queue
@@ -125,7 +119,7 @@ open class Deferred<Value>
   public init(queue: DispatchQueue, task: @escaping () throws -> Value)
   {
     self.queue = queue
-    CAtomicsInitialize(deferredState, .executing)
+    CAtomicsInitialize(deferredState, TaggedOptionalMutableRawPointer(nil, tag: .executing))
 
     queue.async {
       do {
@@ -200,6 +194,7 @@ open class Deferred<Value>
   func beginExecution()
   {
     var current = CAtomicsLoad(deferredState, .relaxed)
+    var executing: TaggedOptionalMutableRawPointer
     repeat {
       if current.tag != .waiting
       { // execution state has already been marked as begun
@@ -209,7 +204,8 @@ open class Deferred<Value>
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .release, .relaxed)
+      executing = TaggedOptionalMutableRawPointer(current.ptr, tag: .executing)
+    } while !CAtomicsCompareAndExchange(deferredState, &current, executing, .weak, .release, .relaxed)
   }
 
   /// Set the `Result` of this `Deferred` and dispatch all notifications for execution.
@@ -231,7 +227,7 @@ open class Deferred<Value>
     let resolved = UnsafeMutablePointer<Result<Value, Error>>.allocate(capacity: 1)
     resolved.initialize(to: result)
 
-    let final = Int(resolved, tag: .resolved)
+    let final = TaggedOptionalMutableRawPointer(resolved, tag: .resolved)
     var current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
       if current.tag == .resolved
@@ -301,7 +297,7 @@ open class Deferred<Value>
 
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
-        let newState = Int(waiter, tag: state.tag)
+        let newState = TaggedOptionalMutableRawPointer(waiter, tag: state.tag)
         // read-modify-write `deferredState` with memory_order_release.
         // this means that this write is in the release sequence of all previous writes.
         // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
@@ -354,7 +350,7 @@ open class Deferred<Value>
 
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
-        let newState = Int(waiter, tag: state.tag)
+        let newState = TaggedOptionalMutableRawPointer(waiter, tag: state.tag)
         // read-modify-write `deferredState` with memory_order_release.
         // this means that this write is in the release sequence of all previous writes.
         // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
