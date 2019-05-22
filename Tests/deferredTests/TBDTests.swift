@@ -227,4 +227,38 @@ class TBDTests: XCTestCase
     let c = deferreds.compactMap({ $0.error }).count
     XCTAssert(c == 5)
   }
+
+  struct MF<Value>
+  {
+    weak var d: Deferred<Value>?
+    init(deferred: Deferred<Value>)
+    {
+      d = deferred
+    }
+  }
+
+  func testMF()
+  {
+    let d = TBD<Int>(task: { _ in }).map(transform: Double.init)
+    let r = Double(nzRandom())
+
+    let e = expectation(description: #function)
+    d.onValue {
+      d in
+      XCTAssertEqual(d, r)
+      e.fulfill()
+    }
+
+    weak var weak = d
+    let mf = MF(deferred: d)
+    XCTAssertEqual(MemoryLayout<MF<Void>>.size, MemoryLayout<Int>.size)
+    XCTAssertNotEqual(unsafeBitCast(mf, to: Int.self), unsafeBitCast(weak, to: Int.self))
+    XCTAssertEqual(MemoryLayout<MF<Void>>.size, MemoryLayout<Resolver<Void>>.size)
+    XCTAssertEqual(MemoryLayout<MF<Void>>.stride, MemoryLayout<Resolver<Void>>.stride)
+    XCTAssertEqual(MemoryLayout<MF<Void>>.alignment, MemoryLayout<Resolver<Void>>.alignment)
+    let rs = unsafeBitCast(mf, to: Resolver<Double>.self)
+    rs.resolve(value: r)
+
+    waitForExpectations(timeout: 0.1)
+  }
 }
