@@ -9,7 +9,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/glessard/swift-atomics.git", from: "5.0.0"),
-    .package(url: "https://github.com/glessard/outcome.git", from: "4.2.0"),
+    .package(url: "https://github.com/glessard/outcome.git", from: "4.3.0"),
     .package(url: "https://github.com/glessard/CurrentQoS.git", from: "1.1.0"),
   ],
   targets: [

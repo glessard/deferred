@@ -1,6 +1,6 @@
 //
 //  deferred-error.swift
-//  async-deferred
+//  deferred
 //
 //  Created by Guillaume Lessard on 19/11/2015.
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
