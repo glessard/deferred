@@ -25,12 +25,12 @@ private extension Int
 {
   static let waiting =   0x0
   static let executing = 0x1
-  static let resolving = 0x3
-  static let resolved =  0x7
+  static let resolved =  0x3
+  private static let stateMask = 0x3
 
-  var isResolved: Bool { return self == .resolved }
-  var state: Int { return self & .resolving }
-  var waiters: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~0x3) }
+  var isResolved: Bool { return (self & .stateMask) == .resolved }
+  var state: Int { return self & .stateMask }
+  var waiters: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
 }
 
 /// An asynchronous computation.
@@ -192,27 +192,32 @@ open class Deferred<Value>
   @discardableResult
   fileprivate func resolve(_ result: Result<Value, Error>) -> Bool
   {
-    let originalState = CAtomicsLoad(deferredState, .relaxed).state
-    guard originalState != .resolving else { return false }
+    let original = CAtomicsLoad(deferredState, .relaxed)
+    guard original.state != .resolved else { return false }
 
-    let updatedState = CAtomicsBitwiseOr(deferredState, .resolving, .acqrel).state
-    guard updatedState != .resolving else { return false }
-    // this thread has exclusive access
+    let resolved = UnsafeMutablePointer<Result<Value, Error>>.allocate(capacity: 1)
+    resolved.initialize(to: result)
 
-    resolved = result
+    let final = Int(bitPattern: resolved) | .resolved
+    var current = CAtomicsLoad(deferredState, .acquire)
+    repeat {
+      if current.state == .resolved
+      {
+        resolved.deinitialize(count: 1)
+        resolved.deallocate()
+        return false
+      }
+    } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .acquire)
 
     // This atomic swap operation uses memory order .acqrel.
     // "release" ordering ensures visibility of changes to `resolved` above to another thread.
     // "acquire" ordering ensures visibility of changes to `waitQueue` from another thread.
     // Any atomic load of `waiters` that precedes a possible use of `resolved`
     // *must* use memory order .acquire.
-    let state = CAtomicsExchange(deferredState, .resolved, .acqrel)
-    // precondition(state.isResolved == false)
-    let waitQueue = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
-    notifyWaiters(queue, waitQueue, result)
 
-    // precondition(deferredState.load(.relaxed) == .resolved,
-    //              "deferredState has incorrect value \(String(deferredState.load(.relaxed), radix: 16))")
+    precondition(current.isResolved == false)
+    let waitQueue = current.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
+    notifyWaiters(queue, waitQueue, result)
 
     // This `Deferred` has been resolved
     return true
@@ -266,7 +271,7 @@ open class Deferred<Value>
 
       repeat {
         waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
-        let newState = Int(bitPattern: waiter) | (state & .resolving)
+        let newState = Int(bitPattern: waiter) | state.state
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
@@ -315,7 +320,7 @@ open class Deferred<Value>
 
       repeat {
         waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
-        let newState = Int(bitPattern: waiter) | (state & .resolving)
+        let newState = Int(bitPattern: waiter) | state.state
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
