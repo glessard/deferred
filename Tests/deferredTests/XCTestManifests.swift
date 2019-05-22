@@ -119,7 +119,6 @@ extension DeletionTests {
 extension TBDTests {
     static let __allTests = [
         ("testCancel", testCancel),
-        ("testMF", testMF),
         ("testNeverResolved", testNeverResolved),
         ("testOnResolution1", testOnResolution1),
         ("testOnResolution2", testOnResolution2),

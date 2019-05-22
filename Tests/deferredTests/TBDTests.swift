@@ -227,38 +227,4 @@ class TBDTests: XCTestCase
     let c = deferreds.compactMap({ $0.error }).count
     XCTAssert(c == 5)
   }
-
-  struct MF<Value>
-  {
-    weak var d: Deferred<Value>?
-    let r: (Result<Value, Error>) -> Bool
-
-    init(deferred: Deferred<Value>)
-    {
-      d = deferred
-      r = { [weak deferred] result in deferred?.cancel() ?? false }
-    }
-  }
-
-  func testMF()
-  {
-    let d = TBD<Int>(task: { _ in }).map(transform: Double.init)
-    let r = Double(nzRandom())
-
-    let e = expectation(description: #function)
-    d.notify {
-      d in
-      XCTAssertEqual(d.value, r)
-      e.fulfill()
-    }
-
-    let mf = MF(deferred: d)
-    XCTAssertEqual(MemoryLayout<MF<Void>>.size, MemoryLayout<Resolver<Void>>.size)
-    XCTAssertEqual(MemoryLayout<MF<Void>>.stride, MemoryLayout<Resolver<Void>>.stride)
-    XCTAssertEqual(MemoryLayout<MF<Void>>.alignment, MemoryLayout<Resolver<Void>>.alignment)
-    let rs = unsafeBitCast(mf, to: Resolver<Double>.self)
-    rs.resolve(value: r)
-
-    waitForExpectations(timeout: 0.1)
-  }
 }
