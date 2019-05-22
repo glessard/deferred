@@ -10,6 +10,7 @@
 		03110CEE20D2069F00F4B44B /* deferred.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		033928191F8C099700F4B44B /* deferred-first.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033928181F8C099700F4B44B /* deferred-first.swift */; };
+		0350E0C22295D11A00F4B44B /* DeallocTBD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038C1A59229343C000F4B44B /* DeallocTBD.swift */; };
 		0358CBDD2153109600F4B44B /* Outcome.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0358CBDA2153107C00F4B44B /* Outcome.framework */; };
 		0358CBDE2153109F00F4B44B /* Outcome.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0358CBDA2153107C00F4B44B /* Outcome.framework */; };
 		0358CBDF2153109F00F4B44B /* Outcome.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0358CBDA2153107C00F4B44B /* Outcome.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -846,6 +847,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0350E0C22295D11A00F4B44B /* DeallocTBD.swift in Sources */,
 				03B776A320CAED1C00F4B44B /* nzRandom.swift in Sources */,
 				03B7769B20CAED1C00F4B44B /* DeferredTests.swift in Sources */,
 				03E4DF5D21FC01E800F4B44B /* URLSessionTests.swift in Sources */,

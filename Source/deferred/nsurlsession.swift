@@ -30,6 +30,12 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     super.init(qos: qos, task: { resolver = $0 })
     let task = task(resolver)
     urlSessionTask = task
+    if urlSessionTask == nil
+    { // URLSession.<some>Task returned a nil object through a non-optional.
+      // This bug was observed in iOS 9 on a 32-bit device.
+      resolver.resolve(error: URLSessionError.invalidState)
+      return
+    }
     resolver.retainSource(task)
   }
 

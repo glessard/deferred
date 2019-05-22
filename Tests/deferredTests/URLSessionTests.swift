@@ -849,6 +849,10 @@ class URLSessionResumeTests: XCTestCase
 #if os(Linux)
       XCTAssertNil((task1.error as? URLError)?.errorUserInfo[NSUnderlyingErrorKey])
 #endif
+    case URLSessionError.invalidState?:
+#if !os(iOS)
+      XCTFail()
+#endif
     case let error?: throw error
     case nil: XCTFail("succeeded incorrectly")
     }
@@ -864,6 +868,10 @@ class URLSessionResumeTests: XCTestCase
     {
     case URLError.unsupportedURL?:
       XCTAssertNotNil((task.error as? URLError)?.errorUserInfo[NSLocalizedDescriptionKey])
+    case URLSessionError.invalidState?:
+#if !os(iOS)
+      XCTFail()
+#endif
     case let error?: throw error
     case nil: XCTFail("succeeded incorrectly")
     }
