@@ -231,9 +231,12 @@ class TBDTests: XCTestCase
   struct MF<Value>
   {
     weak var d: Deferred<Value>?
+    let r: (Result<Value, Error>) -> Bool
+
     init(deferred: Deferred<Value>)
     {
       d = deferred
+      r = { [weak deferred] result in deferred?.cancel() ?? false }
     }
   }
 
@@ -243,16 +246,13 @@ class TBDTests: XCTestCase
     let r = Double(nzRandom())
 
     let e = expectation(description: #function)
-    d.onValue {
+    d.notify {
       d in
-      XCTAssertEqual(d, r)
+      XCTAssertEqual(d.value, r)
       e.fulfill()
     }
 
-    weak var weak = d
     let mf = MF(deferred: d)
-    XCTAssertEqual(MemoryLayout<MF<Void>>.size, MemoryLayout<Int>.size)
-    XCTAssertNotEqual(unsafeBitCast(mf, to: Int.self), unsafeBitCast(weak, to: Int.self))
     XCTAssertEqual(MemoryLayout<MF<Void>>.size, MemoryLayout<Resolver<Void>>.size)
     XCTAssertEqual(MemoryLayout<MF<Void>>.stride, MemoryLayout<Resolver<Void>>.stride)
     XCTAssertEqual(MemoryLayout<MF<Void>>.alignment, MemoryLayout<Resolver<Void>>.alignment)
