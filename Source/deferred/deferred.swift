@@ -488,10 +488,12 @@ open class Deferred<Value>
 public struct Resolver<Value>
 {
   private weak var deferred: Deferred<Value>?
+  private let resolve: (Result<Value, Error>) -> Bool
 
   fileprivate init(_ deferred: Deferred<Value>)
   {
     self.deferred = deferred
+    self.resolve = { [weak deferred] in deferred?.resolve($0) ?? false }
   }
 
   /// Resolve the underlying `Deferred` and execute all of its notifications.
@@ -506,7 +508,7 @@ public struct Resolver<Value>
   @discardableResult
   public func resolve(_ result: Result<Value, Error>) -> Bool
   {
-    return deferred?.resolve(result) ?? false
+    return resolve(result)
   }
 
   /// Resolve the underlying `Deferred` with a value, and execute all of its notifications.
