@@ -31,7 +31,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     let c = DispatchQoS.current
-    assert(c.qosClass == DispatchQoS.userInteractive.qosClass)
+    if #available(iOS 10, *)
+    {
+      assert(c.qosClass == DispatchQoS.userInteractive.qosClass)
+    }
+    else
+    {
+#if !targetEnvironment(simulator)
+      assert(c.qosClass == DispatchQoS.userInteractive.qosClass)
+#endif
+    }
 
     tbd.onValue { assert($0) }
 
