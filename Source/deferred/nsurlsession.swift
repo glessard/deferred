@@ -32,7 +32,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     urlSessionTask = task
     if urlSessionTask == nil
     { // URLSession.<some>Task returned a nil object through a non-optional.
-      // This bug was observed in iOS 9 on a 32-bit device.
+      // This bug has been observed in iOS 9 (32- and 64-bit simulators and 32-bit device)
       resolver.resolve(error: URLSessionError.invalidState)
       return
     }
