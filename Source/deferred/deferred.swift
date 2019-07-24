@@ -212,13 +212,13 @@ open class Deferred<Value>
         resolved.deallocate()
         return false
       }
+      // The atomic compare-and-swap operation uses memory order `.acqrel`.
+      // "release" ordering ensures visibility of changes to `resolved` above to another thread.
+      // "acquire" ordering ensures visibility of changes to `waitQueue` below from another thread.
+      // Any atomic load of `deferredState` that precedes a possible use of `result`
+      // *must* use memory order `.acquire` in order to see the `Result<Value, Error>`
+      // value that was passed to this function.
     } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .acquire)
-
-    // This atomic swap operation uses memory order .acqrel.
-    // "release" ordering ensures visibility of changes to `resolved` above to another thread.
-    // "acquire" ordering ensures visibility of changes to `waitQueue` from another thread.
-    // Any atomic load of `waiters` that precedes a possible use of `resolved`
-    // *must* use memory order .acquire.
 
     precondition(current.isResolved == false)
     let waitQueue = current.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
