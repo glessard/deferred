@@ -30,7 +30,7 @@ private extension Int
 
   var isResolved: Bool { return (self & .stateMask) == .resolved }
   var state: Int { return self & .stateMask }
-  var waiters: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
+
   var pointer: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
 }
 
@@ -66,6 +66,16 @@ open class Deferred<Value>
     return state.pointer?.assumingMemoryBound(to: Result<Value, Error>.self)
   }
 
+  /// Get a pointer to the first `Waiter` for an unresolved `Deferred`.
+  /// `state` must have been read with `.acquire` memory ordering in order
+  /// to safely see all the changes from the thread last enqueued a `Waiter`.
+
+  private func waiterQueue(from state: Int) -> UnsafeMutablePointer<Waiter<Value>>?
+  {
+    if state.isResolved { return nil }
+    return state.pointer?.assumingMemoryBound(to: Waiter<Value>.self)
+  }
+
   deinit
   {
     let state = CAtomicsLoad(deferredState, .acquire)
@@ -74,9 +84,9 @@ open class Deferred<Value>
       resolved.deinitialize(count: 1)
       resolved.deallocate()
     }
-    else if let w = state.waiters
+    else if let waiters = waiterQueue(from: state)
     {
-      deallocateWaiters(w.assumingMemoryBound(to: Waiter<Value>.self))
+      deallocateWaiters(waiters)
     }
     deferredState.deallocate()
   }
@@ -230,8 +240,8 @@ open class Deferred<Value>
     } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .acquire)
 
     precondition(current.isResolved == false)
-    let waitQueue = current.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
-    notifyWaiters(queue, waitQueue, result)
+    let waiters = waiterQueue(from: current)
+    notifyWaiters(queue, waiters, result)
 
     // This `Deferred` has been resolved
     return true
@@ -284,7 +294,7 @@ open class Deferred<Value>
       waiter.initialize(to: Waiter(source: source))
 
       repeat {
-        waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
+        waiter.pointee.next = waiterQueue(from: state)
         let newState = Int(bitPattern: waiter) | state.state
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
@@ -333,7 +343,7 @@ open class Deferred<Value>
       }
 
       repeat {
-        waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
+        waiter.pointee.next = waiterQueue(from: state)
         let newState = Int(bitPattern: waiter) | state.state
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
