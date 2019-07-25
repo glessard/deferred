@@ -232,11 +232,8 @@ open class Deferred<Value>
         return false
       }
       // The atomic compare-and-swap operation uses memory order `.acqrel`.
-      // "release" ordering ensures visibility of changes to `resolved` above to another thread.
-      // "acquire" ordering ensures visibility of changes to `waitQueue` below from another thread.
-      // Any atomic load of `deferredState` that precedes a possible use of `result`
-      // *must* use memory order `.acquire` in order to see the `Result<Value, Error>`
-      // value that was passed to this function.
+      // "release" ordering ensures visibility of changes to `resolvedPointer(from:)` above to another thread.
+      // "acquire" ordering ensures visibility of changes to `waiterQueue(from:)` below from another thread.
     } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .acquire)
 
     precondition(current.isResolved == false)
