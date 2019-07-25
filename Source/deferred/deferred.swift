@@ -31,7 +31,7 @@ private extension Int
   var isResolved: Bool { return (self & .stateMask) == .resolved }
   var state: Int { return self & .stateMask }
   var waiters: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
-  var result: UnsafeMutableRawPointer { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask)! }
+  var pointer: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
 }
 
 /// An asynchronous computation.
@@ -56,16 +56,25 @@ open class Deferred<Value>
 
   private var deferredState = UnsafeMutablePointer<AtomicInt>.allocate(capacity: 1)
 
+  /// Get a pointer to a `Result` for a resolved `Deferred`.
+  /// `state` must have been read with `.acquire` memory ordering in order
+  /// to safely see all the changes from the thread that resolved this `Deferred`.
+
+  private func resolvedPointer(from state: Int) -> UnsafeMutablePointer<Result<Value, Error>>?
+  {
+    guard state.isResolved else { return nil }
+    return state.pointer?.assumingMemoryBound(to: Result<Value, Error>.self)
+  }
+
   deinit
   {
-    let s = CAtomicsLoad(deferredState, .acquire)
-    if s.isResolved
+    let state = CAtomicsLoad(deferredState, .acquire)
+    if let resolved = resolvedPointer(from: state)
     {
-      let r = s.result.assumingMemoryBound(to: Result<Value, Error>.self)
-      r.deinitialize(count: 1)
-      r.deallocate()
+      resolved.deinitialize(count: 1)
+      resolved.deallocate()
     }
-    else if let w = s.waiters
+    else if let w = state.waiters
     {
       deallocateWaiters(w.assumingMemoryBound(to: Waiter<Value>.self))
     }
@@ -340,7 +349,7 @@ open class Deferred<Value>
 
     // this Deferred is resolved
     let q = queue ?? self.queue
-    let resolved = state.result.assumingMemoryBound(to: Result<Value, Error>.self)
+    let resolved = resolvedPointer(from: state)!
     q.async(execute: { [result = resolved.pointee] in handler(result) })
   }
 
@@ -349,9 +358,8 @@ open class Deferred<Value>
 
   public var state: DeferredState {
     let state = CAtomicsLoad(deferredState, .acquire)
-    if state.isResolved
+    if let resolved = resolvedPointer(from: state)
     {
-      let resolved = state.result.assumingMemoryBound(to: Result<Value, Error>.self)
       return (resolved.pointee.isValue ? .succeeded : .errored)
     }
     return (state.state == .waiting ? .waiting : .executing )
@@ -415,7 +423,7 @@ open class Deferred<Value>
     }
 
     // this Deferred is resolved
-    let resolved = state.result.assumingMemoryBound(to: Result<Value, Error>.self)
+    let resolved = resolvedPointer(from: state)!
     return resolved.pointee
   }
 
@@ -443,12 +451,8 @@ open class Deferred<Value>
   public func peek() -> Result<Value, Error>?
   {
     let state = CAtomicsLoad(deferredState, .acquire)
-    if state.isResolved
-    {
-      let resolved = state.result.assumingMemoryBound(to: Result<Value, Error>.self)
-      return resolved.pointee
-    }
-    return nil
+    guard let resolved = resolvedPointer(from: state) else { return nil }
+    return resolved.pointee
   }
 
   /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
