@@ -68,7 +68,7 @@ open class Deferred<Value>
 
   /// Get a pointer to the first `Waiter` for an unresolved `Deferred`.
   /// `state` must have been read with `.acquire` memory ordering in order
-  /// to safely see all the changes from the thread last enqueued a `Waiter`.
+  /// to safely see all the changes from the thread that last enqueued a `Waiter`.
 
   private func waiterQueue(from state: Int) -> UnsafeMutablePointer<Waiter<Value>>?
   {
@@ -200,7 +200,11 @@ open class Deferred<Value>
       { // execution state has already been marked as begun
         return
       }
-    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .acqrel, .acquire)
+      // write to `deferredState` with memory_order_release.
+      // this means that this write is in the release sequence of all previous writes.
+      // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
+      // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
+    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .release, .relaxed)
   }
 
   /// Set the `Result` of this `Deferred` and dispatch all notifications for execution.
@@ -223,7 +227,7 @@ open class Deferred<Value>
     resolved.initialize(to: result)
 
     let final = Int(bitPattern: resolved) | .resolved
-    var current = CAtomicsLoad(deferredState, .acquire)
+    var current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
       if current.state == .resolved
       {
@@ -234,7 +238,7 @@ open class Deferred<Value>
       // The atomic compare-and-swap operation uses memory order `.acqrel`.
       // "release" ordering ensures visibility of changes to `resolvedPointer(from:)` above to another thread.
       // "acquire" ordering ensures visibility of changes to `waiterQueue(from:)` below from another thread.
-    } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .acquire)
+    } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .relaxed)
 
     precondition(current.isResolved == false)
     let waiters = waiterQueue(from: current)
@@ -284,7 +288,7 @@ open class Deferred<Value>
 
   fileprivate func retainSource(_ source: AnyObject)
   {
-    var state = CAtomicsLoad(deferredState, .acquire)
+    var state = CAtomicsLoad(deferredState, .relaxed)
     if !state.isResolved
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
@@ -293,6 +297,10 @@ open class Deferred<Value>
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
         let newState = Int(bitPattern: waiter) | state.state
+        // write to `deferredState` with memory_order_release.
+        // this means that this write is in the release sequence of all previous writes.
+        // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
+        // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
@@ -342,6 +350,10 @@ open class Deferred<Value>
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
         let newState = Int(bitPattern: waiter) | state.state
+        // write to `deferredState` with memory_order_release.
+        // this means that this write is in the release sequence of all previous writes.
+        // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
+        // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
