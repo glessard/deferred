@@ -30,8 +30,8 @@ private extension Int
 
   var isResolved: Bool { return (self & .stateMask) == .resolved }
   var state: Int { return self & .stateMask }
-  var waiters: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
-  var result: UnsafeMutableRawPointer { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask)! }
+
+  var pointer: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
 }
 
 /// An asynchronous computation.
@@ -56,18 +56,37 @@ open class Deferred<Value>
 
   private var deferredState = UnsafeMutablePointer<AtomicInt>.allocate(capacity: 1)
 
+  /// Get a pointer to a `Result` for a resolved `Deferred`.
+  /// `state` must have been read with `.acquire` memory ordering in order
+  /// to safely see all the changes from the thread that resolved this `Deferred`.
+
+  private func resolvedPointer(from state: Int) -> UnsafeMutablePointer<Result<Value, Error>>?
+  {
+    guard state.isResolved else { return nil }
+    return state.pointer?.assumingMemoryBound(to: Result<Value, Error>.self)
+  }
+
+  /// Get a pointer to the first `Waiter` for an unresolved `Deferred`.
+  /// `state` must have been read with `.acquire` memory ordering in order
+  /// to safely see all the changes from the thread that last enqueued a `Waiter`.
+
+  private func waiterQueue(from state: Int) -> UnsafeMutablePointer<Waiter<Value>>?
+  {
+    if state.isResolved { return nil }
+    return state.pointer?.assumingMemoryBound(to: Waiter<Value>.self)
+  }
+
   deinit
   {
-    let s = CAtomicsLoad(deferredState, .acquire)
-    if s.isResolved
+    let state = CAtomicsLoad(deferredState, .acquire)
+    if let resolved = resolvedPointer(from: state)
     {
-      let r = s.result.assumingMemoryBound(to: Result<Value, Error>.self)
-      r.deinitialize(count: 1)
-      r.deallocate()
+      resolved.deinitialize(count: 1)
+      resolved.deallocate()
     }
-    else if let w = s.waiters
+    else if let waiters = waiterQueue(from: state)
     {
-      deallocateWaiters(w.assumingMemoryBound(to: Waiter<Value>.self))
+      deallocateWaiters(waiters)
     }
     deferredState.deallocate()
   }
@@ -181,7 +200,11 @@ open class Deferred<Value>
       { // execution state has already been marked as begun
         return
       }
-    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .acqrel, .acquire)
+      // write to `deferredState` with memory_order_release.
+      // this means that this write is in the release sequence of all previous writes.
+      // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
+      // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
+    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .release, .relaxed)
   }
 
   /// Set the `Result` of this `Deferred` and dispatch all notifications for execution.
@@ -204,7 +227,7 @@ open class Deferred<Value>
     resolved.initialize(to: result)
 
     let final = Int(bitPattern: resolved) | .resolved
-    var current = CAtomicsLoad(deferredState, .acquire)
+    var current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
       if current.state == .resolved
       {
@@ -212,17 +235,14 @@ open class Deferred<Value>
         resolved.deallocate()
         return false
       }
-    } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .acquire)
-
-    // This atomic swap operation uses memory order .acqrel.
-    // "release" ordering ensures visibility of changes to `resolved` above to another thread.
-    // "acquire" ordering ensures visibility of changes to `waitQueue` from another thread.
-    // Any atomic load of `waiters` that precedes a possible use of `resolved`
-    // *must* use memory order .acquire.
+      // The atomic compare-and-swap operation uses memory order `.acqrel`.
+      // "release" ordering ensures visibility of changes to `resolvedPointer(from:)` above to another thread.
+      // "acquire" ordering ensures visibility of changes to `waiterQueue(from:)` below from another thread.
+    } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .relaxed)
 
     precondition(current.isResolved == false)
-    let waitQueue = current.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
-    notifyWaiters(queue, waitQueue, result)
+    let waiters = waiterQueue(from: current)
+    notifyWaiters(queue, waiters, result)
 
     // This `Deferred` has been resolved
     return true
@@ -268,15 +288,19 @@ open class Deferred<Value>
 
   fileprivate func retainSource(_ source: AnyObject)
   {
-    var state = CAtomicsLoad(deferredState, .acquire)
+    var state = CAtomicsLoad(deferredState, .relaxed)
     if !state.isResolved
     {
       let waiter = UnsafeMutablePointer<Waiter<Value>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(source: source))
 
       repeat {
-        waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
+        waiter.pointee.next = waiterQueue(from: state)
         let newState = Int(bitPattern: waiter) | state.state
+        // write to `deferredState` with memory_order_release.
+        // this means that this write is in the release sequence of all previous writes.
+        // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
+        // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
@@ -324,8 +348,12 @@ open class Deferred<Value>
       }
 
       repeat {
-        waiter.pointee.next = state.waiters?.assumingMemoryBound(to: Waiter<Value>.self)
+        waiter.pointee.next = waiterQueue(from: state)
         let newState = Int(bitPattern: waiter) | state.state
+        // write to `deferredState` with memory_order_release.
+        // this means that this write is in the release sequence of all previous writes.
+        // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
+        // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
           return
@@ -340,7 +368,7 @@ open class Deferred<Value>
 
     // this Deferred is resolved
     let q = queue ?? self.queue
-    let resolved = state.result.assumingMemoryBound(to: Result<Value, Error>.self)
+    let resolved = resolvedPointer(from: state)!
     q.async(execute: { [result = resolved.pointee] in handler(result) })
   }
 
@@ -349,9 +377,8 @@ open class Deferred<Value>
 
   public var state: DeferredState {
     let state = CAtomicsLoad(deferredState, .acquire)
-    if state.isResolved
+    if let resolved = resolvedPointer(from: state)
     {
-      let resolved = state.result.assumingMemoryBound(to: Result<Value, Error>.self)
       return (resolved.pointee.isValue ? .succeeded : .errored)
     }
     return (state.state == .waiting ? .waiting : .executing )
@@ -415,7 +442,7 @@ open class Deferred<Value>
     }
 
     // this Deferred is resolved
-    let resolved = state.result.assumingMemoryBound(to: Result<Value, Error>.self)
+    let resolved = resolvedPointer(from: state)!
     return resolved.pointee
   }
 
@@ -443,12 +470,8 @@ open class Deferred<Value>
   public func peek() -> Result<Value, Error>?
   {
     let state = CAtomicsLoad(deferredState, .acquire)
-    if state.isResolved
-    {
-      let resolved = state.result.assumingMemoryBound(to: Result<Value, Error>.self)
-      return resolved.pointee
-    }
-    return nil
+    guard let resolved = resolvedPointer(from: state) else { return nil }
+    return resolved.pointee
   }
 
   /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
