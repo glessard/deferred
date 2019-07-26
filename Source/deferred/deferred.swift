@@ -200,7 +200,7 @@ open class Deferred<Value>
       { // execution state has already been marked as begun
         return
       }
-      // write to `deferredState` with memory_order_release.
+      // read-modify-write `deferredState` with memory_order_release.
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
@@ -297,7 +297,7 @@ open class Deferred<Value>
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
         let newState = Int(bitPattern: waiter) | state.state
-        // write to `deferredState` with memory_order_release.
+        // read-modify-write `deferredState` with memory_order_release.
         // this means that this write is in the release sequence of all previous writes.
         // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
         // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
@@ -350,7 +350,7 @@ open class Deferred<Value>
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
         let newState = Int(bitPattern: waiter) | state.state
-        // write to `deferredState` with memory_order_release.
+        // read-modify-write `deferredState` with memory_order_release.
         // this means that this write is in the release sequence of all previous writes.
         // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
         // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
