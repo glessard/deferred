@@ -1,5 +1,12 @@
 import XCTest
 
+extension AlignmentTests {
+    static let __allTests = [
+        ("testAlignmentOfPointerToSmallResult", testAlignmentOfPointerToSmallResult),
+        ("testAlignmentOfRawPointer", testAlignmentOfRawPointer),
+    ]
+}
+
 extension DeferredCombinationTests {
     static let __allTests = [
         ("testCombine2", testCombine2),
@@ -180,6 +187,7 @@ extension URLSessionTests {
 #if !os(macOS)
 public func __allTests() -> [XCTestCaseEntry] {
     return [
+        testCase(AlignmentTests.__allTests),
         testCase(DeferredCombinationTests.__allTests),
         testCase(DeferredCombinationTimedTests.__allTests),
         testCase(DeferredSelectionTests.__allTests),
