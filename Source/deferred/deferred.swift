@@ -28,10 +28,15 @@ private extension Int
   static let resolved =  0x3
   private static let stateMask = 0x3
 
-  var isResolved: Bool { return (self & .stateMask) == .resolved }
-  var state: Int { return self & .stateMask }
+  init(_ pointer: UnsafeMutableRawPointer, tag: Int)
+  {
+    self = Int(bitPattern: pointer) | (tag & .stateMask)
+  }
 
-  var pointer: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
+  var isResolved: Bool { return tag == .resolved }
+
+  var tag: Int { return self & .stateMask }
+  var ptr: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
 }
 
 /// An asynchronous computation.
@@ -63,7 +68,7 @@ open class Deferred<Value>
   private func resolvedPointer(from state: Int) -> UnsafeMutablePointer<Result<Value, Error>>?
   {
     guard state.isResolved else { return nil }
-    return state.pointer?.assumingMemoryBound(to: Result<Value, Error>.self)
+    return state.ptr?.assumingMemoryBound(to: Result<Value, Error>.self)
   }
 
   /// Get a pointer to the first `Waiter` for an unresolved `Deferred`.
@@ -73,7 +78,7 @@ open class Deferred<Value>
   private func waiterQueue(from state: Int) -> UnsafeMutablePointer<Waiter<Value>>?
   {
     if state.isResolved { return nil }
-    return state.pointer?.assumingMemoryBound(to: Waiter<Value>.self)
+    return state.ptr?.assumingMemoryBound(to: Waiter<Value>.self)
   }
 
   deinit
@@ -109,7 +114,7 @@ open class Deferred<Value>
     self.queue = queue
     let resolved = UnsafeMutablePointer<Result<Value, Error>>.allocate(capacity: 1)
     resolved.initialize(to: result)
-    CAtomicsInitialize(deferredState, Int(bitPattern: resolved) | .resolved)
+    CAtomicsInitialize(deferredState, Int(resolved, tag: .resolved))
   }
 
   /// Initialize with a task to be computed on the specified queue
@@ -196,7 +201,7 @@ open class Deferred<Value>
   {
     var current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
-      if current.state != .waiting
+      if current.tag != .waiting
       { // execution state has already been marked as begun
         return
       }
@@ -221,15 +226,15 @@ open class Deferred<Value>
   fileprivate func resolve(_ result: Result<Value, Error>) -> Bool
   {
     let original = CAtomicsLoad(deferredState, .relaxed)
-    guard original.state != .resolved else { return false }
+    guard original.tag != .resolved else { return false }
 
     let resolved = UnsafeMutablePointer<Result<Value, Error>>.allocate(capacity: 1)
     resolved.initialize(to: result)
 
-    let final = Int(bitPattern: resolved) | .resolved
+    let final = Int(resolved, tag: .resolved)
     var current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
-      if current.state == .resolved
+      if current.tag == .resolved
       {
         resolved.deinitialize(count: 1)
         resolved.deallocate()
@@ -296,7 +301,7 @@ open class Deferred<Value>
 
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
-        let newState = Int(bitPattern: waiter) | state.state
+        let newState = Int(waiter, tag: state.tag)
         // read-modify-write `deferredState` with memory_order_release.
         // this means that this write is in the release sequence of all previous writes.
         // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
@@ -349,7 +354,7 @@ open class Deferred<Value>
 
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
-        let newState = Int(bitPattern: waiter) | state.state
+        let newState = Int(waiter, tag: state.tag)
         // read-modify-write `deferredState` with memory_order_release.
         // this means that this write is in the release sequence of all previous writes.
         // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
@@ -381,7 +386,7 @@ open class Deferred<Value>
     {
       return (resolved.pointee.isValue ? .succeeded : .errored)
     }
-    return (state.state == .waiting ? .waiting : .executing )
+    return (state.tag == .waiting ? .waiting : .executing )
   }
 
   /// Query whether this `Deferred` has become resolved.
