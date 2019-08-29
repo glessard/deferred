@@ -163,7 +163,7 @@ extension URLSessionTests
     let string = handle.map {
       file throws -> String in
       defer { file.closeFile() }
-      guard let string = String(data: file.readDataToEndOfFile(), encoding: .utf8) else { throw TestError() }
+      guard let string = String(data: file.availableData, encoding: .utf8) else { throw TestError() }
       return string
     }
 
@@ -376,7 +376,7 @@ extension URLSessionTests
     XCTAssert(path.isFileURL)
     let file = try FileHandle(forReadingFrom: path)
     defer { file.closeFile() }
-    let data = file.readDataToEndOfFile()
+    let data = file.availableData
     XCTAssert(data.count > 0)
     XCTAssert(response.statusCode == 404)
 
@@ -759,7 +759,7 @@ class URLSessionResumeTests: XCTestCase
         result in
         do {
           let url = try result.get().0
-          let data = try FileHandle(forReadingFrom: url).readDataToEndOfFile()
+          let data = try FileHandle(forReadingFrom: url).availableData
           resolver.resolve(value: data)
         }
         catch URLSessionError.interruptedDownload(let error, let data) {
@@ -786,7 +786,7 @@ class URLSessionResumeTests: XCTestCase
 
     XCTAssertEqual(response.value?.statusCode, 206)
 
-    let fileData = url.map(transform: { try FileHandle(forReadingFrom: $0).readDataToEndOfFile() })
+    let fileData = url.map(transform: { try FileHandle(forReadingFrom: $0).availableData })
     XCTAssertEqual(try fileData.get(), URLSessionResumeTests.largeData)
 #endif
 
