@@ -1,5 +1,5 @@
 # Deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=master)](https://travis-ci.org/glessard/deferred)
-A lock-free, asynchronous `Result`.
+A lock-free, asynchronous `Result` for Swift 4.2 and up.
 
 `Deferred<T>` allows you to chain closures together. A `Deferred` starts with an indeterminate, *unresolved* value. At some later time it may become *resolved*. Its value is then immutable for as long as that particular `Deferred` instance exists.
 Until a `Deferred` becomes resolved, computations that depend on it can be saved for future execution using a lock-free, thread-safe algorithm. The results of these computations are also represented by `Deferred` instances. Errors thrown at any point in a `Deferred` context are propagated effortlessly.
