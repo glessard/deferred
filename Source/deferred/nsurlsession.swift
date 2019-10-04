@@ -9,6 +9,10 @@
 import Dispatch
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 public enum URLSessionError: Error, Equatable
 {
   case interruptedDownload(URLError, Data)

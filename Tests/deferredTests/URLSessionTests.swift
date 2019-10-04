@@ -10,6 +10,10 @@ import XCTest
 import Dispatch
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 import deferred
 
 let baseURL = URL(string: "http://www.somewhere.com/")!
