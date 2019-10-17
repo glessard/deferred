@@ -1,7 +1,7 @@
 # Deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=master)](https://travis-ci.org/glessard/deferred)
 A lock-free, asynchronous `Result` for Swift 4.2 and up.
 
-`Deferred<T>` allows you to chain closures together. A `Deferred` starts with an indeterminate, *unresolved* value. At some later time it may become *resolved*. Its value is then immutable for as long as that particular `Deferred` instance exists.
+`Deferred<T>` allows you to chain computations together. A `Deferred` starts with an indeterminate, *unresolved* value. At some later time it may become *resolved*. Its value is then immutable for as long as that particular `Deferred` instance exists.
 Until a `Deferred` becomes resolved, computations that depend on it can be saved for future execution using a lock-free, thread-safe algorithm. The results of these computations are also represented by `Deferred` instances. Errors thrown at any point in a `Deferred` context are propagated effortlessly.
 
 `Deferred` started out as an approximation of OCaml's module [Deferred](https://ocaml.janestreet.com/ocaml-core/111.25.00/doc/async_kernel/#Deferred).
@@ -29,7 +29,7 @@ The `result` property of `Deferred` (and its adjuncts, `value` , `error` and `ge
 
 ### Long computations, cancellations and timeouts
 
-Long background computations that support cancellation and timeout can be implemented easily by using the `TBD<T>` subclass of `Deferred<T>`. Its constructor takes a closure whose parameter is a `Resolver`. `Resolver` allows your code be a data source of `Deferred` it's associated with, as well as monitor the state of its `Deferred`.
+Long background computations that support cancellation and timeout can be implemented easily by using the `TBD<T>` subclass of `Deferred<T>`. Its constructor takes a closure whose parameter is a `Resolver`. `Resolver` is associated with a specific instance of `Deferred`; it allows your code to be the data source of that `Deferred` instance, as well as to monitor its state.
 
     func bigComputation() -> Deferred<Double>
     {
@@ -61,9 +61,9 @@ Long background computations that support cancellation and timeout can be implem
       XCTAssertEqual(message, String(timeout))
     }
 
-In the above example, our code works hard to compute the ratio of a circle's circumference to its radius, then performs a rough validation of the output by comparing it with a known approximation. Finally, the  Note that the `Deferred` object performing the computation is not retained directly by this user code. Yet, when the timeout is triggered the computation is correctly abandoned and the object is deallocated. General cancellation can be performed in a similar manner.
+In the above example, our computation closure works hard to compute the ratio of a circle's circumference to its diameter, then performs a rough validation of the output by comparing it with a known approximation. Note that the `Deferred` object performing the primary computation is not retained directly by this user code. When the timeout is triggered, the computation is correctly abandoned and the object is deallocated. General cancellation can be performed in a similar manner.
 
-`Deferred` is carefully written to support cancellation by leveraging reference counting. In every case, when a new `Deferred` is returned by a function from the package, that returned reference is the only strong reference in existence. This allows cancellation to work properly for entire chains of transformation, even if it is applied to the final link of the chain.
+`Deferred` is carefully written to support cancellation by leveraging reference counting. In every case, when a new `Deferred` is returned by a function from the package, that returned reference is the only strong reference in existence. This allows cancellation to work properly for entire chains of computations, even if it is applied to the final link of the chain.
 
 ### Using `Deferred` in a project
 
