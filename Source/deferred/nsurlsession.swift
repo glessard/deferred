@@ -210,8 +210,8 @@ extension URLSession
         return
       }
 
-#if os(Linux) && true
-      print(location ?? "no url")
+#if os(Linux) && false
+      print(location ?? "no file location given")
       print(response.map(String.init(describing:)) ?? "no response")
 #endif
 
