@@ -47,12 +47,10 @@ public class TestURLServer: URLProtocol
   private func dispatchNextCommand<Commands>(queue: DispatchQueue, chunks: Commands)
     where Commands: Collection, Commands.Element == Command
   {
-#if (os(macOS) || os(iOS) || os(tvOS) || os(watchOS))
     if #available(iOS 10, macOS 10.12, tvOS 10, watchOS 3, *)
     {
       dispatchPrecondition(condition: .onQueue(queue))
     }
-#endif
 
     switch chunks.first ?? .finishLoading
     {
