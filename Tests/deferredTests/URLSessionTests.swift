@@ -359,8 +359,9 @@ extension URLSessionTests
     let deferred = session.deferredDataTask(with: request)
 
     let (data, response) = try deferred.get()
-    XCTAssert(data.count > 0)
-    XCTAssert(response.statusCode == 404)
+    let string = String(data: data, encoding: .utf8)
+    XCTAssertEqual(string, "Not Found")
+    XCTAssertEqual(response.statusCode, 404)
 
     session.finishTasksAndInvalidate()
   }
@@ -380,9 +381,9 @@ extension URLSessionTests
     XCTAssert(path.isFileURL)
     let file = try FileHandle(forReadingFrom: path)
     defer { file.closeFile() }
-    let data = file.availableData
-    XCTAssert(data.count > 0)
-    XCTAssert(response.statusCode == 404)
+    let string = String(data: file.availableData, encoding: .utf8)
+    XCTAssertEqual(string, "Not Found")
+    XCTAssertEqual(response.statusCode, 404)
 
     session.finishTasksAndInvalidate()
 #endif
