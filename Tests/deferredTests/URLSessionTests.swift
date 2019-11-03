@@ -572,20 +572,22 @@ extension URLSessionTests
     let payload = "data=" + String(repeatElement("A", count: 189)) + "🦉"
     let message = Data(payload.utf8)
 
-#if os(Linux)
-    let tempDir = URL(string: "file:///tmp/")!
+#if compiler(>=5.1) || !os(Linux)
+    let userDir = try FileManager.default.url(for: .desktopDirectory,
+                                              in: .userDomainMask,
+                                              appropriateFor: nil,
+                                              create: false)
+    let tempDir = try FileManager.default.url(for: .itemReplacementDirectory,
+                                              in: .userDomainMask,
+                                              appropriateFor: userDir,
+                                              create: true)
 #else
-    let userDir = try FileManager.default.url(for: .desktopDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-    let tempDir = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: userDir, create: true)
+    let tempDir = URL(string: "file:///tmp/")!
 #endif
     let fileURL = tempDir.appendingPathComponent("temporary.tmp")
-    if !FileManager.default.fileExists(atPath: fileURL.path)
-    {
-      _ = FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
-    }
+    FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
 
     let handle = try FileHandle(forWritingTo: fileURL)
-
     handle.write(message)
     handle.truncateFile(atOffset: handle.offsetInFile)
     handle.closeFile()
@@ -674,17 +676,21 @@ extension URLSessionTests
     let request = URLRequest(url: invalidURL)
     let session = URLSession(configuration: .default)
     let message = Data("data".utf8)
-#if os(Linux)
-    let tempDir = URL(string: "file:///tmp/")!
+#if compiler(>=5.1) || !os(Linux)
+    let userDir = try FileManager.default.url(for: .desktopDirectory,
+                                              in: .userDomainMask,
+                                              appropriateFor: nil,
+                                              create: false)
+    let tempDir = try FileManager.default.url(for: .itemReplacementDirectory,
+                                              in: .userDomainMask,
+                                              appropriateFor: userDir,
+                                              create: true)
 #else
-    let userDir = try FileManager.default.url(for: .desktopDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-    let tempDir = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: userDir, create: true)
+    let tempDir = URL(string: "file:///tmp/")!
 #endif
     let fileURL = tempDir.appendingPathComponent("temporary.tmp")
-    if !FileManager.default.fileExists(atPath: fileURL.path)
-    {
-      _ = FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
-    }
+    FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
+
     let handle = try FileHandle(forWritingTo: fileURL)
     handle.write(message)
     handle.truncateFile(atOffset: handle.offsetInFile)
