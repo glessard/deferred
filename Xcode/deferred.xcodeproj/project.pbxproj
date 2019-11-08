@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		03110CEE20D2069F00F4B44B /* deferred.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		032B4938237B43480086343E /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03DBB0BE2379CE010086343E /* CAtomics.framework */; };
 		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		033928191F8C099700F4B44B /* deferred-first.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033928181F8C099700F4B44B /* deferred-first.swift */; };
 		0350E0C22295D11A00F4B44B /* DeallocTBD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038C1A59229343C000F4B44B /* DeallocTBD.swift */; };
@@ -28,10 +29,6 @@
 		0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
 		03857DB81F55C3DE00F4B44B /* deferred-timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03857DB71F55C3DE00F4B44B /* deferred-timing.swift */; };
 		038C1A5A229343C000F4B44B /* DeallocTBD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038C1A59229343C000F4B44B /* DeallocTBD.swift */; };
-		038CB65620DC637600F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
-		038CB65920DC639400F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
-		038CB65A20DC63A500F4B44B /* CAtomics.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		038CB65D20DC63CB00F4B44B /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 038CB64F20DC636D00F4B44B /* CAtomics.framework */; };
 		0393E8CD2285E7FE00F4B44B /* DeferredSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CB9823227BBECD00F4B44B /* DeferredSelectionTests.swift */; };
 		039E18411DFF621300F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */; };
@@ -95,69 +92,6 @@
 			remoteGlobalIDString = 03CD0E10217A463700F4B44B;
 			remoteInfo = Outcome;
 		};
-		038CB64720DC636D00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 031CA35C20DBDCAD00F4B44B;
-			remoteInfo = CAtomics;
-		};
-		038CB64E20DC636D00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 031CA35D20DBDCAD00F4B44B;
-			remoteInfo = CAtomics;
-		};
-		038CB65020DC636D00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 031CA36520DBDCAE00F4B44B;
-			remoteInfo = CAtomicsTests;
-		};
-		038CB65220DC636D00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 0382B62620DC4A2B00F4B44B;
-			remoteInfo = AtomicsTestApp;
-		};
-		038CB65420DC636D00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 0382B63920DC4A2D00F4B44B;
-			remoteInfo = AtomicsTestAppTests;
-		};
-		038CB65720DC638E00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 031CA35C20DBDCAD00F4B44B;
-			remoteInfo = CAtomics;
-		};
-		038CB65B20DC63C500F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 031CA35C20DBDCAD00F4B44B;
-			remoteInfo = CAtomics;
-		};
-		0393E8D32285E7FE00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 031CA33E20DBDC0400F4B44B;
-			remoteInfo = SwiftAtomics;
-		};
-		0393E8D52285E7FE00F4B44B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 031CA34720DBDC0400F4B44B;
-			remoteInfo = SwiftAtomicsTests;
-		};
 		03B4E0781C14003C00F4B44B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 03E60E231AAA571100F4B44B /* Project object */;
@@ -200,6 +134,48 @@
 			remoteGlobalIDString = 03840EA721769D5400F4B44B;
 			remoteInfo = CurrentQoS;
 		};
+		03DBB0B92379CE010086343E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03DBB0B02379CE010086343E /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 031CA33E20DBDC0400F4B44B;
+			remoteInfo = SwiftAtomics;
+		};
+		03DBB0BB2379CE010086343E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03DBB0B02379CE010086343E /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 031CA34720DBDC0400F4B44B;
+			remoteInfo = SwiftAtomicsTests;
+		};
+		03DBB0BD2379CE010086343E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03DBB0B02379CE010086343E /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 031CA35D20DBDCAD00F4B44B;
+			remoteInfo = CAtomics;
+		};
+		03DBB0BF2379CE010086343E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03DBB0B02379CE010086343E /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 031CA36520DBDCAE00F4B44B;
+			remoteInfo = CAtomicsTests;
+		};
+		03DBB0C12379CE010086343E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03DBB0B02379CE010086343E /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0382B62620DC4A2B00F4B44B;
+			remoteInfo = AtomicsTestApp;
+		};
+		03DBB0C32379CE010086343E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 03DBB0B02379CE010086343E /* Atomics.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0382B63920DC4A2D00F4B44B;
+			remoteInfo = AtomicsTestAppTests;
+		};
 		03DEFA5C21764B1E00F4B44B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0358CBD42153107C00F4B44B /* Outcome.xcodeproj */;
@@ -238,7 +214,6 @@
 			dstSubfolderSpec = 10;
 			files = (
 				03FC96F821779E2800F4B44B /* CurrentQoS.framework in Embed Frameworks */,
-				038CB65A20DC63A500F4B44B /* CAtomics.framework in Embed Frameworks */,
 				03110CEE20D2069F00F4B44B /* deferred.framework in Embed Frameworks */,
 				0358CBDF2153109F00F4B44B /* Outcome.framework in Embed Frameworks */,
 			);
@@ -248,7 +223,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Atomics.xcodeproj; path = Atomics/Xcode/Atomics.xcodeproj; sourceTree = "<group>"; };
 		033928181F8C099700F4B44B /* deferred-first.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "deferred-first.swift"; path = "deferred/deferred-first.swift"; sourceTree = "<group>"; };
 		034857621C11BD5E00F4B44B /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../Package.swift; sourceTree = "<group>"; };
 		0350E0E22295FF6900F4B44B /* AlignmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AlignmentTests.swift; path = deferredTests/AlignmentTests.swift; sourceTree = "<group>"; };
@@ -295,6 +269,7 @@
 		03D59CB31F7B6CB900F4B44B /* outcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = outcome.swift; path = deferred/outcome.swift; sourceTree = "<group>"; };
 		03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "dispatch-utilities.swift"; path = "deferred/dispatch-utilities.swift"; sourceTree = "<group>"; };
 		03D951DA2267B20400F4B44B /* outcome.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = outcome.swift; path = deferredTests/outcome.swift; sourceTree = "<group>"; };
+		03DBB0B02379CE010086343E /* Atomics.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Atomics.xcodeproj; path = "Atomics/Xcode-Old/Atomics.xcodeproj"; sourceTree = "<group>"; };
 		03DBD0232205039600F4B44B /* deferred-split.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "deferred-split.swift"; path = "deferred/deferred-split.swift"; sourceTree = "<group>"; };
 		03FD35AD1F328D4E00F4B44B /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text; name = .travis.yml; path = ../.travis.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -304,9 +279,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				032B4938237B43480086343E /* CAtomics.framework in Frameworks */,
 				03C599182176A18400F4B44B /* CurrentQoS.framework in Frameworks */,
 				0358CBDD2153109600F4B44B /* Outcome.framework in Frameworks */,
-				038CB65620DC637600F4B44B /* CAtomics.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -323,7 +298,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				03FC96F721779E1500F4B44B /* CurrentQoS.framework in Frameworks */,
-				038CB65920DC639400F4B44B /* CAtomics.framework in Frameworks */,
 				03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */,
 				0358CBDE2153109F00F4B44B /* Outcome.framework in Frameworks */,
 			);
@@ -335,7 +309,6 @@
 			files = (
 				03FC96FD21779E4200F4B44B /* CurrentQoS.framework in Frameworks */,
 				03FC96FE21779E4200F4B44B /* Outcome.framework in Frameworks */,
-				038CB65D20DC63CB00F4B44B /* CAtomics.framework in Frameworks */,
 				03E9756B20D2050100F4B44B /* deferred.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -346,24 +319,11 @@
 		030A0C3220CB48CA00F4B44B /* dependencies */ = {
 			isa = PBXGroup;
 			children = (
+				03DBB0B02379CE010086343E /* Atomics.xcodeproj */,
 				03C5990F2176A17500F4B44B /* CurrentQoS.xcodeproj */,
 				0358CBD42153107C00F4B44B /* Outcome.xcodeproj */,
-				030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */,
 			);
 			path = dependencies;
-			sourceTree = "<group>";
-		};
-		030A0C7920CB48DF00F4B44B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				0393E8D42285E7FE00F4B44B /* SwiftAtomics.framework */,
-				0393E8D62285E7FE00F4B44B /* SwiftAtomicsTests.xctest */,
-				038CB64F20DC636D00F4B44B /* CAtomics.framework */,
-				038CB65120DC636D00F4B44B /* CAtomicsTests.xctest */,
-				038CB65320DC636D00F4B44B /* AtomicsTestApp.app */,
-				038CB65520DC636D00F4B44B /* AtomicsTestAppTests.xctest */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		030A0C8720CB48FC00F4B44B /* Frameworks */ = {
@@ -481,6 +441,19 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		03DBB0B12379CE010086343E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				03DBB0BA2379CE010086343E /* SwiftAtomics.framework */,
+				03DBB0BC2379CE010086343E /* SwiftAtomicsTests.xctest */,
+				03DBB0BE2379CE010086343E /* CAtomics.framework */,
+				03DBB0C02379CE010086343E /* CAtomicsTests.xctest */,
+				03DBB0C22379CE010086343E /* AtomicsTestApp.app */,
+				03DBB0C42379CE010086343E /* AtomicsTestAppTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		03E60E221AAA571100F4B44B = {
 			isa = PBXGroup;
 			children = (
@@ -538,7 +511,6 @@
 			dependencies = (
 				03C5991A2176A18D00F4B44B /* PBXTargetDependency */,
 				03DEFA5D21764B1E00F4B44B /* PBXTargetDependency */,
-				038CB64820DC636D00F4B44B /* PBXTargetDependency */,
 			);
 			name = deferred;
 			productName = deferred;
@@ -577,7 +549,6 @@
 			);
 			dependencies = (
 				03FC96F621779E0D00F4B44B /* PBXTargetDependency */,
-				038CB65820DC638E00F4B44B /* PBXTargetDependency */,
 				03B776A720CAED2F00F4B44B /* PBXTargetDependency */,
 				0358CBE12153109F00F4B44B /* PBXTargetDependency */,
 			);
@@ -599,7 +570,6 @@
 			dependencies = (
 				03FC96FA21779E3C00F4B44B /* PBXTargetDependency */,
 				03FC96FC21779E3C00F4B44B /* PBXTargetDependency */,
-				038CB65C20DC63C500F4B44B /* PBXTargetDependency */,
 				03110CEB20D2065900F4B44B /* PBXTargetDependency */,
 				03B7769020CAECFC00F4B44B /* PBXTargetDependency */,
 			);
@@ -654,8 +624,8 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 030A0C7920CB48DF00F4B44B /* Products */;
-					ProjectRef = 030A0C7820CB48DF00F4B44B /* Atomics.xcodeproj */;
+					ProductGroup = 03DBB0B12379CE010086343E /* Products */;
+					ProjectRef = 03DBB0B02379CE010086343E /* Atomics.xcodeproj */;
 				},
 				{
 					ProductGroup = 03C599102176A17500F4B44B /* Products */;
@@ -691,48 +661,6 @@
 			remoteRef = 0358CBDB2153107C00F4B44B /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		038CB64F20DC636D00F4B44B /* CAtomics.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = CAtomics.framework;
-			remoteRef = 038CB64E20DC636D00F4B44B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		038CB65120DC636D00F4B44B /* CAtomicsTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = CAtomicsTests.xctest;
-			remoteRef = 038CB65020DC636D00F4B44B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		038CB65320DC636D00F4B44B /* AtomicsTestApp.app */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.application;
-			path = AtomicsTestApp.app;
-			remoteRef = 038CB65220DC636D00F4B44B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		038CB65520DC636D00F4B44B /* AtomicsTestAppTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = AtomicsTestAppTests.xctest;
-			remoteRef = 038CB65420DC636D00F4B44B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		0393E8D42285E7FE00F4B44B /* SwiftAtomics.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = SwiftAtomics.framework;
-			remoteRef = 0393E8D32285E7FE00F4B44B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		0393E8D62285E7FE00F4B44B /* SwiftAtomicsTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = SwiftAtomicsTests.xctest;
-			remoteRef = 0393E8D52285E7FE00F4B44B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		03C599152176A17600F4B44B /* CurrentQoS.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
@@ -745,6 +673,48 @@
 			fileType = wrapper.cfbundle;
 			path = CurrentQoSTests.xctest;
 			remoteRef = 03C599162176A17600F4B44B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		03DBB0BA2379CE010086343E /* SwiftAtomics.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = SwiftAtomics.framework;
+			remoteRef = 03DBB0B92379CE010086343E /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		03DBB0BC2379CE010086343E /* SwiftAtomicsTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = SwiftAtomicsTests.xctest;
+			remoteRef = 03DBB0BB2379CE010086343E /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		03DBB0BE2379CE010086343E /* CAtomics.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = CAtomics.framework;
+			remoteRef = 03DBB0BD2379CE010086343E /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		03DBB0C02379CE010086343E /* CAtomicsTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = CAtomicsTests.xctest;
+			remoteRef = 03DBB0BF2379CE010086343E /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		03DBB0C22379CE010086343E /* AtomicsTestApp.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = AtomicsTestApp.app;
+			remoteRef = 03DBB0C12379CE010086343E /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		03DBB0C42379CE010086343E /* AtomicsTestAppTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = AtomicsTestAppTests.xctest;
+			remoteRef = 03DBB0C32379CE010086343E /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -879,21 +849,6 @@
 			isa = PBXTargetDependency;
 			name = Outcome;
 			targetProxy = 0358CBE02153109F00F4B44B /* PBXContainerItemProxy */;
-		};
-		038CB64820DC636D00F4B44B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = CAtomics;
-			targetProxy = 038CB64720DC636D00F4B44B /* PBXContainerItemProxy */;
-		};
-		038CB65820DC638E00F4B44B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = CAtomics;
-			targetProxy = 038CB65720DC638E00F4B44B /* PBXContainerItemProxy */;
-		};
-		038CB65C20DC63C500F4B44B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = CAtomics;
-			targetProxy = 038CB65B20DC63C500F4B44B /* PBXContainerItemProxy */;
 		};
 		03B4E0791C14003C00F4B44B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
