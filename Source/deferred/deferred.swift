@@ -529,7 +529,7 @@ extension Deferred
   public var qos: DispatchQoS { return self.queue.qos }
 }
 
-public struct Resolver<Success>
+public struct Resolver<Success, Failure: Error>
 {
   private weak var deferred: Deferred<Success>?
   private let resolve: (Result<Success, Error>) -> Bool
@@ -658,7 +658,7 @@ open class TBD<Success>: Deferred<Success>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public init(queue: DispatchQueue, task: (Resolver<Success>) -> Void)
+  public init(queue: DispatchQueue, task: (Resolver<Success, Error>) -> Void)
   {
     super.init(queue: queue)
     task(Resolver(self))
@@ -668,7 +668,7 @@ open class TBD<Success>: Deferred<Success>
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public init(qos: DispatchQoS = .current, task: (Resolver<Success>) -> Void)
+  public init(qos: DispatchQoS = .current, task: (Resolver<Success, Error>) -> Void)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
     super.init(queue: queue)
@@ -679,7 +679,7 @@ open class TBD<Success>: Deferred<Success>
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
 
-  public static func CreatePair(queue: DispatchQueue) -> (resolver: Resolver<Success>, deferred: Deferred<Success>)
+  public static func CreatePair(queue: DispatchQueue) -> (resolver: Resolver<Success, Error>, deferred: Deferred<Success>)
   {
     let d = Deferred<Success>(queue: queue)
     return (Resolver(d), d)
@@ -689,7 +689,7 @@ open class TBD<Success>: Deferred<Success>
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
 
-  public static func CreatePair(qos: DispatchQoS = .current) -> (resolver: Resolver<Success>, deferred: Deferred<Success>)
+  public static func CreatePair(qos: DispatchQoS = .current) -> (resolver: Resolver<Success, Error>, deferred: Deferred<Success>)
   {
     let queue = DispatchQueue(label: "tbd", qos: qos)
     return CreatePair(queue: queue)

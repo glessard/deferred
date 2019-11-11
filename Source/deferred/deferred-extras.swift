@@ -414,7 +414,7 @@ extension Deferred
   {
     func applyTransform(_ value: Success,
                         _ transform: (Result<(Success) throws -> Other, Error>),
-                        _ resolver: Resolver<Other>)
+                        _ resolver: Resolver<Other, Error>)
     {
       guard resolver.needsResolution else { return }
       resolver.beginExecution()

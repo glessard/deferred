@@ -480,7 +480,7 @@ public func firstResolved<T1, T2, T3, T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>
   return (o1, o2, o3, o4)
 }
 
-private func resolveValue<T>(_ resolver: Resolver<ObjectIdentifier>,
+private func resolveValue<T>(_ resolver: Resolver<ObjectIdentifier, Error>,
                              _ deferred: Deferred<T>) -> Deferred<Error>
 {
   return TBD<Error> {

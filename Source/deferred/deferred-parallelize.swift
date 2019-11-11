@@ -67,7 +67,7 @@ extension Collection
                                  task: @escaping (_ element: Self.Element) throws -> Success) -> [Deferred<Success>]
   {
     let count = self.count
-    var resolvers: [Resolver<Success>] = []
+    var resolvers: [Resolver<Success, Error>] = []
     resolvers.reserveCapacity(count)
     let deferreds = (0..<count).map { _ in TBD<Success>(queue: queue, task: { resolvers.append($0) }) as Deferred }
 

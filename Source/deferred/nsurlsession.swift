@@ -28,9 +28,9 @@ public class DeferredURLSessionTask<Success>: TBD<Success>
     super.init(qos: qos) { $0.resolve(error: error) }
   }
 
-  init(qos: DispatchQoS = .current, task: (Resolver<Success>) -> URLSessionTask)
+  init(qos: DispatchQoS = .current, task: (Resolver<Success, Error>) -> URLSessionTask)
   {
-    var resolver: Resolver<Success>!
+    var resolver: Resolver<Success, Error>!
     super.init(qos: qos, task: { resolver = $0 })
     let task = task(resolver)
     urlSessionTask = task
@@ -92,7 +92,7 @@ private func validateURL(_ request: URLRequest) throws
 
 extension URLSession
 {
-  private func dataCompletion(_ resolver: Resolver<(Data, HTTPURLResponse)>) -> (Data?, URLResponse?, Error?) -> Void
+  private func dataCompletion(_ resolver: Resolver<(Data, HTTPURLResponse), Error>) -> (Data?, URLResponse?, Error?) -> Void
   {
     return {
       (data: Data?, response: URLResponse?, error: Error?) in
@@ -187,7 +187,7 @@ private class DeferredDownloadTask<Success>: DeferredURLSessionTask<Success>
 
 extension URLSession
 {
-  private func downloadCompletion(_ resolver: Resolver<(URL, HTTPURLResponse)>) -> (URL?, URLResponse?, Error?) -> Void
+  private func downloadCompletion(_ resolver: Resolver<(URL, HTTPURLResponse), Error>) -> (URL?, URLResponse?, Error?) -> Void
   {
     return {
       (location: URL?, response: URLResponse?, error: Error?) in
