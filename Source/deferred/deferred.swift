@@ -138,79 +138,7 @@ open class Deferred<Value>
     }
   }
 
-  // MARK: convenience initializers
-
-  /// Initialize with a task to be computed in the background
-  ///
-  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
-  /// - parameter task: a computation to be performed
-
-  public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Value)
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, task: task)
-  }
-
-  /// Initialize as resolved with a `Value`
-  ///
-  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
-  /// - parameter value: the value of this `Deferred`
-
-  public convenience init(qos: DispatchQoS = .current, value: Value)
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, value: value)
-  }
-
-  /// Initialize as resolved with a `Value`
-  ///
-  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
-  /// - parameter value: the value of this `Deferred`
-
-  public convenience init(queue: DispatchQueue, value: Value)
-  {
-    self.init(queue: queue, result: Result<Value, Error>(value: value))
-  }
-
-  /// Initialize as resolved with an `Error`
-  ///
-  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
-  /// - parameter error: the error state of this `Deferred`
-
-  public convenience init(qos: DispatchQoS = .current, error: Error)
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, error: error)
-  }
-
-  /// Initialize as resolved with an `Error`
-  ///
-  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
-  /// - parameter error: the error state of this `Deferred`
-
-  public convenience init(queue: DispatchQueue, error: Error)
-  {
-    self.init(queue: queue, result: Result<Value, Error>(error: error))
-  }
-
-  // MARK: state changes / resolve
-
-  /// Change the state of this `Deferred` from `.waiting` to `.executing`
-
-  func beginExecution()
-  {
-    var current = CAtomicsLoad(deferredState, .relaxed)
-    repeat {
-      if current.tag != .waiting
-      { // execution state has already been marked as begun
-        return
-      }
-      // read-modify-write `deferredState` with memory_order_release.
-      // this means that this write is in the release sequence of all previous writes.
-      // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
-      // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .release, .relaxed)
-  }
+  // MARK: resolve()
 
   /// Set the `Result` of this `Deferred` and dispatch all notifications for execution.
   ///
@@ -253,37 +181,18 @@ open class Deferred<Value>
     return true
   }
 
-  /// Resolve this `Deferred` with a `Value` and dispatch all notifications for execution.
+  /// Attempt to cancel this `Deferred`
   ///
-  /// Note that a `Deferred` can only be resolved once.
-  /// On subsequent calls, `resolve()` will fail and return `false`.
-  ///
-  /// This operation is lock-free and thread-safe.
-  ///
-  /// - parameter value: the intended value for this `Deferred`
-  /// - returns: whether the call succesfully changed the state of this `Deferred`.
+  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
+  /// - returns: whether the cancellation was performed successfully.
 
   @discardableResult
-  fileprivate func resolve(value: Value) -> Bool
+  open func cancel(_ error: DeferredError) -> Bool
   {
-    return resolve(Result<Value, Error>(value: value))
+    return resolve(error: error)
   }
 
-  /// Resolve this `Deferred` with an `Error` and dispatch all notifications for execution.
-  ///
-  /// Note that a `Deferred` can only be resolved once.
-  /// On subsequent calls, `resolve()` will fail and return `false`.
-  ///
-  /// This operation is lock-free and thread-safe.
-  ///
-  /// - parameter error: the intended error for this `Deferred`
-  /// - returns: whether the call succesfully changed the state of this `Deferred`.
-
-  @discardableResult
-  fileprivate func resolve(error: Error) -> Bool
-  {
-    return resolve(Result<Value, Error>(error: error))
-  }
+  // MARK: retain source
 
   /// Keep a strong reference to `source` until this `Deferred` has been resolved.
   ///
@@ -318,7 +227,7 @@ open class Deferred<Value>
     }
   }
 
-  // MARK: public interface
+  // MARK: enqueue notification
 
   /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes resolved.
   ///
@@ -377,6 +286,139 @@ open class Deferred<Value>
     q.async(execute: { [result = resolved.pointee] in handler(result) })
   }
 
+  /// Change the state of this `Deferred` from `.waiting` to `.executing`
+
+  func beginExecution()
+  {
+    var current = CAtomicsLoad(deferredState, .relaxed)
+    repeat {
+      if current.tag != .waiting
+      { // execution state has already been marked as begun
+        return
+      }
+      // read-modify-write `deferredState` with memory_order_release.
+      // this means that this write is in the release sequence of all previous writes.
+      // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
+      // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
+    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .release, .relaxed)
+  }
+}
+
+extension Deferred
+{
+  // MARK: convenience initializers
+
+  /// Initialize with a task to be computed in the background
+  ///
+  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
+  /// - parameter task: a computation to be performed
+
+  public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Value)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, task: task)
+  }
+
+  /// Initialize as resolved with a `Value`
+  ///
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
+  /// - parameter value: the value of this `Deferred`
+
+  public convenience init(qos: DispatchQoS = .current, value: Value)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, value: value)
+  }
+
+  /// Initialize as resolved with a `Value`
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+  /// - parameter value: the value of this `Deferred`
+
+  public convenience init(queue: DispatchQueue, value: Value)
+  {
+    self.init(queue: queue, result: Result<Value, Error>(value: value))
+  }
+
+  /// Initialize as resolved with an `Error`
+  ///
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
+  /// - parameter error: the error state of this `Deferred`
+
+  public convenience init(qos: DispatchQoS = .current, error: Error)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, error: error)
+  }
+
+  /// Initialize as resolved with an `Error`
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+  /// - parameter error: the error state of this `Deferred`
+
+  public convenience init(queue: DispatchQueue, error: Error)
+  {
+    self.init(queue: queue, result: Result<Value, Error>(error: error))
+  }
+}
+
+extension Deferred
+{
+  // MARK: resolve a Deferred
+
+  /// Resolve this `Deferred` with a `Value` and dispatch all notifications for execution.
+  ///
+  /// Note that a `Deferred` can only be resolved once.
+  /// On subsequent calls, `resolve()` will fail and return `false`.
+  ///
+  /// This operation is lock-free and thread-safe.
+  ///
+  /// - parameter value: the intended value for this `Deferred`
+  /// - returns: whether the call succesfully changed the state of this `Deferred`.
+
+  @discardableResult
+  fileprivate func resolve(value: Value) -> Bool
+  {
+    return resolve(Result<Value, Error>(value: value))
+  }
+
+  /// Resolve this `Deferred` with an `Error` and dispatch all notifications for execution.
+  ///
+  /// Note that a `Deferred` can only be resolved once.
+  /// On subsequent calls, `resolve()` will fail and return `false`.
+  ///
+  /// This operation is lock-free and thread-safe.
+  ///
+  /// - parameter error: the intended error for this `Deferred`
+  /// - returns: whether the call succesfully changed the state of this `Deferred`.
+
+  @discardableResult
+  fileprivate func resolve(error: Error) -> Bool
+  {
+    return resolve(Result<Value, Error>(error: error))
+  }
+
+  /// Attempt to cancel this `Deferred`
+  ///
+  /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
+  /// ```
+  /// Deferred<Value>(error: DeferredError.canceled(reason))
+  /// ```
+  ///
+  /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
+  /// - returns: whether the cancellation was performed successfully.
+
+  @discardableResult
+  public final func cancel(_ reason: String = "") -> Bool
+  {
+    return cancel(.canceled(reason))
+  }
+}
+
+extension Deferred
+{
+  // MARK: get data from a Deferred
+
   /// Query the current state of this `Deferred`
   /// - returns: a `deferredState.pointee` that describes this `Deferred`
 
@@ -396,32 +438,6 @@ open class Deferred<Value>
     return CAtomicsLoad(deferredState, .relaxed).isResolved
   }
 
-  /// Attempt to cancel this `Deferred`
-  ///
-  /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
-  /// ```
-  /// Deferred<Value>(error: DeferredError.canceled(reason))
-  /// ```
-  ///
-  /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
-  /// - returns: whether the cancellation was performed successfully.
-
-  @discardableResult
-  public final func cancel(_ reason: String = "") -> Bool
-  {
-    return cancel(.canceled(reason))
-  }
-
-  /// Attempt to cancel this `Deferred`
-  ///
-  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
-  /// - returns: whether the cancellation was performed successfully.
-
-  @discardableResult
-  open func cancel(_ error: DeferredError) -> Bool
-  {
-    return resolve(error: error)
-  }
 
   /// Get this `Deferred`'s `Result`, blocking if necessary until it exists.
   ///
