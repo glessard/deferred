@@ -20,9 +20,9 @@ class DeferredSelectionTests: XCTestCase
 {
   func testFirstValueCollection() throws
   {
-    func resolution(_ c: Int) -> ([Resolver<Int>], Deferred<Int>)
+    func resolution(_ c: Int) -> ([Resolver<Int, Error>], Deferred<Int>)
     {
-      var r = [Resolver<Int>]()
+      var r = [Resolver<Int, Error>]()
       var d = [Deferred<Int>]()
       for i in 0...c
       {
@@ -78,9 +78,9 @@ class DeferredSelectionTests: XCTestCase
 
   func testFirstValueSequence() throws
   {
-    func resolution(_ c: Int) -> ([Resolver<Int>], Deferred<Int>)
+    func resolution(_ c: Int) -> ([Resolver<Int, Error>], Deferred<Int>)
     {
-      var r = [Resolver<Int>]()
+      var r = [Resolver<Int, Error>]()
       var d = [Deferred<Int>]()
       for i in 0...c
       {
@@ -134,9 +134,9 @@ class DeferredSelectionTests: XCTestCase
 
   func testFirstResolvedCollection1() throws
   {
-    func resolution(_ c: Int) -> ([Resolver<Int>], Deferred<Int>)
+    func resolution(_ c: Int) -> ([Resolver<Int, Error>], Deferred<Int>)
     {
-      var r: [Resolver<Int>] = []
+      var r: [Resolver<Int, Error>] = []
       var d: [Deferred<Int>] = []
       for i in 0...c
       {
@@ -159,9 +159,9 @@ class DeferredSelectionTests: XCTestCase
 
   func testFirstResolvedCollection2() throws
   {
-    func resolution(_ c: Int) -> ([Resolver<Int>], Deferred<Int>)
+    func resolution(_ c: Int) -> ([Resolver<Int, Error>], Deferred<Int>)
     {
-      var r: [Resolver<Int>] = []
+      var r: [Resolver<Int, Error>] = []
       var d: [Deferred<Int>] = []
       for i in 0...c
       {
@@ -228,9 +228,9 @@ class DeferredSelectionTests: XCTestCase
 
   func testFirstResolvedSequence3() throws
   {
-    func resolution(_ c: Int) -> ([Resolver<Int>], Deferred<Int>)
+    func resolution(_ c: Int) -> ([Resolver<Int, Error>], Deferred<Int>)
     {
-      var r: [Resolver<Int>] = []
+      var r: [Resolver<Int, Error>] = []
       var d: [Deferred<Int>] = []
       for i in 0...c
       {
@@ -256,7 +256,7 @@ class DeferredSelectionTests: XCTestCase
     let e1 = expectation(description: #function + "1")
     let e2 = expectation(description: #function + "2")
     let r2 = nzRandom()
-    var t2: Resolver<Int>! = nil
+    var t2: Resolver<Int, Error>! = nil
 
     let (s1, s2) = firstResolved(DeallocTBD<Double>(e1),
                                  DeallocTBD<Int>(e2) { t2 = $0 },
@@ -273,7 +273,7 @@ class DeferredSelectionTests: XCTestCase
   {
     let r1 = Double(nzRandom())
     let e2 = expectation(description: #function)
-    var r2: Resolver<Int>! = nil
+    var r2: Resolver<Int, Error>! = nil
 
     let (s1, s2) = firstResolved(Deferred(qos: .utility, value: r1), DeallocTBD(e2) { r2 = $0 })
     s1.notify { XCTAssertEqual($0.value, r1) }
@@ -321,7 +321,7 @@ class DeferredSelectionTests: XCTestCase
   {
     let d1 = TBD<Double>()
     let e2 = expectation(description: #function)
-    var r2: Resolver<Int>!
+    var r2: Resolver<Int, Error>!
 
     let (s1, s2) = firstValue(d1, DeallocTBD<Int>(e2, task: { r2 = $0 }), canceling: true)
     s1.notify { XCTAssertEqual($0.error, DeferredError.notSelected) }

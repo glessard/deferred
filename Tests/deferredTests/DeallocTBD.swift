@@ -13,7 +13,7 @@ class DeallocTBD<T>: TBD<T>
 {
   let e: XCTestExpectation
 
-  init(_ expectation: XCTestExpectation, task: (Resolver<T>) -> Void = { _ in })
+  init(_ expectation: XCTestExpectation, task: (Resolver<T, Error>) -> Void = { _ in })
   {
     e = expectation
     super.init(task: task)
