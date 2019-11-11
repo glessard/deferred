@@ -20,7 +20,7 @@ extension Deferred
   /// - parameter index: an index for the computation
 
   public static func inParallel(count: Int, qos: DispatchQoS = .current,
-                                task: @escaping (_ index: Int) throws -> Value) -> [Deferred<Value>]
+                                task: @escaping (_ index: Int) throws -> Success) -> [Deferred<Success>]
   {
     return (0..<count).deferredMap(qos: qos, task: task)
   }
@@ -34,7 +34,7 @@ extension Deferred
   /// - parameter index: an index for the computation
 
   public static func inParallel(count: Int, queue: DispatchQueue,
-                                task: @escaping (_ index: Int) throws -> Value) -> [Deferred<Value>]
+                                task: @escaping (_ index: Int) throws -> Success) -> [Deferred<Success>]
   {
     return (0..<count).deferredMap(queue: queue, task: task)
   }
@@ -49,8 +49,8 @@ extension Collection
   /// - returns: an array of `Deferred`
   /// - parameter element: an element to transform into a new `Deferred`
 
-  public func deferredMap<Value>(qos: DispatchQoS = .current,
-                                 task: @escaping (_ element: Self.Element) throws -> Value) -> [Deferred<Value>]
+  public func deferredMap<Success>(qos: DispatchQoS = .current,
+                                 task: @escaping (_ element: Self.Element) throws -> Success) -> [Deferred<Success>]
   {
     let queue = DispatchQueue(label: "deferred-map", qos: qos)
     return deferredMap(queue: queue, task: task)
@@ -63,13 +63,13 @@ extension Collection
   /// - returns: an array of `Deferred`
   /// - parameter element: an element to transform into a new `Deferred`
 
-  public func deferredMap<Value>(queue: DispatchQueue,
-                                 task: @escaping (_ element: Self.Element) throws -> Value) -> [Deferred<Value>]
+  public func deferredMap<Success>(queue: DispatchQueue,
+                                 task: @escaping (_ element: Self.Element) throws -> Success) -> [Deferred<Success>]
   {
     let count = self.count
-    var resolvers: [Resolver<Value>] = []
+    var resolvers: [Resolver<Success>] = []
     resolvers.reserveCapacity(count)
-    let deferreds = (0..<count).map { _ in TBD<Value>(queue: queue, task: { resolvers.append($0) }) as Deferred }
+    let deferreds = (0..<count).map { _ in TBD<Success>(queue: queue, task: { resolvers.append($0) }) as Deferred }
 
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {

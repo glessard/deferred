@@ -26,9 +26,9 @@ import Dispatch
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstValue<Value, C: Collection>(_ deferreds: C, qos: DispatchQoS = .current,
-                                             cancelOthers: Bool = false) -> Deferred<Value>
-  where C.Element: Deferred<Value>
+public func firstValue<Success, C: Collection>(_ deferreds: C, qos: DispatchQoS = .current,
+                                             cancelOthers: Bool = false) -> Deferred<Success>
+  where C.Element: Deferred<Success>
 {
   let queue = DispatchQueue(label: "first-collection", qos: qos)
   return firstValue(deferreds, queue: queue, cancelOthers: cancelOthers)
@@ -52,9 +52,9 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, qos: DispatchQoS = 
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstValue<Value, C: Collection>(_ deferreds: C, queue: DispatchQueue,
-                                             cancelOthers: Bool = false) -> Deferred<Value>
-  where C.Element: Deferred<Value>
+public func firstValue<Success, C: Collection>(_ deferreds: C, queue: DispatchQueue,
+                                             cancelOthers: Bool = false) -> Deferred<Success>
+  where C.Element: Deferred<Success>
 {
   if deferreds.isEmpty
   {
@@ -62,7 +62,7 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, queue: DispatchQueu
     return Deferred(queue: queue, error: error)
   }
 
-  return TBD<Value>(queue: queue) {
+  return TBD<Success>(queue: queue) {
     f in
     var errors: [Deferred<Error>] = []
     errors.reserveCapacity(deferreds.count)
@@ -117,9 +117,9 @@ public func firstValue<Value, C: Collection>(_ deferreds: C, queue: DispatchQueu
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstValue<Value, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
-                                           cancelOthers: Bool = false) -> Deferred<Value>
-  where S.Element: Deferred<Value>
+public func firstValue<Success, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
+                                           cancelOthers: Bool = false) -> Deferred<Success>
+  where S.Element: Deferred<Success>
 {
   let queue = DispatchQueue(label: "first-sequence", qos: qos)
   return firstValue(deferreds, queue: queue, cancelOthers: cancelOthers)
@@ -142,11 +142,11 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .c
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstValue<Value, S: Sequence>(_ deferreds: S, queue: DispatchQueue,
-                                           cancelOthers: Bool = false) -> Deferred<Value>
-  where S.Element: Deferred<Value>
+public func firstValue<Success, S: Sequence>(_ deferreds: S, queue: DispatchQueue,
+                                           cancelOthers: Bool = false) -> Deferred<Success>
+  where S.Element: Deferred<Success>
 {
-  return TBD<Value>(queue: queue) {
+  return TBD<Success>(queue: queue) {
     f in
     queue.async {
       var errors: [Deferred<Error>] = []
@@ -206,9 +206,9 @@ public func firstValue<Value, S: Sequence>(_ deferreds: S, queue: DispatchQueue,
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstResolved<Value, C: Collection>(_ deferreds: C, qos: DispatchQoS = .current,
-                                                cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where C.Element: Deferred<Value>
+public func firstResolved<Success, C: Collection>(_ deferreds: C, qos: DispatchQoS = .current,
+                                                cancelOthers: Bool = false) -> Deferred<Deferred<Success>>
+  where C.Element: Deferred<Success>
 {
   let queue = DispatchQueue(label: "first-collection", qos: qos)
   return firstResolved(deferreds, queue: queue, cancelOthers: cancelOthers)
@@ -228,9 +228,9 @@ public func firstResolved<Value, C: Collection>(_ deferreds: C, qos: DispatchQoS
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstResolved<Value, C: Collection>(_ deferreds: C, queue: DispatchQueue,
-                                                cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where C.Element: Deferred<Value>
+public func firstResolved<Success, C: Collection>(_ deferreds: C, queue: DispatchQueue,
+                                                cancelOthers: Bool = false) -> Deferred<Deferred<Success>>
+  where C.Element: Deferred<Success>
 {
   if deferreds.count == 0
   {
@@ -238,7 +238,7 @@ public func firstResolved<Value, C: Collection>(_ deferreds: C, queue: DispatchQ
     return Deferred(queue: queue, error: error)
   }
 
-  let first = TBD<Deferred<Value>>(queue: queue) {
+  let first = TBD<Deferred<Success>>(queue: queue) {
     resolver in
     deferreds.forEach {
       deferred in
@@ -276,9 +276,9 @@ public func firstResolved<Value, C: Collection>(_ deferreds: C, queue: DispatchQ
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstResolved<Value, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
-                                              cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where S.Element: Deferred<Value>
+public func firstResolved<Success, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
+                                              cancelOthers: Bool = false) -> Deferred<Deferred<Success>>
+  where S.Element: Deferred<Success>
 {
   let queue = DispatchQueue(label: "first-sequence", qos: qos)
   return firstResolved(deferreds, queue: queue, cancelOthers: cancelOthers)
@@ -297,11 +297,11 @@ public func firstResolved<Value, S: Sequence>(_ deferreds: S, qos: DispatchQoS =
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstResolved<Value, S>(_ deferreds: S, queue: DispatchQueue,
-                                    cancelOthers: Bool = false) -> Deferred<Deferred<Value>>
-  where S: Sequence, S.Element: Deferred<Value>
+public func firstResolved<Success, S>(_ deferreds: S, queue: DispatchQueue,
+                                    cancelOthers: Bool = false) -> Deferred<Deferred<Success>>
+  where S: Sequence, S.Element: Deferred<Success>
 {
-  let first = TBD<Deferred<Value>>(queue: queue) {
+  let first = TBD<Deferred<Success>>(queue: queue) {
     resolver in
     // We execute `Sequence.forEach` on a background thread
     // because nothing prevents S from blocking on `Sequence.next()`

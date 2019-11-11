@@ -19,7 +19,7 @@ public enum URLSessionError: Error, Equatable
   case invalidState
 }
 
-public class DeferredURLSessionTask<Value>: TBD<Value>
+public class DeferredURLSessionTask<Success>: TBD<Success>
 {
   public private(set) weak var urlSessionTask: URLSessionTask? = nil
 
@@ -28,9 +28,9 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
     super.init(qos: qos) { $0.resolve(error: error) }
   }
 
-  init(qos: DispatchQoS = .current, task: (Resolver<Value>) -> URLSessionTask)
+  init(qos: DispatchQoS = .current, task: (Resolver<Success>) -> URLSessionTask)
   {
-    var resolver: Resolver<Value>!
+    var resolver: Resolver<Success>!
     super.init(qos: qos, task: { resolver = $0 })
     let task = task(resolver)
     urlSessionTask = task
@@ -64,7 +64,7 @@ public class DeferredURLSessionTask<Value>: TBD<Value>
   }
 
   public override func notify(queue: DispatchQueue? = nil, boostQoS: Bool = true,
-                              handler task: @escaping (Result<Value, Error>) -> Void)
+                              handler task: @escaping (Result<Success, Error>) -> Void)
   {
     if state == .waiting
     {
@@ -163,7 +163,7 @@ extension URLSession
   }
 }
 
-private class DeferredDownloadTask<Value>: DeferredURLSessionTask<Value>
+private class DeferredDownloadTask<Success>: DeferredURLSessionTask<Success>
 {
   @discardableResult
   public override func cancel(_ error: DeferredError) -> Bool

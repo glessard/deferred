@@ -24,7 +24,7 @@ extension Deferred
   /// - parameter task: a closure to be executed as a notification
   /// - parameter result: the `Result` of this `Deferred`
 
-  public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
+  public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Success, Error>) -> Void)
   {
     notify(queue: queue, handler: { result in withExtendedLifetime(self, { task(result) }) })
   }
@@ -39,7 +39,7 @@ extension Deferred
   /// - parameter task: the closure to be enqueued
   /// - parameter value: the value of the just-resolved `Deferred`
 
-  public func onValue(queue: DispatchQueue? = nil, task: @escaping (_ value: Value) -> Void)
+  public func onValue(queue: DispatchQueue? = nil, task: @escaping (_ value: Success) -> Void)
   {
     onResult(queue: queue, task: { $0.value.map(task) })
   }
@@ -111,7 +111,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func map<Other>(queue: DispatchQueue? = nil,
-                         transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
+                         transform: @escaping (_ value: Success) throws -> Other) -> Deferred<Other>
   {
     return TBD(queue: queue ?? self.queue) {
       resolver in
@@ -140,7 +140,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func map<Other>(qos: DispatchQoS,
-                         transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
+                         transform: @escaping (_ value: Success) throws -> Other) -> Deferred<Other>
   {
     let queue = DispatchQueue(label: "deferred-map", qos: qos)
     return map(queue: queue, transform: transform)
@@ -159,7 +159,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func flatMap<Other>(queue: DispatchQueue? = nil,
-                             transform: @escaping (_ value: Value) throws -> Deferred<Other>) -> Deferred<Other>
+                             transform: @escaping (_ value: Success) throws -> Deferred<Other>) -> Deferred<Other>
   {
     return TBD(queue: queue ?? self.queue) {
       resolver in
@@ -196,7 +196,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func flatMap<Other>(qos: DispatchQoS,
-                             transform: @escaping (_ value: Value) throws -> Deferred<Other>) -> Deferred<Other>
+                             transform: @escaping (_ value: Success) throws -> Deferred<Other>) -> Deferred<Other>
   {
     let queue = DispatchQueue(label: "deferred-flatmap", qos: qos)
     return flatMap(queue: queue, transform: transform)
@@ -210,7 +210,7 @@ extension Deferred
   /// - parameter error: the Error to be transformed for a new `Deferred`
 
   public func recover(queue: DispatchQueue? = nil,
-                      transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
+                      transform: @escaping (_ error: Error) throws -> Deferred<Success>) -> Deferred<Success>
   {
     return TBD(queue: queue ?? self.queue) {
       resolver in
@@ -253,7 +253,7 @@ extension Deferred
   /// - parameter error: the Error to be transformed for a new `Deferred`
 
   public func recover(qos: DispatchQoS,
-                      transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
+                      transform: @escaping (_ error: Error) throws -> Deferred<Success>) -> Deferred<Success>
   {
     let queue = DispatchQueue(label: "deferred-recover", qos: qos)
     return recover(queue: queue, transform: transform)
@@ -262,7 +262,7 @@ extension Deferred
 
 extension Deferred
 {
-  /// Flatten a `Deferred<Deferred<Value>>` to a `Deferred<Value>`
+  /// Flatten a `Deferred<Deferred<Success>>` to a `Deferred<Success>`
   ///
   /// In the right conditions, acts like a fast path for a flatMap with no transform.
   ///
@@ -270,7 +270,7 @@ extension Deferred
   /// - returns: a flattened `Deferred`
 
   public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other>
-    where Value == Deferred<Other>
+    where Success == Deferred<Other>
   {
     if let result = self.peek()
     {
@@ -335,7 +335,7 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func RetryTask(_ attempts: Int, qos: DispatchQoS = .current,
-                               task: @escaping () throws -> Value) -> Deferred
+                               task: @escaping () throws -> Success) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return Deferred.RetryTask(attempts, queue: queue, task: task)
@@ -350,7 +350,7 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func RetryTask(_ attempts: Int, queue: DispatchQueue,
-                               task: @escaping () throws -> Value) -> Deferred
+                               task: @escaping () throws -> Success) -> Deferred
   {
     return Deferred.Retrying(attempts, queue: queue, task: { Deferred(queue: queue, task: task) })
   }
@@ -382,7 +382,7 @@ extension Deferred
                               task: @escaping () throws -> Deferred) -> Deferred
   {
     let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
-    let deferred = Deferred<Value>(queue: queue, error: error)
+    let deferred = Deferred<Success>(queue: queue, error: error)
 
     if attempts < 1 { return deferred }
 
@@ -410,10 +410,10 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(queue: DispatchQueue? = nil,
-                           transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Success) throws -> Other>) -> Deferred<Other>
   {
-    func applyTransform(_ value: Value,
-                        _ transform: (Result<(Value) throws -> Other, Error>),
+    func applyTransform(_ value: Success,
+                        _ transform: (Result<(Success) throws -> Other, Error>),
                         _ resolver: Resolver<Other>)
     {
       guard resolver.needsResolution else { return }
@@ -461,7 +461,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(qos: DispatchQoS,
-                           transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Success) throws -> Other>) -> Deferred<Other>
   {
     let queue = DispatchQueue(label: "deferred-apply", qos: qos)
     return apply(queue: queue, transform: transform)
@@ -479,7 +479,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(queue: DispatchQueue? = nil,
-                           transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Success) -> Other>) -> Deferred<Other>
   {
     let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
     return apply(queue: queue, transform: retransform)
@@ -497,7 +497,7 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(qos: DispatchQoS,
-                           transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Success) -> Other>) -> Deferred<Other>
   {
     let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
     return apply(qos: qos, transform: retransform)
@@ -508,16 +508,16 @@ extension Deferred
 {
   /// Insert a validation step in a chain of Deferred.
   ///
-  /// Pass `Value` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
+  /// Pass `Success` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
   ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
-  /// - parameter predicate: a predicate that validates the passed-in `Value` by returning a Boolean
+  /// - parameter predicate: a predicate that validates the passed-in `Success` by returning a Boolean
   /// - parameter message: an explanation to add to `DeferredError.invalid`; defaults to the empty `String`
-  /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - returns: a `Deferred` reference holding a validated `Success`
   /// - parameter value: the value to be validated
 
   public func validate(queue: DispatchQueue? = nil,
-                       predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
+                       predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred
   {
     return self.map(queue: queue) {
       value in
@@ -528,16 +528,16 @@ extension Deferred
 
   /// Insert a validation step in a chain of Deferred.
   ///
-  /// Pass `Value` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
+  /// Pass `Success` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
   ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
-  /// - parameter predicate: a predicate that validates the passed-in `Value` by returning a Boolean
+  /// - parameter predicate: a predicate that validates the passed-in `Success` by returning a Boolean
   /// - parameter message: an explanation to add to `DeferredError.invalid`; defaults to the empty `String`
-  /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - returns: a `Deferred` reference holding a validated `Success`
   /// - parameter value: the value to be validated
 
   public func validate(qos: DispatchQoS,
-                       predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
+                       predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return validate(queue: queue, predicate: predicate, message: message)
@@ -545,15 +545,15 @@ extension Deferred
 
   /// Insert a validation step in a chain of Deferred.
   ///
-  /// Pass `Value` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
+  /// Pass `Success` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
   ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
-  /// - parameter predicate: a closure that validates the passed-in `Value` by either returning normally or throwing
-  /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - parameter predicate: a closure that validates the passed-in `Success` by either returning normally or throwing
+  /// - returns: a `Deferred` reference holding a validated `Success`
   /// - parameter value: the value to be validated
 
   public func validate(queue: DispatchQueue? = nil,
-                       predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
+                       predicate: @escaping (_ value: Success) throws -> Void) -> Deferred
   {
     return self.map(queue: queue) {
       value in
@@ -564,15 +564,15 @@ extension Deferred
 
   /// Insert a validation step in a chain of Deferred.
   ///
-  /// Pass `Value` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
+  /// Pass `Success` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
   ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
-  /// - parameter predicate: a closure that validates the passed-in `Value` by either returning normally or throwing
-  /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - parameter predicate: a closure that validates the passed-in `Success` by either returning normally or throwing
+  /// - returns: a `Deferred` reference holding a validated `Success`
   /// - parameter value: the value to be validated
 
   public func validate(qos: DispatchQoS,
-                       predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
+                       predicate: @escaping (_ value: Success) throws -> Void) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return validate(queue: queue, predicate: predicate)

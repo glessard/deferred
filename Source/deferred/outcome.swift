@@ -44,7 +44,7 @@ extension Result where Failure == Swift.Error
 
 import Outcome
 
-public typealias Result<Value, Error> = Outcome<Value>
+public typealias Result<Success, Error> = Outcome<Success>
 
 @available(*, deprecated, renamed: "Outcome")
 public typealias Determined = Outcome

@@ -9,7 +9,7 @@
 extension Deferred
 {
   public func split<T1, T2>() -> (Deferred<T1>, Deferred<T2>)
-    where Value == (T1, T2)
+    where Success == (T1, T2)
   {
     let d1 = map(transform: { $0.0 })
     let d2 = map(transform: { $0.1 })
@@ -18,7 +18,7 @@ extension Deferred
   }
 
   public func split<T1, T2, T3>() -> (Deferred<T1>, Deferred<T2>, Deferred<T3>)
-    where Value == (T1, T2, T3)
+    where Success == (T1, T2, T3)
   {
     let d1 = map(transform: { $0.0 })
     let d2 = map(transform: { $0.1 })
@@ -28,7 +28,7 @@ extension Deferred
   }
 
   public func split<T1, T2, T3, T4>() -> (Deferred<T1>, Deferred<T2>, Deferred<T3>, Deferred<T4>)
-    where Value == (T1, T2, T3, T4)
+    where Success == (T1, T2, T3, T4)
   {
     let d1 = map(transform: { $0.0 })
     let d2 = map(transform: { $0.1 })
