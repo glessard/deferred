@@ -7,14 +7,14 @@
 
 #if compiler(>=5.0)
 
-extension Result where Failure == Swift.Error
+extension Result
 {
   init(value: Success)
   {
     self = .success(value)
   }
 
-  init(error: Error)
+  init(error: Failure)
   {
     self = .failure(error)
   }
@@ -24,7 +24,7 @@ extension Result where Failure == Swift.Error
     return nil
   }
 
-  var error: Error? {
+  var error: Failure? {
     if case .failure(let error) = self { return error }
     return nil
   }

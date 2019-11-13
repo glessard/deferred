@@ -8,12 +8,12 @@
 
 import Dispatch
 
-struct Waiter<T>
+struct Waiter<Success, Failure: Error>
 {
-  fileprivate let waiter: WaiterType<T>
-  var next: UnsafeMutablePointer<Waiter<T>>? = nil
+  fileprivate let waiter: WaiterType<Success, Failure>
+  var next: UnsafeMutablePointer<Waiter<Success, Failure>>? = nil
 
-  init(_ queue: DispatchQueue?, _ handler: @escaping (Result<T, Error>) -> Void)
+  init(_ queue: DispatchQueue?, _ handler: @escaping (Result<Success, Failure>) -> Void)
   {
     waiter = .notification(queue, handler)
   }
@@ -24,13 +24,13 @@ struct Waiter<T>
   }
 }
 
-private enum WaiterType<T>
+private enum WaiterType<Success, Failure: Error>
 {
-  case notification(DispatchQueue?, (Result<T, Error>) -> Void)
+  case notification(DispatchQueue?, (Result<Success, Failure>) -> Void)
   case datasource(AnyObject)
 }
 
-func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<T>>?, _ value: Result<T, Error>)
+func notifyWaiters<Success, Failure: Error>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<Success, Failure>>?, _ value: Result<Success, Failure>)
 {
   var head = reverseList(tail)
   loop: while let current = head
@@ -83,7 +83,7 @@ func notifyWaiters<T>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waite
   }
 }
 
-func deallocateWaiters<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?)
+func deallocateWaiters<Success, Failure: Error>(_ tail: UnsafeMutablePointer<Waiter<Success, Failure>>?)
 {
   var waiter = tail
   while let current = waiter
@@ -95,11 +95,11 @@ func deallocateWaiters<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?)
   }
 }
 
-private func reverseList<T>(_ tail: UnsafeMutablePointer<Waiter<T>>?) -> UnsafeMutablePointer<Waiter<T>>?
+private func reverseList<Success, Failure: Error>(_ tail: UnsafeMutablePointer<Waiter<Success, Failure>>?) -> UnsafeMutablePointer<Waiter<Success, Failure>>?
 {
   if tail?.pointee.next == nil { return tail }
 
-  var head: UnsafeMutablePointer<Waiter<T>>? = nil
+  var head: UnsafeMutablePointer<Waiter<Success, Failure>>? = nil
   var current = tail
   while let element = current
   {
