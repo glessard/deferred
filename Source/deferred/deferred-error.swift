@@ -6,19 +6,14 @@
 //  Copyright © 2015 Guillaume Lessard. All rights reserved.
 //
 
-/// Error type that can be thrown by a `Deferred`.
-///
-/// Must be a top-level type because Deferred is generic.
-
-public enum DeferredError: Error, Equatable
+public enum Cancellation: Error, Equatable, Hashable
 {
   case canceled(String)
-  case invalid(String)
   case timedOut(String)
   case notSelected // not selected in a race between multiple deferreds
 }
 
-extension DeferredError: CustomStringConvertible
+extension Cancellation: CustomStringConvertible
 {
   public var description: String {
     switch self
@@ -27,16 +22,30 @@ extension DeferredError: CustomStringConvertible
       return message.isEmpty ?
         "Deferred was canceled before a result became available" :
         "Deferred canceled: \(message)"
-    case .invalid(let message):
-      return message.isEmpty ?
-        "Deferred failed validation" :
-        "Deferred invalid: \(message)"
     case .timedOut(let message):
       return message.isEmpty ?
         "Deferred operation timed out before a result became available" :
         "Deferred operation timed out: \(message)"
     case .notSelected:
       return "Deferred was canceled when another got resolved more quickly"
+    }
+  }
+}
+
+public enum Invalidation: Error, Equatable, Hashable
+{
+  case invalid(String)
+}
+
+extension Invalidation: CustomStringConvertible
+{
+  public var description: String {
+    switch self
+    {
+    case .invalid(let message):
+      return message.isEmpty ?
+        "Deferred failed validation" :
+        "Deferred invalid: \(message)"
     }
   }
 }

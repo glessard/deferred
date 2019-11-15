@@ -86,7 +86,7 @@ private func validateURL(_ request: URLRequest) throws
   if scheme != "http" && scheme != "https"
   {
     let message = "deferred does not support url scheme \"\(scheme)\""
-    throw DeferredError.invalid(message)
+    throw Invalidation.invalid(message)
   }
 }
 

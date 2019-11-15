@@ -178,7 +178,7 @@ open class Deferred<Success, Failure: Error>
   /// - returns: whether the cancellation was performed successfully.
 
   @discardableResult
-  open func cancel(_ error: DeferredError) -> Bool
+  open func cancel(_ error: Cancellation) -> Bool
   {
     guard let error = error as? Failure else { return false }
     return resolve(error: error)
@@ -615,7 +615,7 @@ public struct Resolver<Success, Failure: Error>
   @discardableResult
   public func cancel(_ reason: String = "") -> Bool
   {
-    return cancel(DeferredError.canceled(reason))
+    return cancel(.canceled(reason))
   }
 
   /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
@@ -624,7 +624,7 @@ public struct Resolver<Success, Failure: Error>
   /// - returns: whether the cancellation was performed successfully.
 
   @discardableResult
-  public func cancel(_ error: DeferredError) -> Bool
+  public func cancel(_ error: Cancellation) -> Bool
   {
     return deferred?.cancel(error) ?? false
   }

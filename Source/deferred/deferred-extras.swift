@@ -381,7 +381,7 @@ extension Deferred
   public static func Retrying(_ attempts: Int, queue: DispatchQueue,
                               task: @escaping () throws -> Deferred) -> Deferred
   {
-    let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
+    let error = Invalidation.invalid("task was not allowed a single attempt in \(#function)")
     let deferred = Deferred<Success>(queue: queue, error: error)
 
     if attempts < 1 { return deferred }
@@ -521,7 +521,7 @@ extension Deferred
   {
     return self.map(queue: queue) {
       value in
-      guard predicate(value) else { throw DeferredError.invalid(message) }
+      guard predicate(value) else { throw Invalidation.invalid(message) }
       return value
     }
   }
@@ -594,7 +594,7 @@ extension Optional
     case .some(let value):
       return Deferred(queue: queue, value: value)
     case .none:
-      return Deferred(queue: queue, error: DeferredError.invalid("initialized from a nil Optional"))
+      return Deferred(queue: queue, error: Invalidation.invalid("initialized from a nil Optional"))
     }
   }
 
