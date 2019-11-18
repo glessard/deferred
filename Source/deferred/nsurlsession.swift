@@ -19,7 +19,7 @@ public enum URLSessionError: Error, Equatable
   case invalidState
 }
 
-public class DeferredURLSessionTask<Success>: TBD<Success>
+public class DeferredURLSessionTask<Success>: TBD<Success, Error>
 {
   public private(set) weak var urlSessionTask: URLSessionTask? = nil
 
@@ -51,7 +51,7 @@ public class DeferredURLSessionTask<Success>: TBD<Success>
   }
 
   @discardableResult
-  public override func cancel(_ error: DeferredError) -> Bool
+  public override func cancel(_ error: Cancellation) -> Bool
   {
     guard !self.isResolved, let task = urlSessionTask else { return false }
 
@@ -166,7 +166,7 @@ extension URLSession
 private class DeferredDownloadTask<Success>: DeferredURLSessionTask<Success>
 {
   @discardableResult
-  public override func cancel(_ error: DeferredError) -> Bool
+  public override func cancel(_ error: Cancellation) -> Bool
   {
     guard !self.isResolved, let task = urlSessionTask as? URLSessionDownloadTask else { return false }
 
