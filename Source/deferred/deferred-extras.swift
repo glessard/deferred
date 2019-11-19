@@ -708,7 +708,7 @@ extension Deferred
   /// - parameter value: the value to be validated
 
   public func validate(queue: DispatchQueue? = nil,
-                       predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred
+                       predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred<Success, Error>
   {
     return self.tryMap(queue: queue) {
       value in
@@ -728,7 +728,7 @@ extension Deferred
   /// - parameter value: the value to be validated
 
   public func validate(qos: DispatchQoS,
-                       predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred
+                       predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred<Success, Error>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return validate(queue: queue, predicate: predicate, message: message)
@@ -744,7 +744,7 @@ extension Deferred
   /// - parameter value: the value to be validated
 
   public func validate(queue: DispatchQueue? = nil,
-                       predicate: @escaping (_ value: Success) throws -> Void) -> Deferred
+                       predicate: @escaping (_ value: Success) throws -> Void) -> Deferred<Success, Error>
   {
     return self.tryMap(queue: queue) {
       value in
@@ -763,7 +763,7 @@ extension Deferred
   /// - parameter value: the value to be validated
 
   public func validate(qos: DispatchQoS,
-                       predicate: @escaping (_ value: Success) throws -> Void) -> Deferred
+                       predicate: @escaping (_ value: Success) throws -> Void) -> Deferred<Success, Error>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return validate(queue: queue, predicate: predicate)
@@ -778,7 +778,7 @@ extension Optional
   ///
   /// - parameter queue: the dispatch queue upon the new `Deferred`'s notifications will be performed
 
-  public func deferred(queue: DispatchQueue) -> Deferred<Wrapped>
+  public func deferred(queue: DispatchQueue) -> Deferred<Wrapped, Invalidation>
   {
     switch self
     {
@@ -795,7 +795,7 @@ extension Optional
   ///
   /// - parameter qos: the QoS at which to perform notifications for the new `Deferred`; defaults to the current QoS class.
 
-  public func deferred(qos: DispatchQoS = .current) -> Deferred<Wrapped>
+  public func deferred(qos: DispatchQoS = .current) -> Deferred<Wrapped, Invalidation>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return self.deferred(queue: queue)
