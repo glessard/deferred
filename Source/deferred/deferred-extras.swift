@@ -639,21 +639,18 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(queue: DispatchQueue? = nil,
-                           transform: Deferred<(_ value: Success) throws -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Success) -> Other, Never>) -> Deferred<Other, Failure>
   {
     func applyTransform(_ value: Success,
-                        _ transform: (Result<(Success) throws -> Other, Error>),
-                        _ resolver: Resolver<Other, Error>)
+                        _ transform: Result<(Success) -> Other, Never>,
+                        _ resolver: Resolver<Other, Failure>)
     {
       guard resolver.needsResolution else { return }
       resolver.beginExecution()
-      do {
-        let transform = try transform.get()
-        let transformed = try transform(value)
-        resolver.resolve(value: transformed)
-      }
-      catch {
-        resolver.resolve(error: error)
+      switch transform
+      {
+      case .success(let transform):
+        resolver.resolve(value: transform(value))
       }
     }
 
@@ -662,8 +659,9 @@ extension Deferred
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        do {
-          let value = try result.get()
+        switch result
+        {
+        case .success(let value):
           if let transform = transform.peek()
           {
             applyTransform(value, transform, resolver)
@@ -673,8 +671,8 @@ extension Deferred
             transform.notify(queue: queue) { applyTransform(value, $0, resolver) }
             resolver.retainSource(transform)
           }
-        }
-        catch {
+
+        case .failure(let error):
           resolver.resolve(error: error)
         }
       }
@@ -690,46 +688,10 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(qos: DispatchQoS,
-                           transform: Deferred<(_ value: Success) throws -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Success) -> Other, Never>) -> Deferred<Other, Failure>
   {
     let queue = DispatchQueue(label: "deferred-apply", qos: qos)
     return apply(queue: queue, transform: transform)
-  }
-
-  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become resolved.
-  ///
-  /// Adaptor made desirable by insufficient covariance from throwing to non-throwing closure types. (radar 22013315)
-  /// (i.e. if the difference between the type signature of two closures is whether they throw,
-  /// the non-throwing one should be usable anywhere the throwing one can.)
-  /// Can hopefully be removed later.
-  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
-  /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
-  /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter value: the value to be transformed for a new `Deferred`
-
-  public func apply<Other>(queue: DispatchQueue? = nil,
-                           transform: Deferred<(_ value: Success) -> Other>) -> Deferred<Other>
-  {
-    let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
-    return apply(queue: queue, transform: retransform)
-  }
-
-  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become resolved.
-  ///
-  /// Adaptor made desirable by insufficient covariance from throwing to non-throwing closure types. (radar 22013315)
-  /// (i.e. if the difference between the type signature of two closures is whether they throw,
-  /// the non-throwing one should be usable anywhere the throwing one can.)
-  /// Can hopefully be removed later.
-  /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
-  /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
-  /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter value: the value to be transformed for a new `Deferred`
-
-  public func apply<Other>(qos: DispatchQoS,
-                           transform: Deferred<(_ value: Success) -> Other>) -> Deferred<Other>
-  {
-    let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
-    return apply(qos: qos, transform: retransform)
   }
 }
 
