@@ -24,7 +24,7 @@ extension Deferred
   /// - parameter task: a closure to be executed as a notification
   /// - parameter result: the `Result` of this `Deferred`
 
-  public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Success, Error>) -> Void)
+  public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Success, Failure>) -> Void)
   {
     notify(queue: queue, handler: { result in withExtendedLifetime(self, { task(result) }) })
   }
@@ -54,7 +54,7 @@ extension Deferred
   /// - parameter task: the closure to be enqueued
   /// - parameter error: the error from the just-resolved `Deferred`
 
-  public func onError(queue: DispatchQueue? = nil, task: @escaping (_ error: Error) -> Void)
+  public func onError(queue: DispatchQueue? = nil, task: @escaping (_ error: Failure) -> Void)
   {
     onResult(queue: queue, task: { $0.error.map(task) })
   }
