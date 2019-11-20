@@ -125,13 +125,13 @@ extension Deferred
   @discardableResult
   public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred<Success, Error>
   {
-    if self.isResolved { return self.mapError { $0 as Error } }
+    if self.isResolved { return self.withAnyError }
 
     let withTimeout: Deferred<Success, Error>
     if let t = self as? Deferred<Success, Error>
     { withTimeout = t }
     else
-    { withTimeout = self.mapError { $0 as Error } }
+    { withTimeout = self.withAnyError }
 
     if deadline < .now()
     {

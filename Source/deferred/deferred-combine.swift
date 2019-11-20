@@ -348,8 +348,7 @@ public func combine<T1, T2, F>(_ d1: Deferred<T1, F>,
 public func combine<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
                                     _ d2: Deferred<T2, F2>) -> Deferred<(T1, T2), Error>
 {
-  return combine(d1.mapError(transform: { $0 as Error }),
-                 d2.mapError(transform: { $0 as Error }))
+  return combine(d1.withAnyError, d2.withAnyError)
 }
 
 /// Combine three `Deferred` into one.
@@ -376,9 +375,7 @@ public func combine<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
                                             _ d2: Deferred<T2, F2>,
                                             _ d3: Deferred<T3, F3>) -> Deferred<(T1, T2, T3), Error>
 {
-  return combine(d1.mapError(transform: { $0 as Error }),
-                 d2.mapError(transform: { $0 as Error }),
-                 d3.mapError(transform: { $0 as Error }))
+  return combine(d1.withAnyError, d2.withAnyError, d3.withAnyError)
 }
 
 /// Combine four `Deferred` into one.
@@ -407,8 +404,5 @@ public func combine<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
                                                     _ d2: Deferred<T2, F2>,
                                                     _ d3: Deferred<T3, F3>, _ d4: Deferred<T4, F4>) -> Deferred<(T1, T2, T3, T4), Error>
 {
-  return combine(d1.mapError(transform: { $0 as Error }),
-                 d2.mapError(transform: { $0 as Error }),
-                 d3.mapError(transform: { $0 as Error }),
-                 d4.mapError(transform: { $0 as Error }))
+  return combine(d1.withAnyError, d2.withAnyError, d3.withAnyError, d4.withAnyError)
 }

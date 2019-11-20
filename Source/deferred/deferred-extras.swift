@@ -210,6 +210,20 @@ extension Deferred
     let queue = DispatchQueue(label: "deferred-maperror", qos: qos)
     return mapError(queue: queue, transform: transform)
   }
+
+  /// Map this `Deferred`'s `Failure` type to `Error` (any Error).
+  ///
+  /// returns: a `Deferred` where the `Failure` type is unconditionally converted to `Error`
+
+  public var withAnyError: Deferred<Success, Error> {
+    return TBD(queue: queue) {
+      resolver in
+      self.notify(queue: nil) {
+        result in
+        resolver.resolve(result.withAnyError)
+      }
+    }
+  }
 }
 
 // MARK: flatMap: asynchronously transform a `Deferred` into another

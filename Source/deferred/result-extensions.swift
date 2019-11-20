@@ -36,4 +36,12 @@ extension Result
     if case .failure = self { return true }
     return false
   }
+
+  var withAnyError: Result<Success, Error> {
+    switch self
+    {
+    case .success(let value): return Result<Success, Error>(value: value)
+    case .failure(let error): return Result<Success, Error>(error: error)
+    }
+  }
 }
