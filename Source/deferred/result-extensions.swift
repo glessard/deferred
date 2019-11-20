@@ -5,8 +5,6 @@
 //  Created by Guillaume Lessard on 9/19/18.
 //
 
-#if compiler(>=5.0)
-
 extension Result
 {
   init(value: Success)
@@ -39,14 +37,3 @@ extension Result
     return false
   }
 }
-
-#else
-
-import Outcome
-
-public typealias Result<Success, Error> = Outcome<Success>
-
-@available(*, deprecated, renamed: "Outcome")
-public typealias Determined = Outcome
-
-#endif
