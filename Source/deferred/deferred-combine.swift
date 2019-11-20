@@ -339,9 +339,17 @@ public func reduce<S: Sequence, T, F, U>(queue: DispatchQueue,
 /// - parameter d2: a second `Deferred` to combine with `d1`
 /// - returns: a new `Deferred` whose value shall be a tuple of `d1.value` and `d2.value`
 
-public func combine<T1,T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(T1,T2)>
+public func combine<T1, T2, F>(_ d1: Deferred<T1, F>,
+                               _ d2: Deferred<T2, F>) -> Deferred<(T1, T2), F>
 {
   return d1.flatMap { t1 in d2.map { t2 in (t1,t2) } }
+}
+
+public func combine<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
+                                    _ d2: Deferred<T2, F2>) -> Deferred<(T1, T2), Error>
+{
+  return combine(d1.mapError(transform: { $0 as Error }),
+                 d2.mapError(transform: { $0 as Error }))
 }
 
 /// Combine three `Deferred` into one.
@@ -357,9 +365,20 @@ public func combine<T1,T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>) -> Deferred<(
 /// - parameter d3: a third `Deferred` to combine
 /// - returns: a new `Deferred` whose value shall be a tuple of the inputs's values
 
-public func combine<T1,T2,T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>) -> Deferred<(T1,T2,T3)>
+public func combine<T1, T2, T3, F>(_ d1: Deferred<T1, F>,
+                                   _ d2: Deferred<T2, F>,
+                                   _ d3: Deferred<T3, F>) -> Deferred<(T1, T2, T3), F>
 {
   return combine(d1,d2).flatMap { (t1,t2) in d3.map { t3 in (t1,t2,t3) } }
+}
+
+public func combine<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
+                                            _ d2: Deferred<T2, F2>,
+                                            _ d3: Deferred<T3, F3>) -> Deferred<(T1, T2, T3), Error>
+{
+  return combine(d1.mapError(transform: { $0 as Error }),
+                 d2.mapError(transform: { $0 as Error }),
+                 d3.mapError(transform: { $0 as Error }))
 }
 
 /// Combine four `Deferred` into one.
@@ -376,7 +395,20 @@ public func combine<T1,T2,T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Defe
 /// - parameter d4: a fourth `Deferred` to combine
 /// - returns: a new `Deferred` whose value shall be a tuple of the inputs's values
 
-public func combine<T1,T2,T3,T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>) -> Deferred<(T1,T2,T3,T4)>
+public func combine<T1, T2, T3, T4, F>(_ d1: Deferred<T1, F>,
+                                       _ d2: Deferred<T2, F>,
+                                       _ d3: Deferred<T3, F>,
+                                       _ d4: Deferred<T4, F>) -> Deferred<(T1, T2, T3, T4), F>
 {
   return combine(d1,d2,d3).flatMap { (t1,t2,t3) in d4.map { t4 in (t1,t2,t3,t4) } }
+}
+
+public func combine<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
+                                                    _ d2: Deferred<T2, F2>,
+                                                    _ d3: Deferred<T3, F3>, _ d4: Deferred<T4, F4>) -> Deferred<(T1, T2, T3, T4), Error>
+{
+  return combine(d1.mapError(transform: { $0 as Error }),
+                 d2.mapError(transform: { $0 as Error }),
+                 d3.mapError(transform: { $0 as Error }),
+                 d4.mapError(transform: { $0 as Error }))
 }
