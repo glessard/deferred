@@ -209,14 +209,16 @@ private func ~= <T: AnyObject>(object: T, id: ObjectIdentifier?) -> Bool
   return ObjectIdentifier(object) == id
 }
 
-public func firstResolved<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
-                                  canceling: Bool = false) -> (Deferred<T1>, Deferred<T2>)
+public func firstResolved<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
+                                          _ d2: Deferred<T2, F2>,
+                                          canceling: Bool = false)
+  -> (Deferred<T1, Error>, Deferred<T2, Error>)
 {
-  let (r1, o1) = TBD<T1>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2>.CreatePair(queue: d2.queue)
+  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
 
   // find which input gets resolved first
-  let selected = TBD<ObjectIdentifier>() {
+  let selected = TBD<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
     d2.notify { [id = ObjectIdentifier(d2)] _ in resolver.resolve(value: id) }
@@ -232,8 +234,8 @@ public func firstResolved<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
 
     switch result.value
     { // transfer the result to the selected output
-    case d1: r1.resolve(d1.result)
-    case d2: r2.resolve(d2.result)
+    case d1: r1.resolve(d1.result.withAnyError)
+    case d2: r2.resolve(d2.result.withAnyError)
     default: fatalError()
     }
 
@@ -248,15 +250,18 @@ public func firstResolved<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
   return (o1, o2)
 }
 
-public func firstResolved<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>,
-                                      canceling: Bool = false) -> (Deferred<T1>, Deferred<T2>, Deferred<T3>)
+public func firstResolved<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
+                                                  _ d2: Deferred<T2, F2>,
+                                                  _ d3: Deferred<T3, F3>,
+                                                  canceling: Bool = false)
+  -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>)
 {
-  let (r1, o1) = TBD<T1>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2>.CreatePair(queue: d2.queue)
-  let (r3, o3) = TBD<T3>.CreatePair(queue: d3.queue)
+  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
+  let (r3, o3) = TBD<T3, Error>.CreatePair(queue: d3.queue)
 
   // find which input gets resolved first
-  let selected = TBD<ObjectIdentifier>() {
+  let selected = TBD<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
     d2.notify { [id = ObjectIdentifier(d2)] _ in resolver.resolve(value: id) }
@@ -274,9 +279,9 @@ public func firstResolved<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ 
 
     switch result.value
     { // transfer the result to the selected output
-    case d1: r1.resolve(d1.result)
-    case d2: r2.resolve(d2.result)
-    case d3: r3.resolve(d3.result)
+    case d1: r1.resolve(d1.result.withAnyError)
+    case d2: r2.resolve(d2.result.withAnyError)
+    case d3: r3.resolve(d3.result.withAnyError)
     default: fatalError()
     }
 
@@ -293,16 +298,20 @@ public func firstResolved<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ 
   return (o1, o2, o3)
 }
 
-public func firstResolved<T1, T2, T3, T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>,
-                                          canceling: Bool = false) -> (Deferred<T1>, Deferred<T2>, Deferred<T3>, Deferred<T4>)
+public func firstResolved<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
+                                                          _ d2: Deferred<T2, F2>,
+                                                          _ d3: Deferred<T3, F3>,
+                                                          _ d4: Deferred<T4, F4>,
+                                                          canceling: Bool = false)
+  -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>, Deferred<T4, Error>)
 {
-  let (r1, o1) = TBD<T1>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2>.CreatePair(queue: d2.queue)
-  let (r3, o3) = TBD<T3>.CreatePair(queue: d3.queue)
-  let (r4, o4) = TBD<T4>.CreatePair(queue: d4.queue)
+  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
+  let (r3, o3) = TBD<T3, Error>.CreatePair(queue: d3.queue)
+  let (r4, o4) = TBD<T4, Error>.CreatePair(queue: d4.queue)
 
   // find which input gets resolved first
-  let selected = TBD<ObjectIdentifier>() {
+  let selected = TBD<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
     d2.notify { [id = ObjectIdentifier(d2)] _ in resolver.resolve(value: id) }
@@ -322,10 +331,10 @@ public func firstResolved<T1, T2, T3, T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>
 
     switch result.value
     { // transfer the result to the selected output
-    case d1: r1.resolve(d1.result)
-    case d2: r2.resolve(d2.result)
-    case d3: r3.resolve(d3.result)
-    case d4: r4.resolve(d4.result)
+    case d1: r1.resolve(d1.result.withAnyError)
+    case d2: r2.resolve(d2.result.withAnyError)
+    case d3: r3.resolve(d3.result.withAnyError)
+    case d4: r4.resolve(d4.result.withAnyError)
     default: fatalError()
     }
 
