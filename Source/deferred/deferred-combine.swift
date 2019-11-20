@@ -151,10 +151,10 @@ public func combine<Success, S: Sequence>(queue: DispatchQueue,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<C: Collection, T, U>(qos: DispatchQoS,
-                                        deferreds: C, initial: U,
-                                        combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where C.Element == Deferred<T>
+public func reduce<C: Collection, T, F, U>(qos: DispatchQoS,
+                                           deferreds: C, initial: U,
+                                           combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where C.Element == Deferred<T, F>
 {
   let queue = DispatchQueue(label: "reduce-collection", qos: qos)
   return reduce(queue: queue, deferreds: deferreds, initial: initial, combine: combine)
@@ -181,9 +181,9 @@ public func reduce<C: Collection, T, U>(qos: DispatchQoS,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<C: Collection, T, U>(_ deferreds: C, initial: U,
-                                        combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where C.Element == Deferred<T>
+public func reduce<C: Collection, T, F, U>(_ deferreds: C, initial: U,
+                                           combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where C.Element == Deferred<T, F>
 {
   return reduce(qos: .current, deferreds: deferreds, initial: initial, combine: combine)
 }
@@ -210,15 +210,15 @@ public func reduce<C: Collection, T, U>(_ deferreds: C, initial: U,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<C: Collection, T, U>(queue: DispatchQueue,
-                                        deferreds: C, initial: U,
-                                        combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where C.Element == Deferred<T>
+public func reduce<C: Collection, T, F, U>(queue: DispatchQueue,
+                                           deferreds: C, initial: U,
+                                           combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where C.Element == Deferred<T, F>
 {
-  let reduced = deferreds.reduce(Deferred(queue: queue, value: initial)) {
+  let reduced = deferreds.reduce(Deferred<U, F>(queue: queue, value: initial)) {
     (accumulator, deferred) in
     accumulator.flatMap {
-      u in deferred.map(queue: queue) { t in try combine(u,t) }
+      u in deferred.map(queue: queue) { t in combine(u,t) }
     }
   }
 
@@ -248,10 +248,10 @@ public func reduce<C: Collection, T, U>(queue: DispatchQueue,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<S: Sequence, T, U>(qos: DispatchQoS,
-                                      deferreds: S, initial: U,
-                                      combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where S.Element == Deferred<T>
+public func reduce<S: Sequence, T, F, U>(qos: DispatchQoS,
+                                         deferreds: S, initial: U,
+                                         combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where S.Element == Deferred<T, F>
 {
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
   return reduce(queue: queue, deferreds: deferreds, initial: initial, combine: combine)
@@ -279,9 +279,9 @@ public func reduce<S: Sequence, T, U>(qos: DispatchQoS,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U,
-                                      combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where S.Element == Deferred<T>
+public func reduce<S: Sequence, T, F, U>(_ deferreds: S, initial: U,
+                                         combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where S.Element == Deferred<T, F>
 {
   return reduce(qos: .current, deferreds: deferreds, initial: initial, combine: combine)
 }
@@ -309,20 +309,21 @@ public func reduce<S: Sequence, T, U>(_ deferreds: S, initial: U,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<S: Sequence, T, U>(queue: DispatchQueue,
-                                      deferreds: S, initial: U,
-                                      combine: @escaping (_ accumulated: U, _ element: T) throws -> U) -> Deferred<U>
-  where S.Element == Deferred<T>
+public func reduce<S: Sequence, T, F, U>(queue: DispatchQueue,
+                                         deferreds: S, initial: U,
+                                         combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where S.Element == Deferred<T, F>
 {
   // We execute `Sequence.reduce` asynchronously because
   // nothing prevents S from blocking on `Sequence.next()`
-  let reduced = Deferred<Deferred<U>>(queue: queue) {
-    deferreds.reduce(Deferred(queue: queue, value: initial)) {
+  let reduced = Deferred<Deferred<U, F>, Never>(queue: queue) {
+    let r = deferreds.reduce(Deferred<U, F>(queue: queue, value: initial)) {
       (accumulator, deferred) in
       accumulator.flatMap {
-        u in deferred.map(queue: queue) { t in try combine(u,t) }
+        u in deferred.map(queue: queue) { t in combine(u,t) }
       }
     }
+    return Result<Deferred<U, F>, Never>(value: r)
   }
 
   return reduced.flatten()
