@@ -22,9 +22,9 @@ import Dispatch
 /// - parameter deferreds: a `Collection` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Success, C: Collection>(qos: DispatchQoS,
-                                          deferreds: C) -> Deferred<[Success]>
-  where C.Element == Deferred<Success>
+public func combine<Success, Failure, C>(qos: DispatchQoS,
+                                         deferreds: C) -> Deferred<[Success], Failure>
+  where Failure: Error, C: Collection, C.Element == Deferred<Success, Failure>
 {
   let queue = DispatchQueue(label: "reduce-collection", qos: qos)
   return combine(queue: queue, deferreds: deferreds)
@@ -41,8 +41,8 @@ public func combine<Success, C: Collection>(qos: DispatchQoS,
 /// - parameter deferreds: a `Collection` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Success, C: Collection>(_ deferreds: C) -> Deferred<[Success]>
-  where C.Element == Deferred<Success>
+public func combine<Success, Failure, C>(_ deferreds: C) -> Deferred<[Success], Failure>
+  where Failure: Error, C: Collection, C.Element == Deferred<Success, Failure>
 {
   return combine(qos: .current, deferreds: deferreds)
 }
@@ -59,9 +59,8 @@ public func combine<Success, C: Collection>(_ deferreds: C) -> Deferred<[Success
 /// - parameter deferreds: a `Collection` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Success, C: Collection>(queue: DispatchQueue,
-                                          deferreds: C) -> Deferred<[Success]>
-  where C.Element == Deferred<Success>
+public func combine<Success, Failure, C>(queue: DispatchQueue, deferreds: C) -> Deferred<[Success], Failure>
+  where Failure: Error, C: Collection, C.Element == Deferred<Success, Failure>
 {
   var combined = [Success]()
   combined.reserveCapacity(numericCast(deferreds.count))
@@ -82,9 +81,9 @@ public func combine<Success, C: Collection>(queue: DispatchQueue,
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Success, S: Sequence>(qos: DispatchQoS = .current,
-                                        deferreds: S) -> Deferred<[Success]>
-  where S.Element == Deferred<Success>
+public func combine<Success, Failure, S>(qos: DispatchQoS = .current,
+                                         deferreds: S) -> Deferred<[Success], Failure>
+  where Failure: Error, S: Sequence, S.Element == Deferred<Success, Failure>
 {
   let queue = DispatchQueue(label: "reduce-collection", qos: qos)
   return combine(queue: queue, deferreds: deferreds)
@@ -101,8 +100,8 @@ public func combine<Success, S: Sequence>(qos: DispatchQoS = .current,
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Success, S: Sequence>(_ deferreds: S) -> Deferred<[Success]>
-  where S.Element == Deferred<Success>
+public func combine<Success, Failure, S>(_ deferreds: S) -> Deferred<[Success], Failure>
+  where Failure: Error, S: Sequence, S.Element == Deferred<Success, Failure>
 {
   return combine(qos: .current, deferreds: deferreds)
 }
@@ -119,9 +118,8 @@ public func combine<Success, S: Sequence>(_ deferreds: S) -> Deferred<[Success]>
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - returns: a new `Deferred`
 
-public func combine<Success, S: Sequence>(queue: DispatchQueue,
-                                        deferreds: S) -> Deferred<[Success]>
-  where S.Element == Deferred<Success>
+public func combine<Success, Failure, S>(queue: DispatchQueue, deferreds: S) -> Deferred<[Success], Failure>
+  where Failure: Error, S: Sequence, S.Element == Deferred<Success, Failure>
 {
   var combined = [Success]()
 
