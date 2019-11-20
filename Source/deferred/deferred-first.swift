@@ -8,95 +8,30 @@
 
 import Dispatch
 
-/// Return the value of the first of an array of `Deferred`s to be resolved succesfully.
-///
-/// The returned `Deferred` be resolved with an `Error` only if every input `Deferred`
-/// is resolved with an `Error`; in such a situation the returned `Error` will be
-/// the last one to have been resolved.
-///
-/// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
-/// `DeferredError.invalid` error.
-///
-/// Note also that if more than one element has a value at the time
-/// the function is called, the earliest one encountered will be considered first; if this
-/// biasing is a problem, consider shuffling the collection first.
-///
-/// - parameter qos: the QoS at which the new `Deferred`'s notifications will be executed
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
-/// - returns: a new `Deferred`
-
-public func firstValue<Success, C: Collection>(_ deferreds: C, qos: DispatchQoS = .current,
-                                             cancelOthers: Bool = false) -> Deferred<Success>
-  where C.Element: Deferred<Success>
+struct NonEmptySequence<Element, S: Sequence>: Sequence, IteratorProtocol
+  where S.Element == Element
 {
-  let queue = DispatchQueue(label: "first-collection", qos: qos)
-  return firstValue(deferreds, queue: queue, cancelOthers: cancelOthers)
-}
+  private var first: Element?
+  private var iterator: S.Iterator
 
-/// Return the value of the first of an array of `Deferred`s to be resolved succesfully.
-///
-/// The returned `Deferred` be resolved with an `Error` only if every input `Deferred`
-/// is resolved with an `Error`; in such a situation the returned `Error` will be
-/// the error returned by the last `Deferred` in the input `Sequence`.
-///
-/// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
-/// `DeferredError.invalid` error.
-///
-/// Note also that if more than one element has a value at the time
-/// the function is called, the earliest one encountered will be considered first; if this
-/// biasing is a problem, consider shuffling the collection first.
-///
-/// - parameter queue: the `DispatchQueue` on which the new `Deferred`'s notifications will be executed.
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
-/// - returns: a new `Deferred`
-
-public func firstValue<Success, C: Collection>(_ deferreds: C, queue: DispatchQueue,
-                                             cancelOthers: Bool = false) -> Deferred<Success>
-  where C.Element: Deferred<Success>
-{
-  if deferreds.isEmpty
+  init?(elements: S)
   {
-    let error = DeferredError.invalid("cannot find first resolved value from an empty set in \(#function)")
-    return Deferred(queue: queue, error: error)
+    iterator = elements.makeIterator()
+    guard let f = iterator.next() else { return nil }
+    first = f
   }
 
-  return TBD<Success>(queue: queue) {
-    f in
-    var errors: [Deferred<Error>] = []
-    errors.reserveCapacity(deferreds.count)
-
-    deferreds.forEach {
-      deferred in
-      let e = TBD<Error>() {
-        e in
-        deferred.notify {
-          result in
-          do {
-            let value = try result.get()
-            f.resolve(value: value)
-            e.cancel()
-          }
-          catch {
-            e.resolve(value: error)
-          }
-        }
-        if cancelOthers
-        {
-          f.notify { deferred.cancel(.notSelected) }
-        }
-        else
-        {
-          f.retainSource(deferred)
-        }
-      }
-      errors.append(e)
+  mutating func next() -> Element?
+  {
+    if let element = first
+    {
+      first = nil
+      return element
     }
-
-    let combined = combine(queue: queue, deferreds: errors)
-    combined.notify { if let e = $0.value { f.resolve(error: e.last!) } }
-    f.notify { combined.cancel() }
+    else
+    {
+      return iterator.next()
+    }
   }
 }
 
@@ -106,20 +41,22 @@ public func firstValue<Success, C: Collection>(_ deferreds: C, queue: DispatchQu
 /// is resolved with an `Error`; in such a situation the returned `Error` will be
 /// the error returned by the last `Deferred` in the input `Sequence`.
 ///
-/// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
-/// `DeferredError.invalid` error.
+/// If the `Sequence` is empty, this function will return `nil`.
+/// If the `Sequence`'s `Iterator` can block on `next()`, this function could block
+/// while attempting to retrieve the first element.
 ///
 /// Note also that if more than one element is already resolved at the time
 /// the function is called, the earliest one encountered will be considered first.
+/// If such biasing is a problem, consider shuffling your sequence or collection first.
 ///
 /// - parameter qos: the QoS at which the new `Deferred`'s notifications will be executed
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstValue<Success, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
-                                           cancelOthers: Bool = false) -> Deferred<Success>
-  where S.Element: Deferred<Success>
+public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
+                                                      cancelOthers: Bool = false) throws -> Deferred<Success, Failure>?
+  where S.Element: Deferred<Success, Failure>
 {
   let queue = DispatchQueue(label: "first-sequence", qos: qos)
   return firstValue(deferreds, queue: queue, cancelOthers: cancelOthers)
@@ -131,41 +68,48 @@ public func firstValue<Success, S: Sequence>(_ deferreds: S, qos: DispatchQoS = 
 /// is resolved with an `Error`; in such a situation the returned `Error` will be
 /// the error returned by the last `Deferred` in the input `Sequence`.
 ///
-/// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
-/// `DeferredError.invalid` error.
+/// If the `Sequence` is empty, this function will return `nil`.
+/// If the `Sequence`'s `Iterator` can block on `next()`, this function could block
+/// while attempting to retrieve the first element.
 ///
 /// Note also that if more than one element is already resolved at the time
 /// the function is called, the earliest one encountered will be considered first.
+/// If such biasing is a problem, consider shuffling your sequence or collection first.
 ///
 /// - parameter queue: the `DispatchQueue` on which the new `Deferred`'s notifications will be executed.
 /// - parameter deferreds: a `Sequence` of `Deferred`
-/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
+/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`).
+///                           `cancelOthers` can only have an effect if `Deferred.Cancellation` can be represented as a `Failure`.
 /// - returns: a new `Deferred`
 
-public func firstValue<Success, S: Sequence>(_ deferreds: S, queue: DispatchQueue,
-                                           cancelOthers: Bool = false) -> Deferred<Success>
-  where S.Element: Deferred<Success>
+public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, queue: DispatchQueue,
+                                                      cancelOthers: Bool = false) -> Deferred<Success, Failure>?
+  where S.Element: Deferred<Success, Failure>
 {
-  return TBD<Success>(queue: queue) {
+  guard let deferreds = NonEmptySequence(elements: deferreds) else { return nil }
+
+  return TBD<Success, Failure>(queue: queue) {
     f in
-    queue.async {
-      var errors: [Deferred<Error>] = []
-      deferreds.forEach {
-        deferred in
-        let error = TBD<Error> {
+    // We loop over the elements on a concurrent thread
+    // because nothing prevents S from blocking on `S.Iterator.next()`
+    DispatchQueue.global(qos: queue.qos.qosClass).async {
+      var errors: [Deferred<Failure, Cancellation>] = []
+      for deferred in deferreds
+      {
+        let error = TBD<Failure, Cancellation> {
           e in
           deferred.notify {
             result in
-            do {
-              let value = try result.get()
+            switch result
+            {
+            case .success(let value):
               f.resolve(value: value)
               e.cancel()
-            }
-            catch {
+            case .failure(let error):
               e.resolve(value: error)
             }
           }
-          if cancelOthers
+          if cancelOthers && (Cancellation.notSelected is Failure)
           {
             f.notify { deferred.cancel(.notSelected) }
           }
@@ -177,108 +121,30 @@ public func firstValue<Success, S: Sequence>(_ deferreds: S, queue: DispatchQueu
         errors.append(error)
       }
 
-      if errors.isEmpty
-      { // our sequence was empty
-        let error = DeferredError.invalid("cannot find first resolved value from an empty set in \(#function)")
-        f.resolve(error: error)
-      }
-      else
-      {
-        let combined = combine(queue: queue, deferreds: errors)
-        combined.notify { if let e = $0.value { f.resolve(error: e.last!) } }
-        f.notify { combined.cancel() }
-      }
+      assert(errors.isEmpty == false)
+      let combined = combine(queue: queue, deferreds: errors)
+      combined.notify { if let e = $0.value { f.resolve(error: e.last!) } }
+      f.notify { combined.cancel() }
     }
   }
 }
 
 /// Return the first of an array of `Deferred`s to become resolved.
 ///
-/// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
-/// `DeferredError.invalid` error.
-///
-/// Note also that if more than one element has a value at the time
-/// the function is called, the earliest one encountered will be considered first; if this
-/// biasing is a problem, consider shuffling the collection first.
-///
-/// - parameter qos: the QoS at which the new `Deferred`'s notifications will be executed
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
-/// - returns: a new `Deferred`
-
-public func firstResolved<Success, C: Collection>(_ deferreds: C, qos: DispatchQoS = .current,
-                                                cancelOthers: Bool = false) -> Deferred<Deferred<Success>>
-  where C.Element: Deferred<Success>
-{
-  let queue = DispatchQueue(label: "first-collection", qos: qos)
-  return firstResolved(deferreds, queue: queue, cancelOthers: cancelOthers)
-}
-
-/// Return the first of an array of `Deferred`s to become resolved.
-///
-/// Note that if the `Collection` is empty, the resulting `Deferred` will resolve to a
-/// `DeferredError.invalid` error.
-///
-/// Note also that if more than one element has a value at the time
-/// the function is called, the earliest one encountered will be considered first; if this
-/// biasing is a problem, consider shuffling the collection first.
-///
-/// - parameter queue: the `DispatchQueue` on which the new `Deferred`'s notifications will be executed.
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
-/// - returns: a new `Deferred`
-
-public func firstResolved<Success, C: Collection>(_ deferreds: C, queue: DispatchQueue,
-                                                cancelOthers: Bool = false) -> Deferred<Deferred<Success>>
-  where C.Element: Deferred<Success>
-{
-  if deferreds.count == 0
-  {
-    let error = DeferredError.invalid("cannot find first resolved from an empty set in \(#function)")
-    return Deferred(queue: queue, error: error)
-  }
-
-  let first = TBD<Deferred<Success>>(queue: queue) {
-    resolver in
-    deferreds.forEach {
-      deferred in
-      deferred.notify {
-        [weak deferred] _ in
-        if let d = deferred
-        {
-          resolver.resolve(value: d)
-        }
-      }
-      if cancelOthers
-      {
-        resolver.notify { deferred.cancel(.notSelected) }
-      }
-      else
-      {
-        resolver.retainSource(deferred)
-      }
-    }
-  }
-
-  return first
-}
-
-/// Return the first of an array of `Deferred`s to become resolved.
-///
-/// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
-/// `DeferredError.invalid` error.
+/// Note that if the `Sequence` is empty, the returned `Deferred` will contain an `Invalidation` error.
 ///
 /// Note also that if more than one element is already resolved at the time
 /// the function is called, the earliest one encountered will be considered first.
+/// If such biasing is a problem, consider shuffling your sequence or collection first.
 ///
 /// - parameter qos: the QoS at which the new `Deferred`'s notifications will be executed
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstResolved<Success, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
-                                              cancelOthers: Bool = false) -> Deferred<Deferred<Success>>
-  where S.Element: Deferred<Success>
+public func firstResolved<Success, Failure, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
+                                                         cancelOthers: Bool = false) -> Deferred<Deferred<Success, Failure>, Invalidation>
+  where S.Element: Deferred<Success, Failure>
 {
   let queue = DispatchQueue(label: "first-sequence", qos: qos)
   return firstResolved(deferreds, queue: queue, cancelOthers: cancelOthers)
@@ -286,30 +152,36 @@ public func firstResolved<Success, S: Sequence>(_ deferreds: S, qos: DispatchQoS
 
 /// Return the first of an array of `Deferred`s to become resolved.
 ///
-/// Note that if the `Sequence` is empty, the resulting `Deferred` will resolve to a
-/// `DeferredError.invalid` error.
+/// Note that if the `Sequence` is empty, the returned `Deferred` will contain an `Invalidation` error.
 ///
 /// Note also that if more than one element is already resolved at the time
 /// the function is called, the earliest one encountered will be considered first.
+/// If such biasing is a problem, consider shuffling your sequence or collection first.
 ///
 /// - parameter queue: the `DispatchQueue` on which the new `Deferred`'s notifications will be executed.
 /// - parameter deferreds: a `Sequence` of `Deferred`
 /// - parameter cancelOthers: whether to attempt to cancel every `Deferred` that doesn't get resolved first (defaults to `false`)
 /// - returns: a new `Deferred`
 
-public func firstResolved<Success, S>(_ deferreds: S, queue: DispatchQueue,
-                                    cancelOthers: Bool = false) -> Deferred<Deferred<Success>>
-  where S: Sequence, S.Element: Deferred<Success>
+public func firstResolved<Success, Failure, S>(_ deferreds: S, queue: DispatchQueue,
+                                               cancelOthers: Bool = false) -> Deferred<Deferred<Success, Failure>, Invalidation>
+  where S: Sequence, S.Element: Deferred<Success, Failure>
 {
-  let first = TBD<Deferred<Success>>(queue: queue) {
+  let function = #function
+
+  return TBD<Deferred<Success, Failure>, Invalidation>(queue: queue) {
     resolver in
-    // We execute `Sequence.forEach` on a background thread
-    // because nothing prevents S from blocking on `Sequence.next()`
-    queue.async {
-      var empty = true
+    // We loop over the elements on a concurrent thread
+    // because nothing prevents S from blocking on `S.Iterator.next()`
+    DispatchQueue.global(qos: queue.qos.qosClass).async {
+      guard let deferreds = NonEmptySequence(elements: deferreds)
+        else {
+          resolver.resolve(error: .invalid("cannot find first resolved `Deferred` from an empty sequence in \(function)"))
+          return
+      }
+
       for deferred in deferreds
       {
-        empty = false
         deferred.notify {
           [weak deferred] _ in
           if let d = deferred
@@ -317,7 +189,7 @@ public func firstResolved<Success, S>(_ deferreds: S, queue: DispatchQueue,
             resolver.resolve(value: d)
           }
         }
-        if cancelOthers
+        if cancelOthers && (Cancellation.notSelected is Failure)
         {
           resolver.notify { deferred.cancel(.notSelected) }
         }
@@ -326,16 +198,8 @@ public func firstResolved<Success, S>(_ deferreds: S, queue: DispatchQueue,
           resolver.retainSource(deferred)
         }
       }
-
-      if empty
-      {
-        let message = "cannot find first resolved from an empty set in \(#function)"
-        resolver.resolve(error: DeferredError.invalid(message))
-      }
     }
   }
-
-  return first
 }
 
 /// match any `AnyObject` reference to its corresponding `ObjectIdentifier`
