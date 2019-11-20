@@ -3,21 +3,12 @@ language: swift
 matrix:
   include:
     - os: osx
-      osx_image: xcode10.1
-      env: SWIFT=4.2.1
-
-    - os: osx
       osx_image: xcode10.2
       env: SWIFT=5.0.1
 
     - os: osx
       osx_image: xcode11.2
       env: SWIFT=5.1.2
-
-    - os: linux
-      dist: xenial
-      language: generic
-      env: SWIFT=4.2.4
 
     - os: linux
       dist: xenial
