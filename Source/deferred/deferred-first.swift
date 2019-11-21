@@ -353,20 +353,20 @@ public func firstResolved<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>
   return (o1, o2, o3, o4)
 }
 
-private func resolveValue<T>(_ resolver: Resolver<ObjectIdentifier, Error>,
-                             _ deferred: Deferred<T>) -> Deferred<Error>
+private func resolveValue<T, F>(_ resolver: Resolver<ObjectIdentifier, Cancellation>,
+                                _ deferred: Deferred<T, F>) -> Deferred<Error, Cancellation>
 {
-  return TBD<Error> {
+  return TBD<Error, Cancellation> {
     error in
     let id = ObjectIdentifier(deferred)
     deferred.notify {
       result in
-      do {
-        _ = try result.get()
+      switch result
+      {
+      case .success:
         resolver.resolve(value: id)
         error.cancel()
-      }
-      catch let e {
+      case .failure(let e):
         error.resolve(value: e)
       }
     }
@@ -374,14 +374,16 @@ private func resolveValue<T>(_ resolver: Resolver<ObjectIdentifier, Error>,
   }
 }
 
-public func firstValue<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
-                               canceling: Bool = false) -> (Deferred<T1>, Deferred<T2>)
+public func firstValue<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
+                                       _ d2: Deferred<T2, F2>,
+                                       canceling: Bool = false)
+  -> (Deferred<T1, Error>, Deferred<T2, Error>)
 {
-  let (r1, o1) = TBD<T1>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2>.CreatePair(queue: d2.queue)
+  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
 
   // find which input first gets a value
-  let selected = TBD<ObjectIdentifier>() {
+  let selected = TBD<ObjectIdentifier, Cancellation>() {
     resolver in
     let errors = [
       resolveValue(resolver, d1),
@@ -390,7 +392,7 @@ public func firstValue<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
 
     // figure out whether all inputs got errors
     let combined = combine(qos: .utility, deferreds: errors)
-    combined.notify { if $0.isValue { resolver.resolve(error: DeferredError.notSelected) } }
+    combined.notify { if $0.isValue { resolver.resolve(error: .notSelected) } }
     resolver.notify { combined.cancel() }
   }
 
@@ -402,15 +404,19 @@ public func firstValue<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
       d2.cancel(.notSelected)
     }
 
-    switch result.value
-    { // transfer the value-containing result to the selected output
-    case d1?: r1.resolve(d1.result)
-    case d2?: r2.resolve(d2.result)
-    case nil:
+    switch result
+    {
+    case .success(let id):
+      switch id
+      { // transfer the value-containing result to the selected output
+      case d1: r1.resolve(d1.result.withAnyError)
+      case d2: r2.resolve(d2.result.withAnyError)
+      default: fatalError()
+      }
+    case .failure:
       // all inputs got errors, so transfer them to the outputs
       d1.error.map { _ = r1.resolve(error: $0) }
       d2.error.map { _ = r2.resolve(error: $0) }
-    default: fatalError()
     }
 
     // cancel the remaining unresolved outputs
@@ -424,15 +430,18 @@ public func firstValue<T1, T2>(_ d1: Deferred<T1>, _ d2: Deferred<T2>,
   return (o1, o2)
 }
 
-public func firstValue<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>,
-                                   canceling: Bool = false) -> (Deferred<T1>, Deferred<T2>, Deferred<T3>)
+public func firstValue<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
+                                               _ d2: Deferred<T2, F2>,
+                                               _ d3: Deferred<T3, F3>,
+                                               canceling: Bool = false)
+  -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>)
 {
-  let (r1, o1) = TBD<T1>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2>.CreatePair(queue: d2.queue)
-  let (r3, o3) = TBD<T3>.CreatePair(queue: d3.queue)
+  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
+  let (r3, o3) = TBD<T3, Error>.CreatePair(queue: d3.queue)
 
   // find which input first gets a value
-  let selected = TBD<ObjectIdentifier>() {
+  let selected = TBD<ObjectIdentifier, Cancellation>() {
     resolver in
     let errors = [
       resolveValue(resolver, d1),
@@ -442,7 +451,7 @@ public func firstValue<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3:
 
     // figure out whether all inputs got errors
     let combined = combine(qos: .utility, deferreds: errors)
-    combined.notify { if $0.isValue { resolver.resolve(error: DeferredError.notSelected) } }
+    combined.notify { if $0.isValue { resolver.resolve(error: .notSelected) } }
     resolver.notify { combined.cancel() }
   }
 
@@ -455,17 +464,21 @@ public func firstValue<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3:
       d3.cancel(.notSelected)
     }
 
-    switch result.value
-    { // transfer the value-containing result to the selected output
-    case d1?: r1.resolve(d1.result)
-    case d2?: r2.resolve(d2.result)
-    case d3?: r3.resolve(d3.result)
-    case nil:
+    switch result
+    {
+    case .success(let id):
+      switch id
+      { // transfer the value-containing result to the selected output
+      case d1: r1.resolve(d1.result.withAnyError)
+      case d2: r2.resolve(d2.result.withAnyError)
+      case d3: r3.resolve(d3.result.withAnyError)
+      default: fatalError()
+      }
+    case .failure:
       // all inputs got errors, so transfer them to the outputs
       d1.error.map { _ = r1.resolve(error: $0) }
       d2.error.map { _ = r2.resolve(error: $0) }
       d3.error.map { _ = r3.resolve(error: $0) }
-    default: fatalError()
     }
 
     // cancel the remaining unresolved outputs
@@ -481,16 +494,20 @@ public func firstValue<T1, T2, T3>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3:
   return (o1, o2, o3)
 }
 
-public func firstValue<T1, T2, T3, T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _ d3: Deferred<T3>, _ d4: Deferred<T4>,
-                                       canceling: Bool = false) -> (Deferred<T1>, Deferred<T2>, Deferred<T3>, Deferred<T4>)
+public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
+                                                       _ d2: Deferred<T2, F2>,
+                                                       _ d3: Deferred<T3, F3>,
+                                                       _ d4: Deferred<T4, F4>,
+                                                       canceling: Bool = false)
+  -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>, Deferred<T4, Error>)
 {
-  let (r1, o1) = TBD<T1>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2>.CreatePair(queue: d2.queue)
-  let (r3, o3) = TBD<T3>.CreatePair(queue: d3.queue)
-  let (r4, o4) = TBD<T4>.CreatePair(queue: d4.queue)
+  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
+  let (r3, o3) = TBD<T3, Error>.CreatePair(queue: d3.queue)
+  let (r4, o4) = TBD<T4, Error>.CreatePair(queue: d4.queue)
 
   // find which input first gets a value
-  let selected = TBD<ObjectIdentifier>() {
+  let selected = TBD<ObjectIdentifier, Cancellation>() {
     resolver in
     let errors = [
       resolveValue(resolver, d1),
@@ -501,7 +518,7 @@ public func firstValue<T1, T2, T3, T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _
 
     // figure out whether all inputs got errors
     let combined = combine(qos: .utility, deferreds: errors)
-    combined.notify { if $0.isValue { resolver.resolve(error: DeferredError.notSelected) } }
+    combined.notify { if $0.isValue { resolver.resolve(error: .notSelected) } }
     resolver.notify { combined.cancel() }
   }
 
@@ -515,19 +532,23 @@ public func firstValue<T1, T2, T3, T4>(_ d1: Deferred<T1>, _ d2: Deferred<T2>, _
       d4.cancel(.notSelected)
     }
 
-    switch result.value
-    { // transfer the value-containing result to the selected output
-    case d1?: r1.resolve(d1.result)
-    case d2?: r2.resolve(d2.result)
-    case d3?: r3.resolve(d3.result)
-    case d4?: r4.resolve(d4.result)
-    case nil:
+    switch result
+    {
+    case .success(let id):
+      switch id
+      { // transfer the value-containing result to the selected output
+      case d1: r1.resolve(d1.result.withAnyError)
+      case d2: r2.resolve(d2.result.withAnyError)
+      case d3: r3.resolve(d3.result.withAnyError)
+      case d4: r4.resolve(d4.result.withAnyError)
+    default: fatalError()
+      }
+    case .failure:
       // all inputs got errors, so transfer them to the outputs
       d1.error.map { _ = r1.resolve(error: $0) }
       d2.error.map { _ = r2.resolve(error: $0) }
       d3.error.map { _ = r3.resolve(error: $0) }
       d4.error.map { _ = r4.resolve(error: $0) }
-    default: fatalError()
     }
 
     // cancel the remaining unresolved outputs
