@@ -2,19 +2,17 @@
 //  outcome.swift
 //  deferred
 //
-//  Created by Guillaume Lessard on 4/17/19.
+//  Created by Guillaume Lessard on 9/19/18.
 //
 
-#if compiler(>=5.0)
-
-extension Result where Failure == Swift.Error
+extension Result
 {
   init(value: Success)
   {
     self = .success(value)
   }
 
-  init(error: Error)
+  init(error: Failure)
   {
     self = .failure(error)
   }
@@ -24,7 +22,7 @@ extension Result where Failure == Swift.Error
     return nil
   }
 
-  var error: Error? {
+  var error: Failure? {
     if case .failure(let error) = self { return error }
     return nil
   }
@@ -38,6 +36,12 @@ extension Result where Failure == Swift.Error
     if case .failure = self { return true }
     return false
   }
-}
 
-#endif
+  var withAnyError: Result<Success, Error> {
+    switch self
+    {
+    case .success(let value): return Result<Success, Error>(value: value)
+    case .failure(let error): return Result<Success, Error>(error: error)
+    }
+  }
+}
