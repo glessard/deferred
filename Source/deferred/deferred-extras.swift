@@ -336,63 +336,6 @@ extension Deferred
   /// - returns: a `Deferred` reference representing the return value of the transform
   /// - parameter error: the Error to be transformed for the new `Deferred`
 
-  public func recover(queue: DispatchQueue? = nil,
-                      transform: @escaping (_ error: Error) throws -> Deferred<Success, Error>) -> Deferred<Success, Error>
-  {
-    return TBD(queue: queue ?? self.queue) {
-      resolver in
-      self.notify(queue: queue) {
-        result in
-        guard resolver.needsResolution else { return }
-        resolver.beginExecution()
-        switch result
-        {
-        case let .success(value):
-          resolver.resolve(value: value)
-
-        case let .failure(error):
-          do {
-            let transformed = try transform(error)
-            if let transformed = transformed.peek()
-            {
-              resolver.resolve(transformed)
-            }
-            else
-            {
-              transformed.notify(queue: queue) { resolver.resolve($0) }
-              resolver.retainSource(transformed)
-            }
-          }
-          catch {
-            resolver.resolve(error: error)
-          }
-        }
-      }
-      resolver.retainSource(self)
-    }
-  }
-
-  /// Enqueue a transform to be computed asynchronously if and when `self` becomes resolved with an error.
-  ///
-  /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
-  /// - parameter transform: the transform to be performed
-  /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter error: the Error to be transformed for the new `Deferred`
-
-  public func recover(qos: DispatchQoS,
-                      transform: @escaping (_ error: Error) throws -> Deferred<Success, Error>) -> Deferred<Success, Error>
-  {
-    let queue = DispatchQueue(label: "deferred-recover", qos: qos)
-    return recover(queue: queue, transform: transform)
-  }
-
-  /// Enqueue a transform to be computed asynchronously if and when `self` becomes resolved with an error.
-  ///
-  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
-  /// - parameter transform: the transform to be performed
-  /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter error: the Error to be transformed for the new `Deferred`
-
   public func flatMapError<OtherFailure>(queue: DispatchQueue? = nil,
                                          transform: @escaping (_ error: Failure) -> Deferred<Success, OtherFailure>) -> Deferred<Success, OtherFailure>
   {
@@ -564,8 +507,64 @@ extension Deferred
 
 }
 
-extension Deferred
+extension Deferred where Failure == Error
 {
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes resolved with an error.
+  ///
+  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter error: the Error to be transformed for the new `Deferred`
+
+  public func recover(queue: DispatchQueue? = nil,
+                      transform: @escaping (_ error: Error) throws -> Deferred) -> Deferred
+  {
+    return Deferred(queue: queue ?? self.queue) {
+      resolver in
+      self.notify(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        switch result
+        {
+        case let .success(value):
+          resolver.resolve(value: value)
+
+        case let .failure(error):
+          do {
+            let transformed = try transform(error)
+            if let transformed = transformed.peek()
+            {
+              resolver.resolve(transformed)
+            }
+            else
+            {
+              transformed.notify(queue: queue) { resolver.resolve($0) }
+              resolver.retainSource(transformed)
+            }
+          }
+          catch {
+            resolver.resolve(error: error)
+          }
+        }
+      }
+      resolver.retainSource(self)
+    }
+  }
+
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes resolved with an error.
+  ///
+  /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter error: the Error to be transformed for the new `Deferred`
+
+  public func recover(qos: DispatchQoS,
+                      transform: @escaping (_ error: Error) throws -> Deferred) -> Deferred
+  {
+    let queue = DispatchQueue(label: "deferred-recover", qos: qos)
+    return recover(queue: queue, transform: transform)
+  }
+
   /// Initialize a `Deferred` with a computation task to be performed in the background
   ///
   /// If at first it does not succeed, it will try `attempts` times in total before being resolved with an `Error`.
@@ -575,7 +574,7 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func RetryTask(_ attempts: Int, qos: DispatchQoS = .current,
-                               task: @escaping () throws -> Success) -> Deferred<Success, Error>
+                               task: @escaping () throws -> Success) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return Deferred.RetryTask(attempts, queue: queue, task: task)
@@ -590,9 +589,9 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func RetryTask(_ attempts: Int, queue: DispatchQueue,
-                               task: @escaping () throws -> Success) -> Deferred<Success, Error>
+                               task: @escaping () throws -> Success) -> Deferred
   {
-    return Deferred.Retrying(attempts, queue: queue, task: { Deferred<Success, Error>(queue: queue, task: task) })
+    return Deferred.Retrying(attempts, queue: queue, task: { Deferred(queue: queue, task: task) })
   }
 
   /// Initialize a `Deferred` with a computation task to be performed in the background
@@ -604,7 +603,7 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func Retrying(_ attempts: Int, qos: DispatchQoS = .current,
-                              task: @escaping () throws -> Deferred<Success, Error>) -> Deferred<Success, Error>
+                              task: @escaping () throws -> Deferred) -> Deferred
   {
     let queue = DispatchQueue(label: "retrying", qos: qos)
     return Deferred.Retrying(attempts, queue: queue, task: task)
@@ -619,17 +618,17 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func Retrying(_ attempts: Int, queue: DispatchQueue,
-                              task: @escaping () throws -> Deferred<Success, Error>) -> Deferred<Success, Error>
+                              task: @escaping () throws -> Deferred) -> Deferred
   {
     let error = Invalidation.invalid("task was not allowed a single attempt in \(#function)")
-    let deferred = Deferred<Success, Error>(queue: queue, error: error)
+    let deferred = Deferred(queue: queue, error: error)
 
     if attempts < 1 { return deferred }
 
     return Deferred.Retrying(attempts, deferred, task: task)
   }
 
-  private static func Retrying(_ attempts: Int, _ deferred: Deferred<Success, Error>, task: @escaping () throws -> Deferred<Success, Error>) -> Deferred<Success, Error>
+  private static func Retrying(_ attempts: Int, _ deferred: Deferred, task: @escaping () throws -> Deferred) -> Deferred
   {
     return (0..<attempts).reduce(deferred) {
       (deferred, _) in

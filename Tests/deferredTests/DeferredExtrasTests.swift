@@ -140,39 +140,36 @@ class DeferredExtrasTests: XCTestCase
   {
     let value = nzRandom()
     let error = nzRandom()
-    let goodOperand = Deferred(value: value)
-    let badOperand  = Deferred<Double>(error: TestError(error))
+    let goodOperand = Deferred<Int, Error>(value: value)
+    let badOperand  = Deferred<Double, Error>(error: TestError(error))
 
     // good operand, transform short-circuited
     let d1 = goodOperand.recover(qos: .default) { e in XCTFail(); return Deferred(error: TestError(error)) }
-    XCTAssert(d1.value == value)
-    XCTAssert(d1.error == nil)
+    XCTAssertEqual(d1.value, value)
+    XCTAssertNil(d1.error)
 
     // bad operand, transform throws (type 1)
     let d2 = badOperand.recover { error in Deferred { throw TestError(value) } }
-    XCTAssert(d2.value == nil)
-    XCTAssert(d2.error as? TestError == TestError(value))
+    XCTAssertEqual(d2.value, nil)
+    XCTAssertEqual(d2.error, TestError(value))
 
     // bad operand, transform throws (type 2)
     let d5 = badOperand.recover { _ in throw TestError(value) }
-    XCTAssert(d5.value == nil)
-    XCTAssert(d5.error as? TestError == TestError(value))
+    XCTAssertEqual(d5.value, nil)
+    XCTAssertEqual(d5.error, TestError(value))
 
     // bad operand, transform executes
     let d3 = badOperand.recover { error in Deferred(value: Double(value)) }
-    XCTAssert(d3.value == Double(value))
-    XCTAssert(d3.error == nil)
+    XCTAssertEqual(d3.value, Double(value))
+    XCTAssertNil(d3.error)
 
     // test early return from notification block
     let reason = "reason"
     let d4 = goodOperand.delay(.milliseconds(50))
     let r4 = d4.recover { e in Deferred(value: value) }
-    XCTAssert(r4.cancel(reason))
-    XCTAssert(r4.value == nil)
-    if let e = r4.error as? DeferredError,
-       case .canceled(let message) = e
-    { XCTAssert(message == reason) }
-    else { XCTFail() }
+    XCTAssertEqual(r4.cancel(reason), true)
+    XCTAssertEqual(r4.value, nil)
+    XCTAssertEqual(r4.error as? Cancellation, .canceled(reason))
   }
 
   func testRetrying1()
@@ -180,15 +177,12 @@ class DeferredExtrasTests: XCTestCase
     let retries = 5
     let queue = DispatchQueue(label: "test")
 
-    let r1 = Deferred.Retrying(0, queue: queue, task: { Deferred<Void>(task: {XCTFail()}) })
-    if let e = r1.error as? DeferredError,
-       case .invalid(let s) = e
-    { _ = s } // print(s)
-    else { XCTFail() }
+    let r1 = Deferred<Void, Error>.Retrying(0, queue: queue, task: { Deferred<Void, Error>(task: {XCTFail()}) })
+    XCTAssertNotNil(r1.error as? Invalidation)
 
     var counter = 0
-    let r2 = Deferred.Retrying(retries, queue: queue) {
-      () -> Deferred<Int> in
+    let r2 = Deferred<Int, Error>.Retrying(retries, queue: queue) {
+      () -> Deferred<Int, Error> in
       counter += 1
       if counter < retries { return Deferred(error: TestError(counter)) }
       return Deferred(value: counter)
@@ -200,23 +194,20 @@ class DeferredExtrasTests: XCTestCase
   {
     let retries = 5
 
-    let r1 = Deferred.Retrying(0, task: { Deferred<Void>(task: {XCTFail()}) })
-    if let e = r1.error as? DeferredError,
-      case .invalid(let s) = e
-    { _ = s } // print(s)
-    else { XCTFail() }
+    let r1 = Deferred<Void, Error>.Retrying(0, task: { Deferred<Void, Error>(task: {XCTFail()}) })
+    XCTAssertNotNil(r1.error as? Invalidation)
 
     var counter = 0
-    let r2 = Deferred.Retrying(retries) {
-      () -> Deferred<Int> in
+    let r2 = Deferred<Int, Error>.Retrying(retries) {
+      () -> Deferred<Int, Error> in
       counter += 1
       if counter < retries { return Deferred(error: TestError(counter)) }
       return Deferred(value: counter)
     }
     XCTAssert(r2.value == retries)
 
-    let r3 = Deferred.Retrying(retries, qos: .background) {
-      () -> Deferred<Int> in
+    let r3 = Deferred<Int, Error>.Retrying(retries, qos: .background) {
+      () -> Deferred<Int, Error> in
       counter += 1
       return Deferred(error: TestError(counter))
     }
