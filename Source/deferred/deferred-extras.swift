@@ -77,9 +77,8 @@ extension Deferred
       return Deferred(queue: queue, result: result)
     }
 
-    return TBD(queue: queue) {
+    return Deferred(queue: queue) {
       resolver in
-      if self.state == .executing { resolver.beginExecution() }
       self.notify(queue: queue, boostQoS: false, handler: { resolver.resolve($0) })
       resolver.retainSource(self)
     }
@@ -113,12 +112,11 @@ extension Deferred
   public func map<Other>(queue: DispatchQueue? = nil,
                          transform: @escaping (_ value: Success) -> Other) -> Deferred<Other, Failure>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Failure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
         resolver.resolve(result.map(transform))
       }
       resolver.retainSource(self)
@@ -149,12 +147,11 @@ extension Deferred
   public func tryMap<Other>(queue: DispatchQueue? = nil,
                             transform: @escaping (_ value: Success) throws -> Other) -> Deferred<Other, Error>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Error>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
         resolver.resolve(Result(catching: { try transform(result.get()) }))
       }
       resolver.retainSource(self)
@@ -185,12 +182,11 @@ extension Deferred
   public func mapError<OtherFailure>(queue: DispatchQueue? = nil,
                                      transform: @escaping (_ error: Failure) -> OtherFailure) -> Deferred<Success, OtherFailure>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Success, OtherFailure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
         resolver.resolve(result.mapError(transform))
       }
       resolver.retainSource(self)
@@ -216,12 +212,13 @@ extension Deferred
   /// returns: a `Deferred` where the `Failure` type is unconditionally converted to `Error`
 
   public var withAnyError: Deferred<Success, Error> {
-    return TBD(queue: queue) {
+    return Deferred<Success, Error>(queue: queue) {
       resolver in
       self.notify(queue: nil) {
         result in
         resolver.resolve(result.withAnyError)
       }
+      resolver.retainSource(self)
     }
   }
 }
