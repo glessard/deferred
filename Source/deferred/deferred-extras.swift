@@ -640,8 +640,6 @@ extension Deferred
                         _ transform: Result<(Success) -> Other, Never>,
                         _ resolver: Resolver<Other, Failure>)
     {
-      guard resolver.needsResolution else { return }
-      resolver.beginExecution()
       switch transform
       {
       case .success(let transform):
@@ -649,7 +647,7 @@ extension Deferred
       }
     }
 
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Failure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
@@ -663,7 +661,11 @@ extension Deferred
           }
           else
           {
-            transform.notify(queue: queue) { applyTransform(value, $0, resolver) }
+            transform.notify(queue: queue) {
+              transform in
+              guard resolver.needsResolution else { return }
+              applyTransform(value, transform, resolver)
+            }
             resolver.retainSource(transform)
           }
 

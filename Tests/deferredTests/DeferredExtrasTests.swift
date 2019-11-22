@@ -438,155 +438,30 @@ class DeferredExtrasTests: XCTestCase
 #endif
   }
 
-
   func testApply()
   {
     // a simple curried function.
     let curriedSum: (Int) -> (Int) -> Int = { a in { b in (a+b) } }
 
-    let value1 = Int(nzRandom())
-    let value2 = Int(nzRandom())
-    let v1 = Deferred(value: value1)
-    let v2 = Deferred(value: curriedSum(value2))
-    let deferred = v1.apply(transform: v2)
-    XCTAssert(deferred.value == value1+value2)
+    let value1 = nzRandom()
+    let value2 = nzRandom()
+    let v1 = Deferred<Int, Error>(value: value1)
+    let t1 = Deferred<(Int) -> Int, Never>(value: curriedSum(value2))
+    let d1 = v1.apply(transform: t1)
+    XCTAssertEqual(d1.value, value1+value2)
 
-    // tuples must be explicitly destructured
-    let transform = Deferred(value: { (ft: (Float, Float)) in powf(ft.0, ft.1) })
+    // tuples must be explicitly destructured for multiple-argument transforms
+    let v2 = Deferred<(Float, Float), Never>(value: (3.0, 4.1))
+    let t2 = Deferred<((Float, Float)) -> Float, Never>(value: { (ft: (Float, Float)) in powf(ft.0, ft.1) })
+    let d2 = v2.apply(transform: t2.delay(seconds: 0.01))
+    XCTAssertEqual(d2.value, powf(3.0, 4.1))
 
-    let v3 = Deferred(value: 3.0 as Float)
-    let v4 = Deferred(value: 4.1 as Float)
-
-    let args = combine(v3, v4)
-    let result = args.apply(transform: transform)
-
-    XCTAssert(result.value == powf(v3.value!, v4.value!))
-  }
-
-  func testApply1()
-  {
-    let (t, transform) = TBD<(Int) -> Double>.CreatePair()
-    let (o, operand) = TBD<Int>.CreatePair()
-    let result = operand.apply(qos: .background, transform: transform)
-    let expect = expectation(description: "Applying a deferred transform to a deferred operand")
-
-    var v1 = 0
-    var v2 = 0
-    result.onResult {
-      result in
-      XCTAssert(result.value == (Double(v1*v2)))
-      expect.fulfill()
-    }
-
-    let trigger = TBD<Int>() { _ in }
-
-    trigger.onResult { _ in
-      v1 = Int(nzRandom() & 0x7fff + 10000)
-      t.resolve(value: { i in Double(v1*i) })
-    }
-
-    trigger.onResult { _ in
-      v2 = Int(nzRandom() & 0x7fff + 10000)
-      o.resolve(value: v2)
-    }
-
-    XCTAssertFalse(operand.isResolved)
-    XCTAssert(operand.state == .waiting)
-    XCTAssertFalse(transform.isResolved)
-    XCTAssert(transform.state == .waiting)
-
-    trigger.cancel()
-    waitForExpectations(timeout: 1.0)
-
-    XCTAssert(transform.state == .succeeded)
-  }
-
-  func testApply2()
-  {
-    let value = nzRandom() & 0x7fff
-    let error = nzRandom()
-
-    // good operand, good transform
-    let o1 = Deferred(value: value)
-    let t1 = Deferred { i throws in Double(value*i) }
-    let e1 = expectation(description: "r1")
-    let r1 = o1.apply(qos: .utility, transform: t1)
-    r1.onResult { _ in e1.fulfill() }
-    XCTAssert(r1.value == Double(value*value))
-    XCTAssert(r1.error == nil)
-
-    // bad operand, transform not applied
-    let o2 = Deferred<Int> { throw TestError(error) }
-    let t2 = Deferred { (i:Int) throws -> Float in XCTFail(); return Float(i) }
-    let e2 = expectation(description: "r2")
-    let r2 = o2.apply(transform: t2)
-    r2.onResult { _ in e2.fulfill() }
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(error))
-
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testApply3()
-  {
-    let value = nzRandom() & 0x7fff
-    let error = nzRandom()
-
-    // good operand, bad transform
-    let o3 = Deferred(value: value)
-    let t3 = Deferred<(Int) throws -> Float>(error: TestError(error))
-    let e3 = expectation(description: "r3")
-    let r3 = o3.apply(transform: t3)
-    r3.onResult { _ in e3.fulfill() }
-    XCTAssert(r3.value == nil)
-    XCTAssert(r3.error as? TestError == TestError(error))
-
-    // good operand, transform throws
-    let o4 = Deferred(value: value)
-    let t4 = Deferred { (i:Int) throws -> Float in throw TestError(error) }
-    let e4 = expectation(description: "r4")
-    let r4 = o4.apply(transform: t4)
-    r4.onResult { _ in e4.fulfill() }
-    XCTAssert(r4.value == nil)
-    XCTAssert(r4.error as? TestError == TestError(error))
-
-    // result canceled before transform is resolved
-    let o5 = Deferred(value: value)
-    let (t5, d5) = TBD<(Int) throws -> Float>.CreatePair()
-    let e5 = expectation(description: "r5")
-    let r5 = o5.apply(transform: d5)
-    combine(d5, r5).onResult { _ in e5.fulfill() }
-    r5.cancel()
-    t5.resolve(value: { Float($0) })
-    XCTAssert(r5.value == nil)
-    XCTAssert(r5.error as? DeferredError == DeferredError.canceled(""))
-
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testCancelAndNotify()
-  {
-    let (_, tbd) = TBD<Int>.CreatePair()
-
-    let d1 = tbd.map { $0 * 2 }
-    let e1 = expectation(description: "first deferred")
-    d1.onValue { _ in XCTFail() }
-    d1.onResult  { r in XCTAssert(r.error != nil) }
-    d1.onError {
-      if $0 as? DeferredError == DeferredError.canceled("test") { e1.fulfill() }
-    }
-
-    let d2 = d1.map  { $0 + 100 }
-    let e2 = expectation(description: "second deferred")
-    d2.onValue { _ in XCTFail() }
-    d2.onResult  { r in XCTAssert(r.error != nil) }
-    d2.onError {
-      if $0 as? DeferredError == DeferredError.canceled("test") { e2.fulfill() }
-    }
-
-    d1.cancel("test")
-
-    waitForExpectations(timeout: 1.0) { _ in tbd.cancel() }
+    // error from operand is passed along to transformed result
+    let v3 = Deferred<Int, TestError>(error: TestError(value2))
+    let t3 = t1.delay(seconds: 0.01)
+    let d3 = v3.apply(qos: .background, transform: t3)
+    XCTAssertEqual(d3.value, nil)
+    XCTAssertEqual(d3.error, TestError(value2))
   }
 
   func testCancelMap()
