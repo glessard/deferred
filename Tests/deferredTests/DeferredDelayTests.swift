@@ -31,12 +31,16 @@ class DelayTests: XCTestCase
 
   func testCancelDelay()
   {
-    let d1 = Deferred<Date, Cancellation>(value: Date()).delay(until: .distantFuture)
-    let d2 = d1.delay(until: .distantFuture)
-    d2.cancel()
+    let d0 = Deferred<Date, Cancellation>(value: Date())
+    let d1 = d0.delay(until: .now() + 0.1)
+    let e1 = expectation(description: #function)
+    XCTAssertEqual(d1.state, .waiting)
+    d1.onError { _ in e1.fulfill() }
+    XCTAssertEqual(d1.state, .executing)
     d1.cancel()
-    XCTAssertEqual(d1.value, d2.value)
-    XCTAssertEqual(d1.error, d2.error)
+    XCTAssertEqual(d1.error, .canceled(""))
+
+    waitForExpectations(timeout: 0.1)
   }
 
   func testSourceSlowerThanDelay()
@@ -47,18 +51,23 @@ class DelayTests: XCTestCase
     XCTAssertNotNil(d2.value)
   }
 
+  func testDelayToThePast()
+  {
+    let d1 = Deferred<Int, Never>(value: nzRandom())
+    let d2 = d1.delay(until: .now() - 1.0)
+    XCTAssertEqual(d1.value, d2.value)
+    XCTAssert(d1 === d2)
+  }
+
   func testDistantFutureDelay()
   {
-    let d1 = Deferred<Date, Cancellation>(value: Date())
+    let d1 = Deferred<Date, Never>(value: Date())
     let d2 = d1.delay(until: .distantFuture)
 
     XCTAssertEqual(d1.state, .resolved)
     XCTAssertEqual(d2.state, .waiting)
 
-    let e1 = expectation(description: "immediate")
-    d1.onValue { _ in e1.fulfill() }
-    waitForExpectations(timeout: 1.0)
-
-    d2.cancel()
+    d2.onValue { _ in fatalError(#function) }
+    XCTAssertEqual(d2.state, .executing)
   }
 }
