@@ -18,92 +18,120 @@ class DeferredTests: XCTestCase
   func testValue()
   {
     let value = 1
-    let d = Deferred<Int, Error>(value: value)
-    XCTAssert(d.value == value)
-    XCTAssert(d.isResolved)
+    let d = Deferred<Int, Never>(value: value)
+    XCTAssertEqual(d.value, value)
+    XCTAssertEqual(d.state, .resolved)
+    XCTAssertNil(d.error)
+  }
+
+  func testError()
+  {
+    let value = nzRandom()
+    let d = Deferred<Void, TestError>(error: TestError(value))
+    XCTAssertNil(d.value)
+    XCTAssertEqual(d.state, .resolved)
+    XCTAssertEqual(d.error, TestError(value))
+  }
+
+  func testBeginExecution()
+  {
+    let e = expectation(description: #function)
+
+    let r = nzRandom()
+    let d = Deferred<Int, Never>(queue: .global()) {
+      resolver in
+      resolver.resolve(value: r)
+      e.fulfill()
+    }
+
+    XCTAssertEqual(d.state, .waiting)
+    d.beginExecution()
+    XCTAssertEqual(d.state, .executing)
+
+    waitForExpectations(timeout: 0.1)
+    XCTAssertEqual(d.value, r)
+    d.beginExecution()
   }
 
   func testPeek()
   {
-    let value = 1
+    let value = nzRandom()
     let d1 = Deferred<Int, Error>(value: value)
     XCTAssert(d1.peek()?.value == value)
 
-    let d2 = d1.delay(until: .distantFuture)
-    XCTAssert(d2.peek() == nil)
-    XCTAssert(d2.isResolved == false)
+    let d2 = Deferred<Int, Cancellation> { _ in fatalError(#function) }
+    XCTAssertEqual(d2.peek(), nil)
+    XCTAssertEqual(d2.state, .waiting)
 
-    _ = d2.cancel(.timedOut(""))
+    d2.cancel(.timedOut(""))
 
-    XCTAssert(d2.peek() != nil)
-    XCTAssert(d2.peek()?.error as? Cancellation == .timedOut(""))
-    XCTAssert(d2.isResolved)
+    XCTAssertNotNil(d2.peek())
+    XCTAssertEqual(d2.peek()?.error, .timedOut(""))
+    XCTAssertEqual(d2.state, .resolved)
   }
 
   func testValueBlocks()
   {
-    let wait = 0.1
+    let wait = 0.01
 
     let value = nzRandom()
 
     let s = DispatchSemaphore(value: 0)
     let busy = Deferred<Int, Never> {
+      resolver in
       s.wait()
-      return .success(value)
+      resolver.resolve(value: value)
     }
 
     let e = expectation(description: "Timing out on Deferred")
     let fulfillTime = DispatchTime.now() + wait
 
     DispatchQueue.global().async {
+      XCTAssertEqual(busy.state, .waiting)
       let v = busy.value
-      XCTAssert(v == value)
+      XCTAssertEqual(busy.state, .resolved)
+      XCTAssertEqual(v, value)
 
-      let now = DispatchTime.now()
-      if now.rawValue < fulfillTime.rawValue { XCTFail("delayed.value unblocked too soon") }
+      if .now() < fulfillTime { XCTFail("delayed.value unblocked too soon") }
     }
 
     DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: fulfillTime) {
       e.fulfill()
     }
 
-    waitForExpectations(timeout: 1.0) { _ in s.signal() }
+    waitForExpectations(timeout: 0.1) { _ in s.signal() }
   }
 
   func testValueUnblocks()
   {
-    let wait = 0.1
-
-    let value = nzRandom()
+    let wait = 0.01
 
     let s = DispatchSemaphore(value: 0)
-    let busy = Deferred<Int, Never> {
-      s.wait()
-      return .success(value)
+    let busy = Deferred<DispatchTimeoutResult, Never> {
+      resolver in
+      let timeoutResult = s.wait(timeout: .now() + wait)
+      resolver.resolve(.success(timeoutResult))
     }
 
-    let e = expectation(description: "Unblocking a Deferred")
+    let e = expectation(description: #function)
     let fulfillTime = DispatchTime.now() + wait
 
     DispatchQueue.global().async {
+      XCTAssertEqual(busy.state, .waiting)
       let v = busy.value
-      XCTAssert(v == value)
+      XCTAssertEqual(busy.state, .resolved)
+      XCTAssertEqual(v, .timedOut)
 
-      let now = DispatchTime.now()
-      if now.rawValue < fulfillTime.rawValue { XCTFail("delayed.value unblocked too soon") }
-      else                 { e.fulfill() }
+      if .now() < fulfillTime { XCTFail("delayed.value unblocked too soon") }
+      e.fulfill()
     }
 
-    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: fulfillTime) {
-      s.signal()
-    }
-
-    waitForExpectations(timeout: 1.0)
+    waitForExpectations(timeout: 0.1)
   }
 
   func testGet() throws
   {
-    let d = 1.0
+    let d = Double(nzRandom())
     let e = TestError(1)
     let d1 = Deferred<Double, TestError>(value: d)
     let d2 = Deferred<Double, TestError>(error: e)
@@ -113,10 +141,10 @@ class DeferredTests: XCTestCase
       double = try d2.get()
       XCTFail()
     } catch let error as TestError {
-      XCTAssert(error == e)
+      XCTAssertEqual(error, e)
     }
 
-    XCTAssert(double == d)
+    XCTAssertEqual(double, d)
   }
 
   func testState()
@@ -127,53 +155,53 @@ class DeferredTests: XCTestCase
     let d = Deferred<DispatchTimeoutResult, Error>(task: { s.wait(timeout: .now() + 1.0) })
     d.notify(handler: { r in if case .success = r { e.fulfill() } })
 
-    XCTAssert(d.state == .executing)
-    XCTAssertFalse(d.state.isResolved)
+    XCTAssertEqual(d.state, .executing)
+    XCTAssertNotEqual(d.state, .resolved)
 
     s.signal()
     waitForExpectations(timeout: 1.0)
 
-    XCTAssert(d.state == .succeeded)
-    XCTAssert(d.state.isResolved)
+    XCTAssertEqual(d.state, .resolved)
   }
 
   func testNotifyWaiters() throws
   {
-    let (t0, d0) = TBD<Int, Never>.CreatePair()
+    let (t, d) = TBD<Int, Never>.CreatePair()
+    let s  = Deferred<Int, Never>(value: 0)
     let e1 = expectation(description: #function)
-    d0.notify(queue: .global(), handler: { _ in e1.fulfill()})
+    d.notify(queue: .global(), handler: { _ in e1.fulfill()})
+    t.retainSource(s)
     let e2 = expectation(description: #function)
-    d0.notify(queue: nil, handler: { _ in e2.fulfill() })
+    d.notify(queue: nil, handler: { _ in e2.fulfill() })
     let e3 = expectation(description: #function)
-    d0.notify(queue: DispatchQueue(label: #function), handler: { _ in e3.fulfill() })
+    d.notify(queue: DispatchQueue(label: #function), handler: { _ in e3.fulfill() })
+    t.retainSource(s)
 
     let r = nzRandom()
-    t0.resolve(value: r)
+    t.resolve(value: r)
 
     waitForExpectations(timeout: 0.1)
-    XCTAssertEqual(r, try d0.get())
+    XCTAssertEqual(d.value, r)
   }
 
   func testCancel()
   {
-    let d1 = Deferred(qos: .utility, task: {
-      () -> Int in
-      usleep(100_000)
-      return nzRandom()
-    })
-
-    XCTAssert(d1.cancel() == true)
-    XCTAssert(d1.value == nil)
+    // Cancel before calculation has run -- cancellation success
+    let d1 = Deferred<Int, Error>(qos: .utility, task: { nzRandom() })
+    XCTAssertEqual(d1.cancel(), true)
+    XCTAssertEqual(d1.value, nil)
+    XCTAssertEqual(d1.error as? Cancellation, .canceled(""))
 
     // Set before canceling -- cancellation failure
     let d2 = Deferred<Int, Cancellation>(value: nzRandom())
-    XCTAssert(d2.cancel("message") == false)
+    XCTAssertEqual(d2.cancel("message"), false)
+    XCTAssertEqual(d2.error, nil)
 
-    if let e = d1.error as? Cancellation
-    {
-      XCTAssert(e.description != "")
-      XCTAssert(e == .canceled(""))
-    }
+    // Attempt to cancel a non-cancellable `Deferred`
+    let d3 = Deferred { nzRandom() }
+    XCTAssertEqual(d3.cancel(), false)
+    XCTAssertEqual(d3.error, nil)
+    XCTAssertNotNil(d3.value)
   }
 
   func testErrorTypes()
