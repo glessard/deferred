@@ -51,7 +51,7 @@ extension Deferred
   {
     guard time > .now() else { return self }
 
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue, boostQoS: false) {
         result in
@@ -63,7 +63,6 @@ extension Deferred
           return
         }
 
-        resolver.beginExecution()
         if time == .distantFuture { return }
         // enqueue block only if it can get executed
         if time > .now()
