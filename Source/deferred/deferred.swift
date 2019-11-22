@@ -13,29 +13,26 @@ import CAtomics
 ///
 /// Must be a top-level type because Deferred is generic.
 
-public enum DeferredState
+public enum DeferredState: Int, Equatable, Hashable
 {
-  case waiting, executing, succeeded, errored
-  /// Whether this `DeferredState` is resolved.
-  /// returns: `true` iff this `DeferredState` represents one of the states where it is resolved
-  public var isResolved: Bool { return self == .succeeded || self == .errored }
+  case waiting = 0x0, executing = 0x1, resolved = 0x3
 }
 
 private extension Int
 {
-  static let waiting =   0x0
-  static let executing = 0x1
-  static let resolved =  0x3
+  static let waiting =   DeferredState.waiting.rawValue
+  static let executing = DeferredState.executing.rawValue
+  static let resolved =  DeferredState.resolved.rawValue
   private static let stateMask = 0x3
 
-  init(_ pointer: UnsafeMutableRawPointer, tag: Int)
+  init(_ pointer: UnsafeMutableRawPointer, tag: DeferredState)
   {
-    self = Int(bitPattern: pointer) | (tag & .stateMask)
+    self = Int(bitPattern: pointer) | (tag.rawValue & .stateMask)
   }
 
   var isResolved: Bool { return tag == .resolved }
 
-  var tag: Int { return self & .stateMask }
+  var tag: DeferredState { return DeferredState(rawValue: self & .stateMask) ?? .executing }
   var ptr: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
 }
 
@@ -440,11 +437,7 @@ extension Deferred
 
   public var state: DeferredState {
     let state = CAtomicsLoad(deferredState, .acquire)
-    if let resolved = resolvedPointer(from: state)
-    {
-      return (resolved.pointee.isValue ? .succeeded : .errored)
-    }
-    return (state.tag == .waiting ? .waiting : .executing )
+    return state.tag
   }
 
   /// Query whether this `Deferred` has become resolved.
