@@ -32,8 +32,13 @@ private extension Int
 
   var isResolved: Bool { return tag == .resolved }
 
-  var tag: DeferredState { return DeferredState(rawValue: self & .stateMask) ?? .executing }
+  var tag: DeferredState { return DeferredState(rawValue: self & .stateMask)! }
   var ptr: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
+}
+
+private struct DeferredTask
+{
+  let task: () -> Void
 }
 
 /// An asynchronous computation.
@@ -58,13 +63,21 @@ open class Deferred<Success, Failure: Error>
 
   private var deferredState = UnsafeMutablePointer<AtomicInt>.allocate(capacity: 1)
 
+  /// Get a pointer to a `DeferredTask` that will resolve this `Deferred`
+
+  private func deferredTask(from state: Int) -> UnsafeMutablePointer<DeferredTask>?
+  {
+    guard state.tag == .waiting else { return nil }
+    return state.ptr?.assumingMemoryBound(to: DeferredTask.self)
+  }
+
   /// Get a pointer to a `Result` for a resolved `Deferred`.
   /// `state` must have been read with `.acquire` memory ordering in order
   /// to safely see all the changes from the thread that resolved this `Deferred`.
 
   private func resolvedPointer(from state: Int) -> UnsafeMutablePointer<Result<Success, Failure>>?
   {
-    guard state.isResolved else { return nil }
+    guard state.tag == .resolved else { return nil }
     return state.ptr?.assumingMemoryBound(to: Result<Success, Failure>.self)
   }
 
@@ -74,7 +87,7 @@ open class Deferred<Success, Failure: Error>
 
   private func waiterQueue(from state: Int) -> UnsafeMutablePointer<Waiter<Success, Failure>>?
   {
-    if state.isResolved { return nil }
+    guard state.tag == .executing else { return nil }
     return state.ptr?.assumingMemoryBound(to: Waiter<Success, Failure>.self)
   }
 
@@ -89,6 +102,11 @@ open class Deferred<Success, Failure: Error>
     else if let waiters = waiterQueue(from: state)
     {
       deallocateWaiters(waiters)
+    }
+    else if let taskp = deferredTask(from: state)
+    {
+      taskp.deinitialize(count: 1)
+      taskp.deallocate()
     }
     deferredState.deallocate()
   }
@@ -119,11 +137,13 @@ open class Deferred<Success, Failure: Error>
   /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
   /// - parameter task:  the computation to be performed
 
-  public init(queue: DispatchQueue, task: @escaping () -> Result<Success, Failure>)
+  public init(queue: DispatchQueue, resolve: @escaping (Resolver<Success, Failure>) -> Void)
   {
     self.queue = queue
-    CAtomicsInitialize(deferredState, .executing)
-    queue.async { self.resolve(task()) }
+    let resolver = Resolver(self)
+    let taskp = UnsafeMutablePointer<DeferredTask>.allocate(capacity: 1)
+    taskp.initialize(to: DeferredTask(task: { resolve(resolver) }))
+    CAtomicsInitialize(deferredState, Int(taskp, tag: .waiting))
   }
 
   // MARK: resolve()
@@ -141,14 +161,14 @@ open class Deferred<Success, Failure: Error>
   @discardableResult
   fileprivate func resolve(_ result: Result<Success, Failure>) -> Bool
   {
-    let original = CAtomicsLoad(deferredState, .relaxed)
-    guard original.tag != .resolved else { return false }
+    var current = CAtomicsLoad(deferredState, .relaxed)
+    guard current.tag != .resolved else { return false }
 
     let resolved = UnsafeMutablePointer<Result<Success, Failure>>.allocate(capacity: 1)
     resolved.initialize(to: result)
 
     let final = Int(resolved, tag: .resolved)
-    var current = CAtomicsLoad(deferredState, .relaxed)
+    current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
       if current.tag == .resolved
       {
@@ -161,9 +181,16 @@ open class Deferred<Success, Failure: Error>
       // "acquire" ordering ensures visibility of changes to `waiterQueue(from:)` below from another thread.
     } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .relaxed)
 
-    precondition(current.isResolved == false)
-    let waiters = waiterQueue(from: current)
-    notifyWaiters(queue, waiters, result)
+    precondition(current.tag != .resolved)
+    if let waiters = waiterQueue(from: current)
+    {
+      notifyWaiters(queue, waiters, result)
+    }
+    else if let taskp = deferredTask(from: current)
+    {
+      taskp.deinitialize(count: 1)
+      taskp.deallocate()
+    }
 
     // This `Deferred` has been resolved
     return true
@@ -216,7 +243,7 @@ open class Deferred<Success, Failure: Error>
     }
   }
 
-  // MARK: enqueue notification
+  // MARK: enqueue notification and start execution
 
   /// Enqueue a closure to be performed asynchronously after this `Deferred` becomes resolved.
   ///
@@ -252,13 +279,21 @@ open class Deferred<Success, Failure: Error>
 
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
-        let newState = Int(waiter, tag: state.tag)
+        let newState = Int(waiter, tag: .executing)
         // read-modify-write `deferredState` with memory_order_release.
         // this means that this write is in the release sequence of all previous writes.
         // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
         // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
+          if let taskp = deferredTask(from: state)
+          { // we need to execute the task
+            self.queue.async {
+              taskp.pointee.task()
+              taskp.deinitialize(count: 1)
+              taskp.deallocate()
+            }
+          }
           return
         }
       } while !state.isResolved
@@ -277,7 +312,7 @@ open class Deferred<Success, Failure: Error>
 
   /// Change the state of this `Deferred` from `.waiting` to `.executing`
 
-  func beginExecution()
+  public func beginExecution()
   {
     var current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
@@ -289,7 +324,16 @@ open class Deferred<Success, Failure: Error>
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-    } while !CAtomicsCompareAndExchange(deferredState, &current, current | .executing, .weak, .release, .relaxed)
+    } while !CAtomicsCompareAndExchange(deferredState, &current, .executing, .weak, .release, .relaxed)
+
+    if let taskp = deferredTask(from: current)
+    { // we need to execute the task
+      self.queue.async {
+        taskp.pointee.task()
+        taskp.deinitialize(count: 1)
+        taskp.deallocate()
+      }
+    }
   }
 }
 
@@ -302,7 +346,7 @@ extension Deferred where Failure == Error
 
   public convenience init(queue: DispatchQueue, task: @escaping () throws -> Success)
   {
-    self.init(queue: queue, task: { Result(catching: task) })
+    self.init(queue: queue, resolve: { r in r.resolve(Result(catching: task)) })
   }
 
   /// Initialize with a task to be computed in the background
@@ -313,7 +357,21 @@ extension Deferred where Failure == Error
   public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Success)
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, task: { Result(catching: task) })
+    self.init(queue: queue, task: task)
+  }
+}
+
+extension Deferred where Failure == Never
+{
+  public convenience init(queue: DispatchQueue, task: @escaping () -> Success)
+  {
+    self.init(queue: queue, resolve: { r in r.resolve(value: task()) })
+  }
+
+  public convenience init(qos: DispatchQoS = .current, task: @escaping () -> Success)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, task: task)
   }
 }
 
@@ -326,10 +384,10 @@ extension Deferred
   /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
   /// - parameter task: a computation to be performed
 
-  public convenience init(qos: DispatchQoS = .current, task: @escaping () -> Result<Success, Failure>)
+  public convenience init(qos: DispatchQoS = .current, resolve: @escaping (Resolver<Success, Failure>) -> Void)
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, task: task)
+    self.init(queue: queue, resolve: resolve)
   }
 
   /// Initialize as resolved with a `Success`
@@ -635,7 +693,7 @@ public struct Resolver<Success, Failure: Error>
 
   /// Query whether the underlying `Deferred` still exists and is also unresolved
 
-  public var needsResolution: Bool { return deferred?.isResolved == false }
+  public var needsResolution: Bool { return deferred?.state != .resolved }
 
   /// Enqueue a notification to be performed asynchronously after our `Deferred` becomes resolved.
   ///

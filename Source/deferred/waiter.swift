@@ -30,7 +30,7 @@ private enum WaiterType<Success, Failure: Error>
   case datasource(AnyObject)
 }
 
-func notifyWaiters<Success, Failure: Error>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<Success, Failure>>?, _ value: Result<Success, Failure>)
+func notifyWaiters<Success, Failure: Error>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<Success, Failure>>, _ value: Result<Success, Failure>)
 {
   var head = reverseList(tail)
   loop: while let current = head
@@ -95,12 +95,12 @@ func deallocateWaiters<Success, Failure: Error>(_ tail: UnsafeMutablePointer<Wai
   }
 }
 
-private func reverseList<Success, Failure: Error>(_ tail: UnsafeMutablePointer<Waiter<Success, Failure>>?) -> UnsafeMutablePointer<Waiter<Success, Failure>>?
+private func reverseList<Success, Failure: Error>(_ tail: UnsafeMutablePointer<Waiter<Success, Failure>>) -> UnsafeMutablePointer<Waiter<Success, Failure>>?
 {
-  if tail?.pointee.next == nil { return tail }
+  if tail.pointee.next == nil { return tail }
 
   var head: UnsafeMutablePointer<Waiter<Success, Failure>>? = nil
-  var current = tail
+  var current = Optional(tail)
   while let element = current
   {
     current = element.pointee.next
