@@ -549,24 +549,23 @@ class DeferredExtrasTests: XCTestCase
 
   func testValidate1()
   {
-    let d = (0..<10).map({Deferred.init(value:$0)})
+    let d = (0..<10).map({ Deferred<Int, Never>.init(value:$0) })
     let m = String(nzRandom())
 
     let v = d.map({ $0.validate(qos: .background, predicate: { $0%2 == 0 }, message: m) })
     let e = v.compactMap { $0.error }
-    XCTAssert(e.count == d.count/2)
-    XCTAssertEqual(e.first as? DeferredError, DeferredError.invalid(m))
+    XCTAssertEqual(e.count, d.count/2)
+    XCTAssertEqual(e.first, Invalidation.invalid(m))
   }
 
   func testValidate2()
   {
-    let d = (0..<10).map({Deferred.init(value:$0)})
-    let i = nzRandom()
+    let d = (0..<10).map({Deferred<Int, Never>.init(value:$0)})
 
-    let v = d.map({ $0.validate(qos: .utility, predicate: { if $0%2 == 0 { throw TestError(i) } }) })
+    let v = d.map({ $0.validate(qos: .utility, predicate: { if $0%2 == 0 { throw TestError($0) } }) })
     let e = v.compactMap { $0.error }
-    XCTAssert(e.count == d.count/2)
-    XCTAssertEqual(e.first as? TestError, TestError(i))
+    XCTAssertEqual(e.count, d.count/2)
+    XCTAssertEqual(e.last, TestError(8))
   }
 
   func testOptional() throws
@@ -575,15 +574,13 @@ class DeferredExtrasTests: XCTestCase
 
     var opt = rnd as Optional
     let d1 = opt.deferred()
-    XCTAssert(d1.value == rnd)
+    XCTAssertEqual(d1.value, rnd)
+    XCTAssertEqual(d1.error, nil)
 
     opt = nil
     let d2 = opt.deferred()
-    do {
-      _ = try d2.get()
-      XCTFail()
-    }
-    catch DeferredError.invalid {}
+    XCTAssertEqual(d2.value, nil)
+    XCTAssertNotNil(d2.error)
   }
 
   func testTimeout()
