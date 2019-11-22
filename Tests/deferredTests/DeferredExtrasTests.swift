@@ -315,48 +315,60 @@ class DeferredExtrasTests: XCTestCase
     XCTAssertEqual(d1.error, TestError(value*2))
   }
   
-  func testFlatten()
+  func testFlatten1()
   {
     let value = nzRandom()
     let error = nzRandom()
 
-    let goodOperand = Deferred(value: Deferred(value: value))
-    let d1 = goodOperand.flatten()
-    XCTAssert(d1.value == value)
+    let t1 = Deferred<Deferred<Int, Error>, Error>(error: TestError(error))
+    let d1 = t1.flatten()
+    XCTAssertEqual(d1.error, TestError(error))
 
-    let badOperand1 = Deferred<Deferred<Int>>(error: TestError(error))
-    let d2 = badOperand1.flatten()
-    XCTAssert(d2.error as? TestError == TestError(error))
+    let t2 = Deferred<Deferred<Int, Error>, Error>(value: Deferred(value: value))
+    let d2 = t2.flatten()
+    XCTAssertEqual(d2.value, value)
 
-    let (t3, dv3) = TBD<Deferred<Int>>.CreatePair()
-    let d3 = dv3.flatten()
-    let e3 = expectation(description: "flatten, part 3")
-    d3.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e3.fulfill() })
-    t3.resolve(value: Deferred(value: value))
+    let t3 = Deferred<Deferred<Int, Error>, Error>(value: Deferred(value: value).delay(seconds: 0.01))
+    let d3 = t3.flatten()
+    t3.cancel()
+    XCTAssertEqual(d3.value, value)
 
-    let (t4, dv4) = TBD<Deferred<Int>>.CreatePair()
-    let d4 = dv4.flatten()
-    let e4 = expectation(description: "flatten, part 4")
-    d4.recover(transform: { Deferred(error: $0) }).onError(task: { _ in e4.fulfill() })
-    t4.resolve(error: TestError(error))
+    let t4 = Deferred<Deferred<Int, Error>, Error>(value: Deferred(error: TestError(error))).delay(seconds: 0.01)
+    let d4 = t4.flatten()
+    t4.cancel(String(error))
+    XCTAssertEqual(d4.error, Cancellation.canceled(String(error)))
 
-    let (t5, dv5) = TBD<Int>.CreatePair()
-    let fullyDeferred = Deferred(value: dv5.delay(seconds: 0.02)).delay(seconds: 0.01)
-    let d5 = fullyDeferred.flatten()
-    let e5 = expectation(description: "flatten, part 5")
-    d5.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e5.fulfill() })
+    let t5 = Deferred<Deferred<Int, Error>, Error>(value: Deferred(value: value)).delay(seconds: 0.01)
+    let d5 = t5.flatten()
+    XCTAssertEqual(d5.value, value)
 
-    let semiDeferred = Deferred(value: dv5.delay(seconds: 0.01))
-    let d6 = semiDeferred.flatten()
-    let e6 = expectation(description: "flatten, part 6")
-    d6.validate(predicate: { XCTAssertEqual($0, value) }).onValue(task: { _ in e6.fulfill() })
+    let t6 = Deferred<Deferred<Int, Error>, Error>(value: Deferred(value: value).delay(seconds: 0.01))
+    let d6 = t6.delay(seconds: 0.02).flatten()
+    XCTAssertEqual(d6.value, value)
 
-//    let willCompile = Deferred(value: d1).flatten()
-//    let wontCompile = Deferred(value: 99).flatten()
+    // let wontCompile = Deferred(value: 99).flatten()
+  }
 
-    t5.resolve(value: value)
+  func testFlatten2()
+  {
+    let value = nzRandom()
 
-    waitForExpectations(timeout: 1.0)
+    let d1 = Deferred(value: Deferred<Int, Error>(value: value)).flatten()
+    // error type of the intermediate `Deferred` is inferred to be `Never`
+    XCTAssertEqual(d1.value, value)
+
+    let t2 = Deferred<Deferred<Int, Error>, Never>(value: Deferred(value: value).delay(seconds: 0.01))
+    let d2 = t2.flatten()
+    t2.cancel()
+    XCTAssertEqual(d2.value, value)
+
+    let t3 = Deferred<Deferred<Int, Error>, Never>(value: Deferred(value: value)).delay(seconds: 0.01)
+    let d3 = t3.flatten()
+    XCTAssertEqual(d3.value, value)
+
+    let t4 = Deferred<Deferred<Int, Error>, Never>(value: Deferred(value: value).delay(seconds: 0.01))
+    let d4 = t4.delay(seconds: 0.02).flatten()
+    XCTAssertEqual(d4.value, value)
   }
 
   func testEnqueuing()

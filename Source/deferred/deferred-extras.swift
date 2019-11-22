@@ -385,7 +385,8 @@ extension Deferred
   ///
   /// In the right conditions, acts like a fast path for a flatMap with no transform.
   ///
-  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `self.queue` if `nil`
+  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should
+  ///                    dispatch notifications; use `self.queue` if `nil`
   /// - returns: a flattened `Deferred`
 
   public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other, Failure>
@@ -393,52 +394,45 @@ extension Deferred
   {
     if let result = self.peek()
     {
-      let deferred: Deferred<Other, Failure>
       switch result
       {
-      case .success(let value):
-        deferred = value
+      case .success(let deferred):
+        if let result = deferred.peek()
+        {
+          return Deferred<Other, Failure>(queue: queue ?? self.queue, result: result)
+        }
+
+        return Deferred<Other, Failure>(queue: queue ?? self.queue) {
+          resolver in
+          deferred.notify(queue: queue) { resolver.resolve($0) }
+          resolver.retainSource(deferred)
+        }
+
       case .failure(let error):
         return Deferred<Other, Failure>(queue: queue ?? self.queue, error: error)
       }
-
-      if let result = deferred.peek()
-      {
-        return Deferred<Other, Failure>(queue: queue ?? self.queue, result: result)
-      }
-
-      return TBD(queue: queue ?? self.queue) {
-        resolver in
-        if deferred.state == .executing { resolver.beginExecution() }
-        deferred.notify(queue: queue) { resolver.resolve($0) }
-        resolver.retainSource(deferred)
-      }
     }
 
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Failure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        let deferred: Deferred<Other, Failure>
         switch result
         {
-        case .success(let value):
-          deferred = value
+        case .success(let deferred):
+          if let result = deferred.peek()
+          {
+            resolver.resolve(result)
+          }
+          else
+          {
+            deferred.notify(queue: queue) { resolver.resolve($0) }
+            resolver.retainSource(deferred)
+          }
         case .failure(let error):
           resolver.resolve(error: error)
-          return
         }
-
-        if let result = deferred.peek()
-        {
-          resolver.resolve(result)
-          return
-        }
-
-        if deferred.state == .executing { resolver.beginExecution() }
-        deferred.notify(queue: queue) { resolver.resolve($0) }
-        resolver.retainSource(deferred)
       }
       resolver.retainSource(self)
     }
@@ -448,7 +442,8 @@ extension Deferred
   ///
   /// In the right conditions, acts like a fast path for a flatMap with no transform.
   ///
-  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `self.queue` if `nil`
+  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should
+  ///                    dispatch notifications; use `self.queue` if `nil`
   /// - returns: a flattened `Deferred`
 
   public func flatten<Other, OtherFailure>(queue: DispatchQueue? = nil) -> Deferred<Other, OtherFailure>
@@ -456,47 +451,40 @@ extension Deferred
   {
     if let result = self.peek()
     {
-      let deferred: Deferred<Other, OtherFailure>
       switch result
       {
-      case .success(let value):
-        deferred = value
-      }
+      case .success(let deferred):
+        if let result = deferred.peek()
+        {
+          return Deferred<Other, OtherFailure>(queue: queue ?? self.queue, result: result)
+        }
 
-      if let result = deferred.peek()
-      {
-        return Deferred<Other, OtherFailure>(queue: queue ?? self.queue, result: result)
-      }
-
-      return TBD(queue: queue ?? self.queue) {
-        resolver in
-        if deferred.state == .executing { resolver.beginExecution() }
-        deferred.notify(queue: queue) { resolver.resolve($0) }
-        resolver.retainSource(deferred)
+        return Deferred<Other, OtherFailure>(queue: queue ?? self.queue) {
+          resolver in
+          deferred.notify(queue: queue) { resolver.resolve($0) }
+          resolver.retainSource(deferred)
+        }
       }
     }
 
-    return TBD<Other, OtherFailure>(queue: queue ?? self.queue) {
+    return Deferred<Other, OtherFailure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        let deferred: Deferred<Other, OtherFailure>
         switch result
         {
-        case .success(let value):
-          deferred = value
+        case .success(let deferred):
+          if let result = deferred.peek()
+          {
+            resolver.resolve(result)
+          }
+          else
+          {
+            deferred.notify(queue: queue) { resolver.resolve($0) }
+            resolver.retainSource(deferred)
+          }
         }
-
-        if let result = deferred.peek()
-        {
-          resolver.resolve(result)
-          return
-        }
-
-        if deferred.state == .executing { resolver.beginExecution() }
-        deferred.notify(queue: queue) { resolver.resolve($0) }
-        resolver.retainSource(deferred)
       }
       resolver.retainSource(self)
     }
