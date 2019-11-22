@@ -237,12 +237,11 @@ extension Deferred
   public func flatMap<Other>(queue: DispatchQueue? = nil,
                              transform: @escaping(_ value: Success) -> Deferred<Other, Failure>) -> Deferred<Other, Failure>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Failure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
         switch result
         {
         case .success(let value):
@@ -288,12 +287,11 @@ extension Deferred
   public func tryFlatMap<Other>(queue: DispatchQueue? = nil,
                                 transform: @escaping (_ value: Success) throws -> Deferred<Other, Error>) -> Deferred<Other, Error>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Error>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
         do {
           let value = try result.get()
           let transformed = try transform(value)
@@ -339,12 +337,11 @@ extension Deferred
   public func flatMapError<OtherFailure>(queue: DispatchQueue? = nil,
                                          transform: @escaping (_ error: Failure) -> Deferred<Success, OtherFailure>) -> Deferred<Success, OtherFailure>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Success, OtherFailure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
         switch result
         {
         case let .success(value):

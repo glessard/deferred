@@ -245,26 +245,76 @@ class DeferredExtrasTests: XCTestCase
   func testFlatMap()
   {
     let value = nzRandom()
-    let error = nzRandom()
-    let goodOperand = Deferred(value: value)
-    let badOperand  = Deferred<Double>(error: TestError(error))
+    let d0 = Deferred<Int, TestError>(value: value)
 
-    // good operand, good transform
-    let d1 = goodOperand.flatMap(qos: .utility, transform: { Deferred(value: Int($0)*2) })
-    XCTAssert(d1.value == Int(value)*2)
-    XCTAssert(d1.error == nil)
+    // good operand, transform executes
+    let d1 = d0.flatMap(qos: .default) { Deferred<Int, TestError>(value: $0*2) }
 
-    // good operand, transform errors
-    let d2 = goodOperand.flatMap { Deferred<Double>(error: TestError($0)) }
-    XCTAssert(d2.value == nil)
-    XCTAssert(d2.error as? TestError == TestError(value))
+    // good operand, transform executes
+    let d2 = d1.flatMap { Deferred<Double, TestError>(error: TestError($0)).delay(seconds: 0.01) }
 
     // bad operand, transform short-circuited
-    let d3 = badOperand.flatMap { _ in Deferred<Void> { XCTFail() } }
-    XCTAssert(d3.value == nil)
-    XCTAssert(d3.error as? TestError == TestError(error))
+    let d3 = d2.flatMap { _ -> Deferred<Int, TestError> in fatalError(#function) }
+    d3.beginExecution()
+
+    XCTAssertEqual(d1.value, value*2)
+    XCTAssertEqual(d1.error, nil)
+    XCTAssertEqual(d2.value, nil)
+    XCTAssertEqual(d2.error, TestError(value*2))
+    XCTAssertEqual(d3.value, nil)
+    XCTAssertEqual(d3.error, d2.error)
   }
 
+  func testTryFlatMap()
+  {
+    let value = nzRandom()
+    let d0 = Deferred<Int, Never>(value: value)
+
+    // good operand, good transform
+    let d1 = d0.tryFlatMap(qos: .utility, transform: { Deferred(value: $0*2) })
+
+    // good operand, transform errors
+    let d2 = d1.tryFlatMap { Deferred<Double, Error>(error: TestError($0)).delay(seconds: 0.01) }
+
+    // bad operand, transform short-circuited
+    let d3 = d2.tryFlatMap { _ -> Deferred<Int, Error> in fatalError(#function) }
+    d3.beginExecution()
+
+    XCTAssertEqual(d1.value, value*2)
+    XCTAssertNil(d1.error)
+    XCTAssertEqual(d2.value, nil)
+    XCTAssertEqual(d2.error, TestError(value*2))
+    XCTAssertEqual(d3.value, nil)
+    XCTAssertEqual(d3.error, TestError(value*2))
+  }
+
+  func testFlatMapError()
+  {
+    let value = nzRandom()
+    let d0 = Deferred<Int, TestError>(error: TestError(value))
+
+    // bad operand, transform executes
+    let d1 = d0.flatMapError(qos: .utility) { Deferred<Int, TestError>(error: TestError($0.error*2)) }
+
+    // bad operand, transform returns value
+    let d2 = d1.flatMapError { Deferred<Int, Cancellation>(value: $0.error).delay(seconds: 0.01) }
+
+    // good operand, transform short-circuited
+    let d3 = d2.flatMapError { _ -> Deferred<Int, NSError> in fatalError(#function) }
+
+    XCTAssertEqual(d1.state, .waiting)
+    XCTAssertEqual(d2.state, .waiting)
+    XCTAssertEqual(d3.state, .waiting)
+    XCTAssertEqual(d3.value, value*2)
+    XCTAssertEqual(d2.state, .resolved)
+    XCTAssertEqual(d1.state, .resolved)
+    XCTAssertEqual(d3.error, nil)
+    XCTAssertEqual(d2.value, d3.value)
+    XCTAssertEqual(d2.error, nil)
+    XCTAssertEqual(d1.value, nil)
+    XCTAssertEqual(d1.error, TestError(value*2))
+  }
+  
   func testFlatten()
   {
     let value = nzRandom()
