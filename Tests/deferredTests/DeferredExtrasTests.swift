@@ -55,12 +55,12 @@ class DeferredExtrasTests: XCTestCase
 
   func testOnValueAndOnError()
   {
-    let d4 = Deferred(value: nzRandom())
+    let d4 = Deferred<Int, TestError>(value: nzRandom())
     let e4 = expectation(description: "Test onValue()")
     d4.onValue { _ in e4.fulfill() }
     d4.onError { _ in XCTFail() }
 
-    let d5 = Deferred<Int>(error: NSError(domain: "", code: 0))
+    let d5 = Deferred<Int, NSError>(error: NSError(domain: "", code: 0))
     let e5 = expectation(description: "Test onError()")
     d5.onValue { _ in XCTFail() }
     d5.onError { _ in e5.fulfill() }
@@ -72,23 +72,68 @@ class DeferredExtrasTests: XCTestCase
   {
     let value = nzRandom()
     let error = nzRandom()
-    let goodOperand = Deferred(value: value)
-    let badOperand  = Deferred<Double>(error: TestError(error))
+    let goodOperand = Deferred<Int, Never>(value: value)
+    let badOperand = Deferred<Int, TestError>(error: TestError(error))
 
-    // good operand, good transform
-    let d1 = goodOperand.map { Int($0)*2 }
-    XCTAssert(d1.value == Int(value)*2)
-    XCTAssert(d1.error == nil)
-
-    // good operand, transform throws
-    let d2 = goodOperand.map { throw TestError($0) }
-    XCTAssert(d2.value == nil)
-    XCTAssert(d2.error as? TestError == TestError(value))
+    // good operand, transform executes
+    let d1 = goodOperand.map { $0*2 }
+    XCTAssertEqual(d1.value, value*2)
+    XCTAssertEqual(d1.error, nil)
 
     // bad operand, transform short-circuited
-    let d3 = badOperand.map { _ in XCTFail() }
-    XCTAssert(d3.value == nil)
-    XCTAssert(d3.error as? TestError == TestError(error))
+    let d2 = badOperand.map(qos: .utility) { _ in XCTFail() }
+    XCTAssertNil(d2.value)
+    XCTAssertEqual(d2.error, TestError(error))
+  }
+
+  func testTryMap()
+  {
+    let value = nzRandom()
+    let d0 = Deferred<Int, Error>(value: value)
+
+    // good operand, good transform
+    let d1 = d0.tryMap { $0*2 }
+
+    // good operand, transform throws
+    let d2 = d1.tryMap { i throws -> Double in throw TestError(i) }
+
+    // bad operand, transform short-circuited
+    let d3 = d2.tryMap(qos: .default) { _ -> Int in fatalError(#function) }
+
+    XCTAssertEqual(d1.state, .waiting)
+    XCTAssertEqual(d2.state, .waiting)
+    XCTAssertEqual(d3.state, .waiting)
+    XCTAssertEqual(d3.value, nil)
+    XCTAssertEqual(d2.state, .resolved)
+    XCTAssertEqual(d1.state, .resolved)
+    XCTAssertEqual(d3.error, TestError(value*2))
+    XCTAssertEqual(d2.value, nil)
+    XCTAssertEqual(d2.error, TestError(value*2))
+    XCTAssertEqual(d1.value, value*2)
+    XCTAssertNil(d1.error)
+  }
+
+  func testMapError()
+  {
+    let value = nzRandom()
+    let error = nzRandom()
+    let goodOperand = Deferred<Int, TestError>(value: value)
+    let badOperand  = Deferred<Double, TestError>(error: TestError(error))
+
+    // good operand, transform short-circuited
+    let d1 = goodOperand.mapError { _ in fatalError(#function) }
+    XCTAssertEqual(d1.value, value)
+    XCTAssertNil(d1.error)
+
+    // bad operand, transform executes
+    let d2 = badOperand.mapError(qos: .default) { e in TestError(e.error*2) }
+    XCTAssertEqual(d2.value, nil)
+    XCTAssertEqual(d2.error, TestError(error*2))
+
+    // bad operand, map to (any) `Error`
+    let d3 = badOperand.withAnyError
+    XCTAssertEqual(d3.value, nil)
+    XCTAssertEqual(d3.error, TestError(error))
   }
 
   func testRecover()
@@ -278,14 +323,11 @@ class DeferredExtrasTests: XCTestCase
     let r1 = nzRandom()
     let r2 = nzRandom()
 
-    let transferred1 = Deferred(value: r1).enqueuing(on: DispatchQueue.global())
+    let t1 = Deferred<Int, Never>(value: r1).enqueuing(at: .utility, serially: false)
+    XCTAssertEqual(t1.value, r1)
 
-    let (t, d) = TBD<Int>.CreatePair(qos: .background)
-    let transferred2 = d.enqueuing(at: .userInitiated, serially: false)
-    t.resolve(value: r2)
-
-    XCTAssert(transferred1.value == r1)
-    XCTAssert(transferred2.value == r2)
+    let t2 = Deferred<Int, Never>(value: r2).delay(seconds: 0.01).enqueuing(at: .userInitiated)
+    XCTAssertEqual(t2.value, r2)
   }
 
   func testQoS()
