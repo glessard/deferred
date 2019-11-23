@@ -146,6 +146,61 @@ open class Deferred<Success, Failure: Error>
     CAtomicsInitialize(deferredState, Int(taskp, tag: .waiting))
   }
 
+  // MARK: convenience initializers
+
+  /// Initialize with a task to be computed in the background
+  ///
+  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
+  /// - parameter task: a computation to be performed
+
+  public convenience init(qos: DispatchQoS = .current, resolve: @escaping (Resolver<Success, Failure>) -> Void)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, resolve: resolve)
+  }
+
+  /// Initialize as resolved with a `Success`
+  ///
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
+  /// - parameter value: the value of this `Deferred`
+
+  public convenience init(qos: DispatchQoS = .current, value: Success)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, value: value)
+  }
+
+  /// Initialize as resolved with a `Success`
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+  /// - parameter value: the value of this `Deferred`
+
+  public convenience init(queue: DispatchQueue, value: Success)
+  {
+    self.init(queue: queue, result: Result<Success, Failure>(value: value))
+  }
+
+  /// Initialize as resolved with a `Failure`
+  ///
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
+  /// - parameter error: the error state of this `Deferred`
+
+  public convenience init(qos: DispatchQoS = .current, error: Failure)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, error: error)
+  }
+
+  /// Initialize as resolved with a `Failure`
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+  /// - parameter error: the error state of this `Deferred`
+
+  public convenience init(queue: DispatchQueue, error: Failure)
+  {
+    self.init(queue: queue, result: Result<Success, Failure>(error: error))
+  }
+
   // MARK: resolve()
 
   /// Set the `Result` of this `Deferred` and dispatch all notifications for execution.
@@ -205,7 +260,7 @@ open class Deferred<Success, Failure: Error>
   open func cancel(_ error: Cancellation) -> Bool
   {
     guard let error = error as? Failure else { return false }
-    return resolve(error: error)
+    return resolve(.failure(error))
   }
 
   // MARK: retain source
@@ -372,64 +427,6 @@ extension Deferred where Failure == Never
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     self.init(queue: queue, task: task)
-  }
-}
-
-extension Deferred
-{
-  // MARK: convenience initializers
-
-  /// Initialize with a task to be computed in the background
-  ///
-  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
-  /// - parameter task: a computation to be performed
-
-  public convenience init(qos: DispatchQoS = .current, resolve: @escaping (Resolver<Success, Failure>) -> Void)
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, resolve: resolve)
-  }
-
-  /// Initialize as resolved with a `Success`
-  ///
-  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
-  /// - parameter value: the value of this `Deferred`
-
-  public convenience init(qos: DispatchQoS = .current, value: Success)
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, value: value)
-  }
-
-  /// Initialize as resolved with a `Success`
-  ///
-  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
-  /// - parameter value: the value of this `Deferred`
-
-  public convenience init(queue: DispatchQueue, value: Success)
-  {
-    self.init(queue: queue, result: Result<Success, Failure>(value: value))
-  }
-
-  /// Initialize as resolved with a `Failure`
-  ///
-  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
-  /// - parameter error: the error state of this `Deferred`
-
-  public convenience init(qos: DispatchQoS = .current, error: Failure)
-  {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, error: error)
-  }
-
-  /// Initialize as resolved with a `Failure`
-  ///
-  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
-  /// - parameter error: the error state of this `Deferred`
-
-  public convenience init(queue: DispatchQueue, error: Failure)
-  {
-    self.init(queue: queue, result: Result<Success, Failure>(error: error))
   }
 }
 
