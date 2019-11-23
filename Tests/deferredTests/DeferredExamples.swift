@@ -46,24 +46,31 @@ class DeferredExamples: XCTestCase
 
     print("Waiting")
     print("Result 1: \(result1.value!)")
+    XCTAssertEqual(result1.value, 10.5)
     print("Result 2: \(result2.value!)")
+    XCTAssertEqual(result2.value, 21)
     print("Result 3: \(result3.value!)")
+    XCTAssertEqual(result3.value, String(3*result1.value!))
     print("Result 4: \(result4.value!)")
+    XCTAssert(result4.value! == (result1.value!, result2.value!))
     print("Result 5: \(result5.error!)")
+    XCTAssertEqual(result5.value, nil)
+    XCTAssertEqual(result5.error, Cancellation.timedOut(""))
     print("Done")
 
-    XCTAssert(result1.error == nil)
-    XCTAssert(result2.error == nil)
-    XCTAssert(result3.error == nil)
-    XCTAssert(result4.error == nil)
-    XCTAssert(result5.value == nil)
+    XCTAssertEqual(result1.error, nil)
+    XCTAssertEqual(result2.error, nil)
+    XCTAssertEqual(result3.error, nil)
+    XCTAssertEqual(result4.error, nil)
+    XCTAssertEqual(result5.value, nil)
   }
 
   func testExample2()
   {
     let d = Deferred<Double, Never> {
+      resolver in
       usleep(50000)
-      return Result.success(1.0)
+      resolver.resolve(.success(.pi))
     }
     print(d.value!)
   }
