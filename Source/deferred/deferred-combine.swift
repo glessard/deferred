@@ -10,65 +10,6 @@ import Dispatch
 
 // combine two or more Deferred objects into one.
 
-/// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
-///
-/// The combined `Deferred` will become resolved after every input `Deferred` is resolved.
-///
-/// The combined `Deferred` will use a new queue at the requested QoS.
-///
-/// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
-///
-/// - parameter qos: the QoS at which the `combine` operation and its notifications should occur; defaults to the current QoS class
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - returns: a new `Deferred`
-
-public func combine<Success, Failure, C>(qos: DispatchQoS,
-                                         deferreds: C) -> Deferred<[Success], Failure>
-  where Failure: Error, C: Collection, C.Element == Deferred<Success, Failure>
-{
-  let queue = DispatchQueue(label: "reduce-collection", qos: qos)
-  return combine(queue: queue, deferreds: deferreds)
-}
-
-/// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
-///
-/// The combined `Deferred` will become resolved after every input `Deferred` is resolved.
-///
-/// The combined `Deferred` will use a new queue at the current QoS.
-///
-/// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
-///
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - returns: a new `Deferred`
-
-public func combine<Success, Failure, C>(_ deferreds: C) -> Deferred<[Success], Failure>
-  where Failure: Error, C: Collection, C.Element == Deferred<Success, Failure>
-{
-  return combine(qos: .current, deferreds: deferreds)
-}
-
-/// Combine a Collection of `Deferred`s into a new `Deferred` whose value is an array.
-///
-/// The combined `Deferred` will become resolved after every input `Deferred` is resolved.
-///
-/// The combined `Deferred` will use the supplied queue.
-///
-/// If any of the elements resolves to an error, the combined `Deferred` will contain that error.
-///
-/// - parameter queue: the queue onto which the `combine` operation and its notifications will occur
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - returns: a new `Deferred`
-
-public func combine<Success, Failure, C>(queue: DispatchQueue, deferreds: C) -> Deferred<[Success], Failure>
-  where Failure: Error, C: Collection, C.Element == Deferred<Success, Failure>
-{
-  var combined = [Success]()
-  combined.reserveCapacity(numericCast(deferreds.count))
-
-  let reduced = reduce(queue: queue, deferreds: deferreds, initial: (), combine: { _, value in combined.append(value) })
-  return reduced.map(transform: { _ in combined })
-}
-
 /// Combine a Sequence of `Deferred`s into a new `Deferred` whose value is an array.
 ///
 /// The combined `Deferred` will become resolved after every input `Deferred` has become resolved.
@@ -85,7 +26,7 @@ public func combine<Success, Failure, S>(qos: DispatchQoS = .current,
                                          deferreds: S) -> Deferred<[Success], Failure>
   where Failure: Error, S: Sequence, S.Element == Deferred<Success, Failure>
 {
-  let queue = DispatchQueue(label: "reduce-collection", qos: qos)
+  let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
   return combine(queue: queue, deferreds: deferreds)
 }
 
@@ -123,104 +64,10 @@ public func combine<Success, Failure, S>(queue: DispatchQueue, deferreds: S) -> 
 {
   var combined = [Success]()
 
-  let reduced = reduce(queue: queue, deferreds: deferreds, initial: (), combine: { _, value in combined.append(value) })
-  return reduced.map(transform: { _ in combined })
-}
-
-/// Returns the result of repeatedly calling `combine` with an
-/// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn.
-///
-/// That is, return a deferred version of
-/// `combine(combine(...combine(combine(initial, deferreds[0].value),
-/// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
-///
-/// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
-///
-/// If the reducing function throws an error, the resulting `Deferred` will contain that error.
-///
-/// The combined `Deferred` will use the supplied queue.
-///
-/// - parameter qos: the QoS at which the `reduce` operation and its notifications should occur; defaults to the current QoS class
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - parameter initial: a value to use as the initial accumulating value
-/// - parameter combine: a reducing function
-/// - returns: a new `Deferred`
-/// - parameter accumulated: the accumulated value up to this element of the `Collection`
-/// - parameter element: a new element to be accumulated
-
-public func reduce<C: Collection, T, F, U>(qos: DispatchQoS,
-                                           deferreds: C, initial: U,
-                                           combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
-  where C.Element == Deferred<T, F>
-{
-  let queue = DispatchQueue(label: "reduce-collection", qos: qos)
-  return reduce(queue: queue, deferreds: deferreds, initial: initial, combine: combine)
-}
-
-/// Returns the result of repeatedly calling `combine` with an
-/// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn.
-///
-/// That is, return a deferred version of
-/// `combine(combine(...combine(combine(initial, deferreds[0].value),
-/// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
-///
-/// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
-///
-/// If the reducing function throws an error, the resulting `Deferred` will contain that error.
-///
-/// The combined `Deferred` will use a new queue at the current QoS.
-///
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - parameter initial: a value to use as the initial accumulating value
-/// - parameter combine: a reducing function
-/// - returns: a new `Deferred`
-/// - parameter accumulated: the accumulated value up to this element of the `Collection`
-/// - parameter element: a new element to be accumulated
-
-public func reduce<C: Collection, T, F, U>(_ deferreds: C, initial: U,
-                                           combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
-  where C.Element == Deferred<T, F>
-{
-  return reduce(qos: .current, deferreds: deferreds, initial: initial, combine: combine)
-}
-
-/// Returns the result of repeatedly calling `combine` with an
-/// accumulated value initialized to `initial` and each element of
-/// `deferreds`, in turn.
-///
-/// That is, return a deferred version of
-/// `combine(combine(...combine(combine(initial, deferreds[0].value),
-/// deferreds[1].value),...deferreds[count-2].value), deferreds[count-1].value)`.
-///
-/// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
-///
-/// If the reducing function throws an error, the resulting `Deferred` will contain that error.
-///
-/// The combined `Deferred` will use the supplied queue.
-///
-/// - parameter queue: the queue onto which the `reduce` operation and its notifications will occur
-/// - parameter deferreds: a `Collection` of `Deferred`
-/// - parameter initial: a value to use as the initial accumulating value
-/// - parameter combine: a reducing function
-/// - returns: a new `Deferred`
-/// - parameter accumulated: the accumulated value up to this element of the `Collection`
-/// - parameter element: a new element to be accumulated
-
-public func reduce<C: Collection, T, F, U>(queue: DispatchQueue,
-                                           deferreds: C, initial: U,
-                                           combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
-  where C.Element == Deferred<T, F>
-{
-  let reduced = deferreds.reduce(Deferred<U, F>(queue: queue, value: initial)) {
-    (accumulator, deferred) in
-    accumulator.flatMap {
-      u in deferred.map(queue: queue) { t in combine(u,t) }
-    }
+  let reduced = reduce(queue: queue, deferreds: deferreds, initial: ()) {
+    _, value in combined.append(value)
   }
-
-  return reduced
+  return reduced.map(transform: { _ in combined })
 }
 
 /// Returns the result of repeatedly calling `combine` with an
@@ -246,10 +93,10 @@ public func reduce<C: Collection, T, F, U>(queue: DispatchQueue,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<S: Sequence, T, F, U>(qos: DispatchQoS,
-                                         deferreds: S, initial: U,
-                                         combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
-  where S.Element == Deferred<T, F>
+public func reduce<S, T, F, U>(qos: DispatchQoS,
+                               deferreds: S, initial: U,
+                               combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where S: Sequence, S.Element == Deferred<T, F>
 {
   let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
   return reduce(queue: queue, deferreds: deferreds, initial: initial, combine: combine)
@@ -277,9 +124,9 @@ public func reduce<S: Sequence, T, F, U>(qos: DispatchQoS,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<S: Sequence, T, F, U>(_ deferreds: S, initial: U,
-                                         combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
-  where S.Element == Deferred<T, F>
+public func reduce<S, T, F, U>(_ deferreds: S, initial: U,
+                               combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where S: Sequence, S.Element == Deferred<T, F>
 {
   return reduce(qos: .current, deferreds: deferreds, initial: initial, combine: combine)
 }
@@ -307,21 +154,22 @@ public func reduce<S: Sequence, T, F, U>(_ deferreds: S, initial: U,
 /// - parameter accumulated: the accumulated value up to this element of the `Collection`
 /// - parameter element: a new element to be accumulated
 
-public func reduce<S: Sequence, T, F, U>(queue: DispatchQueue,
-                                         deferreds: S, initial: U,
-                                         combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
-  where S.Element == Deferred<T, F>
+public func reduce<S, T, F, U>(queue: DispatchQueue,
+                               deferreds: S, initial: U,
+                               combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
+  where S: Sequence, S.Element == Deferred<T, F>
 {
   // We execute `Sequence.reduce` asynchronously because
   // nothing prevents S from blocking on `Sequence.next()`
   let reduced = Deferred<Deferred<U, F>, Never>(queue: queue) {
-    let r = deferreds.reduce(Deferred<U, F>(queue: queue, value: initial)) {
+    resolver in
+    let r = deferreds.reduce(Deferred<U, F>(queue: .global(qos: queue.qos.qosClass), value: initial)) {
       (accumulator, deferred) in
       accumulator.flatMap {
         u in deferred.map(queue: queue) { t in combine(u,t) }
       }
     }
-    return Result<Deferred<U, F>, Never>(value: r)
+    resolver.resolve(value: r)
   }
 
   return reduced.flatten()

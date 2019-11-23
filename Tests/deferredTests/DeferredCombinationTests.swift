@@ -15,52 +15,78 @@ class DeferredCombinationTests: XCTestCase
 {
   func testReduce()
   {
-    let count = 9
-    let inputs = (0..<count).map { i in Deferred(value: nzRandom() & 0x003f_fffe + 1) } + [Deferred(value: 0)]
-
-    let e = expectation(description: "reduce")
-    let c = reduce(AnySequence(inputs), initial: 0) {
-      a, i throws -> Int in
-      if i > 0 { return a+i }
-      throw TestError(a)
-    }
-    c.onResult { _ in e.fulfill() }
-
-    XCTAssert(c.value == nil)
-    XCTAssert(c.error != nil)
-    if let error = c.error as? TestError
-    {
-      XCTAssert(error.error >= 9)
+    let count = 10
+    let inputs = (0..<count).map {
+      i -> Deferred<Int, Never> in
+      return Deferred<Int, Never>(value: i).map {
+        i -> Int in
+        // print(i)
+        return 2*i
+      }
     }
 
-    waitForExpectations(timeout: 1.0)
+    let c = reduce(inputs, initial: 0, combine: { $0 + $1 })
+
+    XCTAssertEqual(c.value, 90)
+    XCTAssertEqual(c.error, nil)
   }
 
   func testReduceCancel()
   {
     let count = 10
-
-    let d = (0..<count).map {
-      i -> Deferred<Int> in
-      let e = expectation(description: String(describing: i))
-      return Deferred {
-        usleep(numericCast(i+1)*10_000)
-        e.fulfill()
-        return i
+    let inputs = (0..<count).map {
+      i in
+      return Deferred<Int, Cancellation> {
+        resolver in
+        // print(i)
+        resolver.resolve(value: i)
       }
     }
 
-    let cancel1 = Int(nzRandom() % numericCast(count))
-    let cancel2 = Int(nzRandom() % numericCast(count))
-    d[cancel1].cancel(String(cancel1))
-    d[cancel2].cancel(String(cancel2))
+    let cancel = Int(nzRandom() % numericCast(count))
+    inputs[cancel].cancel(String(cancel))
+    let c = reduce(inputs, initial: 0, combine: { $0 + $1 })
 
-    let c = reduce(d, initial: 0, combine: { a, b in return a+b })
+    XCTAssertEqual(c.value, nil)
+    XCTAssertEqual(c.error, .canceled(String(cancel)))
+  }
 
-    waitForExpectations(timeout: 1.0)
+  func testCombine()
+  {
+    let count = 10
+    let inputs = (0..<count).map {
+      i -> Deferred<Int, Never> in
+      return Deferred<Int, Never>(value: i).map {
+        i -> Int in
+        // print(i)
+        return 2*i
+      }
+    }
 
-    XCTAssert(c.value == nil)
-    XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1, cancel2))))
+    let c = combine(inputs).map(transform: { $0.reduce(0, { $0 + $1 }) })
+
+    XCTAssertEqual(c.value, 90)
+    XCTAssertEqual(c.error, nil)
+  }
+
+  func testCombineCancel()
+  {
+    let count = 10
+    let inputs = (1...count).map {
+      i in
+      return Deferred<Int, Cancellation> {
+        resolver in
+        // print(i)
+        resolver.resolve(value: i)
+      }
+    }
+
+    let cancel = Int(nzRandom() % numericCast(count))
+    inputs[cancel].cancel(String(cancel))
+    let c = combine(inputs)
+
+    XCTAssertEqual(c.value, nil)
+    XCTAssertEqual(c.error, .canceled(String(cancel)))
   }
 
   func testCombineArray1()
