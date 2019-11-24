@@ -207,7 +207,7 @@ private class DeferredDownloadTask<Success>: DeferredURLSessionTask<Success>
 // FIXME: should we resolve to a FileHandle here?
 // on Mojave (perhaps?) tests are inconsistently failing with invalid URLs
 
-private func downloadCompletion(_ resolver: Resolver<(URL, HTTPURLResponse), Error>)
+private func downloadCompletion(_ resolver: Resolver<(FileHandle, HTTPURLResponse), Error>)
   -> (URL?, URLResponse?, Error?) -> Void
 {
   return {
@@ -239,7 +239,15 @@ private func downloadCompletion(_ resolver: Resolver<(URL, HTTPURLResponse), Err
     if let response = response as? HTTPURLResponse
     {
       if let url = location
-      { resolver.resolve(value: (url, response)) }
+      {
+        do {
+          let handle = try FileHandle(forReadingFrom: url)
+          resolver.resolve(value: (handle, response))
+        }
+        catch {
+          resolver.resolve(error: error)
+        }
+      }
       else // should not happen
       { resolver.resolve(error: URLSessionError.invalidState) }
     }
@@ -251,7 +259,7 @@ private func downloadCompletion(_ resolver: Resolver<(URL, HTTPURLResponse), Err
 extension URLSession
 {
   public func deferredDownloadTask(queue: DispatchQueue,
-                                   with request: URLRequest) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
+                                   with request: URLRequest) -> DeferredURLSessionTask<(FileHandle, HTTPURLResponse)>
   {
     if let error = validateURL(request)
     {
@@ -264,20 +272,20 @@ extension URLSession
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   with request: URLRequest) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
+                                   with request: URLRequest) -> DeferredURLSessionTask<(FileHandle, HTTPURLResponse)>
   {
     let queue = DispatchQueue(label: "deferred-urlsessiontask", qos: .utility)
     return deferredDownloadTask(queue: queue, with: request)
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   with url: URL) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
+                                   with url: URL) -> DeferredURLSessionTask<(FileHandle, HTTPURLResponse)>
   {
     return deferredDownloadTask(qos: qos, with: URLRequest(url: url))
   }
 
   public func deferredDownloadTask(queue: DispatchQueue,
-                                   withResumeData data: Data) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
+                                   withResumeData data: Data) -> DeferredURLSessionTask<(FileHandle, HTTPURLResponse)>
   {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     return DeferredDownloadTask(queue: queue) {
@@ -294,7 +302,7 @@ extension URLSession
   }
 
   public func deferredDownloadTask(qos: DispatchQoS = .current,
-                                   withResumeData data: Data) -> DeferredURLSessionTask<(URL, HTTPURLResponse)>
+                                   withResumeData data: Data) -> DeferredURLSessionTask<(FileHandle, HTTPURLResponse)>
   {
     let queue = DispatchQueue(label: "deferred-urlsessiontask", qos: .utility)
     return deferredDownloadTask(queue: queue, withResumeData: data)

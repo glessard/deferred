@@ -167,13 +167,12 @@ extension URLSessionTests
 
     let task = session.deferredDownloadTask(with: request)
 
-    let url = task.tryMap {
-      (url, response) throws -> URL in
+    let handle = task.tryMap {
+      (handle, response) throws -> FileHandle in
       XCTAssertEqual(response.statusCode, 200)
       guard response.statusCode == 200 else { throw TestError(response.statusCode) }
-      return url
+      return handle
     }
-    let handle = url.tryMap(transform: FileHandle.init(forReadingFrom:))
     let string = handle.tryMap {
       file throws -> String in
       defer { file.closeFile() }
@@ -410,9 +409,7 @@ extension URLSessionTests
     let request = URLRequest(url: missingURL)
     let deferred = session.deferredDownloadTask(with: request)
 
-    let (path, response) = try deferred.get()
-    XCTAssert(path.isFileURL)
-    let file = try FileHandle(forReadingFrom: path)
+    let (file, response) = try deferred.get()
     defer { file.closeFile() }
     let string = String(data: file.availableData, encoding: .utf8)
     XCTAssertEqual(string, "Not Found")
@@ -802,8 +799,7 @@ class URLSessionResumeTests: XCTestCase
       deferred.notify {
         result in
         do {
-          let url = try result.get().0
-          let data = try FileHandle(forReadingFrom: url).availableData
+          let data = try result.get().0.availableData
           resolver.resolve(value: data)
         }
         catch URLSessionError.interruptedDownload(let error, let data) {
@@ -826,11 +822,11 @@ class URLSessionResumeTests: XCTestCase
     XCTAssertNotEqual(data, URLSessionResumeTests.largeData, "download did not time out")
 
     let resumed = session.deferredDownloadTask(withResumeData: data)
-    let (url, response) = resumed.split()
+    let (file, response) = resumed.split()
 
     XCTAssertEqual(response.value?.statusCode, 206)
 
-    let fileData = url.tryMap(transform: { try FileHandle(forReadingFrom: $0).availableData })
+    let fileData = file.map(transform: { $0.availableData })
     XCTAssertEqual(try fileData.get(), URLSessionResumeTests.largeData)
 #endif
   }
@@ -844,7 +840,7 @@ class URLSessionResumeTests: XCTestCase
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
     defer { session.finishTasksAndInvalidate() }
 
-    let deferred = Deferred<(URL, HTTPURLResponse), Error> {
+    let deferred = Deferred<(FileHandle, HTTPURLResponse), Error> {
       resolver in
       let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
       deferred.notify { resolver.resolve($0) }
@@ -872,7 +868,7 @@ class URLSessionResumeTests: XCTestCase
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
     defer { session.finishTasksAndInvalidate() }
 
-    let deferred = Deferred<(URL, HTTPURLResponse), Error> {
+    let deferred = Deferred<(FileHandle, HTTPURLResponse), Error> {
       resolver in
       let request = URLRequest(url: URLSessionResumeTests.largeURL, timeoutInterval: 0.5)
       let deferred = session.deferredDownloadTask(with: request)
