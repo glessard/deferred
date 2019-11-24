@@ -166,7 +166,7 @@ class DeferredTests: XCTestCase
 
   func testNotifyWaiters() throws
   {
-    let (t, d) = TBD<Int, Never>.CreatePair()
+    let (t, d) = Deferred<Int, Never>.CreatePair()
     let s  = Deferred<Int, Never>(value: 0)
     let e1 = expectation(description: #function)
     d.notify(queue: .global(), handler: { _ in e1.fulfill()})

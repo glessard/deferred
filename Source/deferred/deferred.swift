@@ -432,40 +432,6 @@ extension Deferred where Failure == Never
 
 extension Deferred
 {
-  // MARK: resolve a Deferred
-
-  /// Resolve this `Deferred` with a `Success` and dispatch all notifications for execution.
-  ///
-  /// Note that a `Deferred` can only be resolved once.
-  /// On subsequent calls, `resolve()` will fail and return `false`.
-  ///
-  /// This operation is lock-free and thread-safe.
-  ///
-  /// - parameter value: the intended value for this `Deferred`
-  /// - returns: whether the call succesfully changed the state of this `Deferred`.
-
-  @discardableResult
-  fileprivate func resolve(value: Success) -> Bool
-  {
-    return resolve(Result<Success, Failure>(value: value))
-  }
-
-  /// Resolve this `Deferred` with a `Failure` and dispatch all notifications for execution.
-  ///
-  /// Note that a `Deferred` can only be resolved once.
-  /// On subsequent calls, `resolve()` will fail and return `false`.
-  ///
-  /// This operation is lock-free and thread-safe.
-  ///
-  /// - parameter error: the intended error for this `Deferred`
-  /// - returns: whether the call succesfully changed the state of this `Deferred`.
-
-  @discardableResult
-  fileprivate func resolve(error: Failure) -> Bool
-  {
-    return resolve(Result<Success, Failure>(error: error))
-  }
-
   /// Attempt to cancel this `Deferred`
   ///
   /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
@@ -715,31 +681,8 @@ public struct Resolver<Success, Failure: Error>
   }
 }
 
-/// A `Deferred` to be resolved (`TBD`) manually.
-
-open class TBD<Success, Failure: Error>: Deferred<Success, Failure>
+extension Deferred
 {
-  /// Initialize an unresolved `Deferred`, `TBD`.
-  ///
-  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
-
-  public init(queue: DispatchQueue, task: (Resolver<Success, Failure>) -> Void)
-  {
-    super.init(queue: queue)
-    task(Resolver(self))
-  }
-
-  /// Initialize an unresolved `Deferred`, `TBD`.
-  ///
-  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
-
-  public init(qos: DispatchQoS = .current, task: (Resolver<Success, Failure>) -> Void)
-  {
-    let queue = DispatchQueue(label: "tbd", qos: qos)
-    super.init(queue: queue)
-    task(Resolver(self))
-  }
-
   /// Obtain an unresolved `Deferred` with a paired `Resolver`
   ///
   /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
