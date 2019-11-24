@@ -8,8 +8,7 @@
 
 import Dispatch
 
-
-extension Deferred
+extension Deferred where Failure == Error
 {
   /// Initialize an array of `Deferred` to be computed in parallel, at the desired QoS level
   ///
@@ -20,11 +19,28 @@ extension Deferred
   /// - parameter index: an index for the computation
 
   public static func inParallel(count: Int, qos: DispatchQoS = .current,
-                                task: @escaping (_ index: Int) throws -> Success) -> [Deferred<Success, Error>]
+                                task: @escaping (_ index: Int) throws -> Success) -> [Deferred<Success, Failure>]
   {
     return (0..<count).deferredMap(qos: qos, task: task)
   }
 
+  /// Initialize an array of `Deferred` to be computed in parallel, on the desired dispatch queue
+  ///
+  /// - parameter count: the number of parallel tasks to perform
+  /// - parameter queue: the `DispatchQueue` onto which the parallel task should be performed.
+  /// - parameter task: the computation to be performed in parallel
+  /// - returns: an array of `Deferred`
+  /// - parameter index: an index for the computation
+
+  public static func inParallel(count: Int, queue: DispatchQueue,
+                                task: @escaping (_ index: Int) throws -> Success) -> [Deferred<Success, Failure>]
+  {
+    return (0..<count).deferredMap(queue: queue, task: task)
+  }
+}
+
+extension Deferred where Failure == Never
+{
   /// Initialize an array of `Deferred` to be computed in parallel, at the desired QoS level
   ///
   /// - parameter count: the number of parallel tasks to perform
@@ -34,7 +50,7 @@ extension Deferred
   /// - parameter index: an index for the computation
 
   public static func inParallel(count: Int, qos: DispatchQoS = .current,
-                                task: @escaping (_ index: Int) -> Success) -> [Deferred<Success, Never>]
+                                task: @escaping (_ index: Int) -> Success) -> [Deferred<Success, Failure>]
   {
     return (0..<count).deferredMap(qos: qos, task: task)
   }
@@ -48,21 +64,7 @@ extension Deferred
   /// - parameter index: an index for the computation
 
   public static func inParallel(count: Int, queue: DispatchQueue,
-                                task: @escaping (_ index: Int) throws -> Success) -> [Deferred<Success, Error>]
-  {
-    return (0..<count).deferredMap(queue: queue, task: task)
-  }
-
-  /// Initialize an array of `Deferred` to be computed in parallel, on the desired dispatch queue
-  ///
-  /// - parameter count: the number of parallel tasks to perform
-  /// - parameter queue: the `DispatchQueue` onto which the parallel task should be performed.
-  /// - parameter task: the computation to be performed in parallel
-  /// - returns: an array of `Deferred`
-  /// - parameter index: an index for the computation
-
-  public static func inParallel(count: Int, queue: DispatchQueue,
-                                task: @escaping (_ index: Int) -> Success) -> [Deferred<Success, Never>]
+                                task: @escaping (_ index: Int) -> Success) -> [Deferred<Success, Failure>]
   {
     return (0..<count).deferredMap(queue: queue, task: task)
   }
@@ -109,9 +111,8 @@ extension Collection
                                    task: @escaping (_ element: Self.Element) throws -> Success) -> [Deferred<Success, Error>]
   {
     let count = self.count
-    var resolvers: [Resolver<Success, Error>] = []
-    resolvers.reserveCapacity(count)
-    let deferreds = (0..<count).map { _ in TBD<Success, Error>(queue: queue, task: { resolvers.append($0) }) as Deferred }
+    let pairs = (0..<count).map { _ in Deferred<Success, Error>.CreatePair(queue: queue) }
+    let resolvers = pairs.map { $0.0 }
 
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {
@@ -128,7 +129,7 @@ extension Collection
         }
       }
     }
-    return deferreds
+    return pairs.map { $0.1 }
   }
 
   /// Map a collection to an array of `Deferred` to be computed in parallel, on the desired dispatch queue
@@ -142,9 +143,8 @@ extension Collection
                                    task: @escaping (_ element: Self.Element) -> Success) -> [Deferred<Success, Never>]
   {
     let count = self.count
-    var resolvers: [Resolver<Success, Never>] = []
-    resolvers.reserveCapacity(count)
-    let deferreds = (0..<count).map { _ in TBD<Success, Never>(queue: queue, task: { resolvers.append($0) }) as Deferred }
+    let pairs = (0..<count).map { _ in Deferred<Success, Never>.CreatePair(queue: queue) }
+    let resolvers = pairs.map { $0.0 }
 
     queue.async {
       DispatchQueue.concurrentPerform(iterations: count) {
@@ -155,6 +155,6 @@ extension Collection
         d.resolve(value: task(self[index]))
       }
     }
-    return deferreds
+    return pairs.map { $0.1 }
   }
 }

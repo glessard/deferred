@@ -179,7 +179,8 @@ class TBDTests: XCTestCase
     // Verify that the right number of Deferreds get created
 
     let e = (0..<count).map { expectation(description: "\($0)") }
-    _ = Deferred.inParallel(count: count, qos: .utility) { i in e[i].fulfill() }
+    let deferreds = Deferred.inParallel(count: count, qos: .utility) { i in e[i].fulfill() }
+    XCTAssertEqual(deferreds.count, count)
     waitForExpectations(timeout: 1.0)
   }
 
@@ -190,7 +191,7 @@ class TBDTests: XCTestCase
     // Verify that all created Deferreds do the right job
 
     let arrays = Deferred.inParallel(count: count) {
-      index in
+      index throws in
       (0..<count).map { i in index*count+i }
     }
 
@@ -199,7 +200,7 @@ class TBDTests: XCTestCase
 
     let value = try resolved.get()
     XCTAssert(value.count == count*count)
-    value.enumerated().forEach { XCTAssert($0 == $1, "\($0) should equal \($1)") }
+    value.enumerated().forEach { XCTAssertEqual($0, $1) }
   }
 
   func testParallel3() throws
@@ -217,12 +218,11 @@ class TBDTests: XCTestCase
 
   func testParallel4()
   {
-    let range = 0..<10
-    let deferreds = range.deferredMap(task: {
+    let deferreds = Deferred.inParallel(count: 10, queue: .global(qos: .utility)) {
       i throws -> Int in
-      guard (i%2 == 0) else { throw DeferredError.invalid("") }
+      guard (i%2 == 0) else { throw Invalidation.invalid("") }
       return i
-    })
+    }
 
     let c = deferreds.compactMap({ $0.error }).count
     XCTAssert(c == 5)
