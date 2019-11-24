@@ -16,11 +16,11 @@ class DeallocWitness<T, F: Error>: Deferred<T, F>
 {
   let e: XCTestExpectation
 
-  init(_ expectation: XCTestExpectation, resolve: @escaping (Resolver<T, F>) -> Void = { _ in })
+  init(_ expectation: XCTestExpectation, task: @escaping (Resolver<T, F>) -> Void = { _ in })
   {
     e = expectation
     let q = DispatchQueue.global(qos: .current ?? .default)
-    super.init(queue: q, resolve: resolve)
+    super.init(queue: q, resolve: task)
   }
 
   deinit {
