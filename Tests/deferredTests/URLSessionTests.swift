@@ -109,7 +109,7 @@ class URLSessionTests: XCTestCase
 let textURL = baseURL.appendingPathComponent("text")
 func simpleGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
 {
-  XCTAssert(request.url == textURL)
+  XCTAssertEqual(request.url, textURL)
   let data = Data("Text with a 🔨".utf8)
   var headers = request.allHTTPHeaderFields ?? [:]
   headers["Content-Length"] = String(data.count)
@@ -120,6 +120,18 @@ func simpleGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLRespon
   return ([.load(data), .finishLoading], response!)
 }
 
+let slowURL = baseURL.appendingPathComponent("slow")
+func slowGET(_ request: URLRequest) -> ([TestURLServer.Command], HTTPURLResponse)
+{
+  XCTAssertEqual(request.url, slowURL)
+  let data = Data("Slowness".utf8)
+  var headers = request.allHTTPHeaderFields ?? [:]
+  headers["Content-Length"] = String(data.count)
+  headers["Content-Type"] = "text/plain; charset=utf-8"
+  let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: headers)
+  return ([.wait(0.05), .load(data), .finishLoading], response!)
+}
+
 extension URLSessionTests
 {
   func testData_OK() throws
@@ -127,10 +139,11 @@ extension URLSessionTests
     TestURLServer.register(url: textURL, response: simpleGET(_:))
     let request = URLRequest(url: textURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     let task = session.deferredDataTask(with: request)
 
-    let success = task.map {
+    let success = task.tryMap {
       (data, response) throws -> String in
       XCTAssertEqual(response.statusCode, 200)
       guard response.statusCode == 200 else { throw TestError(response.statusCode) }
@@ -140,8 +153,6 @@ extension URLSessionTests
 
     let s = try success.get()
     XCTAssert(s.contains("🔨"), "Failed with error")
-
-    session.finishTasksAndInvalidate()
   }
 
   func testDownload_OK() throws
@@ -152,17 +163,18 @@ extension URLSessionTests
     TestURLServer.register(url: textURL, response: simpleGET(_:))
     let request = URLRequest(url: textURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     let task = session.deferredDownloadTask(with: request)
 
-    let url = task.map {
+    let url = task.tryMap {
       (url, response) throws -> URL in
       XCTAssertEqual(response.statusCode, 200)
       guard response.statusCode == 200 else { throw TestError(response.statusCode) }
       return url
     }
-    let handle = url.map(transform: FileHandle.init(forReadingFrom:))
-    let string = handle.map {
+    let handle = url.tryMap(transform: FileHandle.init(forReadingFrom:))
+    let string = handle.tryMap {
       file throws -> String in
       defer { file.closeFile() }
       guard let string = String(data: file.availableData, encoding: .utf8) else { throw TestError() }
@@ -171,8 +183,6 @@ extension URLSessionTests
 
     let s = try string.get()
     XCTAssert(s.contains("🔨"), "Failed with error")
-
-    session.finishTasksAndInvalidate()
 #endif
   }
 }
@@ -181,9 +191,10 @@ extension URLSessionTests
 
 extension URLSessionTests
 {
-  func testData_Cancellation() throws
+  func testData_CancelDeferred() throws
   {
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
 
     let deferred = session.deferredDataTask(with: unavailableURL)
     let canceled = deferred.cancel()
@@ -193,23 +204,27 @@ extension URLSessionTests
       let _ = try deferred.get()
       XCTFail("failed to cancel")
     }
-    catch let error as URLError {
-      XCTAssertEqual(error.code, .cancelled)
+    catch let error as Cancellation {
+      XCTAssertEqual(error, Cancellation.canceled(""))
     }
-
-    session.finishTasksAndInvalidate()
   }
 
-  func testData_DoubleCancellation() throws
+  func testData_CancelTask() throws
   {
-    let deferred: DeferredURLSessionTask<(Data, HTTPURLResponse)> = {
-      let session = URLSession(configuration: .default)
-      defer { session.finishTasksAndInvalidate() }
+    TestURLServer.register(url: slowURL, response: slowGET(_:))
+    let request = URLRequest(url: slowURL)
+    let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
-      return session.deferredDataTask(with: unavailableURL)
-    }()
+    let queue = DispatchQueue(label: #function)
+    let deferred = session.deferredDataTask(queue: queue, with: request)
 
-    deferred.urlSessionTask?.cancel()
+    deferred.beginExecution()
+    queue.sync {}
+
+    XCTAssertNotNil(deferred.urlSessionTask)
+    let canceled = deferred.cancel()
+    XCTAssertEqual(canceled, true)
 
     do {
       let _ = try deferred.get()
@@ -219,18 +234,29 @@ extension URLSessionTests
       XCTAssertEqual(error.code, .cancelled)
     }
 
-    let canceled = deferred.cancel()
-    XCTAssert(canceled == false)
+    XCTAssertEqual(deferred.cancel(), false)
   }
 
   func testData_SuspendCancel() throws
   {
-    let session = URLSession(configuration: .default)
+    TestURLServer.register(url: slowURL, response: slowGET(_:))
+    let request = URLRequest(url: slowURL)
+    let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
-    let deferred = session.deferredDataTask(with: unavailableURL)
-    deferred.urlSessionTask?.suspend()
+    let queue = DispatchQueue(label: #function)
+    let deferred = session.deferredDataTask(queue: queue, with: request)
+
+    deferred.beginExecution()
+    queue.sync {}
+
+    XCTAssertNotNil(deferred.urlSessionTask)
+    let task = deferred.urlSessionTask!
+    task.suspend()
+    XCTAssertEqual(task.state, .suspended)
+
     let canceled = deferred.cancel()
-    XCTAssert(canceled)
+    XCTAssertEqual(canceled, true)
 
     do {
       let _ = try deferred.get()
@@ -239,13 +265,12 @@ extension URLSessionTests
     catch let error as URLError {
       XCTAssertEqual(error.code, .cancelled)
     }
-
-    session.finishTasksAndInvalidate()
   }
 
-  func testDownload_Cancellation() throws
+  func testDownload_CancelDeferred() throws
   {
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
 
     let deferred = session.deferredDownloadTask(with: unavailableURL)
     let canceled = deferred.cancel()
@@ -255,26 +280,27 @@ extension URLSessionTests
       let _ = try deferred.get()
       XCTFail("succeeded incorrectly")
     }
-    catch let error as URLError {
-      XCTAssertEqual(error.code, .cancelled)
+    catch let error as Cancellation {
+      XCTAssertEqual(error, Cancellation.canceled(""))
     }
-    catch URLSessionError.interruptedDownload(let error, _) {
-      XCTAssertEqual(error.code, .cancelled)
-    }
-
-    session.finishTasksAndInvalidate()
   }
 
-  func testDownload_DoubleCancellation() throws
+  func testDownload_CancelTask() throws
   {
-    let deferred: DeferredURLSessionTask<(URL, HTTPURLResponse)> = {
-      let session = URLSession(configuration: .default)
-      defer { session.finishTasksAndInvalidate() }
+    TestURLServer.register(url: slowURL, response: slowGET(_:))
+    let request = URLRequest(url: slowURL)
+    let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
-      return session.deferredDownloadTask(with: unavailableURL)
-    }()
+    let queue = DispatchQueue(label: #function)
+    let deferred = session.deferredDownloadTask(queue: queue, with: request)
 
-    deferred.urlSessionTask?.cancel()
+    deferred.beginExecution()
+    queue.sync {}
+
+    XCTAssertNotNil(deferred.urlSessionTask)
+    let canceled = deferred.cancel()
+    XCTAssertEqual(canceled, true)
 
     do {
       let _ = try deferred.get()
@@ -284,15 +310,22 @@ extension URLSessionTests
       XCTAssertEqual(error.code, .cancelled)
     }
 
-    let canceled = deferred.cancel()
-    XCTAssert(canceled == false)
+    XCTAssertEqual(deferred.cancel(), false)
   }
 
   func testDownload_SuspendCancel() throws
   {
-    let session = URLSession(configuration: .default)
+    TestURLServer.register(url: slowURL, response: slowGET(_:))
+    let request = URLRequest(url: slowURL)
+    let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
-    let deferred = session.deferredDownloadTask(with: unavailableURL)
+    let queue = DispatchQueue(label: #function)
+    let deferred = session.deferredDownloadTask(queue: queue, with: request)
+
+    deferred.beginExecution()
+    queue.sync {}
+
     deferred.urlSessionTask?.suspend()
     let canceled = deferred.cancel()
     XCTAssert(canceled)
@@ -307,20 +340,24 @@ extension URLSessionTests
     catch URLSessionError.interruptedDownload(let error, _) {
       XCTAssertEqual(error.code, .cancelled)
     }
-
-    session.finishTasksAndInvalidate()
   }
 
-  func testUploadData_Cancellation() throws
+  func testUploadData_CancelTask() throws
   {
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
 
     var request = URLRequest(url: unavailableURL)
     request.httpMethod = "POST"
 
     let data = Data("name=John Tester&age=97".utf8)
 
-    let deferred = session.deferredUploadTask(with: request, fromData: data)
+    let queue = DispatchQueue(label: #function)
+    let deferred = session.deferredUploadTask(queue: queue, with: request, fromData: data)
+
+    deferred.beginExecution()
+    queue.sync {}
+
     let canceled = deferred.cancel()
     XCTAssert(canceled)
 
@@ -331,8 +368,6 @@ extension URLSessionTests
     catch let error as URLError {
       XCTAssertEqual(error.code, .cancelled)
     }
-
-    session.finishTasksAndInvalidate()
   }
 }
 
@@ -352,6 +387,7 @@ extension URLSessionTests
   {
     TestURLServer.register(url: missingURL, response: missingGET(_:))
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     let request = URLRequest(url: missingURL)
     let deferred = session.deferredDataTask(with: request)
@@ -360,8 +396,6 @@ extension URLSessionTests
     let string = String(data: data, encoding: .utf8)
     XCTAssertEqual(string, "Not Found")
     XCTAssertEqual(response.statusCode, 404)
-
-    session.finishTasksAndInvalidate()
   }
 
   func testDownload_NotFound() throws
@@ -371,6 +405,7 @@ extension URLSessionTests
 #else
     TestURLServer.register(url: missingURL, response: missingGET(_:))
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     let request = URLRequest(url: missingURL)
     let deferred = session.deferredDownloadTask(with: request)
@@ -382,8 +417,6 @@ extension URLSessionTests
     let string = String(data: file.availableData, encoding: .utf8)
     XCTAssertEqual(string, "Not Found")
     XCTAssertEqual(response.statusCode, 404)
-
-    session.finishTasksAndInvalidate()
 #endif
   }
 }
@@ -428,14 +461,13 @@ extension URLSessionTests
     TestURLServer.register(url: failURL, response: incompleteGET(_:))
     let request = URLRequest(url: failURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     let task = session.deferredDataTask(with: request)
 
     let (data, response) = try task.get()
     XCTAssertEqual(response.statusCode, 200)
     XCTAssertNotEqual(response.allHeaderFields["Content-Length"] as? String, String(data.count))
-
-    session.finishTasksAndInvalidate()
   }
 
   func testData_Partial() throws
@@ -443,6 +475,7 @@ extension URLSessionTests
     TestURLServer.register(url: failURL, response: partialGET(_:))
     let request = URLRequest(url: failURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     let task = session.deferredDataTask(with: request)
 
@@ -454,8 +487,6 @@ extension URLSessionTests
     catch let error as URLError where error.code == .networkConnectionLost {
       XCTAssertNotNil(error.userInfo[NSURLErrorFailingURLStringErrorKey])
     }
-
-    session.finishTasksAndInvalidate()
   }
 }
 
@@ -507,6 +538,7 @@ extension URLSessionTests
     let url = baseURL.appendingPathComponent("api")
     TestURLServer.register(url: url, response: handleStreamedBody(_:))
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -522,8 +554,6 @@ extension URLSessionTests
     XCTAssertGreaterThan(data.count, 0)
     let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
     XCTAssertEqual(i, String(body.count))
-
-    session.finishTasksAndInvalidate()
   }
 
 
@@ -536,6 +566,7 @@ extension URLSessionTests
     TestURLServer.register(url: url, response: handleStreamedBody(_:))
 #endif
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
@@ -552,8 +583,6 @@ extension URLSessionTests
     let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
     XCTAssertEqual(i, String(payload.count))
 #endif
-
-    session.finishTasksAndInvalidate()
   }
 
   func testUploadFile_OK() throws
@@ -565,6 +594,7 @@ extension URLSessionTests
     TestURLServer.register(url: url, response: handleStreamedBody(_:))
 #endif
     let session = URLSession(configuration: URLSessionTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
@@ -602,7 +632,6 @@ extension URLSessionTests
     XCTAssertEqual(i, String(payload.count))
 #endif
 
-    session.finishTasksAndInvalidate()
     try FileManager.default.removeItem(at: fileURL)
   }
 }
@@ -614,67 +643,73 @@ extension URLSessionTests
   {
     let request = URLRequest(url: invalidURL)
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
+
     let task = session.deferredDataTask(with: request)
     do {
       _ = try task.get()
       XCTFail("succeeded incorrectly")
     }
-    catch DeferredError.invalid(let message) {
+    catch Invalidation.invalid(let message) {
       XCTAssert(message.contains(request.url?.scheme ?? "$$"))
     }
-    session.finishTasksAndInvalidate()
   }
 
   func testInvalidDataTaskURL2() throws
   {
     let request = URLRequest(url: URL(string: "schemeless") ?? invalidURL)
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
+
     let task = session.deferredDataTask(with: request)
     do {
       _ = try task.get()
       XCTFail("succeeded incorrectly")
     }
-    catch DeferredError.invalid(let message) {
+    catch Invalidation.invalid(let message) {
       XCTAssert(message.contains("invalid"))
     }
-    session.finishTasksAndInvalidate()
   }
 
   func testInvalidDownloadTaskURL() throws
   {
     let request = URLRequest(url: invalidURL)
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
+
     let task = session.deferredDownloadTask(with: request)
     do {
       _ = try task.get()
       XCTFail("succeeded incorrectly")
     }
-    catch DeferredError.invalid(let message) {
+    catch Invalidation.invalid(let message) {
       XCTAssert(message.contains(request.url?.scheme ?? "$$"))
     }
-    session.finishTasksAndInvalidate()
   }
 
   func testInvalidUploadTaskURL1() throws
   {
     let request = URLRequest(url: invalidURL)
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
+
     let data = Data("data".utf8)
     let task = session.deferredUploadTask(with: request, fromData: data)
     do {
       _ = try task.get()
       XCTFail("succeeded incorrectly")
     }
-    catch DeferredError.invalid(let message) {
+    catch Invalidation.invalid(let message) {
       XCTAssert(message.contains(request.url?.scheme ?? "$$"))
     }
-    session.finishTasksAndInvalidate()
   }
 
   func testInvalidUploadTaskURL2() throws
   {
     let request = URLRequest(url: invalidURL)
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
+
     let message = Data("data".utf8)
 #if compiler(>=5.1) || !os(Linux)
     let userDir = try FileManager.default.url(for: .desktopDirectory,
@@ -700,10 +735,9 @@ extension URLSessionTests
       _ = try task.get()
       XCTFail("succeeded incorrectly")
     }
-    catch DeferredError.invalid(let message) {
+    catch Invalidation.invalid(let message) {
       XCTAssert(message.contains(request.url?.scheme ?? "$$"))
     }
-    session.finishTasksAndInvalidate()
   }
 }
 
@@ -760,8 +794,9 @@ class URLSessionResumeTests: XCTestCase
   func testResumeAfterCancellation() throws
   {
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
-    let resumeData = TBD<Data> {
+    let resumeData = Deferred<Data, Error> {
       resolver in
       let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
       deferred.notify {
@@ -795,11 +830,9 @@ class URLSessionResumeTests: XCTestCase
 
     XCTAssertEqual(response.value?.statusCode, 206)
 
-    let fileData = url.map(transform: { try FileHandle(forReadingFrom: $0).availableData })
+    let fileData = url.tryMap(transform: { try FileHandle(forReadingFrom: $0).availableData })
     XCTAssertEqual(try fileData.get(), URLSessionResumeTests.largeData)
 #endif
-
-    session.finishTasksAndInvalidate()
   }
 
   func testURLRequestTimeout1() throws
@@ -809,8 +842,9 @@ class URLSessionResumeTests: XCTestCase
 #else
     URLSessionResumeTests.configuration.timeoutIntervalForRequest = 1.0
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
-    let deferred = TBD<(URL, HTTPURLResponse)> {
+    let deferred = Deferred<(URL, HTTPURLResponse), Error> {
       resolver in
       let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
       deferred.notify { resolver.resolve($0) }
@@ -836,8 +870,9 @@ class URLSessionResumeTests: XCTestCase
     print("this test does not succeed due to a corelibs-foundation bug")
 #else
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
-    let deferred = TBD<(URL, HTTPURLResponse)> {
+    let deferred = Deferred<(URL, HTTPURLResponse), Error> {
       resolver in
       let request = URLRequest(url: URLSessionResumeTests.largeURL, timeoutInterval: 0.5)
       let deferred = session.deferredDownloadTask(with: request)
@@ -861,8 +896,9 @@ class URLSessionResumeTests: XCTestCase
   func testResumeWithMangledData() throws
   {
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
+    defer { session.finishTasksAndInvalidate() }
 
-    let resumeData = TBD<Data> {
+    let resumeData = Deferred<Data, Error> {
       resolver in
       let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
       deferred.onError {
@@ -897,15 +933,14 @@ class URLSessionResumeTests: XCTestCase
     case nil: XCTFail("succeeded incorrectly")
     }
 #endif
-
-    session.finishTasksAndInvalidate()
   }
 
   func testResumeWithNonsenseData() throws
   {
-    let nonsense = Data((0..<2345).map { UInt8.random(in: 0...UInt8(truncatingIfNeeded: $0)) })
-
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
+
+    let nonsense = Data((0..<2345).map { UInt8.random(in: 0...UInt8(truncatingIfNeeded: $0)) })
     let task1 = session.deferredDownloadTask(withResumeData: nonsense)
     switch task1.error
     {
@@ -921,13 +956,13 @@ class URLSessionResumeTests: XCTestCase
     case let error?: throw error
     case nil: XCTFail("succeeded incorrectly")
     }
-
-    session.finishTasksAndInvalidate()
   }
 
   func testResumeWithEmptyData() throws
   {
     let session = URLSession(configuration: .default)
+    defer { session.finishTasksAndInvalidate() }
+
     let task = session.deferredDownloadTask(withResumeData: Data())
     switch task.error
     {
@@ -940,7 +975,5 @@ class URLSessionResumeTests: XCTestCase
     case let error?: throw error
     case nil: XCTFail("succeeded incorrectly")
     }
-
-    session.finishTasksAndInvalidate()
   }
 }
