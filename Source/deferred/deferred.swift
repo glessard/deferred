@@ -371,10 +371,9 @@ open class Deferred<Success, Failure: Error>
   {
     var current = CAtomicsLoad(deferredState, .relaxed)
     repeat {
-      if current.tag != .waiting
-      { // execution state has already been marked as begun
-        return
-      }
+      guard current.tag == .waiting else { return }
+      // execution state has not yet been marked as begun
+
       // read-modify-write `deferredState` with memory_order_release.
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.

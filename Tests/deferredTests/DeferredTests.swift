@@ -35,22 +35,27 @@ class DeferredTests: XCTestCase
 
   func testBeginExecution()
   {
+    let q = DispatchQueue(label: #function)
     let e = expectation(description: #function)
 
     let r = nzRandom()
-    let d = Deferred<Int, Never>(queue: .global()) {
+    let d = Deferred<Int, Never>(queue: q) {
       resolver in
       resolver.resolve(value: r)
       e.fulfill()
     }
 
-    XCTAssertEqual(d.state, .waiting)
-    d.beginExecution()
-    XCTAssertEqual(d.state, .executing)
+    q.async {
+      XCTAssertEqual(d.state, .waiting)
+      d.beginExecution()
+      XCTAssertEqual(d.state, .executing)
+    }
 
     waitForExpectations(timeout: 0.1)
     XCTAssertEqual(d.value, r)
+    XCTAssertEqual(d.state, .resolved)
     d.beginExecution()
+    XCTAssertEqual(d.state, .resolved)
   }
 
   func testPeek()
