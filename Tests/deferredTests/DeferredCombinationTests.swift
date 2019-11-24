@@ -135,7 +135,7 @@ class DeferredCombinationTests: XCTestCase
     let d1 = Deferred<Int, TestError> { $0.resolve(value: v1) }
     let d2 = Deferred<UInt64, Never>  { $0.resolve(value: v2) }
     let d3 = Deferred<String, NSError>{ $0.resolve(value: v3) }
-    let d4 = Deferred<Double, CFError>{ $0.resolve(value: v4) }
+    let d4 = Deferred<Double, Error>{ $0.resolve(value: v4) }
 
     let c = combine(d1,d2,d3,d4).value
     XCTAssert(c?.0 == v1)

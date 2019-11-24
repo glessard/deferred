@@ -33,9 +33,9 @@ public class DeferredURLSessionTask<Success>: Deferred<Success, Error>
     return reference
   }
 
-  fileprivate init(queue: DispatchQueue, error: Invalidation)
+  fileprivate init(queue: DispatchQueue, error: Error)
   {
-    task = Deferred(queue: queue, error: error)
+    task = Deferred(queue: queue, error: Invalidation.invalid(""))
     super.init(queue: queue) { $0.resolve(.failure(error)) }
   }
 

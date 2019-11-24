@@ -343,10 +343,11 @@ extension URLSessionTests
 
   func testUploadData_CancelTask() throws
   {
-    let session = URLSession(configuration: .default)
+    TestURLServer.register(url: slowURL, response: slowGET(_:))
+    let session = URLSession(configuration: URLSessionTests.configuration)
     defer { session.finishTasksAndInvalidate() }
 
-    var request = URLRequest(url: unavailableURL)
+    var request = URLRequest(url: slowURL)
     request.httpMethod = "POST"
 
     let data = Data("name=John Tester&age=97".utf8)
@@ -484,7 +485,7 @@ extension URLSessionTests
     catch let error as URLError where error.code == .networkConnectionLost {
       XCTAssertNotNil(error.userInfo[NSURLErrorFailingURLStringErrorKey])
     }
-  }
+  }  
 }
 
 //MARK: requests with data in HTTP body
@@ -552,7 +553,6 @@ extension URLSessionTests
     let i = String(data: data, encoding: .utf8)?.components(separatedBy: " ").last
     XCTAssertEqual(i, String(body.count))
   }
-
 
   func testUploadData_OK() throws
   {
