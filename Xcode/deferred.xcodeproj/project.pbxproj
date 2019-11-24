@@ -13,7 +13,6 @@
 		032B4938237B43480086343E /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03DBB0BE2379CE010086343E /* CAtomics.framework */; };
 		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		033928191F8C099700F4B44B /* deferred-first.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033928181F8C099700F4B44B /* deferred-first.swift */; };
-		0350E0C22295D11A00F4B44B /* DeallocTBD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038C1A59229343C000F4B44B /* DeallocTBD.swift */; };
 		0350E0EA2295FF6900F4B44B /* AlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0350E0E22295FF6900F4B44B /* AlignmentTests.swift */; };
 		0350E0EB2295FF6900F4B44B /* AlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0350E0E22295FF6900F4B44B /* AlignmentTests.swift */; };
 		035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C0D1D84A8DB00F4B44B /* deferred-combine.swift */; };
@@ -23,16 +22,23 @@
 		035D0C1D1D84A8DB00F4B44B /* deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C111D84A8DB00F4B44B /* deferred.swift */; };
 		035D0C231D84A8DB00F4B44B /* waiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C141D84A8DB00F4B44B /* waiter.swift */; };
 		0366AE561DF0FEC400F4B44B /* DeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE501DF0FEC400F4B44B /* DeferredTests.swift */; };
-		0366AE5A1DF0FEC400F4B44B /* TBDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE521DF0FEC400F4B44B /* TBDTests.swift */; };
-		0366AE5C1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */; };
+		0366AE5A1DF0FEC400F4B44B /* ResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE521DF0FEC400F4B44B /* ResolverTests.swift */; };
+		0366AE5C1DF0FEC400F4B44B /* DeferredTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* DeferredTimingTests.swift */; };
 		0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
-		038C1A5A229343C000F4B44B /* DeallocTBD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038C1A59229343C000F4B44B /* DeallocTBD.swift */; };
+		0385F4F2238AA8D10086343E /* DeferredExtrasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0385F4F1238AA8D10086343E /* DeferredExtrasTests.swift */; };
+		0385F4F3238AA8D10086343E /* DeferredExtrasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0385F4F1238AA8D10086343E /* DeferredExtrasTests.swift */; };
+		0385F4F5238AA9350086343E /* DeferredExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0385F4F4238AA9350086343E /* DeferredExamples.swift */; };
+		0385F4F6238AA9350086343E /* DeferredExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0385F4F4238AA9350086343E /* DeferredExamples.swift */; };
+		0385F502238AAA0C0086343E /* DeferredDelayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0385F500238AAA0C0086343E /* DeferredDelayTests.swift */; };
+		0385F503238AAA0C0086343E /* DeferredDelayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0385F500238AAA0C0086343E /* DeferredDelayTests.swift */; };
+		0385F504238AAA0C0086343E /* DeferredTimeoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0385F501238AAA0C0086343E /* DeferredTimeoutTests.swift */; };
+		0385F505238AAA0C0086343E /* DeferredTimeoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0385F501238AAA0C0086343E /* DeferredTimeoutTests.swift */; };
 		0393E8CD2285E7FE00F4B44B /* DeferredSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CB9823227BBECD00F4B44B /* DeferredSelectionTests.swift */; };
 		039E18411DFF621300F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */; };
 		03B16033238733A60086343E /* result-extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B16032238733A60086343E /* result-extensions.swift */; };
 		03B16034238733A60086343E /* result-extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B16032238733A60086343E /* result-extensions.swift */; };
-		03B4337120CAF2C600F4B44B /* TBDTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */; };
+		03B4337120CAF2C600F4B44B /* DeferredTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* DeferredTimingTests.swift */; };
 		03B4E0771C14003C00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
 		03B7767E20CAECFB00F4B44B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B7767D20CAECFB00F4B44B /* AppDelegate.swift */; };
 		03B7768020CAECFB00F4B44B /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B7767F20CAECFB00F4B44B /* ViewController.swift */; };
@@ -42,7 +48,7 @@
 		03B7769B20CAED1C00F4B44B /* DeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE501DF0FEC400F4B44B /* DeferredTests.swift */; };
 		03B7769C20CAED1C00F4B44B /* DeferredCombinationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */; };
 		03B7769D20CAED1C00F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
-		03B7769E20CAED1C00F4B44B /* TBDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE521DF0FEC400F4B44B /* TBDTests.swift */; };
+		03B7769E20CAED1C00F4B44B /* ResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE521DF0FEC400F4B44B /* ResolverTests.swift */; };
 		03B776A220CAED1C00F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
 		03B776A320CAED1C00F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
@@ -197,13 +203,16 @@
 		035D0C121D84A8DB00F4B44B /* nsurlsession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nsurlsession.swift; path = deferred/nsurlsession.swift; sourceTree = "<group>"; };
 		035D0C141D84A8DB00F4B44B /* waiter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = waiter.swift; path = deferred/waiter.swift; sourceTree = "<group>"; };
 		0366AE501DF0FEC400F4B44B /* DeferredTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredTests.swift; path = DeferredTests/DeferredTests.swift; sourceTree = "<group>"; };
-		0366AE521DF0FEC400F4B44B /* TBDTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TBDTests.swift; path = DeferredTests/TBDTests.swift; sourceTree = "<group>"; };
-		0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TBDTimingTests.swift; path = DeferredTests/TBDTimingTests.swift; sourceTree = "<group>"; };
+		0366AE521DF0FEC400F4B44B /* ResolverTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ResolverTests.swift; path = deferredTests/ResolverTests.swift; sourceTree = "<group>"; };
+		0366AE531DF0FEC400F4B44B /* DeferredTimingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredTimingTests.swift; path = deferredTests/DeferredTimingTests.swift; sourceTree = "<group>"; };
 		0366AE541DF0FEC400F4B44B /* TestError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TestError.swift; path = DeferredTests/TestError.swift; sourceTree = "<group>"; };
 		0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = URLSessionTests.swift; path = DeferredTests/URLSessionTests.swift; sourceTree = "<group>"; };
 		0374DFB01DFF5BD800F4B44B /* nzRandom.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nzRandom.swift; path = DeferredTests/nzRandom.swift; sourceTree = "<group>"; };
 		038147591E4138BA00F4B44B /* DeletionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeletionTests.swift; path = deferredTests/DeletionTests.swift; sourceTree = "<group>"; };
-		038C1A59229343C000F4B44B /* DeallocTBD.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeallocTBD.swift; path = deferredTests/DeallocTBD.swift; sourceTree = "<group>"; };
+		0385F4F1238AA8D10086343E /* DeferredExtrasTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredExtrasTests.swift; path = deferredTests/DeferredExtrasTests.swift; sourceTree = "<group>"; };
+		0385F4F4238AA9350086343E /* DeferredExamples.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredExamples.swift; path = deferredTests/DeferredExamples.swift; sourceTree = "<group>"; };
+		0385F500238AAA0C0086343E /* DeferredDelayTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredDelayTests.swift; path = deferredTests/DeferredDelayTests.swift; sourceTree = "<group>"; };
+		0385F501238AAA0C0086343E /* DeferredTimeoutTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredTimeoutTests.swift; path = deferredTests/DeferredTimeoutTests.swift; sourceTree = "<group>"; };
 		039E18431DFF77F900F4B44B /* LinuxMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
 		03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredCombinationTests.swift; path = deferredTests/DeferredCombinationTests.swift; sourceTree = "<group>"; };
 		03B16032238733A60086343E /* result-extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "result-extensions.swift"; path = "deferredTests/result-extensions.swift"; sourceTree = "<group>"; };
@@ -316,14 +325,17 @@
 				039E18431DFF77F900F4B44B /* LinuxMain.swift */,
 				0350E0E22295FF6900F4B44B /* AlignmentTests.swift */,
 				0366AE501DF0FEC400F4B44B /* DeferredTests.swift */,
+				0385F4F4238AA9350086343E /* DeferredExamples.swift */,
+				0385F4F1238AA8D10086343E /* DeferredExtrasTests.swift */,
 				03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */,
 				03CB9823227BBECD00F4B44B /* DeferredSelectionTests.swift */,
+				0385F500238AAA0C0086343E /* DeferredDelayTests.swift */,
+				0385F501238AAA0C0086343E /* DeferredTimeoutTests.swift */,
+				0366AE531DF0FEC400F4B44B /* DeferredTimingTests.swift */,
 				038147591E4138BA00F4B44B /* DeletionTests.swift */,
-				0366AE521DF0FEC400F4B44B /* TBDTests.swift */,
-				0366AE531DF0FEC400F4B44B /* TBDTimingTests.swift */,
+				0366AE521DF0FEC400F4B44B /* ResolverTests.swift */,
 				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
 				0366AE541DF0FEC400F4B44B /* TestError.swift */,
-				038C1A59229343C000F4B44B /* DeallocTBD.swift */,
 				0374DFB01DFF5BD800F4B44B /* nzRandom.swift */,
 				03B16032238733A60086343E /* result-extensions.swift */,
 				03BEA0DF20CF3C1200F4B44B /* XCTestManifests.swift */,
@@ -722,17 +734,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */,
-				038C1A5A229343C000F4B44B /* DeallocTBD.swift in Sources */,
 				03B16033238733A60086343E /* result-extensions.swift in Sources */,
 				03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */,
 				03BBDB1021EFDBBF00F4B44B /* URLSessionTests.swift in Sources */,
-				0366AE5C1DF0FEC400F4B44B /* TBDTimingTests.swift in Sources */,
+				0366AE5C1DF0FEC400F4B44B /* DeferredTimingTests.swift in Sources */,
 				039E18411DFF621300F4B44B /* nzRandom.swift in Sources */,
 				0366AE561DF0FEC400F4B44B /* DeferredTests.swift in Sources */,
+				0385F504238AAA0C0086343E /* DeferredTimeoutTests.swift in Sources */,
 				03CB9824227BBECD00F4B44B /* DeferredSelectionTests.swift in Sources */,
+				0385F502238AAA0C0086343E /* DeferredDelayTests.swift in Sources */,
 				0350E0EA2295FF6900F4B44B /* AlignmentTests.swift in Sources */,
-				0366AE5A1DF0FEC400F4B44B /* TBDTests.swift in Sources */,
+				0385F4F5238AA9350086343E /* DeferredExamples.swift in Sources */,
+				0366AE5A1DF0FEC400F4B44B /* ResolverTests.swift in Sources */,
 				032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */,
+				0385F4F2238AA8D10086343E /* DeferredExtrasTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -749,18 +764,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0350E0C22295D11A00F4B44B /* DeallocTBD.swift in Sources */,
 				03B776A320CAED1C00F4B44B /* nzRandom.swift in Sources */,
 				03B16034238733A60086343E /* result-extensions.swift in Sources */,
 				03B7769B20CAED1C00F4B44B /* DeferredTests.swift in Sources */,
 				03E4DF5D21FC01E800F4B44B /* URLSessionTests.swift in Sources */,
-				03B7769E20CAED1C00F4B44B /* TBDTests.swift in Sources */,
+				03B7769E20CAED1C00F4B44B /* ResolverTests.swift in Sources */,
 				03B7769D20CAED1C00F4B44B /* DeletionTests.swift in Sources */,
-				03B4337120CAF2C600F4B44B /* TBDTimingTests.swift in Sources */,
+				03B4337120CAF2C600F4B44B /* DeferredTimingTests.swift in Sources */,
+				0385F505238AAA0C0086343E /* DeferredTimeoutTests.swift in Sources */,
 				0393E8CD2285E7FE00F4B44B /* DeferredSelectionTests.swift in Sources */,
+				0385F503238AAA0C0086343E /* DeferredDelayTests.swift in Sources */,
 				0350E0EB2295FF6900F4B44B /* AlignmentTests.swift in Sources */,
+				0385F4F6238AA9350086343E /* DeferredExamples.swift in Sources */,
 				03B776A220CAED1C00F4B44B /* TestError.swift in Sources */,
 				03B7769C20CAED1C00F4B44B /* DeferredCombinationTests.swift in Sources */,
+				0385F4F3238AA8D10086343E /* DeferredExtrasTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
