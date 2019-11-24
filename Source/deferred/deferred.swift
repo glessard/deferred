@@ -656,7 +656,10 @@ public struct Resolver<Success, Failure: Error>
 
   /// Query whether the underlying `Deferred` still exists and is also unresolved
 
-  public var needsResolution: Bool { return deferred?.state != .resolved }
+  public var needsResolution: Bool {
+    let state = deferred?.state
+    return state != nil && state != .resolved
+  }
 
   /// Enqueue a notification to be performed asynchronously after our `Deferred` becomes resolved.
   ///
