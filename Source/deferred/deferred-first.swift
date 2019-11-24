@@ -55,7 +55,7 @@ struct NonEmptySequence<Element, S: Sequence>: Sequence, IteratorProtocol
 /// - returns: a new `Deferred`
 
 public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, qos: DispatchQoS = .current,
-                                                      cancelOthers: Bool = false) throws -> Deferred<Success, Failure>?
+                                                      cancelOthers: Bool = false) -> Deferred<Success, Failure>?
   where S.Element: Deferred<Success, Failure>
 {
   let queue = DispatchQueue(label: "first-sequence", qos: qos)
@@ -88,7 +88,7 @@ public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, queue: Dis
 {
   guard let deferreds = NonEmptySequence(elements: deferreds) else { return nil }
 
-  return TBD<Success, Failure>(queue: queue) {
+  return Deferred<Success, Failure>(queue: queue) {
     f in
     // We loop over the elements on a concurrent thread
     // because nothing prevents S from blocking on `S.Iterator.next()`
@@ -96,7 +96,7 @@ public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, queue: Dis
       var errors: [Deferred<Failure, Cancellation>] = []
       for deferred in deferreds
       {
-        let error = TBD<Failure, Cancellation> {
+        let error = Deferred<Failure, Cancellation> {
           e in
           deferred.notify {
             result in
@@ -169,7 +169,7 @@ public func firstResolved<Success, Failure, S>(_ deferreds: S, queue: DispatchQu
 {
   let function = #function
 
-  return TBD<Deferred<Success, Failure>, Invalidation>(queue: queue) {
+  return Deferred<Deferred<Success, Failure>, Invalidation>(queue: queue) {
     resolver in
     // We loop over the elements on a concurrent thread
     // because nothing prevents S from blocking on `S.Iterator.next()`
@@ -214,11 +214,11 @@ public func firstResolved<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
                                           canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>)
 {
-  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
+  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
 
   // find which input gets resolved first
-  let selected = TBD<ObjectIdentifier, Never>() {
+  let selected = Deferred<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
     d2.notify { [id = ObjectIdentifier(d2)] _ in resolver.resolve(value: id) }
@@ -256,12 +256,12 @@ public func firstResolved<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
                                                   canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>)
 {
-  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
-  let (r3, o3) = TBD<T3, Error>.CreatePair(queue: d3.queue)
+  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
+  let (r3, o3) = Deferred<T3, Error>.CreatePair(queue: d3.queue)
 
   // find which input gets resolved first
-  let selected = TBD<ObjectIdentifier, Never>() {
+  let selected = Deferred<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
     d2.notify { [id = ObjectIdentifier(d2)] _ in resolver.resolve(value: id) }
@@ -305,13 +305,13 @@ public func firstResolved<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>
                                                           canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>, Deferred<T4, Error>)
 {
-  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
-  let (r3, o3) = TBD<T3, Error>.CreatePair(queue: d3.queue)
-  let (r4, o4) = TBD<T4, Error>.CreatePair(queue: d4.queue)
+  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
+  let (r3, o3) = Deferred<T3, Error>.CreatePair(queue: d3.queue)
+  let (r4, o4) = Deferred<T4, Error>.CreatePair(queue: d4.queue)
 
   // find which input gets resolved first
-  let selected = TBD<ObjectIdentifier, Never>() {
+  let selected = Deferred<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
     d2.notify { [id = ObjectIdentifier(d2)] _ in resolver.resolve(value: id) }
@@ -356,7 +356,7 @@ public func firstResolved<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>
 private func resolveValue<T, F>(_ resolver: Resolver<ObjectIdentifier, Cancellation>,
                                 _ deferred: Deferred<T, F>) -> Deferred<Error, Cancellation>
 {
-  return TBD<Error, Cancellation> {
+  return Deferred<Error, Cancellation> {
     error in
     let id = ObjectIdentifier(deferred)
     deferred.notify {
@@ -379,11 +379,11 @@ public func firstValue<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
                                        canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>)
 {
-  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
+  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
 
   // find which input first gets a value
-  let selected = TBD<ObjectIdentifier, Cancellation>() {
+  let selected = Deferred<ObjectIdentifier, Cancellation>() {
     resolver in
     let errors = [
       resolveValue(resolver, d1),
@@ -436,12 +436,12 @@ public func firstValue<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
                                                canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>)
 {
-  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
-  let (r3, o3) = TBD<T3, Error>.CreatePair(queue: d3.queue)
+  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
+  let (r3, o3) = Deferred<T3, Error>.CreatePair(queue: d3.queue)
 
   // find which input first gets a value
-  let selected = TBD<ObjectIdentifier, Cancellation>() {
+  let selected = Deferred<ObjectIdentifier, Cancellation>() {
     resolver in
     let errors = [
       resolveValue(resolver, d1),
@@ -501,13 +501,13 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
                                                        canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>, Deferred<T4, Error>)
 {
-  let (r1, o1) = TBD<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = TBD<T2, Error>.CreatePair(queue: d2.queue)
-  let (r3, o3) = TBD<T3, Error>.CreatePair(queue: d3.queue)
-  let (r4, o4) = TBD<T4, Error>.CreatePair(queue: d4.queue)
+  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
+  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
+  let (r3, o3) = Deferred<T3, Error>.CreatePair(queue: d3.queue)
+  let (r4, o4) = Deferred<T4, Error>.CreatePair(queue: d4.queue)
 
   // find which input first gets a value
-  let selected = TBD<ObjectIdentifier, Cancellation>() {
+  let selected = Deferred<ObjectIdentifier, Cancellation>() {
     resolver in
     let errors = [
       resolveValue(resolver, d1),
