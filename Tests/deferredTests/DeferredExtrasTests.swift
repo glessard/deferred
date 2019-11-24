@@ -607,4 +607,13 @@ class DeferredExtrasTests: XCTestCase
     XCTAssertEqual(s4.1.value.map(Double.init), s4.2.value.map({ $0.magnitude }))
     XCTAssertEqual(s4.0.value.map(String.init), s4.3.value)
   }
+
+  func  testExecute()
+  {
+    let deferred = Deferred<Void, Never> { _ in }
+    XCTAssertEqual(deferred.state, .waiting)
+    let executed = deferred.execute
+    XCTAssertEqual(executed.state, .executing)
+    XCTAssert(executed === deferred)
+  }
 }

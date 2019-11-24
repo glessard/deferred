@@ -14,6 +14,18 @@ import Dispatch
 
 extension Deferred
 {
+  /// A way to cause the `Deferred` to switch to `.execute` state in a fluent manner
+  ///
+  /// - returns itself, guaranteed to no longer be in the `.waiting` state.
+
+  public var execute: Deferred {
+    self.beginExecution()
+    return self
+  }
+}
+
+extension Deferred
+{
   // MARK: notify: execute a task when this `deferred` becomes resolved
 
   /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes resolved.
