@@ -27,16 +27,6 @@ extension Result
     return nil
   }
 
-  var isValue: Bool {
-    if case .success = self { return true }
-    return false
-  }
-
-  var isError: Bool {
-    if case .failure = self { return true }
-    return false
-  }
-
   var withAnyError: Result<Success, Error> {
     switch self
     {

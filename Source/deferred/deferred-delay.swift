@@ -57,7 +57,7 @@ extension Deferred
         result in
         guard resolver.needsResolution else { return }
 
-        if result.isError
+        if case .failure = result
         { // don't honor the time delay for the error case
           resolver.resolve(result)
           return

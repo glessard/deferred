@@ -392,7 +392,7 @@ public func firstValue<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
 
     // figure out whether all inputs got errors
     let combined = combine(qos: .utility, deferreds: errors)
-    combined.notify { if $0.isValue { resolver.resolve(error: .notSelected) } }
+    combined.notify { if case .success = $0 { resolver.resolve(error: .notSelected) } }
     resolver.notify { combined.cancel() }
   }
 
@@ -451,7 +451,7 @@ public func firstValue<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
 
     // figure out whether all inputs got errors
     let combined = combine(qos: .utility, deferreds: errors)
-    combined.notify { if $0.isValue { resolver.resolve(error: .notSelected) } }
+    combined.notify { if case .success = $0 { resolver.resolve(error: .notSelected) } }
     resolver.notify { combined.cancel() }
   }
 
@@ -518,7 +518,7 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
 
     // figure out whether all inputs got errors
     let combined = combine(qos: .utility, deferreds: errors)
-    combined.notify { if $0.isValue { resolver.resolve(error: .notSelected) } }
+    combined.notify { if case .success = $0 { resolver.resolve(error: .notSelected) } }
     resolver.notify { combined.cancel() }
   }
 
