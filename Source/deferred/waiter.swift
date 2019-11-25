@@ -30,7 +30,9 @@ private enum WaiterType<Success, Failure: Error>
   case datasource(AnyObject)
 }
 
-func notifyWaiters<Success, Failure: Error>(_ queue: DispatchQueue, _ tail: UnsafeMutablePointer<Waiter<Success, Failure>>, _ value: Result<Success, Failure>)
+func notifyWaiters<S, F>(_ queue: DispatchQueue,
+                         _ tail: UnsafeMutablePointer<Waiter<S, F>>,
+                         _ result: Result<S, F>)
 {
   var head = reverseList(tail)
   loop: while let current = head
@@ -43,7 +45,7 @@ func notifyWaiters<Success, Failure: Error>(_ queue: DispatchQueue, _ tail: Unsa
       head = current.pointee.next
       // execute handler on the requested queue
       queue.async {
-        handler(value)
+        handler(result)
         current.deinitialize(count: 1)
         current.deallocate()
       }
@@ -68,12 +70,12 @@ func notifyWaiters<Success, Failure: Error>(_ queue: DispatchQueue, _ tail: Unsa
       case .notification(let queue?, let handler):
         // execute handler on the requested queue
         queue.async {
-          handler(value)
+          handler(result)
           current.deinitialize(count: 1)
           current.deallocate()
         }
       case .notification(nil, let handler):
-        handler(value)
+        handler(result)
         fallthrough
       case .datasource:
         current.deinitialize(count: 1)
@@ -83,7 +85,7 @@ func notifyWaiters<Success, Failure: Error>(_ queue: DispatchQueue, _ tail: Unsa
   }
 }
 
-func deallocateWaiters<Success, Failure: Error>(_ tail: UnsafeMutablePointer<Waiter<Success, Failure>>?)
+func deallocateWaiters<S, F>(_ tail: UnsafeMutablePointer<Waiter<S, F>>?)
 {
   var waiter = tail
   while let current = waiter
@@ -95,11 +97,11 @@ func deallocateWaiters<Success, Failure: Error>(_ tail: UnsafeMutablePointer<Wai
   }
 }
 
-private func reverseList<Success, Failure: Error>(_ tail: UnsafeMutablePointer<Waiter<Success, Failure>>) -> UnsafeMutablePointer<Waiter<Success, Failure>>?
+private func reverseList<S, F>(_ tail: UnsafeMutablePointer<Waiter<S, F>>) -> UnsafeMutablePointer<Waiter<S, F>>?
 {
   if tail.pointee.next == nil { return tail }
 
-  var head: UnsafeMutablePointer<Waiter<Success, Failure>>? = nil
+  var head: UnsafeMutablePointer<Waiter<S, F>>? = nil
   var current = Optional(tail)
   while let element = current
   {
