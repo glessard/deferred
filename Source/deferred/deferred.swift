@@ -36,9 +36,9 @@ private extension Int
   var ptr: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~.stateMask) }
 }
 
-private struct DeferredTask
+private struct DeferredTask<Success, Failure: Error>
 {
-  let task: () -> Void
+  let task: (Resolver<Success, Failure>) -> Void
 }
 
 /// An asynchronous computation.
@@ -65,7 +65,7 @@ open class Deferred<Success, Failure: Error>
 
   /// Get a pointer to a `DeferredTask` that will resolve this `Deferred`
 
-  private func deferredTask(from state: Int) -> UnsafeMutablePointer<DeferredTask>?
+  private func deferredTask(from state: Int) -> UnsafeMutablePointer<DeferredTask<Success, Failure>>?
   {
     guard state.tag == .waiting else { return nil }
     return state.ptr?.assumingMemoryBound(to: DeferredTask.self)
@@ -140,9 +140,8 @@ open class Deferred<Success, Failure: Error>
   public init(queue: DispatchQueue, resolve: @escaping (Resolver<Success, Failure>) -> Void)
   {
     self.queue = queue
-    let resolver = Resolver(self)
-    let taskp = UnsafeMutablePointer<DeferredTask>.allocate(capacity: 1)
-    taskp.initialize(to: DeferredTask(task: { resolve(resolver) }))
+    let taskp = UnsafeMutablePointer<DeferredTask<Success, Failure>>.allocate(capacity: 1)
+    taskp.initialize(to: DeferredTask(task: resolve))
     CAtomicsInitialize(deferredState, Int(taskp, tag: .waiting))
   }
 
@@ -344,7 +343,8 @@ open class Deferred<Success, Failure: Error>
           if let taskp = deferredTask(from: state)
           { // we need to execute the task
             self.queue.async {
-              taskp.pointee.task()
+              [self] in
+              withExtendedLifetime(self) { taskp.pointee.task(Resolver(self)) }
               taskp.deinitialize(count: 1)
               taskp.deallocate()
             }
@@ -383,7 +383,8 @@ open class Deferred<Success, Failure: Error>
     if let taskp = deferredTask(from: current)
     { // we need to execute the task
       self.queue.async {
-        taskp.pointee.task()
+        [self] in
+        withExtendedLifetime(self) { taskp.pointee.task(Resolver(self)) }
         taskp.deinitialize(count: 1)
         taskp.deallocate()
       }
