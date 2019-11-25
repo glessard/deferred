@@ -137,11 +137,11 @@ open class Deferred<Success, Failure: Error>
   /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
   /// - parameter task:  the computation to be performed
 
-  public init(queue: DispatchQueue, resolve: @escaping (Resolver<Success, Failure>) -> Void)
+  public init(queue: DispatchQueue, task: @escaping (Resolver<Success, Failure>) -> Void)
   {
     self.queue = queue
     let taskp = UnsafeMutablePointer<DeferredTask<Success, Failure>>.allocate(capacity: 1)
-    taskp.initialize(to: DeferredTask(task: resolve))
+    taskp.initialize(to: DeferredTask(task: task))
     CAtomicsInitialize(deferredState, Int(taskp, tag: .waiting))
   }
 
@@ -152,10 +152,10 @@ open class Deferred<Success, Failure: Error>
   /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
   /// - parameter task: a computation to be performed
 
-  public convenience init(qos: DispatchQoS = .current, resolve: @escaping (Resolver<Success, Failure>) -> Void)
+  public convenience init(qos: DispatchQoS = .current, task: @escaping (Resolver<Success, Failure>) -> Void)
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
-    self.init(queue: queue, resolve: resolve)
+    self.init(queue: queue, task: task)
   }
 
   /// Initialize as resolved with a `Success`
@@ -401,7 +401,7 @@ extension Deferred where Failure == Error
 
   public convenience init(queue: DispatchQueue, task: @escaping () throws -> Success)
   {
-    self.init(queue: queue, resolve: { r in r.resolve(Result(catching: task)) })
+    self.init(queue: queue, task: { r in r.resolve(Result(catching: task)) })
   }
 
   /// Initialize with a task to be computed in the background
@@ -420,7 +420,7 @@ extension Deferred where Failure == Never
 {
   public convenience init(queue: DispatchQueue, task: @escaping () -> Success)
   {
-    self.init(queue: queue, resolve: { r in r.resolve(value: task()) })
+    self.init(queue: queue, task: { r in r.resolve(value: task()) })
   }
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping () -> Success)

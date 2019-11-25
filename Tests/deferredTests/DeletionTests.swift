@@ -20,7 +20,7 @@ class DeallocWitness<T, F: Error>: Deferred<T, F>
   {
     e = expectation
     let q = DispatchQueue.global(qos: .current ?? .default)
-    super.init(queue: q, resolve: task)
+    super.init(queue: q, task: task)
   }
 
   deinit {

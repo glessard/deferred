@@ -26,30 +26,29 @@ private struct Weak<T: AnyObject>
 
 public class DeferredURLSessionTask<Success>: Deferred<Success, Error>
 {
-  private let task: Deferred<Weak<URLSessionTask>, Invalidation>
+  private let deferredURLSessionTask: Deferred<Weak<URLSessionTask>, Invalidation>
 
   public var urlSessionTask: URLSessionTask? {
-    let reference = task.peek()?.value?.reference
-    return reference
+    return deferredURLSessionTask.peek()?.value?.reference
   }
 
   fileprivate init(queue: DispatchQueue, error: Error)
   {
-    task = Deferred(queue: queue, error: Invalidation.invalid(""))
+    deferredURLSessionTask = Deferred(queue: queue, error: Invalidation.invalid(""))
     super.init(queue: queue) { $0.resolve(.failure(error)) }
   }
 
-  init(queue: DispatchQueue, resolve: @escaping (Resolver<Success, Error>) -> URLSessionTask)
+  init(queue: DispatchQueue, task: @escaping (Resolver<Success, Error>) -> URLSessionTask)
   {
-    let (taskResolver, task) = Deferred<Weak<URLSessionTask>, Invalidation>.CreatePair(queue: queue)
-    self.task = task
+    let (taskResolver, deferredURLSessionTask) = Deferred<Weak<URLSessionTask>, Invalidation>.CreatePair(queue: queue)
+    self.deferredURLSessionTask = deferredURLSessionTask
 
     super.init(queue: queue) {
       resolver in
-      let task = resolve(resolver)
-      resolver.retainSource(task)
-      taskResolver.resolve(value: Weak(reference: task))
-      task.resume()
+      let urlSessionTask = task(resolver)
+      resolver.retainSource(urlSessionTask)
+      taskResolver.resolve(value: Weak(reference: urlSessionTask))
+      urlSessionTask.resume()
     }
   }
 
