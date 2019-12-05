@@ -65,12 +65,6 @@ open class Deferred<Success, Failure: Error>
 
   /// Get a pointer to a `DeferredTask` that will resolve this `Deferred`
 
-  private func deferredTask(from state: Int) -> UnsafeMutablePointer<DeferredTask<Success, Failure>>?
-  {
-    guard state.tag == .waiting else { return nil }
-    return state.ptr?.assumingMemoryBound(to: DeferredTask.self)
-  }
-
   /// Get a pointer to a `Result` for a resolved `Deferred`.
   /// `state` must have been read with `.acquire` memory ordering in order
   /// to safely see all the changes from the thread that resolved this `Deferred`.
@@ -103,12 +97,7 @@ open class Deferred<Success, Failure: Error>
     {
       deallocateWaiters(waiters)
     }
-    else if let taskp = deferredTask(from: state)
-    {
-      taskp.deinitialize(count: 1)
-      taskp.deallocate()
-    }
-    deferredState.deallocate()
+     deferredState.deallocate()
   }
 
   // MARK: designated initializers
@@ -140,9 +129,8 @@ open class Deferred<Success, Failure: Error>
   public init(queue: DispatchQueue, task: @escaping (Resolver<Success, Failure>) -> Void)
   {
     self.queue = queue
-    let taskp = UnsafeMutablePointer<DeferredTask<Success, Failure>>.allocate(capacity: 1)
-    taskp.initialize(to: DeferredTask(task: task))
-    CAtomicsInitialize(deferredState, Int(taskp, tag: .waiting))
+    CAtomicsInitialize(deferredState, .waiting)
+    self.queue.async { task(Resolver(self)) }
   }
 
   // MARK: convenience initializers
@@ -240,11 +228,6 @@ open class Deferred<Success, Failure: Error>
     {
       notifyWaiters(queue, waiters, result)
     }
-    else if let taskp = deferredTask(from: current)
-    {
-      taskp.deinitialize(count: 1)
-      taskp.deallocate()
-    }
 
     // This `Deferred` has been resolved
     return true
@@ -340,15 +323,6 @@ open class Deferred<Success, Failure: Error>
         // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
-          if let taskp = deferredTask(from: state)
-          { // we need to execute the task
-            self.queue.async {
-              [self] in
-              withExtendedLifetime(self) { taskp.pointee.task(Resolver(self)) }
-              taskp.deinitialize(count: 1)
-              taskp.deallocate()
-            }
-          }
           return
         }
       } while !state.isResolved
@@ -379,16 +353,6 @@ open class Deferred<Success, Failure: Error>
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
     } while !CAtomicsCompareAndExchange(deferredState, &current, .executing, .weak, .release, .relaxed)
-
-    if let taskp = deferredTask(from: current)
-    { // we need to execute the task
-      self.queue.async {
-        [self] in
-        withExtendedLifetime(self) { taskp.pointee.task(Resolver(self)) }
-        taskp.deinitialize(count: 1)
-        taskp.deallocate()
-      }
-    }
   }
 }
 
