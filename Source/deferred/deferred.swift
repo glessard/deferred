@@ -263,7 +263,7 @@ open class Deferred<Success, Failure: Error>
 
       repeat {
         waiter.pointee.next = waiterQueue(from: state)
-        let newState = Int(waiter, tag: state.tag)
+        let newState = Int(waiter, tag: .executing)
         // read-modify-write `deferredState` with memory_order_release.
         // this means that this write is in the release sequence of all previous writes.
         // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
