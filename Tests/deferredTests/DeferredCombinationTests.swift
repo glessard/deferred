@@ -34,7 +34,7 @@ class DeferredCombinationTests: XCTestCase
   func testReduceCancel()
   {
     let count = 10
-    let cancel = Int(nzRandom() % numericCast(count))
+    let cancel = Int.random(in: 1..<count)
 
     let inputs = (0..<count).map {
       i in
@@ -74,7 +74,7 @@ class DeferredCombinationTests: XCTestCase
   func testCombineCancel()
   {
     let count = 10
-    let cancel = Int(nzRandom() % numericCast(count))
+    let cancel = Int.random(in: 2..<count)
 
     let inputs = (1...count).map {
       i in
