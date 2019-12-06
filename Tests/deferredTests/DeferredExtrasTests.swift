@@ -100,9 +100,10 @@ class DeferredExtrasTests: XCTestCase
     // bad operand, transform short-circuited
     let d3 = d2.tryMap(qos: .default) { _ -> Int in fatalError(#function) }
 
-    XCTAssertEqual(d1.state, .waiting)
-    XCTAssertEqual(d2.state, .waiting)
-    XCTAssertEqual(d3.state, .waiting)
+    // FIXME: un-comment this once on-demand execution is reinstated
+    // XCTAssertEqual(d1.state, .waiting)
+    // XCTAssertEqual(d2.state, .waiting)
+    // XCTAssertEqual(d3.state, .waiting)
     XCTAssertEqual(d3.value, nil)
     XCTAssertEqual(d2.state, .resolved)
     XCTAssertEqual(d1.state, .resolved)
@@ -302,9 +303,10 @@ class DeferredExtrasTests: XCTestCase
     // good operand, transform short-circuited
     let d3 = d2.flatMapError { _ -> Deferred<Int, NSError> in fatalError(#function) }
 
-    XCTAssertEqual(d1.state, .waiting)
-    XCTAssertEqual(d2.state, .waiting)
-    XCTAssertEqual(d3.state, .waiting)
+    // FIXME: un-comment this once on-demand execution is reinstated
+    // XCTAssertEqual(d1.state, .waiting)
+    // XCTAssertEqual(d2.state, .waiting)
+    // XCTAssertEqual(d3.state, .waiting)
     XCTAssertEqual(d3.value, value*2)
     XCTAssertEqual(d2.state, .resolved)
     XCTAssertEqual(d1.state, .resolved)
@@ -611,7 +613,8 @@ class DeferredExtrasTests: XCTestCase
   func  testExecute()
   {
     let deferred = Deferred<Void, Never> { _ in }
-    XCTAssertEqual(deferred.state, .waiting)
+    // FIXME: un-comment this once on-demand execution is reinstated
+    // XCTAssertEqual(deferred.state, .waiting)
     let executed = deferred.execute
     XCTAssertEqual(executed.state, .executing)
     XCTAssert(executed === deferred)

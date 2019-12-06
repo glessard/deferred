@@ -39,13 +39,13 @@ class DeferredTests: XCTestCase
     let e = expectation(description: #function)
 
     let r = nzRandom()
-    let d = Deferred<Int, Never>(queue: q) {
-      resolver in
-      resolver.resolve(value: r)
-      e.fulfill()
-    }
-
+    var d: Deferred<Int, Never>! = nil
     q.async {
+      d = Deferred<Int, Never>(queue: q) {
+        resolver in
+        resolver.resolve(value: r)
+        e.fulfill()
+      }
       XCTAssertEqual(d.state, .waiting)
       d.beginExecution()
       XCTAssertEqual(d.state, .executing)
@@ -64,7 +64,7 @@ class DeferredTests: XCTestCase
     let d1 = Deferred<Int, Error>(value: value)
     XCTAssert(d1.peek()?.value == value)
 
-    let d2 = Deferred<Int, Cancellation> { _ in fatalError(#function) }
+    let d2 = Deferred<Int, Cancellation> { _ in }
     XCTAssertEqual(d2.peek(), nil)
     XCTAssertEqual(d2.state, .waiting)
 
@@ -192,7 +192,7 @@ class DeferredTests: XCTestCase
   func testCancel()
   {
     // Cancel before calculation has run -- cancellation success
-    let d1 = Deferred<Int, Error>(qos: .utility, task: { nzRandom() })
+    let d1 = Deferred<Int, Error>(qos: .utility, task: { _ in })
     XCTAssertEqual(d1.cancel(), true)
     XCTAssertEqual(d1.value, nil)
     XCTAssertEqual(d1.error as? Cancellation, .canceled(""))

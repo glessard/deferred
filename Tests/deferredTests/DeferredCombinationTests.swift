@@ -34,17 +34,19 @@ class DeferredCombinationTests: XCTestCase
   func testReduceCancel()
   {
     let count = 10
+    let cancel = Int(nzRandom() % numericCast(count))
+
     let inputs = (0..<count).map {
       i in
       return Deferred<Int, Cancellation> {
         resolver in
-        // print(i)
-        resolver.resolve(value: i)
+        if i == cancel
+        { resolver.cancel(String(i)) }
+        else
+        { resolver.resolve(value: i) }
       }
     }
 
-    let cancel = Int(nzRandom() % numericCast(count))
-    inputs[cancel].cancel(String(cancel))
     let c = reduce(inputs, initial: 0, combine: { $0 + $1 })
 
     XCTAssertEqual(c.value, nil)
@@ -72,17 +74,19 @@ class DeferredCombinationTests: XCTestCase
   func testCombineCancel()
   {
     let count = 10
+    let cancel = Int(nzRandom() % numericCast(count))
+
     let inputs = (1...count).map {
       i in
       return Deferred<Int, Cancellation> {
         resolver in
-        // print(i)
-        resolver.resolve(value: i)
+        if i == cancel
+        { resolver.cancel(String(i)) }
+        else
+        { resolver.resolve(value: i) }
       }
     }
 
-    let cancel = Int(nzRandom() % numericCast(count))
-    inputs[cancel].cancel(String(cancel))
     let c = combine(inputs)
 
     XCTAssertEqual(c.value, nil)
