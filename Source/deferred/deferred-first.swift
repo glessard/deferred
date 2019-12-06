@@ -8,7 +8,7 @@
 
 import Dispatch
 
-struct NonEmptySequence<Element, S: Sequence>: Sequence, IteratorProtocol
+private struct NonEmptySequence<Element, S: Sequence>: Sequence, IteratorProtocol
   where S.Element == Element
 {
   private var first: Element?
@@ -28,10 +28,7 @@ struct NonEmptySequence<Element, S: Sequence>: Sequence, IteratorProtocol
       first = nil
       return element
     }
-    else
-    {
-      return iterator.next()
-    }
+    return iterator.next()
   }
 }
 
@@ -541,7 +538,7 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
       case d2: r2.resolve(d2.result.withAnyError)
       case d3: r3.resolve(d3.result.withAnyError)
       case d4: r4.resolve(d4.result.withAnyError)
-    default: fatalError()
+      default: fatalError()
       }
     case .failure:
       // all inputs got errors, so transfer them to the outputs
