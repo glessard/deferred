@@ -157,7 +157,7 @@ extension URLSessionTests
 
   func testDownload_OK() throws
   {
-#if os(Linux) && !swift(>=5.1.2)
+#if os(Linux) && !swift(>=5.1.3)
     print("this test does not succeed due to a corelibs-foundation bug")
 #else
     TestURLServer.register(url: textURL, response: simpleGET(_:))
@@ -412,7 +412,7 @@ extension URLSessionTests
 
   func testDownload_NotFound() throws
   {
-#if os(Linux) && !swift(>=5.1.2)
+#if os(Linux) && !swift(>=5.1.3)
     print("this test does not succeed due to a corelibs-foundation bug")
 #else
     TestURLServer.register(url: missingURL, response: missingGET(_:))
@@ -845,7 +845,7 @@ class URLSessionResumeTests: XCTestCase
 
   func testURLRequestTimeout1() throws
   { // time out a URL request via session configuration
-#if os(Linux) && !swift(>=5.1.2)
+#if os(Linux) && !swift(>=5.1.3)
     print("this test does not succeed due to a corelibs-foundation bug")
 #else
     URLSessionResumeTests.configuration.timeoutIntervalForRequest = 1.0
@@ -874,7 +874,7 @@ class URLSessionResumeTests: XCTestCase
 
   func testURLRequestTimeout2() throws
   { // time out a URL request via request configuration
-#if os(Linux) && !swift(>=5.1.2)
+#if os(Linux) && !swift(>=5.1.3)
     print("this test does not succeed due to a corelibs-foundation bug")
 #else
     let session = URLSession(configuration: URLSessionResumeTests.configuration)
