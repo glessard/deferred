@@ -106,16 +106,13 @@ public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, queue: Dis
               e.resolve(value: error)
             }
           }
-          if cancelOthers && (Cancellation.notSelected is Failure)
-          {
-            f.notify { deferred.cancel(.notSelected) }
-          }
-          else
-          {
-            f.retainSource(deferred)
+          switch cancelOthers && (Cancellation.notSelected is Failure)
+          { // retain and cancel source, or just retain it
+          case true: f.notify { deferred.cancel(.notSelected) }
+          default:   f.retainSource(deferred)
           }
         }
-        errors.append(error)
+        errors.append(error.execute)
       }
 
       assert(errors.isEmpty == false)
@@ -186,13 +183,10 @@ public func firstResolved<Success, Failure, S>(_ deferreds: S, queue: DispatchQu
             resolver.resolve(value: d)
           }
         }
-        if cancelOthers && (Cancellation.notSelected is Failure)
-        {
-          resolver.notify { deferred.cancel(.notSelected) }
-        }
-        else
-        {
-          resolver.retainSource(deferred)
+        switch cancelOthers && (Cancellation.notSelected is Failure)
+        { // retain and cancel source, or just retain it
+        case true: resolver.notify { deferred.cancel(.notSelected) }
+        default:   resolver.retainSource(deferred)
         }
       }
     }
@@ -350,10 +344,11 @@ public func firstResolved<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>
   return (o1, o2, o3, o4)
 }
 
-private func resolveValue<T, F>(_ resolver: Resolver<ObjectIdentifier, Cancellation>,
-                                _ deferred: Deferred<T, F>) -> Deferred<Error, Cancellation>
+private func resolveSelection<T, F>(_ queue: DispatchQueue,
+                                    _ resolver: Resolver<ObjectIdentifier, Cancellation>,
+                                    _ deferred: Deferred<T, F>) -> Deferred<Error, Cancellation>
 {
-  return Deferred<Error, Cancellation> {
+  let notifier = Deferred<Error, Cancellation>(queue: queue) {
     error in
     let id = ObjectIdentifier(deferred)
     deferred.notify {
@@ -367,7 +362,29 @@ private func resolveValue<T, F>(_ resolver: Resolver<ObjectIdentifier, Cancellat
         error.resolve(value: e)
       }
     }
-    resolver.retainSource(deferred)
+  }
+  return notifier.execute
+}
+
+private func select<T, F>(_ deferred:  Deferred<T, F>,
+                          if selected: Deferred<ObjectIdentifier, Cancellation>)
+  -> Deferred<T, Error>
+{
+  return Deferred<T, Error>(queue: deferred.queue) {
+    resolver in
+    selected.notify {
+      result in
+      switch result
+      {
+      case .success(let id) where id == ObjectIdentifier(deferred):
+        resolver.resolve(deferred.result.withAnyError)
+      case .success: // another `Deferred` got resolved first
+        resolver.cancel(.notSelected)
+      case .failure: // all inputs got errors: transfer them to the outputs
+        resolver.resolve(deferred.result.withAnyError)
+      }
+    }
+    resolver.retainSource(selected)
   }
 }
 
@@ -376,54 +393,33 @@ public func firstValue<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
                                        canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>)
 {
-  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
-
   // find which input first gets a value
-  let selected = Deferred<ObjectIdentifier, Cancellation>() {
+  let queue = DispatchQueue(label: "select", qos: .current)
+  let selected = Deferred<ObjectIdentifier, Cancellation>(queue: queue) {
     resolver in
     let errors = [
-      resolveValue(resolver, d1),
-      resolveValue(resolver, d2),
+      resolveSelection(queue, resolver, d1),
+      resolveSelection(queue, resolver, d2),
     ]
 
-    // figure out whether all inputs got errors
-    let combined = combine(qos: .utility, deferreds: errors)
+    // figure out whether every input got an error
+    let combined = combine(queue: queue, deferreds: errors)
     combined.notify { if case .success = $0 { resolver.resolve(error: .notSelected) } }
-    resolver.notify { combined.cancel() }
-  }
 
-  selected.notify {
-    result in
-    if canceling
-    { // attempt to cancel the unresolved input
-      d1.cancel(.notSelected)
-      d2.cancel(.notSelected)
-    }
-
-    switch result
-    {
-    case .success(let id):
-      switch id
-      { // transfer the value-containing result to the selected output
-      case d1: r1.resolve(d1.result.withAnyError)
-      case d2: r2.resolve(d2.result.withAnyError)
-      default: fatalError()
+    // clean up (closure also retains sources)
+    resolver.notify {
+      combined.cancel()
+      if canceling
+      { // attempt to cancel the unresolved input
+        d1.cancel(.notSelected)
+        d2.cancel(.notSelected)
       }
-    case .failure:
-      // all inputs got errors, so transfer them to the outputs
-      d1.error.map { _ = r1.resolve(error: $0) }
-      d2.error.map { _ = r2.resolve(error: $0) }
     }
-
-    // cancel the remaining unresolved outputs
-    r1.cancel(.notSelected)
-    r2.cancel(.notSelected)
   }
 
-  // ensure `selected` lasts as long as it will be useful
-  r1.retainSource(selected)
-  r2.retainSource(selected)
+  let o1 = select(d1, if: selected)
+  let o2 = select(d2, if: selected)
+
   return (o1, o2)
 }
 
@@ -433,61 +429,36 @@ public func firstValue<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
                                                canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>)
 {
-  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
-  let (r3, o3) = Deferred<T3, Error>.CreatePair(queue: d3.queue)
-
   // find which input first gets a value
+  let queue = DispatchQueue(label: "select", qos: .current)
   let selected = Deferred<ObjectIdentifier, Cancellation>() {
     resolver in
     let errors = [
-      resolveValue(resolver, d1),
-      resolveValue(resolver, d2),
-      resolveValue(resolver, d3),
+      resolveSelection(queue, resolver, d1),
+      resolveSelection(queue, resolver, d2),
+      resolveSelection(queue, resolver, d3),
     ]
 
     // figure out whether all inputs got errors
-    let combined = combine(qos: .utility, deferreds: errors)
+    let combined = combine(queue: queue, deferreds: errors)
     combined.notify { if case .success = $0 { resolver.resolve(error: .notSelected) } }
-    resolver.notify { combined.cancel() }
-  }
 
-  selected.notify {
-    result in
-    if canceling
-    { // attempt to cancel any unresolved inputs
-      d1.cancel(.notSelected)
-      d2.cancel(.notSelected)
-      d3.cancel(.notSelected)
-    }
-
-    switch result
-    {
-    case .success(let id):
-      switch id
-      { // transfer the value-containing result to the selected output
-      case d1: r1.resolve(d1.result.withAnyError)
-      case d2: r2.resolve(d2.result.withAnyError)
-      case d3: r3.resolve(d3.result.withAnyError)
-      default: fatalError()
+    // clean up (closure also retains sources)
+    resolver.notify {
+      combined.cancel()
+      if canceling
+      { // attempt to cancel the unresolved input
+        d1.cancel(.notSelected)
+        d2.cancel(.notSelected)
+        d3.cancel(.notSelected)
       }
-    case .failure:
-      // all inputs got errors, so transfer them to the outputs
-      d1.error.map { _ = r1.resolve(error: $0) }
-      d2.error.map { _ = r2.resolve(error: $0) }
-      d3.error.map { _ = r3.resolve(error: $0) }
     }
-
-    // cancel the remaining unresolved outputs
-    r1.cancel(.notSelected)
-    r2.cancel(.notSelected)
-    r3.cancel(.notSelected)
   }
 
-  // ensure `selected` lasts as long as it will be useful
-  r1.retainSource(selected)
-  r2.retainSource(selected)
-  r3.retainSource(selected)
+  let o1 = select(d1, if: selected)
+  let o2 = select(d2, if: selected)
+  let o3 = select(d3, if: selected)
+
   return (o1, o2, o3)
 }
 
@@ -498,67 +469,38 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
                                                        canceling: Bool = false)
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>, Deferred<T4, Error>)
 {
-  let (r1, o1) = Deferred<T1, Error>.CreatePair(queue: d1.queue)
-  let (r2, o2) = Deferred<T2, Error>.CreatePair(queue: d2.queue)
-  let (r3, o3) = Deferred<T3, Error>.CreatePair(queue: d3.queue)
-  let (r4, o4) = Deferred<T4, Error>.CreatePair(queue: d4.queue)
-
   // find which input first gets a value
+  let queue = DispatchQueue(label: "select", qos: .current)
   let selected = Deferred<ObjectIdentifier, Cancellation>() {
     resolver in
     let errors = [
-      resolveValue(resolver, d1),
-      resolveValue(resolver, d2),
-      resolveValue(resolver, d3),
-      resolveValue(resolver, d4),
-      ]
+      resolveSelection(queue, resolver, d1),
+      resolveSelection(queue, resolver, d2),
+      resolveSelection(queue, resolver, d3),
+      resolveSelection(queue, resolver, d4),
+    ]
 
     // figure out whether all inputs got errors
-    let combined = combine(qos: .utility, deferreds: errors)
+    let combined = combine(queue: queue, deferreds: errors)
     combined.notify { if case .success = $0 { resolver.resolve(error: .notSelected) } }
-    resolver.notify { combined.cancel() }
-  }
 
-  selected.notify {
-    result in
-    if canceling
-    { // attempt to cancel any unresolved inputs
-      d1.cancel(.notSelected)
-      d2.cancel(.notSelected)
-      d3.cancel(.notSelected)
-      d4.cancel(.notSelected)
-    }
-
-    switch result
-    {
-    case .success(let id):
-      switch id
-      { // transfer the value-containing result to the selected output
-      case d1: r1.resolve(d1.result.withAnyError)
-      case d2: r2.resolve(d2.result.withAnyError)
-      case d3: r3.resolve(d3.result.withAnyError)
-      case d4: r4.resolve(d4.result.withAnyError)
-      default: fatalError()
+    // clean up (closure also retains sources)
+    resolver.notify {
+      combined.cancel()
+      if canceling
+      { // attempt to cancel the unresolved input
+        d1.cancel(.notSelected)
+        d2.cancel(.notSelected)
+        d3.cancel(.notSelected)
+        d4.cancel(.notSelected)
       }
-    case .failure:
-      // all inputs got errors, so transfer them to the outputs
-      d1.error.map { _ = r1.resolve(error: $0) }
-      d2.error.map { _ = r2.resolve(error: $0) }
-      d3.error.map { _ = r3.resolve(error: $0) }
-      d4.error.map { _ = r4.resolve(error: $0) }
     }
-
-    // cancel the remaining unresolved outputs
-    r1.cancel(.notSelected)
-    r2.cancel(.notSelected)
-    r3.cancel(.notSelected)
-    r4.cancel(.notSelected)
   }
 
-  // ensure `selected` lasts as long as it will be useful
-  r1.retainSource(selected)
-  r2.retainSource(selected)
-  r3.retainSource(selected)
-  r4.retainSource(selected)
+  let o1 = select(d1, if: selected)
+  let o2 = select(d2, if: selected)
+  let o3 = select(d3, if: selected)
+  let o4 = select(d4, if: selected)
+
   return (o1, o2, o3, o4)
 }

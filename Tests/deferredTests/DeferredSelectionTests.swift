@@ -28,7 +28,7 @@ class DeferredSelectionTests: XCTestCase
       for i in 0...c
       {
         let tbd = DeallocWitness(self.expectation(description: String(i)), queue: q) { r.append($0) }
-        d.append(tbd.validate(predicate: {$0 == i}))
+        d.append(tbd)
       }
       for deferred in d { deferred.beginExecution() }
       q.sync { XCTAssertEqual(r.count, d.count) }
@@ -41,6 +41,8 @@ class DeferredSelectionTests: XCTestCase
     let lucky = Int.random(in: 1..<count)
     XCTAssert(resolvers[count].resolve(error: TestError(count)))
     XCTAssert(resolvers[lucky].resolve(value: lucky))
+    first?.beginExecution()
+
     waitForExpectations(timeout: 1.0)
 
     XCTAssertEqual(first?.value, lucky)
@@ -115,10 +117,9 @@ class DeferredSelectionTests: XCTestCase
       var d: [Deferred<Int, Error>] = []
       for i in 0...c
       {
-        let tbd = DeallocWitness(self.expectation(description: String(i)), queue: q) { r.append($0) }
-        let validated = tbd.validate(predicate: {$0 == i})
-        let e = expectation(description: "Resolution \(i)")
-        validated.notify  {
+        let deferred = Deferred(queue: q) { r.append($0) }
+        let e = expectation(description: "\(i) in \(#function)")
+        deferred.notify  {
           result in
           if result.value == i { e.fulfill() }
           else if result.error != nil
@@ -127,9 +128,9 @@ class DeferredSelectionTests: XCTestCase
             e.fulfill()
           }
         }
-        d.append(validated)
+        d.append(deferred)
       }
-      for deferred in d { deferred.beginExecution() }
+      for deferred in d { XCTAssertEqual(deferred.state, .executing) }
       q.sync { XCTAssertEqual(r.count, d.count) }
       return (r, firstResolved(d, qos: .utility, cancelOthers: true))
     }
@@ -166,12 +167,13 @@ class DeferredSelectionTests: XCTestCase
     var t2: Resolver<Int, Error>! = nil
 
     let (s1, s2) = firstResolved(DeallocWitness<Double, Never>(e1),
-                                 DeallocWitness<Int, Error>(e2, queue: q2) { t2 = $0 },
+                                 DeallocWitness<Int, Error>(e2, queue: q2, task: { t2 = $0 }).execute,
                                  canceling: true)
+    q2.sync { XCTAssertNotNil(r2) }
     s1.notify { XCTAssertEqual($0.error, Cancellation.notSelected) }
     s2.notify { XCTAssertEqual($0.value, r2) }
 
-    q2.sync { XCTAssertEqual(t2.resolve(value: r2), true) }
+    XCTAssertEqual(t2.resolve(value: r2), true)
 
     waitForExpectations(timeout: 1.0)
   }
@@ -230,36 +232,25 @@ class DeferredSelectionTests: XCTestCase
   func testSelectFirstValueBinary1()
   {
     let d1 = Deferred<Double, Cancellation>()
+    let (r2, d2) = Deferred<Int, Never>.CreatePair()
+
+    let (s1, s2) = firstValue(d1, d2, canceling: true)
+    XCTAssertEqual(d1.state, .waiting)
+    XCTAssertEqual(d2.state, .waiting)
+    XCTAssertEqual(s1.state, .waiting)
+    XCTAssertEqual(s2.state, .waiting)
+
     let e2 = expectation(description: #function)
-    let q2 = DispatchQueue(label: #function)
-    var r2: Resolver<Int, Never>! = nil
-
-    let (s1, s2) = firstValue(d1,
-                              DeallocWitness(e2, queue: q2, task: { r2 = $0 }).execute,
-                              canceling: true)
-    q2.sync { XCTAssertNotNil(r2) }
-    s1.notify { XCTAssertEqual($0.error, Cancellation.notSelected) }
-    s2.notify { XCTAssertNotNil($0.value) }
-
+    s2.notify { _ in e2.fulfill() }
     r2.resolve(value: nzRandom())
 
     waitForExpectations(timeout: 1.0)
+    XCTAssertEqual(s2.value, d2.value)
+    XCTAssertEqual(s1.error, Cancellation.notSelected)
     XCTAssertEqual(d1.error, Cancellation.notSelected)
   }
 
   func testSelectFirstValueBinary2()
-  {
-    let r1 = Double(nzRandom())
-    let e2 = expectation(description: #function)
-
-    let (s1, s2) = firstValue(Deferred<Double, NSError>(value: r1), DeallocWitness<Int, Never>(e2))
-    s1.onValue { XCTAssertEqual($0, r1) }
-    s2.notify { XCTAssertEqual($0.error, Cancellation.notSelected) }
-
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testSelectFirstValueBinary3()
   {
     let r1 = nzRandom()
     let r2 = nzRandom()
@@ -271,6 +262,35 @@ class DeferredSelectionTests: XCTestCase
     s2.notify { XCTAssertEqual($0.error, TestError(r2)) }
 
     waitForExpectations(timeout: 1.0)
+  }
+
+  func testSelectFirstValueMemoryRelease()
+  {
+    do {
+      let (s1, s2) = firstValue(DeallocWitness<Void, Error>(expectation(description: #function + "1")),
+                                DeallocWitness<Void, Error>(expectation(description: #function + "2")))
+      s1.beginExecution()
+      s2.beginExecution()
+    }
+
+    waitForExpectations(timeout: 1.0)
+  }
+
+  func testSelectFirstValueRetainMemory()
+  {
+    let d1 = Deferred<Void, Never>() { _ in }
+    let e2 = expectation(description: #function)
+
+    let (s1, s2) = firstValue(d1, Deferred<Void, Error> { _ in e2.fulfill() } )
+
+    let q = DispatchQueue(label: #function)
+    q.asyncAfter(deadline: .now() + 0.01) { s1.beginExecution() }
+
+    XCTAssertEqual(s1.state, .waiting)
+    XCTAssertEqual(s2.state, .waiting)
+    XCTAssertEqual(d1.state, .waiting)
+    waitForExpectations(timeout: 1.0)
+    XCTAssertEqual(d1.state, .executing)
   }
 
   func testSelectFirstValueTernary1()
