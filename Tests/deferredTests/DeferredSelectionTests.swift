@@ -158,7 +158,7 @@ class DeferredSelectionTests: XCTestCase
     }
   }
 
-  func testSelectFirstResolvedBinary1()
+  func testSelectFirstResolvedBinary()
   {
     let e1 = expectation(description: #function + "1")
     let e2 = expectation(description: #function + "2")
@@ -176,23 +176,6 @@ class DeferredSelectionTests: XCTestCase
     XCTAssertEqual(t2.resolve(value: r2), true)
 
     waitForExpectations(timeout: 1.0)
-  }
-
-  func testSelectFirstResolvedBinary2()
-  {
-    let r1 = Double(nzRandom())
-    let e2 = expectation(description: #function)
-    let q2 = DispatchQueue(label: #function)
-    var r2: Resolver<Int, Error>! = nil
-
-    let (s1, s2) = firstResolved(Deferred<Double, Never>(qos: .utility, value: r1),
-                                 DeallocWitness(e2, queue: q2, task: { r2 = $0 }).execute)
-    q2.sync { XCTAssertNotNil(r2) }
-    s1.notify { XCTAssertEqual($0.value, r1) }
-    s2.notify { XCTAssertEqual($0.error, Cancellation.notSelected) }
-
-    waitForExpectations(timeout: 1.0)
-    XCTAssertEqual(r2.needsResolution, false)
   }
 
   func testSelectFirstResolvedTernary()
