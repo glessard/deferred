@@ -482,6 +482,9 @@ extension URLSessionTests
 
   func testData_Partial() throws
   {
+#if os(Linux) && !swift(>=5.1.3)
+    print("this test does not succeed due to a corelibs-foundation bug")
+#else
     TestURLServer.register(url: failURL, response: partialGET(_:))
     let request = URLRequest(url: failURL)
     let session = URLSession(configuration: URLSessionTests.configuration)
@@ -497,6 +500,7 @@ extension URLSessionTests
     catch let error as URLError where error.code == .networkConnectionLost {
       XCTAssertNotNil(error.userInfo[NSURLErrorFailingURLStringErrorKey])
     }
+#endif
   }  
 }
 
@@ -666,6 +670,9 @@ extension URLSessionTests
 
   func testInvalidDataTaskURL2() throws
   {
+#if os(Linux) && !swift(>=5.1.3)
+    print("this test does not succeed due to a corelibs-foundation bug")
+#else
     let request = URLRequest(url: URL(string: "schemeless") ?? invalidURL)
     let session = URLSession(configuration: .default)
     defer { session.finishTasksAndInvalidate() }
@@ -678,6 +685,7 @@ extension URLSessionTests
     catch Invalidation.invalid(let message) {
       XCTAssert(message.contains("invalid"))
     }
+#endif
   }
 
   func testInvalidDownloadTaskURL() throws
@@ -715,6 +723,9 @@ extension URLSessionTests
 
   func testInvalidUploadTaskURL2() throws
   {
+#if os(Linux) && !swift(>=5.1.3)
+    print("this test does not succeed due to a corelibs-foundation bug")
+#else
     let request = URLRequest(url: invalidURL)
     let session = URLSession(configuration: .default)
     defer { session.finishTasksAndInvalidate() }
@@ -747,6 +758,7 @@ extension URLSessionTests
     catch Invalidation.invalid(let message) {
       XCTAssert(message.contains(request.url?.scheme ?? "$$"))
     }
+#endif
   }
 }
 
