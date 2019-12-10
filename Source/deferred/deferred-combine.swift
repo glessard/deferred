@@ -142,8 +142,6 @@ public func reduce<S, T, F, U>(_ deferreds: S, initial: U,
 ///
 /// If any of the elements resolves to an error, the resulting `Deferred` will contain that error.
 ///
-/// If the reducing function throws an error, the resulting `Deferred` will contain that error.
-///
 /// The combined `Deferred` will use the supplied queue.
 ///
 /// - parameter queue: the queue onto which the `reduce` operation and its notifications will occur
@@ -159,20 +157,22 @@ public func reduce<S, T, F, U>(queue: DispatchQueue,
                                combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
   where S: Sequence, S.Element == Deferred<T, F>
 {
-  // We execute `Sequence.reduce` asynchronously because
-  // nothing prevents S from blocking on `Sequence.next()`
-  let reduced = Deferred<Deferred<U, F>, Never>(queue: queue) {
+  return Deferred<U, F>(queue: queue) {
     resolver in
-    let r = deferreds.reduce(Deferred<U, F>(queue: .global(qos: queue.qos.qosClass), value: initial)) {
-      (accumulator, deferred) in
-      accumulator.flatMap {
-        u in deferred.map(queue: queue) { t in combine(u,t) }
+    // We execute `Sequence.reduce` asynchronously because
+    // nothing prevents S from blocking on `Sequence.next()`
+    DispatchQueue.global(qos: queue.qos.qosClass).async {
+      let r = deferreds.reduce(Deferred<U, F>(queue: queue, value: initial)) {
+        (accumulator, deferred) in
+        deferred.beginExecution()
+        return accumulator.flatMap {
+          u in deferred.map(queue: queue) { t in combine(u,t) }
+        }
       }
+      r.notify { resolver.resolve($0) }
+      resolver.retainSource(r)
     }
-    resolver.resolve(value: r)
   }
-
-  return reduced.flatten()
 }
 
 /// Combine two `Deferred` into one.
@@ -190,7 +190,47 @@ public func reduce<S, T, F, U>(queue: DispatchQueue,
 public func combine<T1, T2, F>(_ d1: Deferred<T1, F>,
                                _ d2: Deferred<T2, F>) -> Deferred<(T1, T2), F>
 {
-  return d1.flatMap { t1 in d2.map { t2 in (t1,t2) } }
+  return Deferred(queue: d1.queue) {
+    resolver in
+    d1.notify {
+      switch $0
+      {
+      case .success(let t1):
+        d2.notify {
+          if case .success(let t2) = $0 { resolver.resolve(value: (t1, t2)) }
+        }
+      case .failure(let e1): resolver.resolve(error: e1)
+      }
+    }
+    d2.notify {
+      if case .failure(let e2) = $0 { resolver.resolve(error: e2) }
+    }
+    resolver.retainSource(d1)
+    resolver.retainSource(d2)
+  }
+}
+
+public func combine<T1, T2>(_ d1: Deferred<T1, Never>,
+                            _ d2: Deferred<T2, Never>) -> Deferred<(T1, T2), Never>
+{
+  return Deferred(queue: d1.queue) {
+    resolver in
+    d1.notify {
+      switch $0
+      {
+      case .success(let t1):
+        d2.notify {
+          switch $0
+          {
+          case .success(let t2): resolver.resolve(value: (t1, t2))
+          }
+        }
+      }
+    }
+    d2.beginExecution()
+    resolver.retainSource(d1)
+    resolver.retainSource(d2)
+  }
 }
 
 public func combine<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
@@ -216,7 +256,14 @@ public func combine<T1, T2, T3, F>(_ d1: Deferred<T1, F>,
                                    _ d2: Deferred<T2, F>,
                                    _ d3: Deferred<T3, F>) -> Deferred<(T1, T2, T3), F>
 {
-  return combine(d1,d2).flatMap { (t1,t2) in d3.map { t3 in (t1,t2,t3) } }
+  return combine(combine(d1, d2), d3).map { (c12,t3) in (c12.0,c12.1,t3) }
+}
+
+public func combine<T1, T2, T3>(_ d1: Deferred<T1, Never>,
+                                _ d2: Deferred<T2, Never>,
+                                _ d3: Deferred<T3, Never>) -> Deferred<(T1, T2, T3), Never>
+{
+  return combine(combine(d1, d2), d3).map { (c12,t3) in (c12.0,c12.1,t3) }
 }
 
 public func combine<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
@@ -245,7 +292,15 @@ public func combine<T1, T2, T3, T4, F>(_ d1: Deferred<T1, F>,
                                        _ d3: Deferred<T3, F>,
                                        _ d4: Deferred<T4, F>) -> Deferred<(T1, T2, T3, T4), F>
 {
-  return combine(d1,d2,d3).flatMap { (t1,t2,t3) in d4.map { t4 in (t1,t2,t3,t4) } }
+  return combine(combine(d1, d2, d3), d4).map { (c123, t4) in (c123.0,c123.1,c123.2,t4) }
+}
+
+public func combine<T1, T2, T3, T4>(_ d1: Deferred<T1, Never>,
+                                    _ d2: Deferred<T2, Never>,
+                                    _ d3: Deferred<T3, Never>,
+                                    _ d4: Deferred<T4, Never>) -> Deferred<(T1, T2, T3, T4), Never>
+{
+  return combine(combine(d1, d2, d3), d4).map { (c123, t4) in (c123.0,c123.1,c123.2,t4) }
 }
 
 public func combine<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,

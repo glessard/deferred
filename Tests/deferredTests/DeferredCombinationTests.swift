@@ -98,7 +98,7 @@ class DeferredCombinationTests: XCTestCase
     let v1 = Int(nzRandom())
     let v2 = UInt64(nzRandom())
 
-    let d1 = Deferred<Int, Never> { $0.resolve(value: v1) }
+    let d1 = Deferred<Int, Never>    { $0.resolve(value: v1) }
     let d2 = Deferred<UInt64, Never> { $0.resolve(value: v2) }
     let d3 = d1.delay(.microseconds(10))
     let d4 = d2.delay(.milliseconds(10))
@@ -111,6 +111,9 @@ class DeferredCombinationTests: XCTestCase
     let d = combine(d3, d4)
     XCTAssertEqual(d.value?.0, v1)
     XCTAssertEqual(d.value?.1, v2)
+
+    let e = combine(Deferred<Never, Cancellation>(error: .canceled("")), d4)
+    XCTAssertEqual(e.error, Cancellation.canceled(""))
   }
 
   func testCombine3()
@@ -119,14 +122,15 @@ class DeferredCombinationTests: XCTestCase
     let v2 = UInt64(nzRandom())
     let v3 = String(nzRandom())
 
-    let d1 = Deferred<Int, TestError> { $0.resolve(value: v1) }
-    let d2 = Deferred<UInt64, Never>  { $0.resolve(value: v2) }
-    let d3 = Deferred<String, NSError>{ $0.resolve(value: v3) }
+    let queue = DispatchQueue(label: #function)
+    let d1 = Deferred<Int, TestError>(queue: queue)  { $0.resolve(value: v1) }
+    let d2 = Deferred<UInt64, Never>(queue: queue)   { $0.resolve(value: v2) }
+    let d3 = Deferred<String, NSError>(queue: queue) { $0.resolve(value: v3) }
 
     let c = combine(d1,d2,d3.delay(seconds: 0.001)).value
-    XCTAssert(c?.0 == v1)
-    XCTAssert(c?.1 == v2)
-    XCTAssert(c?.2 == v3)
+    XCTAssertEqual(c?.0, v1)
+    XCTAssertEqual(c?.1, v2)
+    XCTAssertEqual(c?.2, v3)
   }
 
   func testCombine4()
@@ -136,16 +140,16 @@ class DeferredCombinationTests: XCTestCase
     let v3 = String(nzRandom())
     let v4 = sin(Double(v2))
 
-    let d1 = Deferred<Int, TestError> { $0.resolve(value: v1) }
-    let d2 = Deferred<UInt64, Never>  { $0.resolve(value: v2) }
-    let d3 = Deferred<String, NSError>{ $0.resolve(value: v3) }
-    let d4 = Deferred<Double, Error>{ $0.resolve(value: v4) }
+    let d1 = Deferred<Int, TestError>  { $0.resolve(value: v1) }
+    let d2 = Deferred<UInt64, Never>   { $0.resolve(value: v2) }
+    let d3 = Deferred<String, NSError> { $0.resolve(value: v3) }
+    let d4 = Deferred<Double, Error>   { $0.resolve(value: v4) }
 
     let c = combine(d1,d2,d3,d4).value
-    XCTAssert(c?.0 == v1)
-    XCTAssert(c?.1 == v2)
-    XCTAssert(c?.2 == v3)
-    XCTAssert(c?.3 == v4)
+    XCTAssertEqual(c?.0, v1)
+    XCTAssertEqual(c?.1, v2)
+    XCTAssertEqual(c?.2, v3)
+    XCTAssertEqual(c?.3, v4)
   }
 }
 
