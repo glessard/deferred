@@ -89,12 +89,16 @@ extension DeferredSelectionTests {
     //   `swift test --generate-linuxmain`
     // to regenerate.
     static let __allTests__DeferredSelectionTests = [
-        ("testFirstResolved1", testFirstResolved1),
-        ("testFirstResolved2", testFirstResolved2),
+        ("testFirstResolvedCollection", testFirstResolvedCollection),
         ("testFirstResolvedEmptyCollection", testFirstResolvedEmptyCollection),
-        ("testFirstValue", testFirstValue),
+        ("testFirstResolvedEmptySequence", testFirstResolvedEmptySequence),
+        ("testFirstResolvedSequence", testFirstResolvedSequence),
+        ("testFirstValueCollection", testFirstValueCollection),
+        ("testFirstValueCollectionError", testFirstValueCollectionError),
         ("testFirstValueEmptyCollection", testFirstValueEmptyCollection),
-        ("testFirstValueError", testFirstValueError),
+        ("testFirstValueEmptySequence", testFirstValueEmptySequence),
+        ("testFirstValueSequence", testFirstValueSequence),
+        ("testFirstValueSequenceError", testFirstValueSequenceError),
         ("testSelectFirstResolvedBinary", testSelectFirstResolvedBinary),
         ("testSelectFirstResolvedQuaternary", testSelectFirstResolvedQuaternary),
         ("testSelectFirstResolvedTernary", testSelectFirstResolvedTernary),
