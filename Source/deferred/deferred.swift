@@ -287,15 +287,7 @@ open class Deferred<Success, Failure: Error>
         // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
-          if let taskp = deferredTask(from: state)
-          { // we need to execute the task
-            self.queue.async {
-              [self] in
-              withExtendedLifetime(self) { taskp.pointee.task(Resolver(self)) }
-              taskp.deinitialize(count: 1)
-              taskp.deallocate()
-            }
-          }
+          if let taskp = deferredTask(from: state) { executeDeferredTask(taskp) }
           return
         }
       } while !state.isResolved
@@ -349,15 +341,7 @@ open class Deferred<Success, Failure: Error>
         // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
         if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
         { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
-          if let taskp = deferredTask(from: state)
-          { // we need to execute the task
-            self.queue.async {
-              [self] in
-              withExtendedLifetime(self) { taskp.pointee.task(Resolver(self)) }
-              taskp.deinitialize(count: 1)
-              taskp.deallocate()
-            }
-          }
+          if let taskp = deferredTask(from: state) { executeDeferredTask(taskp) }
           return
         }
       } while !state.isResolved
@@ -389,14 +373,16 @@ open class Deferred<Success, Failure: Error>
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
     } while !CAtomicsCompareAndExchange(deferredState, &state, .executing, .weak, .release, .relaxed)
 
-    if let taskp = deferredTask(from: state)
-    { // we need to execute the task
-      self.queue.async {
-        [self] in
-        withExtendedLifetime(self) { taskp.pointee.task(Resolver(self)) }
-        taskp.deinitialize(count: 1)
-        taskp.deallocate()
-      }
+    if let taskp = deferredTask(from: state) { executeDeferredTask(taskp) }
+  }
+
+  private func executeDeferredTask(_ taskp: UnsafeMutablePointer<DeferredTask<Success, Failure>>)
+  {
+    queue.async {
+      [self] in
+      withExtendedLifetime(self) { taskp.pointee.task(Resolver($0)) }
+      taskp.deinitialize(count: 1)
+      taskp.deallocate()
     }
   }
 }
