@@ -68,7 +68,7 @@ open class Deferred<Success, Failure: Error>
   private func deferredTask(from state: Int) -> UnsafeMutablePointer<DeferredTask<Success, Failure>>?
   {
     guard state.tag == .waiting else { return nil }
-    return state.ptr?.assumingMemoryBound(to: DeferredTask.self)
+    return state.ptr?.assumingMemoryBound(to: DeferredTask<Success, Failure>.self)
   }
 
   /// Get a pointer to a `Result` for a resolved `Deferred`.
@@ -215,16 +215,16 @@ open class Deferred<Success, Failure: Error>
   @discardableResult
   fileprivate func resolve(_ result: Result<Success, Failure>) -> Bool
   {
-    var current = CAtomicsLoad(deferredState, .relaxed)
-    guard current.tag != .resolved else { return false }
+    var state = CAtomicsLoad(deferredState, .relaxed)
+    guard state.tag != .resolved else { return false }
 
     let resolved = UnsafeMutablePointer<Result<Success, Failure>>.allocate(capacity: 1)
     resolved.initialize(to: result)
 
     let final = Int(resolved, tag: .resolved)
-    current = CAtomicsLoad(deferredState, .relaxed)
+    state = CAtomicsLoad(deferredState, .relaxed)
     repeat {
-      if current.tag == .resolved
+      if state.tag == .resolved
       {
         resolved.deinitialize(count: 1)
         resolved.deallocate()
@@ -233,14 +233,14 @@ open class Deferred<Success, Failure: Error>
       // The atomic compare-and-swap operation uses memory order `.acqrel`.
       // "release" ordering ensures visibility of changes to `resolvedPointer(from:)` above to another thread.
       // "acquire" ordering ensures visibility of changes to `waiterQueue(from:)` below from another thread.
-    } while !CAtomicsCompareAndExchange(deferredState, &current, final, .weak, .acqrel, .relaxed)
+    } while !CAtomicsCompareAndExchange(deferredState, &state, final, .weak, .acqrel, .relaxed)
 
-    precondition(current.tag != .resolved)
-    if let waiters = waiterQueue(from: current)
+    precondition(state.tag != .resolved)
+    if let waiters = waiterQueue(from: state)
     {
       notifyWaiters(queue, waiters, result)
     }
-    else if let taskp = deferredTask(from: current)
+    else if let taskp = deferredTask(from: state)
     {
       taskp.deinitialize(count: 1)
       taskp.deallocate()
@@ -378,18 +378,18 @@ open class Deferred<Success, Failure: Error>
 
   public func beginExecution()
   {
-    var current = CAtomicsLoad(deferredState, .relaxed)
+    var state = CAtomicsLoad(deferredState, .relaxed)
     repeat {
-      guard current.tag == .waiting else { return }
+      guard state.tag == .waiting else { return }
       // execution state has not yet been marked as begun
 
       // read-modify-write `deferredState` with memory_order_release.
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-    } while !CAtomicsCompareAndExchange(deferredState, &current, .executing, .weak, .release, .relaxed)
+    } while !CAtomicsCompareAndExchange(deferredState, &state, .executing, .weak, .release, .relaxed)
 
-    if let taskp = deferredTask(from: current)
+    if let taskp = deferredTask(from: state)
     { // we need to execute the task
       self.queue.async {
         [self] in
