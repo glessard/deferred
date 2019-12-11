@@ -202,32 +202,10 @@ public func combine<T1, T2, F>(_ d1: Deferred<T1, F>,
       case .failure(let e1): resolver.resolve(error: e1)
       }
     }
-    d2.notify {
-      if case .failure(let e2) = $0 { resolver.resolve(error: e2) }
-    }
-    resolver.retainSource(d1)
-    resolver.retainSource(d2)
-  }
-}
-
-public func combine<T1, T2>(_ d1: Deferred<T1, Never>,
-                            _ d2: Deferred<T2, Never>) -> Deferred<(T1, T2), Never>
-{
-  return Deferred(queue: d1.queue) {
-    resolver in
-    d1.notify {
-      switch $0
-      {
-      case .success(let t1):
-        d2.notify {
-          switch $0
-          {
-          case .success(let t2): resolver.resolve(value: (t1, t2))
-          }
-        }
-      }
-    }
-    d2.beginExecution()
+    if F.self == Never.self
+    { d2.beginExecution() }
+    else
+    { d2.notify { if case .failure(let e2) = $0 { resolver.resolve(error: e2) } } }
     resolver.retainSource(d1)
     resolver.retainSource(d2)
   }
@@ -259,13 +237,6 @@ public func combine<T1, T2, T3, F>(_ d1: Deferred<T1, F>,
   return combine(combine(d1, d2), d3).map { (c12,t3) in (c12.0,c12.1,t3) }
 }
 
-public func combine<T1, T2, T3>(_ d1: Deferred<T1, Never>,
-                                _ d2: Deferred<T2, Never>,
-                                _ d3: Deferred<T3, Never>) -> Deferred<(T1, T2, T3), Never>
-{
-  return combine(combine(d1, d2), d3).map { (c12,t3) in (c12.0,c12.1,t3) }
-}
-
 public func combine<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
                                             _ d2: Deferred<T2, F2>,
                                             _ d3: Deferred<T3, F3>) -> Deferred<(T1, T2, T3), Error>
@@ -292,15 +263,7 @@ public func combine<T1, T2, T3, T4, F>(_ d1: Deferred<T1, F>,
                                        _ d3: Deferred<T3, F>,
                                        _ d4: Deferred<T4, F>) -> Deferred<(T1, T2, T3, T4), F>
 {
-  return combine(combine(d1, d2, d3), d4).map { (c123, t4) in (c123.0,c123.1,c123.2,t4) }
-}
-
-public func combine<T1, T2, T3, T4>(_ d1: Deferred<T1, Never>,
-                                    _ d2: Deferred<T2, Never>,
-                                    _ d3: Deferred<T3, Never>,
-                                    _ d4: Deferred<T4, Never>) -> Deferred<(T1, T2, T3, T4), Never>
-{
-  return combine(combine(d1, d2, d3), d4).map { (c123, t4) in (c123.0,c123.1,c123.2,t4) }
+  return combine(combine(d1, d2), combine(d3, d4)).map { (c12, c34) in (c12.0,c12.1,c34.0,c34.1) }
 }
 
 public func combine<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
