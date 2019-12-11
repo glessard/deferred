@@ -14,6 +14,18 @@ import Dispatch
 
 extension Deferred
 {
+  /// A way to cause the `Deferred` to switch to `.execute` state in a fluent manner
+  ///
+  /// - returns itself, guaranteed to no longer be in the `.waiting` state.
+
+  public var execute: Deferred {
+    self.beginExecution()
+    return self
+  }
+}
+
+extension Deferred
+{
   // MARK: notify: execute a task when this `deferred` becomes resolved
 
   /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes resolved.
@@ -24,7 +36,7 @@ extension Deferred
   /// - parameter task: a closure to be executed as a notification
   /// - parameter result: the `Result` of this `Deferred`
 
-  public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Value, Error>) -> Void)
+  public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Success, Failure>) -> Void)
   {
     notify(queue: queue, handler: { result in withExtendedLifetime(self, { task(result) }) })
   }
@@ -39,7 +51,7 @@ extension Deferred
   /// - parameter task: the closure to be enqueued
   /// - parameter value: the value of the just-resolved `Deferred`
 
-  public func onValue(queue: DispatchQueue? = nil, task: @escaping (_ value: Value) -> Void)
+  public func onValue(queue: DispatchQueue? = nil, task: @escaping (_ value: Success) -> Void)
   {
     onResult(queue: queue, task: { $0.value.map(task) })
   }
@@ -54,7 +66,7 @@ extension Deferred
   /// - parameter task: the closure to be enqueued
   /// - parameter error: the error from the just-resolved `Deferred`
 
-  public func onError(queue: DispatchQueue? = nil, task: @escaping (_ error: Error) -> Void)
+  public func onError(queue: DispatchQueue? = nil, task: @escaping (_ error: Failure) -> Void)
   {
     onResult(queue: queue, task: { $0.error.map(task) })
   }
@@ -77,9 +89,8 @@ extension Deferred
       return Deferred(queue: queue, result: result)
     }
 
-    return TBD(queue: queue) {
+    return Deferred(queue: queue) {
       resolver in
-      if self.state == .executing { resolver.beginExecution() }
       self.notify(queue: queue, boostQoS: false, handler: { resolver.resolve($0) })
       resolver.retainSource(self)
     }
@@ -103,47 +114,124 @@ extension Deferred
 
 extension Deferred
 {
-  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved, creating a new `Deferred`
+  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved succesfully, creating a new `Deferred`
   ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter value: the value to be transformed for a new `Deferred`
+  /// - parameter value: the value to be transformed for the new `Deferred`
 
   public func map<Other>(queue: DispatchQueue? = nil,
-                         transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
+                         transform: @escaping (_ value: Success) -> Other) -> Deferred<Other, Failure>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Failure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
-        do {
-          let value = try result.get()
-          let transformed = try transform(value)
-          resolver.resolve(value: transformed)
-        }
-        catch {
-          resolver.resolve(error: error)
-        }
+        resolver.resolve(result.map(transform))
       }
       resolver.retainSource(self)
     }
   }
 
-  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved, creating a new `Deferred`
+  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved succesfully, creating a new `Deferred`
   ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter value: the value to be transformed for a new `Deferred`
+  /// - parameter value: the value to be transformed for the new `Deferred`
 
   public func map<Other>(qos: DispatchQoS,
-                         transform: @escaping (_ value: Value) throws -> Other) -> Deferred<Other>
+                         transform: @escaping (_ value: Success) -> Other) -> Deferred<Other, Failure>
   {
     let queue = DispatchQueue(label: "deferred-map", qos: qos)
     return map(queue: queue, transform: transform)
+  }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved succesfully, creating a new `Deferred`
+  ///
+  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
+  /// - parameter transform: the throwing transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter value: the value to be transformed for the new `Deferred`
+
+  public func tryMap<Other>(queue: DispatchQueue? = nil,
+                            transform: @escaping (_ value: Success) throws -> Other) -> Deferred<Other, Error>
+  {
+    return Deferred<Other, Error>(queue: queue ?? self.queue) {
+      resolver in
+      self.notify(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        resolver.resolve(Result(catching: { try transform(result.get()) }))
+      }
+      resolver.retainSource(self)
+    }
+  }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved succesfully, creating a new `Deferred`
+  ///
+  /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
+  /// - parameter transform: the throwing transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter value: the value to be transformed for the new `Deferred`
+
+  public func tryMap<Other>(qos: DispatchQoS,
+                            transform: @escaping (_ value: Success) throws -> Other) -> Deferred<Other, Error>
+  {
+    let queue = DispatchQueue(label: "deferred-trymap", qos: qos)
+    return tryMap(queue: queue, transform: transform)
+  }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved with a `Failure`, creating a new `Deferred`
+  ///
+  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter error: the `Failure` to be transformed for the new `Deferred`
+
+  public func mapError<OtherFailure>(queue: DispatchQueue? = nil,
+                                     transform: @escaping (_ error: Failure) -> OtherFailure) -> Deferred<Success, OtherFailure>
+  {
+    return Deferred<Success, OtherFailure>(queue: queue ?? self.queue) {
+      resolver in
+      self.notify(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        resolver.resolve(result.mapError(transform))
+      }
+      resolver.retainSource(self)
+    }
+  }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved with a `Failure`, creating a new `Deferred`
+  ///
+  /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter error: the `Failure` to be transformed for the new `Deferred`
+
+  public func mapError<OtherFailure>(qos: DispatchQoS,
+                                     transform: @escaping (_ error: Failure) -> OtherFailure) -> Deferred<Success, OtherFailure>
+  {
+    let queue = DispatchQueue(label: "deferred-maperror", qos: qos)
+    return mapError(queue: queue, transform: transform)
+  }
+
+  /// Map this `Deferred`'s `Failure` type to `Error` (any Error).
+  ///
+  /// returns: a `Deferred` where the `Failure` type is unconditionally converted to `Error`
+
+  public var withAnyError: Deferred<Success, Error> {
+    return Deferred<Success, Error>(queue: queue) {
+      resolver in
+      self.notify(queue: nil) {
+        result in
+        resolver.resolve(result.withAnyError)
+      }
+      resolver.retainSource(self)
+    }
   }
 }
 
@@ -156,17 +244,66 @@ extension Deferred
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter value: the value to be transformed for a new `Deferred`
+  /// - parameter value: the value to be transformed for the new `Deferred`
 
   public func flatMap<Other>(queue: DispatchQueue? = nil,
-                             transform: @escaping (_ value: Value) throws -> Deferred<Other>) -> Deferred<Other>
+                             transform: @escaping(_ value: Success) -> Deferred<Other, Failure>) -> Deferred<Other, Failure>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Failure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
+        switch result
+        {
+        case .success(let value):
+          let transformed = transform(value)
+          if let transformed = transformed.peek()
+          {
+            resolver.resolve(transformed)
+          }
+          else
+          {
+            transformed.notify(queue: queue) { resolver.resolve($0) }
+            resolver.retainSource(transformed)
+          }
+        case .failure(let error):
+          resolver.resolve(error: error)
+        }
+      }
+      resolver.retainSource(self)
+    }
+  }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved.
+  ///
+  /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter value: the value to be transformed for the new `Deferred`
+
+  public func flatMap<Other>(qos: DispatchQoS,
+                             transform: @escaping (_ value: Success) -> Deferred<Other, Failure>) -> Deferred<Other, Failure>
+  {
+    let queue = DispatchQueue(label: "deferred-flatmap", qos: qos)
+    return flatMap(queue: queue, transform: transform)
+  }
+
+  /// Enqueue a transform to be computed asynchronously after `self` becomes resolved.
+  ///
+  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter value: the value to be transformed for the new `Deferred`
+
+  public func tryFlatMap<Other>(queue: DispatchQueue? = nil,
+                                transform: @escaping (_ value: Success) throws -> Deferred<Other, Error>) -> Deferred<Other, Error>
+  {
+    return Deferred<Other, Error>(queue: queue ?? self.queue) {
+      resolver in
+      self.notify(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
         do {
           let value = try result.get()
           let transformed = try transform(value)
@@ -193,13 +330,13 @@ extension Deferred
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter value: the value to be transformed for a new `Deferred`
+  /// - parameter value: the value to be transformed for the new `Deferred`
 
-  public func flatMap<Other>(qos: DispatchQoS,
-                             transform: @escaping (_ value: Value) throws -> Deferred<Other>) -> Deferred<Other>
+  public func tryFlatMap<Other>(qos: DispatchQoS,
+                                transform: @escaping (_ value: Success) throws -> Deferred<Other, Error>) -> Deferred<Other, Error>
   {
     let queue = DispatchQueue(label: "deferred-flatmap", qos: qos)
-    return flatMap(queue: queue, transform: transform)
+    return tryFlatMap(queue: queue, transform: transform)
   }
 
   /// Enqueue a transform to be computed asynchronously if and when `self` becomes resolved with an error.
@@ -207,19 +344,189 @@ extension Deferred
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter error: the Error to be transformed for a new `Deferred`
+  /// - parameter error: the Error to be transformed for the new `Deferred`
 
-  public func recover(queue: DispatchQueue? = nil,
-                      transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
+  public func flatMapError<OtherFailure>(queue: DispatchQueue? = nil,
+                                         transform: @escaping (_ error: Failure) -> Deferred<Success, OtherFailure>) -> Deferred<Success, OtherFailure>
   {
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Success, OtherFailure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        resolver.beginExecution()
-        if let error = result.error
+        switch result
         {
+        case let .success(value):
+          resolver.resolve(value: value)
+
+        case let .failure(error):
+          let transformed = transform(error)
+          if let transformed = transformed.peek()
+          {
+            resolver.resolve(transformed)
+          }
+          else
+          {
+            transformed.notify(queue: queue) { resolver.resolve($0) }
+            resolver.retainSource(transformed)
+          }
+        }
+      }
+      resolver.retainSource(self)
+    }
+  }
+
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes resolved with an error.
+  ///
+  /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter error: the Error to be transformed for the new `Deferred`
+
+  public func flatMapError<OtherFailure>(qos: DispatchQoS,
+                                         transform: @escaping(_ error: Failure) -> Deferred<Success, OtherFailure>) -> Deferred<Success, OtherFailure>
+  {
+    let queue = DispatchQueue(label: "deferred-flatmaperror", qos: qos)
+    return flatMapError(queue: queue, transform: transform)
+  }
+}
+
+extension Deferred
+{
+  /// Flatten a `Deferred<Deferred<Success>, Failure>` to a `Deferred<Success, Failure>`
+  ///
+  /// In the right conditions, acts like a fast path for a flatMap with no transform.
+  ///
+  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should
+  ///                    dispatch notifications; use `self.queue` if `nil`
+  /// - returns: a flattened `Deferred`
+
+  public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other, Failure>
+    where Success == Deferred<Other, Failure>
+  {
+    if let result = self.peek()
+    {
+      switch result
+      {
+      case .success(let deferred):
+        if let result = deferred.peek()
+        {
+          return Deferred<Other, Failure>(queue: queue ?? self.queue, result: result)
+        }
+
+        return Deferred<Other, Failure>(queue: queue ?? self.queue) {
+          resolver in
+          deferred.notify(queue: queue) { resolver.resolve($0) }
+          resolver.retainSource(deferred)
+        }
+
+      case .failure(let error):
+        return Deferred<Other, Failure>(queue: queue ?? self.queue, error: error)
+      }
+    }
+
+    return Deferred<Other, Failure>(queue: queue ?? self.queue) {
+      resolver in
+      self.notify(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        switch result
+        {
+        case .success(let deferred):
+          if let result = deferred.peek()
+          {
+            resolver.resolve(result)
+          }
+          else
+          {
+            deferred.notify(queue: queue) { resolver.resolve($0) }
+            resolver.retainSource(deferred)
+          }
+        case .failure(let error):
+          resolver.resolve(error: error)
+        }
+      }
+      resolver.retainSource(self)
+    }
+  }
+
+  /// Flatten a `Deferred<Deferred<Success>, Never>` to a `Deferred<Success, Failure>`
+  ///
+  /// In the right conditions, acts like a fast path for a flatMap with no transform.
+  ///
+  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should
+  ///                    dispatch notifications; use `self.queue` if `nil`
+  /// - returns: a flattened `Deferred`
+
+  public func flatten<Other, OtherFailure>(queue: DispatchQueue? = nil) -> Deferred<Other, OtherFailure>
+    where Success == Deferred<Other, OtherFailure>, Failure == Never
+  {
+    if let result = self.peek()
+    {
+      switch result
+      {
+      case .success(let deferred):
+        if let result = deferred.peek()
+        {
+          return Deferred<Other, OtherFailure>(queue: queue ?? self.queue, result: result)
+        }
+
+        return Deferred<Other, OtherFailure>(queue: queue ?? self.queue) {
+          resolver in
+          deferred.notify(queue: queue) { resolver.resolve($0) }
+          resolver.retainSource(deferred)
+        }
+      }
+    }
+
+    return Deferred<Other, OtherFailure>(queue: queue ?? self.queue) {
+      resolver in
+      self.notify(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        switch result
+        {
+        case .success(let deferred):
+          if let result = deferred.peek()
+          {
+            resolver.resolve(result)
+          }
+          else
+          {
+            deferred.notify(queue: queue) { resolver.resolve($0) }
+            resolver.retainSource(deferred)
+          }
+        }
+      }
+      resolver.retainSource(self)
+    }
+  }
+
+}
+
+extension Deferred where Failure == Error
+{
+  /// Enqueue a transform to be computed asynchronously if and when `self` becomes resolved with an error.
+  ///
+  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
+  /// - parameter transform: the transform to be performed
+  /// - returns: a `Deferred` reference representing the return value of the transform
+  /// - parameter error: the Error to be transformed for the new `Deferred`
+
+  public func recover(queue: DispatchQueue? = nil,
+                      transform: @escaping (_ error: Error) throws -> Deferred) -> Deferred
+  {
+    return Deferred(queue: queue ?? self.queue) {
+      resolver in
+      self.notify(queue: queue) {
+        result in
+        guard resolver.needsResolution else { return }
+        switch result
+        {
+        case let .success(value):
+          resolver.resolve(value: value)
+
+        case let .failure(error):
           do {
             let transformed = try transform(error)
             if let transformed = transformed.peek()
@@ -236,10 +543,6 @@ extension Deferred
             resolver.resolve(error: error)
           }
         }
-        else
-        {
-          resolver.resolve(result)
-        }
       }
       resolver.retainSource(self)
     }
@@ -250,82 +553,15 @@ extension Deferred
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
   /// - parameter transform: the transform to be performed
   /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter error: the Error to be transformed for a new `Deferred`
+  /// - parameter error: the Error to be transformed for the new `Deferred`
 
   public func recover(qos: DispatchQoS,
-                      transform: @escaping (_ error: Error) throws -> Deferred<Value>) -> Deferred<Value>
+                      transform: @escaping (_ error: Error) throws -> Deferred) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred-recover", qos: qos)
     return recover(queue: queue, transform: transform)
   }
-}
 
-extension Deferred
-{
-  /// Flatten a `Deferred<Deferred<Value>>` to a `Deferred<Value>`
-  ///
-  /// In the right conditions, acts like a fast path for a flatMap with no transform.
-  ///
-  /// - parameter queue: the `DispatchQueue` onto which the new `Deferred` should dispatch notifications; use `self.queue` if `nil`
-  /// - returns: a flattened `Deferred`
-
-  public func flatten<Other>(queue: DispatchQueue? = nil) -> Deferred<Other>
-    where Value == Deferred<Other>
-  {
-    if let result = self.peek()
-    {
-      let deferred: Deferred<Other>
-      do {
-        deferred = try result.get()
-      }
-      catch {
-        return Deferred<Other>(queue: queue ?? self.queue, error: error)
-      }
-
-      if let result = deferred.peek()
-      {
-        return Deferred<Other>(queue: queue ?? self.queue, result: result)
-      }
-
-      return TBD(queue: queue ?? self.queue) {
-        resolver in
-        if deferred.state == .executing { resolver.beginExecution() }
-        deferred.notify(queue: queue) { resolver.resolve($0) }
-        resolver.retainSource(deferred)
-      }
-    }
-
-    return TBD(queue: queue ?? self.queue) {
-      resolver in
-      self.notify(queue: queue) {
-        result in
-        guard resolver.needsResolution else { return }
-        let deferred: Deferred<Other>
-        do {
-          deferred = try result.get()
-        }
-        catch {
-          resolver.resolve(error: error)
-          return
-        }
-
-        if let result = deferred.peek()
-        {
-          resolver.resolve(result)
-          return
-        }
-
-        if deferred.state == .executing { resolver.beginExecution() }
-        deferred.notify(queue: queue) { resolver.resolve($0) }
-        resolver.retainSource(deferred)
-      }
-      resolver.retainSource(self)
-    }
-  }
-}
-
-extension Deferred
-{
   /// Initialize a `Deferred` with a computation task to be performed in the background
   ///
   /// If at first it does not succeed, it will try `attempts` times in total before being resolved with an `Error`.
@@ -335,7 +571,7 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func RetryTask(_ attempts: Int, qos: DispatchQoS = .current,
-                               task: @escaping () throws -> Value) -> Deferred
+                               task: @escaping () throws -> Success) -> Deferred
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return Deferred.RetryTask(attempts, queue: queue, task: task)
@@ -350,7 +586,7 @@ extension Deferred
   /// - parameter task: the computation to be performed
 
   public static func RetryTask(_ attempts: Int, queue: DispatchQueue,
-                               task: @escaping () throws -> Value) -> Deferred
+                               task: @escaping () throws -> Success) -> Deferred
   {
     return Deferred.Retrying(attempts, queue: queue, task: { Deferred(queue: queue, task: task) })
   }
@@ -381,8 +617,8 @@ extension Deferred
   public static func Retrying(_ attempts: Int, queue: DispatchQueue,
                               task: @escaping () throws -> Deferred) -> Deferred
   {
-    let error = DeferredError.invalid("task was not allowed a single attempt in \(#function)")
-    let deferred = Deferred<Value>(queue: queue, error: error)
+    let error = Invalidation.invalid("task was not allowed a single attempt in \(#function)")
+    let deferred = Deferred(queue: queue, error: error)
 
     if attempts < 1 { return deferred }
 
@@ -410,42 +646,42 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(queue: DispatchQueue? = nil,
-                           transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Success) -> Other, Never>) -> Deferred<Other, Failure>
   {
-    func applyTransform(_ value: Value,
-                        _ transform: (Result<(Value) throws -> Other, Error>),
-                        _ resolver: Resolver<Other>)
+    func applyTransform(_ value: Success,
+                        _ transform: Result<(Success) -> Other, Never>,
+                        _ resolver: Resolver<Other, Failure>)
     {
-      guard resolver.needsResolution else { return }
-      resolver.beginExecution()
-      do {
-        let transform = try transform.get()
-        let transformed = try transform(value)
-        resolver.resolve(value: transformed)
-      }
-      catch {
-        resolver.resolve(error: error)
+      switch transform
+      {
+      case .success(let transform):
+        resolver.resolve(value: transform(value))
       }
     }
 
-    return TBD(queue: queue ?? self.queue) {
+    return Deferred<Other, Failure>(queue: queue ?? self.queue) {
       resolver in
       self.notify(queue: queue) {
         result in
         guard resolver.needsResolution else { return }
-        do {
-          let value = try result.get()
+        switch result
+        {
+        case .success(let value):
           if let transform = transform.peek()
           {
             applyTransform(value, transform, resolver)
           }
           else
           {
-            transform.notify(queue: queue) { applyTransform(value, $0, resolver) }
+            transform.notify(queue: queue) {
+              transform in
+              guard resolver.needsResolution else { return }
+              applyTransform(value, transform, resolver)
+            }
             resolver.retainSource(transform)
           }
-        }
-        catch {
+
+        case .failure(let error):
           resolver.resolve(error: error)
         }
       }
@@ -461,46 +697,10 @@ extension Deferred
   /// - parameter value: the value to be transformed for a new `Deferred`
 
   public func apply<Other>(qos: DispatchQoS,
-                           transform: Deferred<(_ value: Value) throws -> Other>) -> Deferred<Other>
+                           transform: Deferred<(_ value: Success) -> Other, Never>) -> Deferred<Other, Failure>
   {
     let queue = DispatchQueue(label: "deferred-apply", qos: qos)
     return apply(queue: queue, transform: transform)
-  }
-
-  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become resolved.
-  ///
-  /// Adaptor made desirable by insufficient covariance from throwing to non-throwing closure types. (radar 22013315)
-  /// (i.e. if the difference between the type signature of two closures is whether they throw,
-  /// the non-throwing one should be usable anywhere the throwing one can.)
-  /// Can hopefully be removed later.
-  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
-  /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
-  /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter value: the value to be transformed for a new `Deferred`
-
-  public func apply<Other>(queue: DispatchQueue? = nil,
-                           transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
-  {
-    let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
-    return apply(queue: queue, transform: retransform)
-  }
-
-  /// Enqueue a transform to be computed asynchronously after `self` and `transform` become resolved.
-  ///
-  /// Adaptor made desirable by insufficient covariance from throwing to non-throwing closure types. (radar 22013315)
-  /// (i.e. if the difference between the type signature of two closures is whether they throw,
-  /// the non-throwing one should be usable anywhere the throwing one can.)
-  /// Can hopefully be removed later.
-  /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
-  /// - parameter transform: the transform to be performed, wrapped in a `Deferred`
-  /// - returns: a `Deferred` reference representing the return value of the transform
-  /// - parameter value: the value to be transformed for a new `Deferred`
-
-  public func apply<Other>(qos: DispatchQoS,
-                           transform: Deferred<(_ value: Value) -> Other>) -> Deferred<Other>
-  {
-    let retransform = transform.map(queue: queue) { transform in { v throws in transform(v) } }
-    return apply(qos: qos, transform: retransform)
   }
 }
 
@@ -508,36 +708,36 @@ extension Deferred
 {
   /// Insert a validation step in a chain of Deferred.
   ///
-  /// Pass `Value` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
+  /// Pass `Success` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
   ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
-  /// - parameter predicate: a predicate that validates the passed-in `Value` by returning a Boolean
+  /// - parameter predicate: a predicate that validates the passed-in `Success` by returning a Boolean
   /// - parameter message: an explanation to add to `DeferredError.invalid`; defaults to the empty `String`
-  /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - returns: a `Deferred` reference holding a validated `Success`
   /// - parameter value: the value to be validated
 
   public func validate(queue: DispatchQueue? = nil,
-                       predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
+                       predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred<Success, Error>
   {
-    return self.map(queue: queue) {
+    return self.tryMap(queue: queue) {
       value in
-      guard predicate(value) else { throw DeferredError.invalid(message) }
+      guard predicate(value) else { throw Invalidation.invalid(message) }
       return value
     }
   }
 
   /// Insert a validation step in a chain of Deferred.
   ///
-  /// Pass `Value` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
+  /// Pass `Success` through if it passes the predicate, otherwise replace it with the error `DeferredError.invalid`.
   ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
-  /// - parameter predicate: a predicate that validates the passed-in `Value` by returning a Boolean
+  /// - parameter predicate: a predicate that validates the passed-in `Success` by returning a Boolean
   /// - parameter message: an explanation to add to `DeferredError.invalid`; defaults to the empty `String`
-  /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - returns: a `Deferred` reference holding a validated `Success`
   /// - parameter value: the value to be validated
 
   public func validate(qos: DispatchQoS,
-                       predicate: @escaping (_ value: Value) -> Bool, message: String = "") -> Deferred
+                       predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred<Success, Error>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return validate(queue: queue, predicate: predicate, message: message)
@@ -545,17 +745,17 @@ extension Deferred
 
   /// Insert a validation step in a chain of Deferred.
   ///
-  /// Pass `Value` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
+  /// Pass `Success` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
   ///
   /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
-  /// - parameter predicate: a closure that validates the passed-in `Value` by either returning normally or throwing
-  /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - parameter predicate: a closure that validates the passed-in `Success` by either returning normally or throwing
+  /// - returns: a `Deferred` reference holding a validated `Success`
   /// - parameter value: the value to be validated
 
   public func validate(queue: DispatchQueue? = nil,
-                       predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
+                       predicate: @escaping (_ value: Success) throws -> Void) -> Deferred<Success, Error>
   {
-    return self.map(queue: queue) {
+    return self.tryMap(queue: queue) {
       value in
       try predicate(value)
       return value
@@ -564,15 +764,15 @@ extension Deferred
 
   /// Insert a validation step in a chain of Deferred.
   ///
-  /// Pass `Value` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
+  /// Pass `Success` through if the predicate returns normally, otherwise replace it by the `Error` thrown by the predicate.
   ///
   /// - parameter qos: the QoS at which to execute the transform and the new `Deferred`'s notifications
-  /// - parameter predicate: a closure that validates the passed-in `Value` by either returning normally or throwing
-  /// - returns: a `Deferred` reference holding a validated `Value`
+  /// - parameter predicate: a closure that validates the passed-in `Success` by either returning normally or throwing
+  /// - returns: a `Deferred` reference holding a validated `Success`
   /// - parameter value: the value to be validated
 
   public func validate(qos: DispatchQoS,
-                       predicate: @escaping (_ value: Value) throws -> Void) -> Deferred
+                       predicate: @escaping (_ value: Success) throws -> Void) -> Deferred<Success, Error>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return validate(queue: queue, predicate: predicate)
@@ -587,14 +787,14 @@ extension Optional
   ///
   /// - parameter queue: the dispatch queue upon the new `Deferred`'s notifications will be performed
 
-  public func deferred(queue: DispatchQueue) -> Deferred<Wrapped>
+  public func deferred(queue: DispatchQueue) -> Deferred<Wrapped, Invalidation>
   {
     switch self
     {
     case .some(let value):
       return Deferred(queue: queue, value: value)
     case .none:
-      return Deferred(queue: queue, error: DeferredError.invalid("initialized from a nil Optional"))
+      return Deferred(queue: queue, error: Invalidation.invalid("initialized from a nil Optional"))
     }
   }
 
@@ -604,7 +804,7 @@ extension Optional
   ///
   /// - parameter qos: the QoS at which to perform notifications for the new `Deferred`; defaults to the current QoS class.
 
-  public func deferred(qos: DispatchQoS = .current) -> Deferred<Wrapped>
+  public func deferred(qos: DispatchQoS = .current) -> Deferred<Wrapped, Invalidation>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     return self.deferred(queue: queue)

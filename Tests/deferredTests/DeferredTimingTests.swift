@@ -1,5 +1,5 @@
 //
-//  TBDTimingTests.swift
+//  DeferredTimingTests.swift
 //  deferred
 //
 //  Created by Guillaume Lessard on 29/04/2016.
@@ -13,7 +13,7 @@ import Dispatch
 import deferred
 
 
-class TBDTimingTests: XCTestCase
+class DeferredTimingTests: XCTestCase
 {
   let propagationTestCount = 10_000
 
@@ -23,7 +23,7 @@ class TBDTimingTests: XCTestCase
     let ref = Date.distantPast
 
     measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
-      let (trigger, first) = TBD<(Int, Date, Date)>.CreatePair(qos: .userInitiated)
+      let (trigger, first) = Deferred<(Int, Date, Date), Never>.CreatePair(qos: .userInitiated)
       var dt = first
       for _ in 0...iterations
       {
@@ -49,7 +49,7 @@ class TBDTimingTests: XCTestCase
     let iterations = propagationTestCount
 
     measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
-      let start = TBD<Date>(queue: DispatchQueue(label: "", qos: .userInitiated)) {
+      let start = Deferred<Date, Never>(queue: DispatchQueue(label: "", qos: .userInitiated)) {
         start in
         for _ in 0..<iterations
         {
@@ -75,18 +75,17 @@ class TBDTimingTests: XCTestCase
     let iterations = propagationTestCount
 
     measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
-      _ = TBD<Int>(qos: .userInitiated) {
-        t in
-        self.startMeasuring()
-        for _ in 0...iterations
-        {
-          t.notify {}
-        }
-        self.stopMeasuring()
+      let (t, d) = Deferred<Int, Never>.CreatePair(qos: .userInitiated)
 
-        t.resolve(value: 1)
+      self.startMeasuring()
+      for _ in 0...iterations
+      {
+        t.notify {}
       }
+      self.stopMeasuring()
 
+      t.resolve(value: 1)
+      XCTAssertNotNil(d.value)
     }
   }
 }

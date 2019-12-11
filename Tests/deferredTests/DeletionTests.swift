@@ -2,8 +2,8 @@
 //  DeletionTests.swift
 //  deferred
 //
-//  Created by Guillaume Lessard on 31/01/2017.
-//  Copyright © 2017 Guillaume Lessard. All rights reserved.
+//  Created by Guillaume Lessard
+//  Copyright © 2017-2019 Guillaume Lessard. All rights reserved.
 //
 
 import XCTest
@@ -12,27 +12,44 @@ import Dispatch
 
 import deferred
 
+class DeallocWitness<T, F: Error>: Deferred<T, F>
+{
+  let e: XCTestExpectation
+
+  init(_ expectation: XCTestExpectation,
+       queue: DispatchQueue = DispatchQueue.global(qos: .current ?? .default),
+       task: @escaping (Resolver<T, F>) -> Void = { _ in })
+  {
+    e = expectation
+    super.init(queue: queue, task: task)
+  }
+
+  deinit {
+    e.fulfill()
+  }
+}
+
 class DeletionTests: XCTestCase
 {
   func testDelayedDeallocDeferred()
   {
-    let witness: Deferred<Void>
+    let witness: Deferred<Void, Never>
     let e = expectation(description: "deallocation delay")
     do {
       let queue = DispatchQueue(label: "\(#function)")
-      let delayed = Deferred(queue: queue, value: ()).delay(.milliseconds(50))
+      let delayed = Deferred<Void, Never>(queue: queue, value: ()).delay(.milliseconds(50))
       _ = delayed.map { XCTFail("a value no one waits for should not be computed") }
       witness = delayed.map { e.fulfill() }
     }
 
+    witness.onValue { _ in }
     waitForExpectations(timeout: 1.0)
-    _ = witness.value
   }
 
   func testDeallocTBD1()
   {
     do {
-      _ = DeallocTBD<Void>(expectation(description: "will dealloc tbd 1"))
+      _ = DeallocWitness<Void, Never>(expectation(description: "will dealloc tbd 1"))
     }
 
     waitForExpectations(timeout: 1.0)
@@ -41,7 +58,7 @@ class DeletionTests: XCTestCase
   func testDeallocTBD2()
   {
     do {
-      let tbd = DeallocTBD<Void>(expectation(description: "will dealloc tbd 2"))
+      let tbd = DeallocWitness<Void, Never>(expectation(description: "will dealloc tbd 2"))
       do { _ = tbd.map { _ in XCTFail("Unexpected notification") } }
       tbd.cancel()
     }
@@ -52,7 +69,7 @@ class DeletionTests: XCTestCase
   func testDeallocTBD3()
   {
     do {
-      DeallocTBD<Void>(expectation(description: "will dealloc tbd 3")).cancel()
+      DeallocWitness<Void, Cancellation>(expectation(description: "will dealloc tbd 3")).cancel()
     }
 
     waitForExpectations(timeout: 1.0)
@@ -60,27 +77,28 @@ class DeletionTests: XCTestCase
 
   func testDeallocTBD4()
   {
-    let mapped: Deferred<Void> = {
-      let deferred = DeallocTBD<Void>(expectation(description: "will dealloc tbd 4"))
+    let mapped: Deferred<Void, Cancellation> = {
+      let deferred = DeallocWitness<Void, Cancellation>(expectation(description: "will dealloc tbd 4"))
       return deferred.map { _ in XCTFail("Unexpected notification") }
     }()
     mapped.cancel()
+    mapped.onError { _ in }
 
     waitForExpectations(timeout: 1.0)
   }
 
   func testLongTaskCancellation1() throws
   {
-    func bigComputation() -> Deferred<Double>
+    func bigComputation() -> Deferred<Double, Cancellation>
     {
       let e = expectation(description: #function)
-      return DeallocTBD<Double>(e) {
+      return DeallocWitness<Double, Cancellation>(e) {
         resolver in
         DispatchQueue.global(qos: .utility).async {
           var progress = 0
           repeat {
             guard resolver.needsResolution else { return }
-            Thread.sleep(until: Date() + 0.01) // work hard
+            Thread.sleep(until: Date() + 0.001) // work hard
             print(".", terminator: "")
             progress += 1
           } while progress < 20
@@ -93,23 +111,23 @@ class DeletionTests: XCTestCase
     let timeout = 0.1
     validated.timeout(seconds: timeout, reason: String(timeout))
 
-    waitForExpectations(timeout: 1.0)
-
     do {
       let pi = try validated.get()
       print(" ", pi)
     }
-    catch DeferredError.timedOut(let message) {
+    catch Cancellation.timedOut(let message) {
       print()
       XCTAssertEqual(message, String(timeout))
     }
+
+    waitForExpectations(timeout: 1.0)
   }
 
   func testLongTaskCancellation2()
   {
     let e = expectation(description: #function)
 
-    let deferred = TBD<Void>(qos: .utility) {
+    let deferred = Deferred<Void, Cancellation>(qos: .utility) {
       resolver in
       func segmentedTask()
       {
@@ -129,8 +147,7 @@ class DeletionTests: XCTestCase
     }
 
     deferred.timeout(seconds: 0.1)
+    XCTAssertEqual(deferred.error, Cancellation.timedOut(""))
     waitForExpectations(timeout: 1.0)
-
-    XCTAssertEqual(deferred.error, DeferredError.timedOut(""))
   }
 }

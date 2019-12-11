@@ -1,20 +1,12 @@
 import XCTest
 import Foundation
 
-#if !compiler(>=5.0)
-import Outcome
-#endif
-
 class AlignmentTests: XCTestCase
 {
   func testAlignmentOfPointerToSmallResult()
   {
-#if compiler(>=5.0)
     var p: UnsafeMutablePointer<Result<Void, Never>>
     XCTAssertEqual(MemoryLayout<Result<Void, Never>>.alignment, 1)
-#else
-    var p: UnsafeMutablePointer<Outcome<Void>>
-#endif
 
     p = UnsafeMutablePointer.allocate(capacity: 1)
     var pointers = [p]

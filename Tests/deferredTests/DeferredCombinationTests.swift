@@ -15,101 +15,82 @@ class DeferredCombinationTests: XCTestCase
 {
   func testReduce()
   {
-    let count = 9
-    let inputs = (0..<count).map { i in Deferred(value: nzRandom() & 0x003f_fffe + 1) } + [Deferred(value: 0)]
-
-    let e = expectation(description: "reduce")
-    let c = reduce(AnySequence(inputs), initial: 0) {
-      a, i throws -> Int in
-      if i > 0 { return a+i }
-      throw TestError(a)
-    }
-    c.onResult { _ in e.fulfill() }
-
-    XCTAssert(c.value == nil)
-    XCTAssert(c.error != nil)
-    if let error = c.error as? TestError
-    {
-      XCTAssert(error.error >= 9)
+    let count = 10
+    let inputs = (0..<count).map {
+      i -> Deferred<Int, Never> in
+      return Deferred<Int, Never>(value: i).map {
+        i -> Int in
+        // print(i)
+        return 2*i
+      }
     }
 
-    waitForExpectations(timeout: 1.0)
+    let c = reduce(inputs, initial: 0, combine: { $0 + $1 })
+
+    XCTAssertEqual(c.value, 90)
+    XCTAssertEqual(c.error, nil)
   }
 
   func testReduceCancel()
   {
     let count = 10
+    let cancel = Int.random(in: 1..<count)
 
-    let d = (0..<count).map {
-      i -> Deferred<Int> in
-      let e = expectation(description: String(describing: i))
-      return Deferred {
-        usleep(numericCast(i+1)*10_000)
-        e.fulfill()
-        return i
+    let inputs = (0..<count).map {
+      i in
+      return Deferred<Int, Cancellation> {
+        resolver in
+        if i == cancel
+        { resolver.cancel(String(i)) }
+        else
+        { resolver.resolve(value: i) }
       }
     }
 
-    let cancel1 = Int(nzRandom() % numericCast(count))
-    let cancel2 = Int(nzRandom() % numericCast(count))
-    d[cancel1].cancel(String(cancel1))
-    d[cancel2].cancel(String(cancel2))
+    let c = reduce(inputs, initial: 0, combine: { $0 + $1 })
 
-    let c = reduce(d, initial: 0, combine: { a, b in return a+b })
-
-    waitForExpectations(timeout: 1.0)
-
-    XCTAssert(c.value == nil)
-    XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1, cancel2))))
+    XCTAssertEqual(c.value, nil)
+    XCTAssertEqual(c.error, .canceled(String(cancel)))
   }
 
-  func testCombineArray1()
+  func testCombine()
   {
     let count = 10
-
-    let inputs = (0..<count).map { i in Deferred(value: nzRandom()) }
-    let combined = combine(AnySequence(inputs))
-    if let values = combined.value
-    {
-      XCTAssert(values.count == count)
-      for (a,b) in zip(inputs, values)
-      {
-        XCTAssert(a.value == b)
+    let inputs = (0..<count).map {
+      i -> Deferred<Int, Never> in
+      return Deferred<Int, Never>(value: i).map {
+        i -> Int in
+        // print(i)
+        return 2*i
       }
     }
-    XCTAssert(combined.error == nil)
 
-    let combined1 = combine([Deferred<Int>]())
-    XCTAssert(combined1.value?.count == 0)
+    let c = combine(inputs).map(transform: { $0.reduce(0, { $0 + $1 }) })
+
+    XCTAssertEqual(c.value, 90)
+    XCTAssertEqual(c.error, nil)
   }
 
-  func testCombineArray2()
+  func testCombineCancel()
   {
     let count = 10
-    let e = (0..<count).map { i in expectation(description: String(describing: i)) }
+    let cancel = Int.random(in: 2..<count)
 
-    let d = Deferred.inParallel(count: count) {
-      i -> Int in
-      usleep(numericCast(i+1)*10_000)
-      e[i].fulfill()
-      return i
+    let inputs = (1...count).map {
+      i in
+      return Deferred<Int, Cancellation> {
+        resolver in
+        if i == cancel
+        { resolver.cancel(String(i)) }
+        else
+        { resolver.resolve(value: i) }
+      }
     }
 
-    // If any one is in error, the combined whole will be in error.
-    // The first error encountered will be passed on.
+    let c = combine(inputs)
 
-    let cancel1 = Int(nzRandom() % numericCast(count))
-    let cancel2 = Int(nzRandom() % numericCast(count))
-
-    d[cancel1].cancel(String(cancel1))
-    d[cancel2].cancel(String(cancel2))
-
-    let c = combine(d)
-
-    waitForExpectations(timeout: 1.0)
-
-    XCTAssert(c.value == nil)
-    XCTAssert(c.error as? DeferredError == DeferredError.canceled(String(min(cancel1,cancel2))))
+    XCTAssertEqual(c.value, nil)
+    XCTAssertEqual(c.error, .canceled(String(cancel)))
   }
 
   func testCombine2()
@@ -117,14 +98,22 @@ class DeferredCombinationTests: XCTestCase
     let v1 = Int(nzRandom())
     let v2 = UInt64(nzRandom())
 
-    let d1 = Deferred(value: v1)
-    let d2 = Deferred(value: v2)
-    let d3 = d1.delay(.milliseconds(10))
-    let d4 = d2.delay(.milliseconds(20))
+    let d1 = Deferred<Int, Never>    { $0.resolve(value: v1) }
+    let d2 = Deferred<UInt64, Never> { $0.resolve(value: v2) }
+    let d3 = d1.delay(.microseconds(10))
+    let d4 = d2.delay(.milliseconds(10))
 
-    let c = combine(d3,d4).value
-    XCTAssert(c?.0 == v1)
-    XCTAssert(c?.1 == v2)
+    let c = combine(d3, d4.timeout(.microseconds(10)))
+    XCTAssertEqual(c.value?.0, nil)
+    XCTAssertEqual(c.value?.1, nil)
+    XCTAssertEqual(c.error, Cancellation.timedOut(""))
+
+    let d = combine(d3, d4)
+    XCTAssertEqual(d.value?.0, v1)
+    XCTAssertEqual(d.value?.1, v2)
+
+    let e = combine(Deferred<Never, Cancellation>(error: .canceled("")), d4)
+    XCTAssertEqual(e.error, Cancellation.canceled(""))
   }
 
   func testCombine3()
@@ -133,18 +122,15 @@ class DeferredCombinationTests: XCTestCase
     let v2 = UInt64(nzRandom())
     let v3 = String(nzRandom())
 
-    let d1 = Deferred(value: v1)
-    let d2 = Deferred(value: v2)
-    let d3 = Deferred(value: v3)
-    // let d4 = Deferred { v3 }                        // infers Deferred<()->String> rather than Deferred<String>
-    // let d5 = Deferred { () -> String in v3 }        // infers Deferred<()->String> rather than Deferred<String>
-    // let d6 = Deferred { _ in v3 }                   // infers Deferred<String> as expected
-    // let d7 = Deferred { () throws -> String in v3 } // infers Deferred<String> as expected
+    let queue = DispatchQueue(label: #function)
+    let d1 = Deferred<Int, TestError>(queue: queue)  { $0.resolve(value: v1) }
+    let d2 = Deferred<UInt64, Never>(queue: queue)   { $0.resolve(value: v2) }
+    let d3 = Deferred<String, NSError>(queue: queue) { $0.resolve(value: v3) }
 
     let c = combine(d1,d2,d3.delay(seconds: 0.001)).value
-    XCTAssert(c?.0 == v1)
-    XCTAssert(c?.1 == v2)
-    XCTAssert(c?.2 == v3)
+    XCTAssertEqual(c?.0, v1)
+    XCTAssertEqual(c?.1, v2)
+    XCTAssertEqual(c?.2, v3)
   }
 
   func testCombine4()
@@ -154,16 +140,16 @@ class DeferredCombinationTests: XCTestCase
     let v3 = String(nzRandom())
     let v4 = sin(Double(v2))
 
-    let d1 = Deferred(value: v1)
-    let d2 = Deferred(value: v2)
-    let d3 = Deferred(value: v3)
-    let d4 = Deferred(value: v4)
+    let d1 = Deferred<Int, TestError>  { $0.resolve(value: v1) }
+    let d2 = Deferred<UInt64, Never>   { $0.resolve(value: v2) }
+    let d3 = Deferred<String, NSError> { $0.resolve(value: v3) }
+    let d4 = Deferred<Double, Error>   { $0.resolve(value: v4) }
 
-    let c = combine(d1,d2,d3,d4.delay(.milliseconds(1))).value
-    XCTAssert(c?.0 == v1)
-    XCTAssert(c?.1 == v2)
-    XCTAssert(c?.2 == v3)
-    XCTAssert(c?.3 == v4)
+    let c = combine(d1,d2,d3,d4).value
+    XCTAssertEqual(c?.0, v1)
+    XCTAssertEqual(c?.1, v2)
+    XCTAssertEqual(c?.2, v3)
+    XCTAssertEqual(c?.3, v4)
   }
 }
 
@@ -176,7 +162,7 @@ class DeferredCombinationTimedTests: XCTestCase
     let iterations = loopTestCount
 
     measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
-      let inputs = (1...iterations).map { Deferred(value: $0) }
+      let inputs = (1...iterations).map { Deferred<Int, Never>(value: $0) }
       self.startMeasuring()
       let c = reduce(inputs, initial: 0, combine: +)
       let v = try? c.get()
@@ -190,9 +176,9 @@ class DeferredCombinationTimedTests: XCTestCase
     let iterations = loopTestCount / 10
 
     measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
-      let inputs = (1...iterations).map {Deferred(value: $0) }
+      let inputs = (1...iterations).map {Deferred<Int, Never>(value: $0) }
       self.startMeasuring()
-      let accumulator = Deferred(value: 0)
+      let accumulator = Deferred<Int, Never>(value: 0)
       let c = inputs.reduce(accumulator) {
         (accumulator, deferred) in
         accumulator.flatMap {
@@ -210,7 +196,7 @@ class DeferredCombinationTimedTests: XCTestCase
     let iterations = loopTestCount
 
     measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
-      let inputs = (1...iterations).map { Deferred(value: $0) }
+      let inputs = (1...iterations).map { Deferred<Int, Never>(value: $0) }
       self.startMeasuring()
       let c = combine(inputs)
       let v = try? c.get()
@@ -218,4 +204,5 @@ class DeferredCombinationTimedTests: XCTestCase
       self.stopMeasuring()
     }
   }
+
 }
