@@ -14,45 +14,6 @@ import deferred
 
 class DeferredExtrasTests: XCTestCase
 {
-  func testOnResolution1()
-  {
-    let value = nzRandom()
-    let e1 = expectation(description: "Pre-set Deferred")
-    let d1 = Deferred<Int, Never>(value: value)
-    d1.onResult {
-      result in
-      XCTAssertEqual(result.value, value)
-      e1.fulfill()
-    }
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testOnResolution2()
-  {
-    let value = nzRandom()
-    let e2 = expectation(description: "Properly Deferred")
-    let d1 = Deferred<Int, Never>(qos: .background, value: value)
-    let d2 = d1.delay(.milliseconds(100))
-    d2.onResult(queue: DispatchQueue(label: "Test", qos: .utility)) {
-      result in
-      XCTAssertEqual(result.value, value)
-      e2.fulfill()
-    }
-    waitForExpectations(timeout: 1.0)
-  }
-
-  func testOnResolution3()
-  {
-    let e3 = expectation(description: "Pre-set Deferred Error")
-    let d3 = Deferred<Int, Cancellation>(error: .canceled(""))
-    d3.onResult {
-      result in
-      XCTAssertEqual(result.error, .canceled(""))
-      e3.fulfill()
-    }
-    waitForExpectations(timeout: 1.0)
-  }
-
   func testOnValueAndOnError()
   {
     let d4 = Deferred<Int, TestError>(value: nzRandom())
@@ -66,6 +27,14 @@ class DeferredExtrasTests: XCTestCase
     d5.onError { _ in e5.fulfill() }
 
     waitForExpectations(timeout: 1.0)
+  }
+
+  func testOnErrorNever()
+  {
+    let d1 = Deferred<Int, Never> { _ in }
+    XCTAssertEqual(d1.state, .waiting)
+    d1.onError { _ in XCTFail() }
+    XCTAssertEqual(d1.state, .executing)
   }
 
   func testMap()
@@ -406,7 +375,7 @@ class DeferredExtrasTests: XCTestCase
 
     let e2 = expectation(description: "e2")
     let q2 = qb.enqueuing(at: .background, serially: true)
-    q2.onResult { _ in e2.fulfill() }
+    q2.notify { _ in e2.fulfill() }
 
     let e3 = expectation(description: "e3")
     let q3 = q2.map(qos: .userInitiated) {

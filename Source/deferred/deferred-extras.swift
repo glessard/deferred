@@ -26,49 +26,41 @@ extension Deferred
 
 extension Deferred
 {
-  // MARK: notify: execute a task when this `deferred` becomes resolved
-
-  /// Enqueue a notification to be performed asynchronously after this `Deferred` becomes resolved.
-  ///
-  /// This function will extend the lifetime of this `Deferred` until `task` completes.
-  ///
-  /// - parameter queue: the `DispatchQueue` on which to dispatch this notification when ready; defaults to `self`'s queue.
-  /// - parameter task: a closure to be executed as a notification
-  /// - parameter result: the `Result` of this `Deferred`
-
-  public func onResult(queue: DispatchQueue? = nil, task: @escaping (_ result: Result<Success, Failure>) -> Void)
-  {
-    notify(queue: queue, handler: { result in withExtendedLifetime(self, { task(result) }) })
-  }
-
   // MARK: onValue: execute a task when (and only when) a computation succeeds
 
-  /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes resolved with a value
+  /// Enqueue a closure to be performed asynchronously, when and only when `self` becomes resolved with a value
   ///
-  /// This function will extend the lifetime of this `Deferred` until `task` completes.
+  /// This is a simple specialization of `notify` that runs only on the happy (success) path.
   ///
   /// - parameter queue: the `DispatchQueue` on which to execute the notification; defaults to `self`'s queue.
   /// - parameter task: the closure to be enqueued
   /// - parameter value: the value of the just-resolved `Deferred`
 
-  public func onValue(queue: DispatchQueue? = nil, task: @escaping (_ value: Success) -> Void)
+  public func onValue(queue: DispatchQueue? = nil, handler: @escaping (_ value: Success) -> Void)
   {
-    onResult(queue: queue, task: { $0.value.map(task) })
+    notify(queue: queue, handler: { if case .success(let value) = $0 { handler(value) } })
   }
 
   // MARK: onError: execute a task when (and only when) a computation fails
 
-  /// Enqueue a closure to be performed asynchronously, if and only if after `self` becomes resolved with an error
+  /// Enqueue a closure to be performed asynchronously, when and only when `self` becomes resolved with an error
   ///
-  /// This function will extend the lifetime of this `Deferred` until `task` completes.
+  /// This is a simple specialization of `notify` that runs only on the error path. Note that if `Failure == Never`,
+  /// this simply calls `beginExecution()` then returns, as the closure would never be run.
   ///
   /// - parameter queue: the `DispatchQueue` on which to execute the notification; defaults to `self`'s queue.
   /// - parameter task: the closure to be enqueued
   /// - parameter error: the error from the just-resolved `Deferred`
 
-  public func onError(queue: DispatchQueue? = nil, task: @escaping (_ error: Failure) -> Void)
+  public func onError(queue: DispatchQueue? = nil, handler: @escaping (_ error: Failure) -> Void)
   {
-    onResult(queue: queue, task: { $0.error.map(task) })
+    if Failure.self == Never.self
+    {
+      beginExecution()
+      return
+    }
+
+    notify(queue: queue, handler: { if case .failure(let error) = $0 { handler(error) } })
   }
 }
 

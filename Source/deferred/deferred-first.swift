@@ -86,7 +86,7 @@ public func firstValue<Success, Failure, C: Collection>(_ deferreds: C, queue: D
     }
 
     let combined = combine(queue: queue, deferreds: errors)
-    combined.notify { if let e = $0.value { first.resolve(error: e.last!) } }
+    combined.onValue { first.resolve(error: $0.last!) }
 
     // clean up (closure also retains sources)
     first.notify {
@@ -192,7 +192,7 @@ public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, queue: Dis
 
       assert(errors.isEmpty == false)
       let combined = combine(queue: queue, deferreds: errors)
-      combined.notify { if let e = $0.value { first.resolve(error: e.last!) } }
+      combined.onValue { first.resolve(error: $0.last!) }
 
       // clean up (closure also retains sources)
       first.notify {

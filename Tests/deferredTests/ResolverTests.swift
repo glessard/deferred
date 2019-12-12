@@ -26,10 +26,10 @@ class ResolverTests: XCTestCase
 
     (i, d) = Deferred<Int, TestError>.CreatePair()
     i.beginExecution()
-    XCTAssert(i.resolve(error: TestError(value)))
-    XCTAssert(d.isResolved)
-    XCTAssert(d.value == nil)
-    XCTAssert(d.error == TestError(value))
+    XCTAssertEqual(i.resolve(error: TestError(value)), true)
+    XCTAssertEqual(d.state, .resolved)
+    XCTAssertEqual(d.value, nil)
+    XCTAssertEqual(d.error, TestError(value))
   }
 
   func testResolve2()

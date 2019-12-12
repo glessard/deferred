@@ -150,7 +150,7 @@ class DeferredSelectionTests: XCTestCase
         if i == e
         { tbd.beginExecution() }
         else
-        { tbd.notify { XCTAssertEqual($0.error, Cancellation.notSelected) } }
+        { tbd.notify { XCTAssertEqual($0, Cancellation.notSelected) } }
         d.append(tbd)
       }
       q.sync { XCTAssertEqual(r.count, d.count) }
@@ -182,7 +182,7 @@ class DeferredSelectionTests: XCTestCase
         if i == e
         { tbd.beginExecution() }
         else
-        { tbd.notify { XCTAssertEqual($0.error, Cancellation.notSelected) } }
+        { tbd.notify { XCTAssertEqual($0, Cancellation.notSelected) } }
         d.append(tbd)
       }
       q.sync { XCTAssertEqual(r.count, d.count) }
@@ -221,8 +221,8 @@ class DeferredSelectionTests: XCTestCase
                                  DeallocWitness<Int, Error>(e2, queue: q2, task: { t2 = $0 }).execute,
                                  cancelOthers: true)
     q2.sync { XCTAssertNotNil(r2) }
-    s1.notify { XCTAssertEqual($0.error, Cancellation.notSelected) }
-    s2.notify { XCTAssertEqual($0.value, r2) }
+    s1.notify { XCTAssertEqual($0, Cancellation.notSelected) }
+    s2.notify { XCTAssertEqual($0, r2) }
 
     XCTAssertEqual(t2.resolve(value: r2), true)
 
@@ -292,8 +292,8 @@ class DeferredSelectionTests: XCTestCase
 
     let (s1, s2) = firstValue(Deferred<Int, TestError>(error: TestError(r1)),
                               DeallocWitness<Void, Error>(e2, task: { $0.resolve(error: TestError(r2)) }))
-    s1.notify { XCTAssertEqual($0.error, TestError(r1)) }
-    s2.notify { XCTAssertEqual($0.error, TestError(r2)) }
+    s1.notify { XCTAssertEqual($0, TestError(r1)) }
+    s2.notify { XCTAssertEqual($0, TestError(r2)) }
 
     waitForExpectations(timeout: 1.0)
   }

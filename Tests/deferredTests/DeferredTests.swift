@@ -62,7 +62,7 @@ class DeferredTests: XCTestCase
   {
     let value = nzRandom()
     let d1 = Deferred<Int, Error>(value: value)
-    XCTAssert(d1.peek()?.value == value)
+    XCTAssertEqual(d1.peek(), value)
 
     let d2 = Deferred<Int, Cancellation> { _ in }
     XCTAssertEqual(d2.peek(), nil)
@@ -71,7 +71,7 @@ class DeferredTests: XCTestCase
     d2.cancel(.timedOut(""))
 
     XCTAssertNotNil(d2.peek())
-    XCTAssertEqual(d2.peek()?.error, .timedOut(""))
+    XCTAssertEqual(d2.peek(), .timedOut(""))
     XCTAssertEqual(d2.state, .resolved)
   }
 

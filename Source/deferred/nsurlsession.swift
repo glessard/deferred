@@ -29,7 +29,11 @@ public class DeferredURLSessionTask<Success>: Deferred<Success, Error>
   private let deferredURLSessionTask: Deferred<Weak<URLSessionTask>, Invalidation>
 
   public var urlSessionTask: URLSessionTask? {
-    return deferredURLSessionTask.peek()?.value?.reference
+    if let result = deferredURLSessionTask.peek(), case let .success(weak) = result
+    {
+      return weak.reference
+    }
+    return nil
   }
 
   fileprivate init(queue: DispatchQueue, error: Error)
