@@ -272,30 +272,41 @@ open class Deferred<Success, Failure: Error>
 
   fileprivate func retainSource(_ source: AnyObject)
   {
-    var state = CAtomicsLoad(deferredState, .relaxed)
+    let state = CAtomicsLoad(deferredState, .relaxed)
     if !state.isResolved
     {
       let waiter = UnsafeMutablePointer<Waiter<Success, Failure>>.allocate(capacity: 1)
       waiter.initialize(to: Waiter(source: source))
 
-      repeat {
-        waiter.pointee.next = waiterQueue(from: state)
-        let newState = Int(waiter, tag: .executing)
-        // read-modify-write `deferredState` with memory_order_release.
-        // this means that this write is in the release sequence of all previous writes.
-        // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
-        // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-        if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
-        { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
-          if let taskp = deferredTask(from: state) { executeDeferredTask(taskp) }
-          return
-        }
-      } while !state.isResolved
+      if enqueueWaiter(state: state, waiter: waiter)
+      { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
+        return
+      }
 
       // this Deferred has become resolved; clean up
       waiter.deinitialize(count: 1)
       waiter.deallocate()
     }
+  }
+
+  private func enqueueWaiter(state: Int, waiter: UnsafeMutablePointer<Waiter<Success, Failure>>) -> Bool
+  {
+    var state = state
+    repeat {
+      if state.isResolved { return false }
+
+      waiter.pointee.next = waiterQueue(from: state)
+      // read-modify-write `deferredState` with memory_order_release.
+      // this means that this write is in the release sequence of all previous writes.
+      // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
+      // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
+    } while !CAtomicsCompareAndExchange(deferredState, &state, Int(waiter, tag: .executing), .weak, .release, .relaxed)
+
+    if let taskp = deferredTask(from: state)
+    { // initial task needs to run
+      executeDeferredTask(taskp)
+    }
+    return true
   }
 
   // MARK: enqueue notification and start execution
@@ -332,19 +343,10 @@ open class Deferred<Success, Failure: Error>
         self.queue.async(qos: qos, flags: [.enforceQoS, .barrier], execute: {})
       }
 
-      repeat {
-        waiter.pointee.next = waiterQueue(from: state)
-        let newState = Int(waiter, tag: .executing)
-        // read-modify-write `deferredState` with memory_order_release.
-        // this means that this write is in the release sequence of all previous writes.
-        // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
-        // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-        if CAtomicsCompareAndExchange(deferredState, &state, newState, .weak, .release, .relaxed)
-        { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
-          if let taskp = deferredTask(from: state) { executeDeferredTask(taskp) }
-          return
-        }
-      } while !state.isResolved
+      if enqueueWaiter(state: state, waiter: waiter)
+      { // waiter is now enqueued; it will be deallocated at a later time by notifyWaiters()
+        return
+      }
 
       // this Deferred has become resolved; clean up
       waiter.deinitialize(count: 1)
