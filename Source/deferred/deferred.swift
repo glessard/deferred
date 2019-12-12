@@ -415,10 +415,20 @@ extension Deferred where Failure == Error
 
 extension Deferred where Failure == Never
 {
+  /// Initialize with a task to be computed on the specified queue
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
+  /// - parameter task:  the computation to be performed
+
   public convenience init(queue: DispatchQueue, task: @escaping () -> Success)
   {
     self.init(queue: queue, task: { r in r.resolve(value: task()) })
   }
+
+  /// Initialize with a task to be computed in the background
+  ///
+  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
+  /// - parameter task: a computation to be performed
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping () -> Success)
   {
