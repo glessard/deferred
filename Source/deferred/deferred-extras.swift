@@ -36,6 +36,7 @@ extension Deferred
   /// - parameter task: the closure to be enqueued
   /// - parameter value: the value of the just-resolved `Deferred`
 
+  @inlinable
   public func onValue(queue: DispatchQueue? = nil, handler: @escaping (_ value: Success) -> Void)
   {
     notify(queue: queue, handler: { if case .success(let value) = $0 { handler(value) } })
@@ -52,6 +53,7 @@ extension Deferred
   /// - parameter task: the closure to be enqueued
   /// - parameter error: the error from the just-resolved `Deferred`
 
+  @inlinable
   public func onError(queue: DispatchQueue? = nil, handler: @escaping (_ error: Failure) -> Void)
   {
     if Failure.self == Never.self
