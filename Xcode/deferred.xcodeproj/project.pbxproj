@@ -36,8 +36,8 @@
 		0393E8CD2285E7FE00F4B44B /* DeferredSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CB9823227BBECD00F4B44B /* DeferredSelectionTests.swift */; };
 		039E18411DFF621300F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */; };
-		03B16033238733A60086343E /* result-extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B16032238733A60086343E /* result-extensions.swift */; };
-		03B16034238733A60086343E /* result-extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B16032238733A60086343E /* result-extensions.swift */; };
+		03B16033238733A60086343E /* xctest-helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B16032238733A60086343E /* xctest-helpers.swift */; };
+		03B16034238733A60086343E /* xctest-helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B16032238733A60086343E /* xctest-helpers.swift */; };
 		03B4337120CAF2C600F4B44B /* DeferredTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE531DF0FEC400F4B44B /* DeferredTimingTests.swift */; };
 		03B4E0771C14003C00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
 		03B7767E20CAECFB00F4B44B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B7767D20CAECFB00F4B44B /* AppDelegate.swift */; };
@@ -215,7 +215,7 @@
 		0385F501238AAA0C0086343E /* DeferredTimeoutTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredTimeoutTests.swift; path = deferredTests/DeferredTimeoutTests.swift; sourceTree = "<group>"; };
 		039E18431DFF77F900F4B44B /* LinuxMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxMain.swift; sourceTree = "<group>"; };
 		03AA21731E3FF9D600F4B44B /* DeferredCombinationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredCombinationTests.swift; path = deferredTests/DeferredCombinationTests.swift; sourceTree = "<group>"; };
-		03B16032238733A60086343E /* result-extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "result-extensions.swift"; path = "deferredTests/result-extensions.swift"; sourceTree = "<group>"; };
+		03B16032238733A60086343E /* xctest-helpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "xctest-helpers.swift"; path = "deferredTests/xctest-helpers.swift"; sourceTree = "<group>"; };
 		03B4E0641C13FF6900F4B44B /* deferred.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deferred.h; sourceTree = "<group>"; };
 		03B4E0651C13FF6900F4B44B /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03B4E06D1C14003B00F4B44B /* deferred.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = deferred.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -337,7 +337,7 @@
 				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
 				0366AE541DF0FEC400F4B44B /* TestError.swift */,
 				0374DFB01DFF5BD800F4B44B /* nzRandom.swift */,
-				03B16032238733A60086343E /* result-extensions.swift */,
+				03B16032238733A60086343E /* xctest-helpers.swift */,
 				03BEA0DF20CF3C1200F4B44B /* XCTestManifests.swift */,
 			);
 			name = Tests;
@@ -734,7 +734,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */,
-				03B16033238733A60086343E /* result-extensions.swift in Sources */,
+				03B16033238733A60086343E /* xctest-helpers.swift in Sources */,
 				03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */,
 				03BBDB1021EFDBBF00F4B44B /* URLSessionTests.swift in Sources */,
 				0366AE5C1DF0FEC400F4B44B /* DeferredTimingTests.swift in Sources */,
@@ -765,7 +765,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03B776A320CAED1C00F4B44B /* nzRandom.swift in Sources */,
-				03B16034238733A60086343E /* result-extensions.swift in Sources */,
+				03B16034238733A60086343E /* xctest-helpers.swift in Sources */,
 				03B7769B20CAED1C00F4B44B /* DeferredTests.swift in Sources */,
 				03E4DF5D21FC01E800F4B44B /* URLSessionTests.swift in Sources */,
 				03B7769E20CAED1C00F4B44B /* ResolverTests.swift in Sources */,

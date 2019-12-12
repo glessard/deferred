@@ -176,7 +176,7 @@ open class Deferred<Success, Failure: Error>
 
   public convenience init(queue: DispatchQueue, value: Success)
   {
-    self.init(queue: queue, result: Result<Success, Failure>(value: value))
+    self.init(queue: queue, result: .success(value))
   }
 
   /// Initialize as resolved with a `Failure`
@@ -197,7 +197,7 @@ open class Deferred<Success, Failure: Error>
 
   public convenience init(queue: DispatchQueue, error: Failure)
   {
-    self.init(queue: queue, result: Result<Success, Failure>(error: error))
+    self.init(queue: queue, result: .failure(error))
   }
 
   // MARK: resolve()
@@ -534,7 +534,8 @@ extension Deferred
   /// - returns: this `Deferred`'s resolved value, or `nil`
 
   public var value: Success? {
-    return result.value
+    if case .success(let value) = result { return value }
+    return nil
   }
 
   /// Get this `Deferred`'s error state, blocking if necessary until it becomes resolved.
@@ -548,7 +549,8 @@ extension Deferred
   /// - returns: this `Deferred`'s resolved error state, or `nil`
 
   public var error: Failure? {
-    return result.error
+    if case .failure(let error) = result { return error }
+    return nil
   }
 
   /// Get the QoS of this `Deferred`'s queue
@@ -595,7 +597,7 @@ public struct Resolver<Success, Failure: Error>
   @discardableResult
   public func resolve(value: Success) -> Bool
   {
-    return resolve(Result<Success, Failure>(value: value))
+    return resolve(.success(value))
   }
 
   /// Resolve the underlying `Deferred` with an error, and execute all of its notifications.
@@ -610,7 +612,7 @@ public struct Resolver<Success, Failure: Error>
   @discardableResult
   public func resolve(error: Failure) -> Bool
   {
-    return resolve(Result<Success, Failure>(error: error))
+    return resolve(.failure(error))
   }
 
   /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
