@@ -38,7 +38,7 @@ class DeferredExamples: XCTestCase
       return (3*d).description
     }
 
-    result3.onResult { print("Result 3 is: \($0.value!)") }
+    result3.onValue { print("Result 3 is: \($0)") }
 
     let result4 = combine(result1, result2)
 

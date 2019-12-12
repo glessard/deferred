@@ -932,6 +932,7 @@ class URLSessionResumeTests: XCTestCase
           resolver.resolve(error: error)
         }
       }
+      resolver.retainSource(deferred)
       deferred.timeout(seconds: 0.5)
     }
 #if os(Linux)
