@@ -572,12 +572,12 @@ extension Deferred
 public struct Resolver<Success, Failure: Error>
 {
   private weak var deferred: Deferred<Success, Failure>?
-  private let resolve: (Result<Success, Failure>) -> Bool
+  private let resolve: (Result<Success, Failure>) -> Void
 
   fileprivate init(_ deferred: Deferred<Success, Failure>)
   {
     self.deferred = deferred
-    self.resolve = { [weak deferred] in deferred?.resolve($0) ?? false }
+    self.resolve = { [weak deferred] in deferred?.resolve($0) }
   }
 
   /// Resolve the underlying `Deferred` and execute all of its notifications.
@@ -587,12 +587,10 @@ public struct Resolver<Success, Failure: Error>
   /// This operation is lock-free and thread-safe.
   ///
   /// - parameter value: the intended value for this `Deferred`
-  /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  @discardableResult
-  public func resolve(_ result: Result<Success, Failure>) -> Bool
+  public func resolve(_ result: Result<Success, Failure>)
   {
-    return resolve(result)
+    resolve(result)
   }
 
   /// Resolve the underlying `Deferred` with a value, and execute all of its notifications.
@@ -604,10 +602,9 @@ public struct Resolver<Success, Failure: Error>
   /// - parameter value: the intended value for this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  @discardableResult
-  public func resolve(value: Success) -> Bool
+  public func resolve(value: Success)
   {
-    return resolve(.success(value))
+    resolve(.success(value))
   }
 
   /// Resolve the underlying `Deferred` with an error, and execute all of its notifications.
@@ -619,10 +616,9 @@ public struct Resolver<Success, Failure: Error>
   /// - parameter error: the intended error for this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  @discardableResult
-  public func resolve(error: Failure) -> Bool
+  public func resolve(error: Failure)
   {
-    return resolve(.failure(error))
+    resolve(.failure(error))
   }
 
   /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.

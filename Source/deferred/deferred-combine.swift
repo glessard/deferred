@@ -169,7 +169,7 @@ public func reduce<S, T, F, U>(queue: DispatchQueue,
           u in deferred.map(queue: queue) { t in combine(u,t) }
         }
       }
-      r.notify { resolver.resolve($0) }
+      r.notify(handler: resolver.resolve)
       resolver.retainSource(r)
     }
   }
@@ -201,7 +201,7 @@ public func combine<T1, T2, F>(_ d1: Deferred<T1, F>,
         resolver.resolve(error: e1)
       }
     }
-    d2.onError { resolver.resolve(error: $0) }
+    d2.onError(handler: resolver.resolve)
     resolver.retainSource(d1)
     resolver.retainSource(d2)
   }

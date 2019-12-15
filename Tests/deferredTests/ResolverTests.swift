@@ -19,14 +19,14 @@ class ResolverTests: XCTestCase
     var (i, d) = Deferred<Int, TestError>.CreatePair()
     i.beginExecution()
     let value = nzRandom()
-    XCTAssert(i.resolve(value: value))
+    i.resolve(value: value)
     XCTAssert(d.isResolved)
     XCTAssert(d.value == value)
     XCTAssert(d.error == nil)
 
     (i, d) = Deferred<Int, TestError>.CreatePair()
     i.beginExecution()
-    XCTAssertEqual(i.resolve(error: TestError(value)), true)
+    i.resolve(error: TestError(value))
     XCTAssertEqual(d.state, .resolved)
     XCTAssertEqual(d.value, nil)
     XCTAssertEqual(d.error, TestError(value))
@@ -39,7 +39,7 @@ class ResolverTests: XCTestCase
     var value = nzRandom()
     DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.01) {
       value = nzRandom()
-      XCTAssert(i.resolve(value: value))
+      i.resolve(value: value)
     }
 
     XCTAssert(d.isResolved == false)
@@ -49,7 +49,7 @@ class ResolverTests: XCTestCase
     XCTAssert(d.error == nil)
 
     // Try and fail to resolve tbd a second time.
-    XCTAssert(i.resolve(value: value) == false)
+    i.resolve(value: nzRandom())
   }
 
   func testResolverWithoutDeferred()
@@ -57,7 +57,6 @@ class ResolverTests: XCTestCase
     let r = Deferred<Int, Never>.CreatePair().resolver
 
     XCTAssertEqual(r.needsResolution, false)
-    XCTAssertEqual(r.resolve(value: .max), false)
     XCTAssertEqual(r.cancel(), false)
     XCTAssertEqual(r.qos, .unspecified)
   }
@@ -78,13 +77,14 @@ class ResolverTests: XCTestCase
 
     let e = expectation(description: "Cancel before setting")
     (i, d) = Deferred<Int, Error>.CreatePair()
-    i.cancel()
-    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + 0.1) {
-      i.resolve(value: nzRandom()) ?  XCTFail() : e.fulfill()
-    }
+    d.onError { _ in e.fulfill() }
+
+    XCTAssertEqual(i.cancel(), true)
+    i.resolve(value: nzRandom())
 
     waitForExpectations(timeout: 1.0)
     XCTAssertNil(d.value)
+    XCTAssertEqual(d.result, Cancellation.canceled(""))
   }
 
   func testNotify()

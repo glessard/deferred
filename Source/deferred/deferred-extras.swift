@@ -85,7 +85,7 @@ extension Deferred
 
     return Deferred(queue: queue) {
       resolver in
-      self.notify(queue: queue, boostQoS: false, handler: { resolver.resolve($0) })
+      self.notify(queue: queue, boostQoS: false, handler: resolver.resolve)
       resolver.retainSource(self)
     }
   }
@@ -273,7 +273,7 @@ extension Deferred
           }
           else
           {
-            transformed.notify(queue: queue) { resolver.resolve($0) }
+            transformed.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(transformed)
           }
         case .failure(let error):
@@ -322,7 +322,7 @@ extension Deferred
           }
           else
           {
-            transformed.notify(queue: queue) { resolver.resolve($0) }
+            transformed.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(transformed)
           }
         }
@@ -376,7 +376,7 @@ extension Deferred
           }
           else
           {
-            transformed.notify(queue: queue) { resolver.resolve($0) }
+            transformed.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(transformed)
           }
         }
@@ -425,7 +425,7 @@ extension Deferred
 
         return Deferred<Other, Failure>(queue: queue ?? self.queue) {
           resolver in
-          deferred.notify(queue: queue) { resolver.resolve($0) }
+          deferred.notify(queue: queue, handler: resolver.resolve)
           resolver.retainSource(deferred)
         }
 
@@ -448,7 +448,7 @@ extension Deferred
           }
           else
           {
-            deferred.notify(queue: queue) { resolver.resolve($0) }
+            deferred.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(deferred)
           }
         case .failure(let error):
@@ -482,7 +482,7 @@ extension Deferred
 
         return Deferred<Other, OtherFailure>(queue: queue ?? self.queue) {
           resolver in
-          deferred.notify(queue: queue) { resolver.resolve($0) }
+          deferred.notify(queue: queue, handler: resolver.resolve)
           resolver.retainSource(deferred)
         }
       }
@@ -502,7 +502,7 @@ extension Deferred
           }
           else
           {
-            deferred.notify(queue: queue) { resolver.resolve($0) }
+            deferred.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(deferred)
           }
         }
@@ -544,7 +544,7 @@ extension Deferred where Failure == Error
             }
             else
             {
-              transformed.notify(queue: queue) { resolver.resolve($0) }
+              transformed.notify(queue: queue, handler: resolver.resolve)
               resolver.retainSource(transformed)
             }
           }

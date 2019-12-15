@@ -867,7 +867,7 @@ class URLSessionResumeTests: XCTestCase
     let deferred = Deferred<(FileHandle, HTTPURLResponse), Error> {
       resolver in
       let deferred = session.deferredDownloadTask(with: URLSessionResumeTests.largeURL)
-      deferred.notify { resolver.resolve($0) }
+      deferred.notify(handler: resolver.resolve)
       resolver.retainSource(deferred)
     }
 
@@ -896,7 +896,7 @@ class URLSessionResumeTests: XCTestCase
       resolver in
       let request = URLRequest(url: URLSessionResumeTests.largeURL, timeoutInterval: 0.5)
       let deferred = session.deferredDownloadTask(with: request)
-      deferred.notify { resolver.resolve($0) }
+      deferred.notify(handler: resolver.resolve)
       resolver.retainSource(deferred)
     }
 

@@ -246,7 +246,7 @@ public func firstResolved<Success, Failure, C>(_ deferreds: C, queue: DispatchQu
   return Deferred<Success, Failure>(queue: queue) {
     first in
     let deferreds = Array(deferreds)
-    for deferred in deferreds { deferred.notify { first.resolve($0) } }
+    for deferred in deferreds { deferred.notify(handler: first.resolve) }
 
     // clean up (closure also retains sources)
     first.notify { if cancelOthers { deferreds.forEach { $0.cancel(.notSelected) } } }
@@ -302,7 +302,7 @@ public func firstResolved<Success, Failure, S>(_ deferreds: S, queue: DispatchQu
     DispatchQueue.global(qos: queue.qos.qosClass).async {
       let sources: [Deferred<Success, Failure>] = deferreds.map {
         deferred in
-        deferred.notify { first.resolve($0) }
+        deferred.notify(handler: first.resolve)
         return deferred
       }
 
