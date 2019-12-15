@@ -104,6 +104,11 @@ class DeferredExtrasTests: XCTestCase
     let d3 = badOperand.withAnyError
     XCTAssertEqual(d3.value, nil)
     XCTAssertEqual(d3.error, TestError(error))
+
+    // good operand, map from Never to something else
+    let d4 = Deferred<Int, Never>(value: value).setFailureType(to: TestError.self)
+    // XCTAssert(d4.error is Optional<TestError>)
+    XCTAssertEqual(d4.result, value)
   }
 
   func testRecover()

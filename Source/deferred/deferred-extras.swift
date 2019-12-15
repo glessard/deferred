@@ -229,6 +229,21 @@ extension Deferred
   }
 }
 
+extension Deferred where Failure == Never
+{
+  public func setFailureType<E: Error>(to: E.Type) -> Deferred<Success, E>
+  {
+    return Deferred<Success, E>(queue: queue) {
+      resolver in
+      self.notify(queue: nil) {
+        result in
+        resolver.resolve(result.setFailureType(to: E.self))
+      }
+      resolver.retainSource(self)
+    }
+  }
+}
+
 // MARK: flatMap: asynchronously transform a `Deferred` into another
 
 extension Deferred

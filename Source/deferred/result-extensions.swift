@@ -13,3 +13,14 @@ extension Result
     }
   }
 }
+
+extension Result where Failure == Never
+{
+  func setFailureType<E: Error>(to: E.Type) -> Result<Success, E>
+  {
+    switch self
+    {
+    case .success(let value): return Result<Success, E>.success(value)
+    }
+  }
+}
