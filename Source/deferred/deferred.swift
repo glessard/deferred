@@ -415,10 +415,20 @@ extension Deferred where Failure == Error
 
 extension Deferred where Failure == Never
 {
+  /// Initialize with a task to be computed on the specified queue
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
+  /// - parameter task:  the computation to be performed
+
   public convenience init(queue: DispatchQueue, task: @escaping () -> Success)
   {
     self.init(queue: queue, task: { r in r.resolve(value: task()) })
   }
+
+  /// Initialize with a task to be computed in the background
+  ///
+  /// - parameter qos:  the QoS at which the computation (and notifications) should be performed; defaults to the current QoS class.
+  /// - parameter task: a computation to be performed
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping () -> Success)
   {
@@ -562,12 +572,12 @@ extension Deferred
 public struct Resolver<Success, Failure: Error>
 {
   private weak var deferred: Deferred<Success, Failure>?
-  private let resolve: (Result<Success, Failure>) -> Bool
+  private let resolve: (Result<Success, Failure>) -> Void
 
   fileprivate init(_ deferred: Deferred<Success, Failure>)
   {
     self.deferred = deferred
-    self.resolve = { [weak deferred] in deferred?.resolve($0) ?? false }
+    self.resolve = { [weak deferred] in deferred?.resolve($0) }
   }
 
   /// Resolve the underlying `Deferred` and execute all of its notifications.
@@ -577,12 +587,10 @@ public struct Resolver<Success, Failure: Error>
   /// This operation is lock-free and thread-safe.
   ///
   /// - parameter value: the intended value for this `Deferred`
-  /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  @discardableResult
-  public func resolve(_ result: Result<Success, Failure>) -> Bool
+  public func resolve(_ result: Result<Success, Failure>)
   {
-    return resolve(result)
+    resolve(result)
   }
 
   /// Resolve the underlying `Deferred` with a value, and execute all of its notifications.
@@ -594,10 +602,9 @@ public struct Resolver<Success, Failure: Error>
   /// - parameter value: the intended value for this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  @discardableResult
-  public func resolve(value: Success) -> Bool
+  public func resolve(value: Success)
   {
-    return resolve(.success(value))
+    resolve(.success(value))
   }
 
   /// Resolve the underlying `Deferred` with an error, and execute all of its notifications.
@@ -609,10 +616,9 @@ public struct Resolver<Success, Failure: Error>
   /// - parameter error: the intended error for this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  @discardableResult
-  public func resolve(error: Failure) -> Bool
+  public func resolve(error: Failure)
   {
-    return resolve(.failure(error))
+    resolve(.failure(error))
   }
 
   /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.

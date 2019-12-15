@@ -39,8 +39,8 @@ class DeferredSelectionTests: XCTestCase
     let (resolvers, first) = resolution(count)
 
     let lucky = Int.random(in: 1..<count)
-    XCTAssert(resolvers[count].resolve(error: TestError(count)))
-    XCTAssert(resolvers[lucky].resolve(value: lucky))
+    resolvers[count].resolve(error: TestError(count))
+    resolvers[lucky].resolve(value: lucky)
     first?.beginExecution()
 
     waitForExpectations(timeout: 1.0)
@@ -70,8 +70,8 @@ class DeferredSelectionTests: XCTestCase
     let (resolvers, first) = resolution(count)
 
     let lucky = Int.random(in: 1..<count)
-    XCTAssert(resolvers[count].resolve(error: TestError(count)))
-    XCTAssert(resolvers[lucky].resolve(value: lucky))
+    resolvers[count].resolve(error: TestError(count))
+    resolvers[lucky].resolve(value: lucky)
     first?.beginExecution()
 
     waitForExpectations(timeout: 1.0)
@@ -224,7 +224,7 @@ class DeferredSelectionTests: XCTestCase
     s1.notify { XCTAssertEqual($0, Cancellation.notSelected) }
     s2.notify { XCTAssertEqual($0, r2) }
 
-    XCTAssertEqual(t2.resolve(value: r2), true)
+    t2.resolve(value: r2)
 
     waitForExpectations(timeout: 1.0)
   }

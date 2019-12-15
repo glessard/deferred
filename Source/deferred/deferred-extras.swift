@@ -36,6 +36,7 @@ extension Deferred
   /// - parameter task: the closure to be enqueued
   /// - parameter value: the value of the just-resolved `Deferred`
 
+  @inlinable
   public func onValue(queue: DispatchQueue? = nil, handler: @escaping (_ value: Success) -> Void)
   {
     notify(queue: queue, handler: { if case .success(let value) = $0 { handler(value) } })
@@ -52,6 +53,7 @@ extension Deferred
   /// - parameter task: the closure to be enqueued
   /// - parameter error: the error from the just-resolved `Deferred`
 
+  @inlinable
   public func onError(queue: DispatchQueue? = nil, handler: @escaping (_ error: Failure) -> Void)
   {
     if Failure.self == Never.self
@@ -83,7 +85,7 @@ extension Deferred
 
     return Deferred(queue: queue) {
       resolver in
-      self.notify(queue: queue, boostQoS: false, handler: { resolver.resolve($0) })
+      self.notify(queue: queue, boostQoS: false, handler: resolver.resolve)
       resolver.retainSource(self)
     }
   }
@@ -227,6 +229,21 @@ extension Deferred
   }
 }
 
+extension Deferred where Failure == Never
+{
+  public func setFailureType<E: Error>(to: E.Type) -> Deferred<Success, E>
+  {
+    return Deferred<Success, E>(queue: queue) {
+      resolver in
+      self.notify(queue: nil) {
+        result in
+        resolver.resolve(result.setFailureType(to: E.self))
+      }
+      resolver.retainSource(self)
+    }
+  }
+}
+
 // MARK: flatMap: asynchronously transform a `Deferred` into another
 
 extension Deferred
@@ -256,7 +273,7 @@ extension Deferred
           }
           else
           {
-            transformed.notify(queue: queue) { resolver.resolve($0) }
+            transformed.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(transformed)
           }
         case .failure(let error):
@@ -305,7 +322,7 @@ extension Deferred
           }
           else
           {
-            transformed.notify(queue: queue) { resolver.resolve($0) }
+            transformed.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(transformed)
           }
         }
@@ -359,7 +376,7 @@ extension Deferred
           }
           else
           {
-            transformed.notify(queue: queue) { resolver.resolve($0) }
+            transformed.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(transformed)
           }
         }
@@ -408,7 +425,7 @@ extension Deferred
 
         return Deferred<Other, Failure>(queue: queue ?? self.queue) {
           resolver in
-          deferred.notify(queue: queue) { resolver.resolve($0) }
+          deferred.notify(queue: queue, handler: resolver.resolve)
           resolver.retainSource(deferred)
         }
 
@@ -431,7 +448,7 @@ extension Deferred
           }
           else
           {
-            deferred.notify(queue: queue) { resolver.resolve($0) }
+            deferred.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(deferred)
           }
         case .failure(let error):
@@ -465,7 +482,7 @@ extension Deferred
 
         return Deferred<Other, OtherFailure>(queue: queue ?? self.queue) {
           resolver in
-          deferred.notify(queue: queue) { resolver.resolve($0) }
+          deferred.notify(queue: queue, handler: resolver.resolve)
           resolver.retainSource(deferred)
         }
       }
@@ -485,7 +502,7 @@ extension Deferred
           }
           else
           {
-            deferred.notify(queue: queue) { resolver.resolve($0) }
+            deferred.notify(queue: queue, handler: resolver.resolve)
             resolver.retainSource(deferred)
           }
         }
@@ -527,7 +544,7 @@ extension Deferred where Failure == Error
             }
             else
             {
-              transformed.notify(queue: queue) { resolver.resolve($0) }
+              transformed.notify(queue: queue, handler: resolver.resolve)
               resolver.retainSource(transformed)
             }
           }
