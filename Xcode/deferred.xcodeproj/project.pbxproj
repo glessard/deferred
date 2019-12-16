@@ -52,14 +52,11 @@
 		03B776A220CAED1C00F4B44B /* TestError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE541DF0FEC400F4B44B /* TestError.swift */; };
 		03B776A320CAED1C00F4B44B /* nzRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374DFB01DFF5BD800F4B44B /* nzRandom.swift */; };
 		03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
-		03BBDB1021EFDBBF00F4B44B /* URLSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */; };
-		03BBDB1821EFDBDD00F4B44B /* nsurlsession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035D0C121D84A8DB00F4B44B /* nsurlsession.swift */; };
 		03C599182176A18400F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
 		03CB9824227BBECD00F4B44B /* DeferredSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CB9823227BBECD00F4B44B /* DeferredSelectionTests.swift */; };
 		03D59CB41F7B6CB900F4B44B /* result-extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D59CB31F7B6CB900F4B44B /* result-extensions.swift */; };
 		03D5D78A1E52339C00F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */; };
 		03DBD0242205039600F4B44B /* deferred-split.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DBD0232205039600F4B44B /* deferred-split.swift */; };
-		03E4DF5D21FC01E800F4B44B /* URLSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */; };
 		03E9756B20D2050100F4B44B /* deferred.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; };
 		03FC96F721779E1500F4B44B /* CurrentQoS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; };
 		03FC96F821779E2800F4B44B /* CurrentQoS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03C599152176A17600F4B44B /* CurrentQoS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -200,13 +197,11 @@
 		035D0C0F1D84A8DB00F4B44B /* deferred-extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-extras.swift"; path = "deferred/deferred-extras.swift"; sourceTree = "<group>"; };
 		035D0C101D84A8DB00F4B44B /* deferred-parallelize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "deferred-parallelize.swift"; path = "deferred/deferred-parallelize.swift"; sourceTree = "<group>"; };
 		035D0C111D84A8DB00F4B44B /* deferred.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = deferred.swift; path = deferred/deferred.swift; sourceTree = "<group>"; };
-		035D0C121D84A8DB00F4B44B /* nsurlsession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nsurlsession.swift; path = deferred/nsurlsession.swift; sourceTree = "<group>"; };
 		035D0C141D84A8DB00F4B44B /* waiter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = waiter.swift; path = deferred/waiter.swift; sourceTree = "<group>"; };
 		0366AE501DF0FEC400F4B44B /* DeferredTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredTests.swift; path = DeferredTests/DeferredTests.swift; sourceTree = "<group>"; };
 		0366AE521DF0FEC400F4B44B /* ResolverTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ResolverTests.swift; path = deferredTests/ResolverTests.swift; sourceTree = "<group>"; };
 		0366AE531DF0FEC400F4B44B /* DeferredTimingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredTimingTests.swift; path = deferredTests/DeferredTimingTests.swift; sourceTree = "<group>"; };
 		0366AE541DF0FEC400F4B44B /* TestError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TestError.swift; path = DeferredTests/TestError.swift; sourceTree = "<group>"; };
-		0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = URLSessionTests.swift; path = DeferredTests/URLSessionTests.swift; sourceTree = "<group>"; };
 		0374DFB01DFF5BD800F4B44B /* nzRandom.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nzRandom.swift; path = DeferredTests/nzRandom.swift; sourceTree = "<group>"; };
 		038147591E4138BA00F4B44B /* DeletionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeletionTests.swift; path = deferredTests/DeletionTests.swift; sourceTree = "<group>"; };
 		0385F4F1238AA8D10086343E /* DeferredExtrasTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeferredExtrasTests.swift; path = deferredTests/DeferredExtrasTests.swift; sourceTree = "<group>"; };
@@ -310,7 +305,6 @@
 				035D0C101D84A8DB00F4B44B /* deferred-parallelize.swift */,
 				03DBD0232205039600F4B44B /* deferred-split.swift */,
 				033928181F8C099700F4B44B /* deferred-first.swift */,
-				035D0C121D84A8DB00F4B44B /* nsurlsession.swift */,
 				03D59CB31F7B6CB900F4B44B /* result-extensions.swift */,
 				035D0C141D84A8DB00F4B44B /* waiter.swift */,
 				03D5D7891E52339C00F4B44B /* dispatch-utilities.swift */,
@@ -334,7 +328,6 @@
 				0366AE531DF0FEC400F4B44B /* DeferredTimingTests.swift */,
 				038147591E4138BA00F4B44B /* DeletionTests.swift */,
 				0366AE521DF0FEC400F4B44B /* ResolverTests.swift */,
-				0366AE551DF0FEC400F4B44B /* URLSessionTests.swift */,
 				0366AE541DF0FEC400F4B44B /* TestError.swift */,
 				0374DFB01DFF5BD800F4B44B /* nzRandom.swift */,
 				03B16032238733A60086343E /* xctest-helpers.swift */,
@@ -721,7 +714,6 @@
 				0305DD1623875A420086343E /* deferred-delay.swift in Sources */,
 				03D59CB41F7B6CB900F4B44B /* result-extensions.swift in Sources */,
 				035D0C151D84A8DB00F4B44B /* deferred-combine.swift in Sources */,
-				03BBDB1821EFDBDD00F4B44B /* nsurlsession.swift in Sources */,
 				0305DD1723875A420086343E /* deferred-timeout.swift in Sources */,
 				035D0C191D84A8DB00F4B44B /* deferred-extras.swift in Sources */,
 				035D0C231D84A8DB00F4B44B /* waiter.swift in Sources */,
@@ -736,7 +728,6 @@
 				0366AE5E1DF0FEC400F4B44B /* TestError.swift in Sources */,
 				03B16033238733A60086343E /* xctest-helpers.swift in Sources */,
 				03AA21741E3FF9D600F4B44B /* DeferredCombinationTests.swift in Sources */,
-				03BBDB1021EFDBBF00F4B44B /* URLSessionTests.swift in Sources */,
 				0366AE5C1DF0FEC400F4B44B /* DeferredTimingTests.swift in Sources */,
 				039E18411DFF621300F4B44B /* nzRandom.swift in Sources */,
 				0366AE561DF0FEC400F4B44B /* DeferredTests.swift in Sources */,
@@ -767,7 +758,6 @@
 				03B776A320CAED1C00F4B44B /* nzRandom.swift in Sources */,
 				03B16034238733A60086343E /* xctest-helpers.swift in Sources */,
 				03B7769B20CAED1C00F4B44B /* DeferredTests.swift in Sources */,
-				03E4DF5D21FC01E800F4B44B /* URLSessionTests.swift in Sources */,
 				03B7769E20CAED1C00F4B44B /* ResolverTests.swift in Sources */,
 				03B7769D20CAED1C00F4B44B /* DeletionTests.swift in Sources */,
 				03B4337120CAF2C600F4B44B /* DeferredTimingTests.swift in Sources */,
