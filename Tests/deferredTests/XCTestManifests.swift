@@ -121,6 +121,7 @@ extension DeferredTests {
         ("testError", testError),
         ("testErrorTypes", testErrorTypes),
         ("testGet", testGet),
+        ("testNotify", testNotify),
         ("testNotifyWaiters", testNotifyWaiters),
         ("testPeek", testPeek),
         ("testState", testState),

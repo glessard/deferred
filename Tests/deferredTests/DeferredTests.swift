@@ -134,6 +134,34 @@ class DeferredTests: XCTestCase
     waitForExpectations(timeout: 0.1)
   }
 
+  func testNotify()
+  {
+    let wait = 0.01
+
+    let s = DispatchSemaphore(value: 0)
+    let busy = Deferred<DispatchTimeoutResult, Never>(queue: .global(qos: .utility)) {
+      resolver in
+      let timeoutResult = s.wait(timeout: .now() + wait)
+      resolver.resolve(value: timeoutResult)
+    }
+
+    let e1 = expectation(description: #function + "-1")
+    busy.notify(queue: .global(qos: .userInteractive)) {
+      result in
+      e1.fulfill()
+    }
+
+    waitForExpectations(timeout: 0.1)
+
+    let e2 = expectation(description: #function + "-2")
+    busy.notify {
+      result in
+      e2.fulfill()
+    }
+
+    waitForExpectations(timeout: 0.1)
+  }
+
   func testGet() throws
   {
     let d = Double(nzRandom())
