@@ -217,7 +217,7 @@ class DeferredSelectionTests: XCTestCase
     let q2 = DispatchQueue(label: #function)
     var t2: Resolver<Int, Error>! = nil
 
-    let (s1, s2) = firstResolved(DeallocWitness<Double, Never>(e1),
+    let (s1, s2) = firstResolved(DeallocWitness<Double, Cancellation>(e1),
                                  DeallocWitness<Int, Error>(e2, queue: q2, task: { t2 = $0 }).execute,
                                  cancelOthers: true)
     q2.sync { XCTAssertNotNil(r2) }
@@ -232,7 +232,7 @@ class DeferredSelectionTests: XCTestCase
   func testSelectFirstResolvedTernary()
   {
     let r1 = nzRandom()
-    let d2 = Deferred<Float, Never>()
+    let d2 = Deferred<Float, Error>()
 
     let (s1, s2, s3) = firstResolved(Deferred<Int, TestError>(error: TestError(r1)),
                                      d2,
@@ -240,7 +240,7 @@ class DeferredSelectionTests: XCTestCase
                                      cancelOthers: true)
 
     XCTAssertEqual(s1.error, TestError(r1))
-    XCTAssertEqual(d2.state, .executing)
+    XCTAssertEqual(d2.state, .resolved)
     XCTAssertEqual(s2.error, Cancellation.notSelected)
     XCTAssertEqual(s3.error, Cancellation.notSelected)
   }
@@ -248,16 +248,16 @@ class DeferredSelectionTests: XCTestCase
   func testSelectFirstResolvedQuaternary()
   {
     let r1 = nzRandom()
-    let d2 = Deferred<String, Never>()
+    let d2 = Deferred<String, Error>()
 
     let (s1, s2, s3, s4) = firstResolved(Deferred<Int, TestError>(error: TestError(r1)),
                                          d2,
                                          Deferred<Double, NSError>(),
-                                         Deferred<Void, Error>(),
+                                         Deferred<Void, Cancellation>(),
                                          cancelOthers: true)
 
     XCTAssertEqual(s1.error, TestError(r1))
-    XCTAssertEqual(d2.state, .executing)
+    XCTAssertEqual(d2.state, .resolved)
     XCTAssertEqual(s2.error, Cancellation.notSelected)
     XCTAssertEqual(s3.error, Cancellation.notSelected)
     XCTAssertEqual(s4.error, Cancellation.notSelected)
