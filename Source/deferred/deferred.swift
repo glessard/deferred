@@ -252,6 +252,8 @@ open class Deferred<Success, Failure: Error>
 
   /// Attempt to cancel this `Deferred`
   ///
+  /// This method can only succeed if a `Cancellation` can be cast as a `Failure`.
+  ///
   /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
   /// - returns: whether the cancellation was performed successfully.
 
