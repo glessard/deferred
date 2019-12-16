@@ -240,7 +240,7 @@ class DeferredSelectionTests: XCTestCase
                                      cancelOthers: true)
 
     XCTAssertEqual(s1.error, TestError(r1))
-    XCTAssertEqual(d2.state, .resolved)
+    XCTAssertEqual(d2.error, Cancellation.notSelected)
     XCTAssertEqual(s2.error, Cancellation.notSelected)
     XCTAssertEqual(s3.error, Cancellation.notSelected)
   }
@@ -257,7 +257,7 @@ class DeferredSelectionTests: XCTestCase
                                          cancelOthers: true)
 
     XCTAssertEqual(s1.error, TestError(r1))
-    XCTAssertEqual(d2.state, .resolved)
+    XCTAssertEqual(d2.error, Cancellation.notSelected)
     XCTAssertEqual(s2.error, Cancellation.notSelected)
     XCTAssertEqual(s3.error, Cancellation.notSelected)
     XCTAssertEqual(s4.error, Cancellation.notSelected)
