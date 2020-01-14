@@ -42,6 +42,7 @@ extension DeferredExamples {
     //   `swift test --generate-linuxmain`
     // to regenerate.
     static let __allTests__DeferredExamples = [
+        ("testBigComputation", testBigComputation),
         ("testExample", testExample),
         ("testExample2", testExample2),
         ("testExample3", testExample3),

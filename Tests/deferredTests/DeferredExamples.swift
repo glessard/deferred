@@ -82,4 +82,42 @@ class DeferredExamples: XCTestCase
     let result = operand.apply(transform: transform)                      // Deferred<Double>
     print(result.value!)                                                  // 42.0
   }
+
+  func testBigComputation() throws
+  {
+    func bigComputation() -> Deferred<Double, Never>
+    {
+      return Deferred {
+        resolver in
+        DispatchQueue.global(qos: .utility).async {
+          var progress = 0
+          repeat {
+            // first check that a result is still needed
+            guard resolver.needsResolution else { return }
+            // then work towards a partial computation
+            Thread.sleep(until: Date() + 0.001)
+            print(".", terminator: "")
+            progress += 1
+          } while progress < 20
+          // we have an answer!
+          resolver.resolve(value: .pi)
+        }
+      }
+    }
+
+    // let the child `Deferred` keep a reference to our big computation
+    let validated = bigComputation().validate(predicate: { $0 > 3.14159 && $0 < 3.14160 })
+    let timeout = 0.1
+    validated.timeout(seconds: timeout, reason: String(timeout))
+
+    do {
+      print(validated.state)       // still waiting: no request yet
+      let pi = try validated.get() // make the request and wait for value
+      print(" ", pi)
+    }
+    catch Cancellation.timedOut(let message) {
+      print()
+      assert(message == String(timeout))
+    }
+  }
 }
