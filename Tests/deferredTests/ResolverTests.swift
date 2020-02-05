@@ -20,9 +20,9 @@ class ResolverTests: XCTestCase
     i.beginExecution()
     let value = nzRandom()
     i.resolve(value: value)
-    XCTAssert(d.isResolved)
-    XCTAssert(d.value == value)
-    XCTAssert(d.error == nil)
+    XCTAssertEqual(d.isResolved, true)
+    XCTAssertEqual(d.value, value)
+    XCTAssertEqual(d.error, nil)
 
     (i, d) = Deferred<Int, TestError>.CreatePair()
     i.beginExecution()
@@ -42,11 +42,11 @@ class ResolverTests: XCTestCase
       i.resolve(value: value)
     }
 
-    XCTAssert(d.isResolved == false)
+    XCTAssertEqual(d.isResolved, false)
 
     // Block until tbd becomes resolved
-    XCTAssert(d.value == value)
-    XCTAssert(d.error == nil)
+    XCTAssertEqual(d.value, value)
+    XCTAssertEqual(d.error, nil)
 
     // Try and fail to resolve tbd a second time.
     i.resolve(value: nzRandom())
@@ -66,13 +66,13 @@ class ResolverTests: XCTestCase
     var (i, d) = Deferred<Int, Error>.CreatePair()
     let reason = "unused"
     i.cancel(reason)
-    XCTAssert(d.value == nil)
+    XCTAssertEqual(d.value, nil)
     do {
       _ = try d.get()
       XCTFail()
     }
     catch Cancellation.canceled(let message) {
-      XCTAssert(message == reason)
+      XCTAssertEqual(message, reason)
     }
 
     let e = expectation(description: "Cancel before setting")
@@ -103,18 +103,13 @@ class ResolverTests: XCTestCase
   { // a Deferred that cannot be resolved normally.
     let first = Deferred<Int, Cancellation>() { _ in }
 
-    let other = first.map { XCTFail(String($0)) }
-    let third = other.map { XCTFail(String(describing: $0)) }
-
-    XCTAssert(first.isResolved == false)
-    XCTAssert(other.isResolved == false)
-    XCTAssert(third.isResolved == false)
+    let other = first.map { fatalError(String($0)) }
+    XCTAssertEqual(first.isResolved, false)
+    XCTAssertEqual(other.isResolved, false)
 
     first.cancel()
-
-    XCTAssertNil(first.value)
-    XCTAssertNil(other.value)
-    XCTAssertNil(third.value)
+    XCTAssertEqual(first.value, nil)
+    XCTAssertEqual(other.value, nil)
   }
 }
 
@@ -147,7 +142,7 @@ class ParallelTests: XCTestCase
     let resolved = combined.map { $0.flatMap({$0}) }
 
     let value = try resolved.get()
-    XCTAssert(value.count == count*count)
+    XCTAssertEqual(value.count, count*count)
     value.enumerated().forEach { XCTAssertEqual($0, $1) }
   }
 
@@ -161,7 +156,7 @@ class ParallelTests: XCTestCase
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
     let c = combine(d)
     let value = try c.get()
-    XCTAssert(value.count == count)
+    XCTAssertEqual(value.count, count)
   }
 
   func testParallel4()
@@ -173,6 +168,6 @@ class ParallelTests: XCTestCase
     }
 
     let c = deferreds.compactMap({ $0.error }).count
-    XCTAssert(c == 5)
+    XCTAssertEqual(c, 5)
   }
 }

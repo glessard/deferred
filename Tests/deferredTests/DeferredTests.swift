@@ -254,7 +254,7 @@ class DeferredTests: XCTestCase
 
     for (i,e) in cancellations.enumerated()
     {
-      XCTAssert(String(describing: e) == cancellationStrings[i])
+      XCTAssertEqual(String(describing: e), cancellationStrings[i])
     }
 
     let invalidations: [Invalidation] = [
@@ -267,7 +267,7 @@ class DeferredTests: XCTestCase
 
     for (i,e) in invalidations.enumerated()
     {
-      XCTAssert(String(describing: e) == invalidationStrings[i])
+      XCTAssertEqual(String(describing: e), invalidationStrings[i])
     }
   }
 }

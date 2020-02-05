@@ -166,7 +166,7 @@ class DeferredCombinationTimedTests: XCTestCase
       self.startMeasuring()
       let c = reduce(inputs, initial: 0, combine: +)
       let v = try? c.get()
-      XCTAssert(v == (iterations*(iterations+1)/2))
+      XCTAssertEqual(v, iterations*(iterations+1)/2)
       self.stopMeasuring()
     }
   }
@@ -186,7 +186,7 @@ class DeferredCombinationTimedTests: XCTestCase
         }
       }
       let v = try? c.get()
-      XCTAssert(v == (iterations*(iterations+1)/2))
+      XCTAssertEqual(v, iterations*(iterations+1)/2)
       self.stopMeasuring()
     }
   }
@@ -200,7 +200,7 @@ class DeferredCombinationTimedTests: XCTestCase
       self.startMeasuring()
       let c = combine(inputs)
       let v = try? c.get()
-      XCTAssert(v?.count == iterations)
+      XCTAssertEqual(v?.count, iterations)
       self.stopMeasuring()
     }
   }

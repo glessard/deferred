@@ -56,7 +56,7 @@ class DelayTests: XCTestCase
     let d1 = Deferred<Int, Never>(value: nzRandom())
     let d2 = d1.delay(until: .now() - 1.0)
     XCTAssertEqual(d1.value, d2.value)
-    XCTAssert(d1 === d2)
+    XCTAssertEqual(ObjectIdentifier(d1), ObjectIdentifier(d2))
   }
 
   func testDistantFutureDelay()
