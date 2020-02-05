@@ -83,7 +83,7 @@ class ResolverTests: XCTestCase
     i.resolve(value: nzRandom())
 
     waitForExpectations(timeout: 1.0)
-    XCTAssertNil(d.value)
+    XCTAssertEqual(d.value, nil)
     XCTAssertEqual(d.result, Cancellation.canceled(""))
   }
 

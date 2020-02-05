@@ -20,7 +20,7 @@ class DeferredTimeoutTests: XCTestCase
     XCTAssertEqual(t1.error, Cancellation.timedOut("a"))
 
     let t2 = Deferred<Int, NSError>(value: 0).timeout(after: .distantFuture)
-    XCTAssertNil(t2.error)
+    XCTAssertEqual(t2.error, nil)
 
     let t3 = Deferred<Int, Error>(task: { _ in }).timeout(seconds: 0.01, reason: "b")
     XCTAssertEqual(t3.error, Cancellation.timedOut("b"))
@@ -32,7 +32,7 @@ class DeferredTimeoutTests: XCTestCase
     XCTAssertEqual(t1.error, .timedOut("a"))
 
     let t2 = Deferred<Int, Cancellation>(value: 0).timeout(after: .distantFuture)
-    XCTAssertNil(t2.error)
+    XCTAssertEqual(t2.error, nil)
 
     let t3 = Deferred<Int, Cancellation>(task: { _ in }).timeout(seconds: 0.01, reason: "b")
     XCTAssertEqual(t3.error, .timedOut("b"))
@@ -44,7 +44,7 @@ class DeferredTimeoutTests: XCTestCase
     XCTAssertEqual(t1.error, .timedOut("a"))
 
     let t2 = Deferred<Int, Never>(value: 0).timeout(after: .distantFuture)
-    XCTAssertNil(t2.error)
+    XCTAssertEqual(t2.error, nil)
 
     let t3 = Deferred<Int, Never>(task: { _ in }).timeout(seconds: 0.01, reason: "b")
     XCTAssertEqual(t3.error, .timedOut("b"))

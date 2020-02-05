@@ -50,8 +50,8 @@ class DeferredExtrasTests: XCTestCase
     XCTAssertEqual(d1.error, nil)
 
     // bad operand, transform short-circuited
-    let d2 = badOperand.map(qos: .utility) { _ in XCTFail() }
-    XCTAssertNil(d2.value)
+    let d2 = badOperand.map(qos: .utility) { _ in fatalError() }
+    XCTAssertEqual(d2.value, nil)
     XCTAssertEqual(d2.error, TestError(error))
   }
 
@@ -80,7 +80,7 @@ class DeferredExtrasTests: XCTestCase
     XCTAssertEqual(d2.value, nil)
     XCTAssertEqual(d2.error, TestError(value*2))
     XCTAssertEqual(d1.value, value*2)
-    XCTAssertNil(d1.error)
+    XCTAssertEqual(d1.error, nil)
   }
 
   func testMapError()
@@ -93,7 +93,7 @@ class DeferredExtrasTests: XCTestCase
     // good operand, transform short-circuited
     let d1 = goodOperand.mapError { _ in fatalError(#function) }
     XCTAssertEqual(d1.value, value)
-    XCTAssertNil(d1.error)
+    XCTAssertEqual(d1.error, nil)
 
     // bad operand, transform executes
     let d2 = badOperand.mapError(qos: .default) { e in TestError(e.error*2) }
@@ -120,7 +120,7 @@ class DeferredExtrasTests: XCTestCase
     // good operand, transform short-circuited
     let d1 = goodOperand.recover(qos: .default) { e in XCTFail(); return Deferred(error: TestError(error)) }
     XCTAssertEqual(d1.value, value)
-    XCTAssertNil(d1.error)
+    XCTAssertEqual(d1.error, nil)
 
     // bad operand, transform throws (type 1)
     let d2 = badOperand.recover { error in Deferred { throw TestError(value) } }
@@ -135,7 +135,7 @@ class DeferredExtrasTests: XCTestCase
     // bad operand, transform executes
     let d3 = badOperand.recover { error in Deferred(value: Double(value)) }
     XCTAssertEqual(d3.value, Double(value))
-    XCTAssertNil(d3.error)
+    XCTAssertEqual(d3.error, nil)
 
     // test early return from notification block
     let reason = "reason"
@@ -256,7 +256,7 @@ class DeferredExtrasTests: XCTestCase
     d3.beginExecution()
 
     XCTAssertEqual(d1.value, value*2)
-    XCTAssertNil(d1.error)
+    XCTAssertEqual(d1.error, nil)
     XCTAssertEqual(d2.value, nil)
     XCTAssertEqual(d2.error, TestError(value*2))
     XCTAssertEqual(d3.value, nil)
