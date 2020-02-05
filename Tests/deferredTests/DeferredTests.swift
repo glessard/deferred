@@ -148,6 +148,7 @@ class DeferredTests: XCTestCase
     let e1 = expectation(description: #function + "-1")
     busy.notify(queue: .global(qos: .userInteractive)) {
       result in
+      XCTAssertEqual(result.value, try! result.get())
       e1.fulfill()
     }
 
@@ -269,5 +270,47 @@ class DeferredTests: XCTestCase
     {
       XCTAssertEqual(String(describing: e), invalidationStrings[i])
     }
+  }
+}
+
+extension Result: ResultWrapper
+{
+  public var result: Result<Success, Failure> { return self }
+}
+
+class ResultWrapperTests: XCTestCase
+{
+  func testAccessors()
+  {
+    let r = nzRandom()
+
+    var re = Result<Int, TestError>.success(r)
+    XCTAssertEqual(re.value, r)
+    XCTAssertEqual(re.error, nil)
+
+    re = .failure(TestError(r))
+    XCTAssertEqual(re.value, nil)
+    XCTAssertEqual(re.error, TestError(r))
+
+    let rn = Result<Int, Never>.success(r)
+    let rr = rn.value
+    XCTAssertEqual(rr, r)
+    XCTAssertEqual(rn.error, nil)
+  }
+
+  func testGet() throws
+  {
+    let r = nzRandom()
+
+    let re = Deferred<Never, TestError>(error: TestError(r))
+    do {
+      let _: Never = try re.get()
+    }
+    catch TestError.value(let e) {
+      XCTAssertEqual(e, r)
+    }
+
+    let rn = Deferred<Int, Never>(value: r)
+    XCTAssertEqual(rn.get(), r)
   }
 }

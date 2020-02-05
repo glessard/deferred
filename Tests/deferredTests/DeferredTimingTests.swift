@@ -35,7 +35,7 @@ class DeferredTimingTests: XCTestCase
 
       self.startMeasuring()
       trigger.resolve(value: (0, ref, ref))
-      let (iterations, tic, toc) = try! dt.get()
+      let (iterations, tic, toc) = dt.value
       self.stopMeasuring()
 
       let interval = toc.timeIntervalSince(tic)
@@ -61,7 +61,7 @@ class DeferredTimingTests: XCTestCase
       }
 
       let dt = start.map { start in Date().timeIntervalSince(start) }
-      let interval = try! dt.get()
+      let interval = dt.value
       self.stopMeasuring()
 
       // print("\(round(Double(interval*1e9)/Double(iterations))/1000) µs per notification")

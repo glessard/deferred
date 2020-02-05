@@ -165,7 +165,7 @@ class DeferredCombinationTimedTests: XCTestCase
       let inputs = (1...iterations).map { Deferred<Int, Never>(value: $0) }
       self.startMeasuring()
       let c = reduce(inputs, initial: 0, combine: +)
-      let v = try? c.get()
+      let v = c.get()
       XCTAssertEqual(v, iterations*(iterations+1)/2)
       self.stopMeasuring()
     }
@@ -185,7 +185,7 @@ class DeferredCombinationTimedTests: XCTestCase
           u in deferred.map { t in u+t }
         }
       }
-      let v = try? c.get()
+      let v = c.value
       XCTAssertEqual(v, iterations*(iterations+1)/2)
       self.stopMeasuring()
     }
@@ -199,8 +199,8 @@ class DeferredCombinationTimedTests: XCTestCase
       let inputs = (1...iterations).map { Deferred<Int, Never>(value: $0) }
       self.startMeasuring()
       let c = combine(inputs)
-      let v = try? c.get()
-      XCTAssertEqual(v?.count, iterations)
+      let v = c.value
+      XCTAssertEqual(v.count, iterations)
       self.stopMeasuring()
     }
   }
