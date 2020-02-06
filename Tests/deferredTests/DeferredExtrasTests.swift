@@ -50,8 +50,8 @@ class DeferredExtrasTests: XCTestCase
     XCTAssertEqual(d1.error, nil)
 
     // bad operand, transform short-circuited
-    let d2 = badOperand.map(qos: .utility) { _ in XCTFail() }
-    XCTAssertNil(d2.value)
+    let d2 = badOperand.map(qos: .utility) { _ in fatalError() }
+    XCTAssertEqual(d2.value, nil)
     XCTAssertEqual(d2.error, TestError(error))
   }
 
@@ -80,7 +80,7 @@ class DeferredExtrasTests: XCTestCase
     XCTAssertEqual(d2.value, nil)
     XCTAssertEqual(d2.error, TestError(value*2))
     XCTAssertEqual(d1.value, value*2)
-    XCTAssertNil(d1.error)
+    XCTAssertEqual(d1.error, nil)
   }
 
   func testMapError()
@@ -93,7 +93,7 @@ class DeferredExtrasTests: XCTestCase
     // good operand, transform short-circuited
     let d1 = goodOperand.mapError { _ in fatalError(#function) }
     XCTAssertEqual(d1.value, value)
-    XCTAssertNil(d1.error)
+    XCTAssertEqual(d1.error, nil)
 
     // bad operand, transform executes
     let d2 = badOperand.mapError(qos: .default) { e in TestError(e.error*2) }
@@ -107,7 +107,6 @@ class DeferredExtrasTests: XCTestCase
 
     // good operand, map from Never to something else
     let d4 = Deferred<Int, Never>(value: value).setFailureType(to: TestError.self)
-    // XCTAssert(d4.error is Optional<TestError>)
     XCTAssertEqual(d4.result, value)
   }
 
@@ -121,7 +120,7 @@ class DeferredExtrasTests: XCTestCase
     // good operand, transform short-circuited
     let d1 = goodOperand.recover(qos: .default) { e in XCTFail(); return Deferred(error: TestError(error)) }
     XCTAssertEqual(d1.value, value)
-    XCTAssertNil(d1.error)
+    XCTAssertEqual(d1.error, nil)
 
     // bad operand, transform throws (type 1)
     let d2 = badOperand.recover { error in Deferred { throw TestError(value) } }
@@ -136,7 +135,7 @@ class DeferredExtrasTests: XCTestCase
     // bad operand, transform executes
     let d3 = badOperand.recover { error in Deferred(value: Double(value)) }
     XCTAssertEqual(d3.value, Double(value))
-    XCTAssertNil(d3.error)
+    XCTAssertEqual(d3.error, nil)
 
     // test early return from notification block
     let reason = "reason"
@@ -162,7 +161,7 @@ class DeferredExtrasTests: XCTestCase
       if counter < retries { return Deferred(error: TestError(counter)) }
       return Deferred(value: counter)
     }
-    XCTAssert(r2.value == retries)
+    XCTAssertEqual(r2.value, retries)
   }
 
   func testRetrying2()
@@ -179,14 +178,14 @@ class DeferredExtrasTests: XCTestCase
       if counter < retries { return Deferred(error: TestError(counter)) }
       return Deferred(value: counter)
     }
-    XCTAssert(r2.value == retries)
+    XCTAssertEqual(r2.value, retries)
 
     let r3 = Deferred<Int, Error>.Retrying(retries, qos: .background) {
       () -> Deferred<Int, Error> in
       counter += 1
       return Deferred(error: TestError(counter))
     }
-    XCTAssert(r3.error as? TestError == TestError(2*retries))
+    XCTAssertEqual(r3.error, TestError(2*retries))
   }
 
   func testRetryTask()
@@ -196,24 +195,25 @@ class DeferredExtrasTests: XCTestCase
 
     var counter = 0
     let r1 = Deferred.RetryTask(retries, queue: queue) {
-      () in
+      () throws -> Int in
       counter += 1
       throw TestError(counter)
     }
-    XCTAssert(r1.value == nil)
-    XCTAssert(r1.error as? TestError == TestError(retries))
+    XCTAssertEqual(r1.value, nil)
+    XCTAssertEqual(r1.error, TestError(retries))
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    XCTAssert(r1.qos == .background)
+    XCTAssertEqual(r1.qos, .background)
 #endif
 
     let r2 = Deferred.RetryTask(retries, qos: .utility) {
+      () throws -> Int in
       counter += 1
       throw TestError(counter)
     }
-    XCTAssert(r2.value == nil)
-    XCTAssert(r2.error as? TestError == TestError(2*retries))
+    XCTAssertEqual(r2.value, nil)
+    XCTAssertEqual(r2.error, TestError(2*retries))
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    XCTAssert(r2.qos == .utility)
+    XCTAssertEqual(r2.qos, .utility)
 #endif
   }
 
@@ -256,7 +256,7 @@ class DeferredExtrasTests: XCTestCase
     d3.beginExecution()
 
     XCTAssertEqual(d1.value, value*2)
-    XCTAssertNil(d1.error)
+    XCTAssertEqual(d1.error, nil)
     XCTAssertEqual(d2.value, nil)
     XCTAssertEqual(d2.error, TestError(value*2))
     XCTAssertEqual(d3.value, nil)
@@ -365,16 +365,16 @@ class DeferredExtrasTests: XCTestCase
     let q = DispatchQueue.global(qos: .utility)
     let qb = Deferred(queue: q, task: { qos_class_self() }).enqueuing(at: .background, serially: false)
     // Verify that the block's QOS was adjusted and is different from the queue's
-    XCTAssert(qb.value == QOS_CLASS_UTILITY)
-    XCTAssert(qb.qos == DispatchQoS.background)
+    XCTAssertEqual(qb.value, QOS_CLASS_UTILITY)
+    XCTAssertEqual(qb.qos, DispatchQoS.background)
 
     let e1 = expectation(description: "e1")
     let q1 = Deferred<qos_class_t, Never>(qos: .background, value: qos_class_self())
     q1.onValue {
       qosv in
       // Verify that the QOS has been adjusted
-      XCTAssert(qosv != qos_class_self())
-      XCTAssert(qos_class_self() == QOS_CLASS_BACKGROUND)
+      XCTAssertNotEqual(qosv, qos_class_self())
+      XCTAssertEqual(qos_class_self(), QOS_CLASS_BACKGROUND)
       e1.fulfill()
     }
 
@@ -385,11 +385,11 @@ class DeferredExtrasTests: XCTestCase
     let e3 = expectation(description: "e3")
     let q3 = q2.map(qos: .userInitiated) {
       qosv -> qos_class_t in
-      XCTAssert(qosv == QOS_CLASS_UTILITY)
+      XCTAssertEqual(qosv, QOS_CLASS_UTILITY)
       // Verify that the QOS has changed
-      XCTAssert(qosv != qos_class_self())
+      XCTAssertNotEqual(qosv, qos_class_self())
       // This block is running at the requested QOS
-      XCTAssert(qos_class_self() == QOS_CLASS_USER_INITIATED)
+      XCTAssertEqual(qos_class_self(), QOS_CLASS_USER_INITIATED)
       e3.fulfill()
       return qos_class_self()
     }
@@ -399,12 +399,12 @@ class DeferredExtrasTests: XCTestCase
     q4.onValue {
       qosv in
       // Last block was in fact executing at QOS_CLASS_USER_INITIATED
-      XCTAssert(qosv == QOS_CLASS_USER_INITIATED)
+      XCTAssertEqual(qosv, QOS_CLASS_USER_INITIATED)
       // Last block wasn't executing at the queue's QOS
-      XCTAssert(qosv != QOS_CLASS_BACKGROUND)
+      XCTAssertNotEqual(qosv, QOS_CLASS_BACKGROUND)
       // This block is executing at the queue's QOS.
-      XCTAssert(qos_class_self() == QOS_CLASS_USER_INTERACTIVE)
-      XCTAssert(qos_class_self() != QOS_CLASS_BACKGROUND)
+      XCTAssertEqual(qos_class_self(), QOS_CLASS_USER_INTERACTIVE)
+      XCTAssertNotEqual(qos_class_self(), QOS_CLASS_BACKGROUND)
       e4.fulfill()
     }
 
@@ -591,6 +591,6 @@ class DeferredExtrasTests: XCTestCase
     // XCTAssertEqual(deferred.state, .waiting)
     let executed = deferred.execute
     XCTAssertEqual(executed.state, .executing)
-    XCTAssert(executed === deferred)
+    XCTAssertEqual(ObjectIdentifier(executed), ObjectIdentifier(deferred))
   }
 }

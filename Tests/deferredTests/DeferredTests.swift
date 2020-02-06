@@ -21,14 +21,14 @@ class DeferredTests: XCTestCase
     let d = Deferred<Int, Never>(value: value)
     XCTAssertEqual(d.value, value)
     XCTAssertEqual(d.state, .resolved)
-    XCTAssertNil(d.error)
+    XCTAssertEqual(d.error, nil)
   }
 
   func testError()
   {
     let value = nzRandom()
-    let d = Deferred<Void, TestError>(error: TestError(value))
-    XCTAssertNil(d.value)
+    let d = Deferred<Never, TestError>(error: TestError(value))
+    XCTAssertEqual(d.value, nil)
     XCTAssertEqual(d.state, .resolved)
     XCTAssertEqual(d.error, TestError(value))
   }
@@ -254,7 +254,7 @@ class DeferredTests: XCTestCase
 
     for (i,e) in cancellations.enumerated()
     {
-      XCTAssert(String(describing: e) == cancellationStrings[i])
+      XCTAssertEqual(String(describing: e), cancellationStrings[i])
     }
 
     let invalidations: [Invalidation] = [
@@ -267,7 +267,7 @@ class DeferredTests: XCTestCase
 
     for (i,e) in invalidations.enumerated()
     {
-      XCTAssert(String(describing: e) == invalidationStrings[i])
+      XCTAssertEqual(String(describing: e), invalidationStrings[i])
     }
   }
 }

@@ -19,6 +19,15 @@ func XCTAssertEqual<E: Error & Equatable>(_ error: Error?, _ target: E,
   }
 }
 
+func XCTAssertEqual(_ error: Error?, _ target: Error?,
+                    _ message: @autoclosure () -> String = "",
+                    file: StaticString = #file, line: UInt = #line)
+{ // a substantially bogus, last-resort tool, but kinda useful for XCTest
+  XCTAssertEqual(error.map { String(describing: $0) },
+                 target.map { String(describing: $0) },
+                 message(), file: file, line: line)
+}
+
 func XCTAssertEqual<Success: Equatable, Failure: Error>(_ result: Result<Success, Failure>?, _ value: Success,
                                                         _ message: @autoclosure () -> String = "",
                                                         file: StaticString = #file, line: UInt = #line)
