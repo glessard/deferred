@@ -155,7 +155,7 @@ class ParallelTests: XCTestCase
     let count = 20
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
     let c = combine(d)
-    let value = try c.get()
+    let value = c.value
     XCTAssertEqual(value.count, count)
   }
 

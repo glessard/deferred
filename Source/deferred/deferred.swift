@@ -458,26 +458,8 @@ extension Deferred
   }
 }
 
-extension Deferred
+extension Deferred: ResultWrapper
 {
-  // MARK: get data from a Deferred
-
-  /// Query the current state of this `Deferred`
-  /// - returns: a `deferredState.pointee` that describes this `Deferred`
-
-  public var state: DeferredState {
-    let state = CAtomicsLoad(deferredState, .acquire)
-    return state.tag
-  }
-
-  /// Query whether this `Deferred` has become resolved.
-  /// - returns: `true` iff this `Deferred` has become resolved.
-
-  public var isResolved: Bool {
-    return CAtomicsLoad(deferredState, .relaxed).isResolved
-  }
-
-
   /// Get this `Deferred`'s `Result`, blocking if necessary until it exists.
   ///
   /// When called on a `Deferred` that is already resolved, this call is non-blocking.
@@ -505,21 +487,25 @@ extension Deferred
     let resolved = resolvedPointer(from: state)!
     return resolved.pointee
   }
+}
 
-  /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
-  ///
-  /// If the `Deferred` is resolved with a `Failure`, that `Failure` is thrown.
-  ///
-  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
-  ///
-  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
-  ///
-  /// - returns: this `Deferred`'s resolved `Success`, or throws
-  /// - throws: this `Deferred`'s resolved `Failure` if it cannot return a `Success`
+extension Deferred
+{
+  // MARK: get data from a Deferred
 
-  public func get() throws -> Success
-  {
-    return try result.get()
+  /// Query the current state of this `Deferred`
+  /// - returns: a `deferredState.pointee` that describes this `Deferred`
+
+  public var state: DeferredState {
+    let state = CAtomicsLoad(deferredState, .acquire)
+    return state.tag
+  }
+
+  /// Query whether this `Deferred` has become resolved.
+  /// - returns: `true` iff this `Deferred` has become resolved.
+
+  public var isResolved: Bool {
+    return CAtomicsLoad(deferredState, .relaxed).isResolved
   }
 
   /// Get this `Deferred`'s `Result` if has been resolved, `nil` otherwise.
@@ -533,36 +519,6 @@ extension Deferred
     let state = CAtomicsLoad(deferredState, .acquire)
     guard let resolved = resolvedPointer(from: state) else { return nil }
     return resolved.pointee
-  }
-
-  /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
-  ///
-  /// If the `Deferred` is resolved with a `Failure`, return nil.
-  ///
-  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
-  ///
-  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
-  ///
-  /// - returns: this `Deferred`'s resolved value, or `nil`
-
-  public var value: Success? {
-    if case .success(let value) = result { return value }
-    return nil
-  }
-
-  /// Get this `Deferred`'s error state, blocking if necessary until it becomes resolved.
-  ///
-  /// If the `Deferred` is resolved with a `Success`, return nil.
-  ///
-  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
-  ///
-  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
-  ///
-  /// - returns: this `Deferred`'s resolved error state, or `nil`
-
-  public var error: Failure? {
-    if case .failure(let error) = result { return error }
-    return nil
   }
 
   /// Get the QoS of this `Deferred`'s queue
