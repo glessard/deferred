@@ -5,6 +5,8 @@
 
 extension Result
 {
+  /// Map this `Result`'s `Failure` type to `Error` (any Error).
+
   var withAnyError: Result<Success, Error> {
     switch self
     {
@@ -16,70 +18,75 @@ extension Result
 
 extension Result where Failure == Never
 {
-  func setFailureType<E: Error>(to: E.Type) -> Result<Success, E>
+  /// Set this `Result`'s `Failure` type to `NewError`
+  ///
+  /// - parameter to: the type of `Failure` to be used for the returned `Result`
+  /// - returns: a `Result` where the `Failure` type is unconditionally converted to `NewError`
+
+  func setFailureType<NewError: Error>(to: NewError.Type) -> Result<Success, NewError>
   {
     switch self
     {
-    case .success(let value): return Result<Success, E>.success(value)
+    case .success(let value): return Result<Success, NewError>.success(value)
     }
   }
 }
+
+/// A representation for a type that always contains a `Result`
 
 public protocol ResultWrapper
 {
   associatedtype Success
   associatedtype Failure: Error
 
+  /// The wrapped `Result`
+  ///
+  /// `result` must be implemented in order to conform to `ResultWrapper`.
+  /// Its performance characteristics will be inherited by the default implementations.
   var result: Result<Success, Failure> { get }
 
+  /// Obtain the wrapped `Success` case, or throw the `Failure`
+  ///
+  /// - returns: the `Success` value, if this `Result` represents a `Success`
+  /// - throws:  the `Failure` value, if this `Result` represents a `Failure`
   func get() throws -> Success
 
+  /// Obtain the `Success` value if the wrapped `Result` is a `Success`, or return `nil`
   var value: Success? { get }
+
+  /// Obtain the `Failure` value if the wrapped `Result` is a `Failure`, or return `nil`
   var error: Failure? { get }
 }
 
 extension ResultWrapper
 {
-  /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
+  /// Obtain the `Success` value if the wrapped `Result` is a `Success`, or return `nil`
   ///
-  /// If the `Deferred` is resolved with a `Failure`, return nil.
-  ///
-  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
-  ///
-  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
-  ///
-  /// - returns: this `Deferred`'s resolved value, or `nil`
+  /// The default implementation uses the `result` computed property,
+  /// and therefore inherits its performance characteristics.
 
   public var value: Success? {
     if case .success(let value) = result { return value }
     return nil
   }
 
-  /// Get this `Deferred`'s error state, blocking if necessary until it becomes resolved.
+  /// Obtain the `Failure` value if the wrapped `Result` is a `Failure`, or return `nil`
   ///
-  /// If the `Deferred` is resolved with a `Success`, return nil.
-  ///
-  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
-  ///
-  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
-  ///
-  /// - returns: this `Deferred`'s resolved error state, or `nil`
+  /// The default implementation uses the `result` computed property,
+  /// and therefore inherits its performance characteristics.
 
   public var error: Failure? {
     if case .failure(let error) = result { return error }
     return nil
   }
 
-  /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
+  /// Obtain the `Success` value if the wrapped `Result` is a `Success`, or throw the `Failure`.
   ///
-  /// If the `Deferred` is resolved with a `Failure`, that `Failure` is thrown.
+  /// The default implementation uses the `result` computed property,
+  /// and therefore inherits its performance characteristics.
   ///
-  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
-  ///
-  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
-  ///
-  /// - returns: this `Deferred`'s resolved `Success`, or throws
-  /// - throws: this `Deferred`'s resolved `Failure` if it cannot return a `Success`
+  /// - returns: this `ResultWrapper`'s `Success` value, or throws
+  /// - throws: this `ResultWrapper`'s `Failure` value if it cannot return a `Success`
 
   public func get() throws -> Success
   {
@@ -89,13 +96,10 @@ extension ResultWrapper
 
 extension ResultWrapper where Failure == Never
 {
-  /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
+  /// Obtain the `Success` value of the wrapped `Result`
   ///
-  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
-  ///
-  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
-  ///
-  /// - returns: this `Deferred`'s resolved `Success` value
+  /// The default implementation uses the `result` computed property,
+  /// and therefore inherits its performance characteristics.
 
   public var value: Success {
     switch result
@@ -104,16 +108,12 @@ extension ResultWrapper where Failure == Never
     }
   }
 
-  /// Get this `Deferred`'s value, blocking if necessary until it becomes resolved.
+  /// Obtain the `Success` value of the wrapped `Result`.
   ///
-  /// If the `Deferred` is resolved with a `Failure`, that `Failure` is thrown.
+  /// The default implementation uses the `result` computed property,
+  /// and therefore inherits its performance characteristics.
   ///
-  /// When called on a `Deferred` that is already resolved, this call is non-blocking.
-  ///
-  /// When called on a `Deferred` that is not resolved, this call blocks the executing thread.
-  ///
-  /// - returns: this `Deferred`'s resolved `Success`, or throws
-  /// - throws: this `Deferred`'s resolved `Failure` if it cannot return a `Success`
+  /// - returns: this `ResultWrapper`'s `Success` value
 
   public func get() -> Success
   {

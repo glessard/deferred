@@ -214,8 +214,6 @@ extension Deferred
   }
 
   /// Map this `Deferred`'s `Failure` type to `Error` (any Error).
-  ///
-  /// returns: a `Deferred` where the `Failure` type is unconditionally converted to `Error`
 
   public var withAnyError: Deferred<Success, Error> {
     return Deferred<Success, Error>(queue: queue) {
@@ -231,13 +229,18 @@ extension Deferred
 
 extension Deferred where Failure == Never
 {
-  public func setFailureType<E: Error>(to: E.Type) -> Deferred<Success, E>
+  /// Set this `Deferred`'s `Failure` type to `NewError`
+  ///
+  /// - parameter to: the type of `Failure` to be used for the returned `Result`
+  /// - returns: a `Result` where the `Failure` type is unconditionally converted to `NewError`
+
+  public func setFailureType<NewError: Error>(to: NewError.Type) -> Deferred<Success, NewError>
   {
-    return Deferred<Success, E>(queue: queue) {
+    return Deferred<Success, NewError>(queue: queue) {
       resolver in
       self.notify(queue: nil) {
         result in
-        resolver.resolve(result.setFailureType(to: E.self))
+        resolver.resolve(result.setFailureType(to: NewError.self))
       }
       resolver.retainSource(self)
     }
