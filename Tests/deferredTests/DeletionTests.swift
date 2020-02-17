@@ -44,6 +44,7 @@ class DeletionTests: XCTestCase
 
     witness.onValue { _ in }
     waitForExpectations(timeout: 1.0)
+    withExtendedLifetime(witness) {}
   }
 
   func testDeallocTBD1()
