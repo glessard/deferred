@@ -250,6 +250,12 @@ open class Deferred<Success, Failure: Error>
     return true
   }
 
+  // FIXME: Should be a conditional extension
+  // Unfortunately, it should be `where Cancellation is Failure`,
+  // which is not (yet) a valid condition.
+  // It might be nice to conform to the `Cancellable` protocol defined by `Combine`.
+  // For the moment, this is `open` for the benefit of `DeferredHTTP`. Is it necessary?
+
   /// Attempt to cancel this `Deferred`
   ///
   /// This method can only succeed if a `Cancellation` can be cast as a `Failure`.
