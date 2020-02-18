@@ -8,8 +8,17 @@
 
 public enum Cancellation: Error, Equatable, Hashable
 {
+#if compiler(>=5.1)
+  case canceled(String = "")
+  case timedOut(String = "")
+#else
   case canceled(String)
   case timedOut(String)
+
+  public static func canceled() -> Cancellation { return .canceled("") }
+  public static func timedOut() -> Cancellation { return .timedOut("") }
+#endif
+
   case notSelected // not selected in a race between multiple deferreds
 }
 

@@ -68,10 +68,10 @@ class DeferredTests: XCTestCase
     XCTAssertEqual(d2.peek(), nil)
     XCTAssertEqual(d2.state, .waiting)
 
-    d2.cancel(.timedOut(""))
+    d2.cancel(.timedOut())
 
     XCTAssertNotNil(d2.peek())
-    XCTAssertEqual(d2.peek(), .timedOut(""))
+    XCTAssertEqual(d2.peek(), .timedOut())
     XCTAssertEqual(d2.state, .resolved)
   }
 
