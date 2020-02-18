@@ -61,7 +61,6 @@ class DeletionTests: XCTestCase
     do {
       let tbd = DeallocWitness<Void, Never>(expectation(description: "will dealloc tbd 2"))
       do { _ = tbd.map { _ in XCTFail("Unexpected notification") } }
-      tbd.cancel()
     }
 
     waitForExpectations(timeout: 1.0)
