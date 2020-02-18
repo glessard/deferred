@@ -57,7 +57,6 @@ class ResolverTests: XCTestCase
     let r = Deferred<Int, Never>.CreatePair().resolver
 
     XCTAssertEqual(r.needsResolution, false)
-    XCTAssertEqual(r.cancel(), false)
     XCTAssertEqual(r.qos, .unspecified)
   }
 
@@ -79,7 +78,7 @@ class ResolverTests: XCTestCase
     (i, d) = Deferred<Int, Error>.CreatePair()
     d.onError { _ in e.fulfill() }
 
-    XCTAssertEqual(i.cancel(), true)
+    i.cancel()
     i.resolve(value: nzRandom())
 
     waitForExpectations(timeout: 1.0)

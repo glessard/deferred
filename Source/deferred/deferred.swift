@@ -212,11 +212,10 @@ open class Deferred<Success, Failure: Error>
   /// - parameter result: the intended `Result` to resolve this `Deferred`
   /// - returns: whether the call succesfully changed the state of this `Deferred`.
 
-  @discardableResult
-  fileprivate func resolve(_ result: Result<Success, Failure>) -> Bool
+  fileprivate func resolve(_ result: Result<Success, Failure>)
   {
     var state = CAtomicsLoad(deferredState, .relaxed)
-    guard state.tag != .resolved else { return false }
+    guard state.tag != .resolved else { return }
 
     let resolved = UnsafeMutablePointer<Result<Success, Failure>>.allocate(capacity: 1)
     resolved.initialize(to: result)
@@ -228,7 +227,7 @@ open class Deferred<Success, Failure: Error>
       {
         resolved.deinitialize(count: 1)
         resolved.deallocate()
-        return false
+        return
       }
       // The atomic compare-and-swap operation uses memory order `.acqrel`.
       // "release" ordering ensures visibility of changes to `resolvedPointer(from:)` above to another thread.
@@ -247,27 +246,21 @@ open class Deferred<Success, Failure: Error>
     }
 
     // This `Deferred` has been resolved
-    return true
   }
 
-  // FIXME: Should be a conditional extension
-  // Unfortunately, it should be `where Cancellation is Failure`,
-  // which is not (yet) a valid condition.
-  // It might be nice to conform to the `Cancellable` protocol defined by `Combine`.
-  // For the moment, this is `open` for the benefit of `DeferredHTTP`. Is it necessary?
-
-  /// Attempt to cancel this `Deferred`
+  /// Find out whether a cancellation attempt should proceed.
   ///
-  /// This method can only succeed if a `Cancellation` can be cast as a `Failure`.
+  /// This is a customization point for subclasses of `Deferred`, and
+  /// should not be called by client code.
   ///
-  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
-  /// - returns: whether the cancellation was performed successfully.
+  /// As `Deferred`'s cancellation operation does not occur in this
+  /// function, calling this is likely useless for client code.
+  ///
+  /// - returns: whether the `cancel()` function should proceed.
 
-  @discardableResult
-  open func cancel(_ error: Cancellation) -> Bool
+  open func attemptCancellation() -> Bool
   {
-    guard let error = error as? Failure else { return false }
-    return resolve(.failure(error))
+    return (Cancellation.canceled() is Failure)
   }
 
   // MARK: retain source
@@ -445,8 +438,25 @@ extension Deferred where Failure == Never
   }
 }
 
-extension Deferred
+// FIXME: Should be a single conditional extension
+// Unfortunately, it should be `where Cancellation is Failure`,
+// which is not (yet) a valid condition.
+// It might be nice to conform to the `Cancellable` protocol defined by `Combine`.
+
+extension Deferred where Failure == Cancellation
 {
+  /// Attempt to cancel this `Deferred`
+  ///
+  /// This method can only succeed if a `Cancellation` can be cast as a `Failure`.
+  ///
+  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
+  /// - returns: whether the cancellation was performed successfully.
+
+  public func cancel(_ error: Cancellation)
+  {
+    if attemptCancellation() { resolve(.failure(error)) }
+  }
+
   /// Attempt to cancel this `Deferred`
   ///
   /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
@@ -457,10 +467,39 @@ extension Deferred
   /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
   /// - returns: whether the cancellation was performed successfully.
 
-  @discardableResult
-  public final func cancel(_ reason: String = "") -> Bool
+  public func cancel(_ reason: String = "")
   {
-    return cancel(.canceled(reason))
+    cancel(.canceled(reason))
+  }
+}
+
+extension Deferred where Failure == Error
+{
+  /// Attempt to cancel this `Deferred`
+  ///
+  /// This method can only succeed if a `Cancellation` can be cast as a `Failure`.
+  ///
+  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
+  /// - returns: whether the cancellation was performed successfully.
+
+  public func cancel(_ error: Cancellation)
+  {
+    if attemptCancellation() { resolve(.failure(error)) }
+  }
+
+  /// Attempt to cancel this `Deferred`
+  ///
+  /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
+  /// ```
+  /// Deferred<Success>(error: DeferredError.canceled(reason))
+  /// ```
+  ///
+  /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
+  /// - returns: whether the cancellation was performed successfully.
+
+  public func cancel(_ reason: String = "")
+  {
+    cancel(.canceled(reason))
   }
 }
 
@@ -585,33 +624,6 @@ public struct Resolver<Success, Failure: Error>
     resolve(.failure(error))
   }
 
-  /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
-  ///
-  /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
-  /// ```
-  /// Deferred<Success>(error: DeferredError.canceled(reason))
-  /// ```
-  ///
-  /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
-  /// - returns: whether the cancellation was performed successfully.
-
-  @discardableResult
-  public func cancel(_ reason: String = "") -> Bool
-  {
-    return cancel(.canceled(reason))
-  }
-
-  /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
-  ///
-  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
-  /// - returns: whether the cancellation was performed successfully.
-
-  @discardableResult
-  public func cancel(_ error: Cancellation) -> Bool
-  {
-    return deferred?.cancel(error) ?? false
-  }
-
   /// Change the state of the underlying `Deferred` from `.waiting` to `.executing`
 
   public func beginExecution()
@@ -650,6 +662,66 @@ public struct Resolver<Success, Failure: Error>
   public func retainSource(_ source: AnyObject)
   {
     deferred?.retainSource(source)
+  }
+}
+
+// FIXME: Should be a single conditional extension
+// Unfortunately, it should be `where Cancellation is Failure`,
+// which is not (yet) a valid condition.
+
+extension Resolver where Failure == Cancellation
+{
+  /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
+  ///
+  /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
+  /// ```
+  /// Deferred<Success>(error: DeferredError.canceled(reason))
+  /// ```
+  ///
+  /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
+  /// - returns: whether the cancellation was performed successfully.
+
+  public func cancel(_ reason: String = "")
+  {
+    cancel(.canceled(reason))
+  }
+
+  /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
+  ///
+  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
+  /// - returns: whether the cancellation was performed successfully.
+
+  public func cancel(_ error: Cancellation)
+  {
+    deferred?.cancel(error)
+  }
+}
+
+extension Resolver where Failure == Error
+{
+  /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
+  ///
+  /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
+  /// ```
+  /// Deferred<Success>(error: DeferredError.canceled(reason))
+  /// ```
+  ///
+  /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
+  /// - returns: whether the cancellation was performed successfully.
+
+  public func cancel(_ reason: String = "")
+  {
+    cancel(.canceled(reason))
+  }
+
+  /// Attempt to cancel the underlying `Deferred`, and report on whether cancellation happened successfully.
+  ///
+  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
+  /// - returns: whether the cancellation was performed successfully.
+
+  public func cancel(_ error: Cancellation)
+  {
+    deferred?.cancel(error)
   }
 }
 

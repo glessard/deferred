@@ -141,7 +141,7 @@ class DeferredExtrasTests: XCTestCase
     let reason = "reason"
     let d4 = goodOperand.delay(.milliseconds(50))
     let r4 = d4.recover { e in Deferred(value: value) }
-    XCTAssertEqual(r4.cancel(reason), true)
+    r4.cancel(reason)
     XCTAssertEqual(r4.value, nil)
     XCTAssertEqual(r4.error as? Cancellation, .canceled(reason))
   }
@@ -335,7 +335,6 @@ class DeferredExtrasTests: XCTestCase
 
     let t2 = Deferred<Deferred<Int, Error>, Never>(value: Deferred(value: value).delay(seconds: 0.01))
     let d2 = t2.flatten()
-    t2.cancel()
     XCTAssertEqual(d2.value, value)
 
     let t3 = Deferred<Deferred<Int, Error>, Never>(value: Deferred(value: value)).delay(seconds: 0.01)
@@ -447,19 +446,19 @@ class DeferredExtrasTests: XCTestCase
     let e1 = expectation(description: #function)
     let d1 = d0.map { XCTFail(String($0)) }
     d1.onError { _ in e1.fulfill() }
-    XCTAssertEqual(d1.cancel(), true)
+    d1.cancel()
     XCTAssertEqual(d1.error, .canceled(""))
 
     let e2 = expectation(description: #function)
     let d2 = d0.tryMap { XCTFail(String($0)) }
     d2.onError { _ in e2.fulfill() }
-    XCTAssertEqual(d2.cancel(), true)
+    d2.cancel()
     XCTAssertEqual(d2.error, Cancellation.canceled(""))
 
     let e3 = expectation(description: #function)
     let d3 = d0.mapError { _ in TestError(0) as Error }
     d3.onError { _ in e3.fulfill() }
-    XCTAssertEqual(d3.cancel(), true)
+    d3.cancel()
     XCTAssertEqual(d3.error, Cancellation.canceled(""))
 
     d0.cancel("other")
@@ -473,19 +472,19 @@ class DeferredExtrasTests: XCTestCase
     let e1 = expectation(description: #function)
     let d1 = d0.flatMap { Deferred(value: XCTFail(String($0))) }
     d1.onError { _ in e1.fulfill() }
-    XCTAssertEqual(d1.cancel(), true)
+    d1.cancel()
     XCTAssertEqual(d1.error, .canceled(""))
 
     let e2 = expectation(description: #function)
     let d2 = d0.tryFlatMap { Deferred(value: XCTFail(String($0))) }
     d2.onError { _ in e2.fulfill() }
-    XCTAssertEqual(d2.cancel(), true)
+    d2.cancel()
     XCTAssertEqual(d2.error, Cancellation.canceled(""))
 
     let e3 = expectation(description: #function)
     let d3 = d0.flatMapError { _ in Deferred(error: TestError(0) as Error) }
     d3.onError { _ in e3.fulfill() }
-    XCTAssertEqual(d3.cancel(), true)
+    d3.cancel()
     XCTAssertEqual(d3.error, Cancellation.canceled(""))
 
     d0.cancel("other")
@@ -499,7 +498,7 @@ class DeferredExtrasTests: XCTestCase
     let e1 = expectation(description: #function)
     let d1 = d0.recover { _ in Deferred(error: TestError(0) as Error) }
     d1.onError { _ in e1.fulfill() }
-    XCTAssertEqual(d1.cancel(), true)
+    d1.cancel()
     XCTAssertEqual(d1.error, Cancellation.canceled(""))
 
     d0.cancel("other")
@@ -514,7 +513,7 @@ class DeferredExtrasTests: XCTestCase
     let e1 = expectation(description: #function)
     let d1 = d0.apply(transform: t0)
     d1.onError { _ in e1.fulfill() }
-    XCTAssertEqual(d1.cancel(), true)
+    d1.cancel()
     XCTAssertEqual(d1.error, Cancellation.canceled(""))
 
     // TODO: find a way to exercise the inner early return in `apply`

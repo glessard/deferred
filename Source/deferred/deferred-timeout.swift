@@ -174,6 +174,6 @@ extension Deferred where Failure == Never
   @discardableResult
   public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred<Success, Cancellation>
   {
-    return self.mapError(transform: { _ in Cancellation.timedOut("") }).timeout(after: deadline, reason: reason)
+    return self.setFailureType(to: Cancellation.self).timeout(after: deadline, reason: reason)
   }
 }

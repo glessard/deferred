@@ -68,10 +68,10 @@ class DeferredTests: XCTestCase
     XCTAssertEqual(d2.peek(), nil)
     XCTAssertEqual(d2.state, .waiting)
 
-    d2.cancel(.timedOut(""))
+    d2.cancel(.timedOut())
 
     XCTAssertNotNil(d2.peek())
-    XCTAssertEqual(d2.peek(), .timedOut(""))
+    XCTAssertEqual(d2.peek(), .timedOut())
     XCTAssertEqual(d2.state, .resolved)
   }
 
@@ -222,20 +222,14 @@ class DeferredTests: XCTestCase
   {
     // Cancel before calculation has run -- cancellation success
     let d1 = Deferred<Int, Error>(qos: .utility, task: { _ in })
-    XCTAssertEqual(d1.cancel(), true)
+    d1.cancel()
     XCTAssertEqual(d1.value, nil)
     XCTAssertEqual(d1.error as? Cancellation, .canceled(""))
 
     // Set before canceling -- cancellation failure
     let d2 = Deferred<Int, Cancellation>(value: nzRandom())
-    XCTAssertEqual(d2.cancel("message"), false)
+    d2.cancel("message")
     XCTAssertEqual(d2.error, nil)
-
-    // Attempt to cancel a non-cancellable `Deferred`
-    let d3 = Deferred { nzRandom() }
-    XCTAssertEqual(d3.cancel(), false)
-    XCTAssertEqual(d3.error, nil)
-    XCTAssertNotNil(d3.value)
   }
 
   func testErrorTypes()
