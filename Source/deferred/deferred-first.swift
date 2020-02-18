@@ -91,7 +91,7 @@ public func firstValue<Success, Failure, C: Collection>(_ deferreds: C, queue: D
     // clean up (closure also retains sources)
     first.notify {
       withExtendedLifetime(combined) {}
-      if cancelOthers { deferreds.forEach { $0.cancel(.notSelected) } }
+      if cancelOthers { deferreds.forEach { $0.notSelected() } }
     }
   }
 }
@@ -197,7 +197,7 @@ public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, queue: Dis
       // clean up (closure also retains sources)
       first.notify {
         withExtendedLifetime(combined) {}
-        if cancelOthers { values.forEach { $0.cancel(.notSelected) } }
+        if cancelOthers { values.forEach { $0.notSelected() } }
       }
     }
   }
@@ -249,7 +249,7 @@ public func firstResolved<Success, Failure, C>(_ deferreds: C, queue: DispatchQu
     for deferred in deferreds { deferred.notify(handler: first.resolve) }
 
     // clean up (closure also retains sources)
-    first.notify { if cancelOthers { deferreds.forEach { $0.cancel(.notSelected) } } }
+    first.notify { if cancelOthers { deferreds.forEach { $0.notSelected() } } }
   }
 }
 
@@ -307,7 +307,7 @@ public func firstResolved<Success, Failure, S>(_ deferreds: S, queue: DispatchQu
       }
 
       // clean up (closure also retains sources)
-      first.notify { if cancelOthers { sources.forEach { $0.cancel(.notSelected) } } }
+      first.notify { if cancelOthers { sources.forEach { $0.notSelected() } } }
     }
   }
 }
@@ -327,8 +327,8 @@ public func firstResolved<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
     resolver.notify {
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.cancel(.notSelected)
-        d2.cancel(.notSelected)
+        d1.notSelected()
+        d2.notSelected()
       }
     }
   }
@@ -356,9 +356,9 @@ public func firstResolved<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
     resolver.notify {
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.cancel(.notSelected)
-        d2.cancel(.notSelected)
-        d3.cancel(.notSelected)
+        d1.notSelected()
+        d2.notSelected()
+        d3.notSelected()
       }
     }
   }
@@ -389,10 +389,10 @@ public func firstResolved<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>
     resolver.notify {
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.cancel(.notSelected)
-        d2.cancel(.notSelected)
-        d3.cancel(.notSelected)
-        d4.cancel(.notSelected)
+        d1.notSelected()
+        d2.notSelected()
+        d3.notSelected()
+        d4.notSelected()
       }
     }
   }
@@ -469,8 +469,8 @@ public func firstValue<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
       withExtendedLifetime(combined) {}
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.cancel(.notSelected)
-        d2.cancel(.notSelected)
+        d1.notSelected()
+        d2.notSelected()
       }
     }
   }
@@ -506,9 +506,9 @@ public func firstValue<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
       withExtendedLifetime(combined) {}
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.cancel(.notSelected)
-        d2.cancel(.notSelected)
-        d3.cancel(.notSelected)
+        d1.notSelected()
+        d2.notSelected()
+        d3.notSelected()
       }
     }
   }
@@ -547,10 +547,10 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
       withExtendedLifetime(combined) {}
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.cancel(.notSelected)
-        d2.cancel(.notSelected)
-        d3.cancel(.notSelected)
-        d4.cancel(.notSelected)
+        d1.notSelected()
+        d2.notSelected()
+        d3.notSelected()
+        d4.notSelected()
       }
     }
   }
@@ -561,4 +561,18 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
   let o4 = select(input: d4, if: selected)
 
   return (o1, o2, o3, o4)
+}
+
+extension Deferred
+{
+  fileprivate func notSelected()
+  {
+    if Cancellation.notSelected is Failure
+    {
+      if let s = self as? Deferred<Success, Cancellation>
+      { s.cancel(.notSelected) }
+      else if let s = self as? Deferred<Success, Error>
+      { s.cancel(.notSelected) }
+    }
+  }
 }
