@@ -405,7 +405,7 @@ extension Deferred
 
 extension Deferred
 {
-  /// Flatten a `Deferred<Deferred<Success>, Failure>` to a `Deferred<Success, Failure>`
+  /// Flatten a `Deferred<Deferred<Success, Failure>, Failure>` to a `Deferred<Success, Failure>`
   ///
   /// In the right conditions, acts like a fast path for a flatMap with no transform.
   ///
@@ -462,7 +462,7 @@ extension Deferred
     }
   }
 
-  /// Flatten a `Deferred<Deferred<Success>, Never>` to a `Deferred<Success, Failure>`
+  /// Flatten a `Deferred<Deferred<Success, Failure>, Never>` to a `Deferred<Success, Failure>`
   ///
   /// In the right conditions, acts like a fast path for a flatMap with no transform.
   ///
