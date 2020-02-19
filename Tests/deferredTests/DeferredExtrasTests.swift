@@ -110,7 +110,47 @@ class DeferredExtrasTests: XCTestCase
     XCTAssertEqual(d4.result, value)
   }
 
-  func testRecover()
+  func testRecover1()
+  {
+    let value = nzRandom()
+    let error = nzRandom()
+    let goodOperand = Deferred<Int, Error>(value: value)
+    let badOperand  = Deferred<Double, TestError>(error: TestError(error))
+
+    // good operand, transform short-circuited
+    let d1 = goodOperand.recover(qos: .default) { _ -> Deferred<Int, Error> in fatalError(#function) }
+    XCTAssertEqual(d1.value, value)
+    XCTAssertEqual(d1.error, nil)
+
+    // bad operand, transform errors
+    let d2 = badOperand.recover { error in Deferred(error: TestError(error.error)) }
+    XCTAssertEqual(d2.value, nil)
+    XCTAssertEqual(d2.error, TestError(error))
+
+    // bad operand, transform executes later
+    let d3 = badOperand.recover { error in Deferred(value: Double(error.error)).delay(.milliseconds(10)) }
+    XCTAssertEqual(d3.value, Double(error))
+    XCTAssertEqual(d3.error, nil)
+  }
+
+  func testRetrying1()
+  {
+    let retries = 5
+    var counter = 0
+    let retried = Deferred<Int, TestError>.Retrying(retries, qos: .utility) {
+      () -> Deferred<Int, TestError> in
+      counter += 1
+      if counter < retries { return Deferred(error: TestError(counter)) }
+      return Deferred(value: counter)
+    }
+    XCTAssertEqual(retried.value, retries)
+
+    let errored = Deferred<Int, Error>.Retrying(0, task: { () -> Deferred<Int, Error> in fatalError() })
+    XCTAssertEqual(errored.value, nil)
+    XCTAssertNotNil(errored.error as? Invalidation)
+  }
+
+  func testRecover2()
   {
     let value = nzRandom()
     let error = nzRandom()
@@ -118,103 +158,45 @@ class DeferredExtrasTests: XCTestCase
     let badOperand  = Deferred<Double, Error>(error: TestError(error))
 
     // good operand, transform short-circuited
-    let d1 = goodOperand.recover(qos: .default) { e in XCTFail(); return Deferred(error: TestError(error)) }
+    let d1 = goodOperand.recover(qos: .default) { _ throws -> Int in fatalError(#function) }
     XCTAssertEqual(d1.value, value)
     XCTAssertEqual(d1.error, nil)
 
-    // bad operand, transform throws (type 1)
-    let d2 = badOperand.recover { error in Deferred { throw TestError(value) } }
+    // bad operand, transform errors
+    let d2 = badOperand.recover { try ($0 as? TestError).map { throw TestError($0.error) } ?? 0.0 }
     XCTAssertEqual(d2.value, nil)
-    XCTAssertEqual(d2.error, TestError(value))
-
-    // bad operand, transform throws (type 2)
-    let d5 = badOperand.recover { _ in throw TestError(value) }
-    XCTAssertEqual(d5.value, nil)
-    XCTAssertEqual(d5.error, TestError(value))
+    XCTAssertEqual(d2.error, TestError(error))
 
     // bad operand, transform executes
-    let d3 = badOperand.recover { error in Deferred(value: Double(value)) }
-    XCTAssertEqual(d3.value, Double(value))
+    let d3 = badOperand.recover { ($0 as? TestError).map { Double($0.error) } ?? 0.0 }
+    XCTAssertEqual(d3.value, Double(error))
     XCTAssertEqual(d3.error, nil)
-
-    // test early return from notification block
-    let reason = "reason"
-    let d4 = goodOperand.delay(.milliseconds(50))
-    let r4 = d4.recover { e in Deferred(value: value) }
-    r4.cancel(reason)
-    XCTAssertEqual(r4.value, nil)
-    XCTAssertEqual(r4.error as? Cancellation, .canceled(reason))
-  }
-
-  func testRetrying1()
-  {
-    let retries = 5
-    let queue = DispatchQueue(label: "test")
-
-    let r1 = Deferred<Void, Error>.Retrying(0, queue: queue, task: { Deferred<Void, Error>(task: {XCTFail()}) })
-    XCTAssertNotNil(r1.error as? Invalidation)
-
-    var counter = 0
-    let r2 = Deferred<Int, Error>.Retrying(retries, queue: queue) {
-      () -> Deferred<Int, Error> in
-      counter += 1
-      if counter < retries { return Deferred(error: TestError(counter)) }
-      return Deferred(value: counter)
-    }
-    XCTAssertEqual(r2.value, retries)
   }
 
   func testRetrying2()
   {
     let retries = 5
-
-    let r1 = Deferred<Void, Error>.Retrying(0, task: { Deferred<Void, Error>(task: {XCTFail()}) })
-    XCTAssertNotNil(r1.error as? Invalidation)
-
-    var counter = 0
-    let r2 = Deferred<Int, Error>.Retrying(retries) {
-      () -> Deferred<Int, Error> in
-      counter += 1
-      if counter < retries { return Deferred(error: TestError(counter)) }
-      return Deferred(value: counter)
-    }
-    XCTAssertEqual(r2.value, retries)
-
-    let r3 = Deferred<Int, Error>.Retrying(retries, qos: .background) {
-      () -> Deferred<Int, Error> in
-      counter += 1
-      return Deferred(error: TestError(counter))
-    }
-    XCTAssertEqual(r3.error, TestError(2*retries))
-  }
-
-  func testRetryTask()
-  {
-    let retries = 5
     let queue = DispatchQueue(label: "test", qos: .background)
 
-    var counter = 0
-    let r1 = Deferred.RetryTask(retries, queue: queue) {
-      () throws -> Int in
-      counter += 1
-      throw TestError(counter)
+    var counter = retries+retries-1
+    func transform() throws -> Int
+    {
+      counter -= 1
+      guard counter <= 0 else { throw TestError(counter) }
+      return counter
     }
-    XCTAssertEqual(r1.value, nil)
-    XCTAssertEqual(r1.error, TestError(retries))
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    XCTAssertEqual(r1.qos, .background)
-#endif
 
-    let r2 = Deferred.RetryTask(retries, qos: .utility) {
-      () throws -> Int in
-      counter += 1
-      throw TestError(counter)
-    }
-    XCTAssertEqual(r2.value, nil)
-    XCTAssertEqual(r2.error, TestError(2*retries))
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    XCTAssertEqual(r2.qos, .utility)
-#endif
+    let r1 = Deferred.Retrying(retries, queue: queue, task: transform)
+    XCTAssertEqual(r1.value, nil)
+    XCTAssertEqual(r1.error, TestError(retries-1))
+
+    let r2 = Deferred.Retrying(retries, qos: .utility, task: transform)
+    XCTAssertEqual(r2.value, 0)
+    XCTAssertEqual(r2.error, nil)
+
+    let r3 = Deferred.Retrying(0, task: { Double.nan })
+    XCTAssertEqual(r3.value, nil)
+    XCTAssertNotNil(r3.error as? Invalidation)
   }
 
   func testFlatMap()
