@@ -11,8 +11,8 @@ then
 
   if [[ "$TRAVIS_OS_NAME" == "linux" ]]
   then
-    PLATFORM="ubuntu1604"
-    BASENAME="${COMPILER}-ubuntu16.04"
+    PLATFORM="ubuntu1804"
+    BASENAME="${COMPILER}-ubuntu18.04"
 
     # install swift
     cd ..
