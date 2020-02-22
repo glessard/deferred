@@ -58,6 +58,12 @@ class DeferredTests: XCTestCase
     XCTAssertEqual(d.state, .resolved)
   }
 
+  func testSynchronousInit()
+  {
+    let d1 = Deferred<Int, Cancellation>(notifyingAt: .current) { _ in }
+    XCTAssertEqual(d1.state, .executing)
+  }
+
   func testPeek()
   {
     let value = nzRandom()
