@@ -132,7 +132,7 @@ open class Deferred<Success, Failure: Error>
     CAtomicsInitialize(deferredState, Int(resolved, tag: .resolved))
   }
 
-  /// Initialize with a task to be computed on the specified queue
+  /// Initialize with a task to be computed in the background, on the specified queue
   ///
   /// - parameter queue: the `DispatchQueue` on which the computation (and notifications) will be executed
   /// - parameter task:  the computation to be performed
@@ -143,6 +143,20 @@ open class Deferred<Success, Failure: Error>
     let taskp = UnsafeMutablePointer<DeferredTask<Success, Failure>>.allocate(capacity: 1)
     taskp.initialize(to: DeferredTask(task: task))
     CAtomicsInitialize(deferredState, Int(taskp, tag: .waiting))
+  }
+
+  /// Initialize with a task to be executed immediately
+  ///
+  /// The closure received as a parameter is executed immediately, on the current thread.
+  ///
+  /// - parameter queue: the `DispatchQueue` on which the notifications will be executed
+  /// - parameter task:  the computation to be performed
+
+  public init(notifyingOn queue: DispatchQueue, synchronous task: (Resolver<Success, Failure>) -> Void)
+  {
+    self.queue = queue
+    CAtomicsInitialize(deferredState, .executing)
+    task(Resolver(self))
   }
 
   // MARK: convenience initializers
@@ -156,6 +170,19 @@ open class Deferred<Success, Failure: Error>
   {
     let queue = DispatchQueue(label: "deferred", qos: qos)
     self.init(queue: queue, task: task)
+  }
+
+  /// Initialize with a task to be executed immediately
+  ///
+  /// The closure received as a parameter is executed immediately, on the current thread.
+  ///
+  /// - parameter qos:  the QoS at which the notifications will be performed.
+  /// - parameter task: the computation to be performed.
+
+  public convenience init(notifyingAt qos: DispatchQoS, synchronous task: (Resolver<Success, Failure>) -> Void)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(notifyingOn: queue, synchronous: task)
   }
 
   /// Initialize as resolved with a `Success`
