@@ -11,8 +11,14 @@ then
 
   if [[ "$TRAVIS_OS_NAME" == "linux" ]]
   then
-    PLATFORM="ubuntu1804"
-    BASENAME="${COMPILER}-ubuntu18.04"
+    if [[ "$TRAVIS_DIST" == "bionic" ]]
+    then
+      PLATFORM="ubuntu1804"
+      BASENAME="${COMPILER}-ubuntu18.04"
+    else
+      echo "Unexpected linux distribution in use"
+      exit 1
+    fi
 
     # install swift
     cd ..
