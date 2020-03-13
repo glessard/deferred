@@ -126,6 +126,7 @@ extension DeferredTests {
         ("testNotifyWaiters", testNotifyWaiters),
         ("testPeek", testPeek),
         ("testState", testState),
+        ("testSynchronousInit", testSynchronousInit),
         ("testValue", testValue),
         ("testValueBlocks", testValueBlocks),
         ("testValueUnblocks", testValueUnblocks),
