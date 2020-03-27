@@ -18,6 +18,9 @@ jobs:
     - os: linux
       env: SWIFT=5.1.5
 
+    - os: linux
+      env: SWIFT=5.2
+
 before_install:
   - clang --version
   - . Utilities/install-swift.sh
