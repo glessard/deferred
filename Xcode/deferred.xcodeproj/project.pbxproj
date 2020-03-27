@@ -10,6 +10,8 @@
 		0305DD1623875A420086343E /* deferred-delay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0305DD0D23875A410086343E /* deferred-delay.swift */; };
 		0305DD1723875A420086343E /* deferred-timeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0305DD1523875A410086343E /* deferred-timeout.swift */; };
 		03110CEE20D2069F00F4B44B /* deferred.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03B4E06D1C14003B00F4B44B /* deferred.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		031335DC242E97F30086343E /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03DBB0BE2379CE010086343E /* CAtomics.framework */; };
+		031335DD242E97F30086343E /* CAtomics.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 03DBB0BE2379CE010086343E /* CAtomics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		032B4938237B43480086343E /* CAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 03DBB0BE2379CE010086343E /* CAtomics.framework */; };
 		032F0AA91E4454D600F4B44B /* DeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038147591E4138BA00F4B44B /* DeletionTests.swift */; };
 		033928191F8C099700F4B44B /* deferred-first.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033928181F8C099700F4B44B /* deferred-first.swift */; };
@@ -179,6 +181,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				03FC96F821779E2800F4B44B /* CurrentQoS.framework in Embed Frameworks */,
+				031335DD242E97F30086343E /* CAtomics.framework in Embed Frameworks */,
 				03110CEE20D2069F00F4B44B /* deferred.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -261,6 +264,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03FC96F721779E1500F4B44B /* CurrentQoS.framework in Frameworks */,
+				031335DC242E97F30086343E /* CAtomics.framework in Frameworks */,
 				03B776A420CAED2F00F4B44B /* deferred.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
