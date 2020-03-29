@@ -280,7 +280,7 @@ class DeferredSelectionTests: XCTestCase
     s2.notify { _ in e2.fulfill() }
     r2.resolve(value: nzRandom())
 
-    waitForExpectations(timeout: 1.0) { _ in _ = d1.cancel() }
+    waitForExpectations(timeout: 1.0) { _ in d1.cancel() }
     XCTAssertEqual(s2.value, d2.value)
     XCTAssertEqual(s1.error, Cancellation.notSelected)
     XCTAssertEqual(d1.error, Cancellation.notSelected)
