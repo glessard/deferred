@@ -109,9 +109,10 @@ class DeferredSelectionTests: XCTestCase
 
     let count = 10
     let first = noValue(count)
-    XCTAssertEqual(first.error, TestError(count-1))
+    first.onError { XCTAssertEqual($0, TestError(count-1)) }
 
     waitForExpectations(timeout: 1.0)
+    withExtendedLifetime(first) {}
   }
 
   func testFirstValueSequenceError() throws
@@ -129,9 +130,10 @@ class DeferredSelectionTests: XCTestCase
 
     let count = 10
     let first = noValue(count)
-    XCTAssertEqual(first.error, TestError(count-1))
+    first.onError { XCTAssertEqual($0, TestError(count-1)) }
 
     waitForExpectations(timeout: 1.0)
+    withExtendedLifetime(first) {}
   }
 
   func testFirstResolvedCollection() throws
