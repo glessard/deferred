@@ -7,7 +7,7 @@
 //
 
 import Dispatch
-import CAtomics
+import Atomics
 
 /// An asynchronous computation.
 ///
@@ -29,10 +29,11 @@ open class Deferred<Success, Failure: Error>
 {
   let queue: DispatchQueue
 
-  private let deferredState = UnsafeMutablePointer<AtomicInt>.allocate(capacity: 1)
+  private var deferredState: UnsafeAtomic<Int> { return UnsafeAtomic<Int>(at: storage) }
+  private let storage = UnsafeMutablePointer<UnsafeAtomic<Int>.Storage>.allocate(capacity: 1)
 
   deinit {
-    let current = CAtomicsLoad(deferredState, .acquire)
+    let current = deferredState.destroy()
     if let resolved = current.resolution(for: Deferred.self)
     {
       resolved.deinitialize(count: 1)
@@ -47,7 +48,6 @@ open class Deferred<Success, Failure: Error>
       taskp.deinitialize(count: 1)
       taskp.deallocate()
     }
-    deferredState.deallocate()
   }
 
   // MARK: designated initializers
@@ -55,7 +55,7 @@ open class Deferred<Success, Failure: Error>
   fileprivate init(queue: DispatchQueue)
   {
     self.queue = queue
-    CAtomicsInitialize(deferredState, Int(state: .waiting))
+    storage.initialize(to: .init(Int(state: .waiting)))
   }
 
   /// Initialize as resolved with a `Result`
@@ -68,7 +68,7 @@ open class Deferred<Success, Failure: Error>
     self.queue = queue
     let resolved = UnsafeMutablePointer<Result<Success, Failure>>.allocate(capacity: 1)
     resolved.initialize(to: result)
-    CAtomicsInitialize(deferredState, Int(resolved: resolved))
+    storage.initialize(to: .init(Int(resolved: resolved)))
   }
 
   /// Initialize with a task to be computed in the background, on the specified queue
@@ -81,7 +81,7 @@ open class Deferred<Success, Failure: Error>
     self.queue = queue
     let taskp = UnsafeMutablePointer<DeferredTask<Success, Failure>>.allocate(capacity: 1)
     taskp.initialize(to: DeferredTask(task: task))
-    CAtomicsInitialize(deferredState, Int(task: taskp))
+    storage.initialize(to: .init(Int(task: taskp)))
   }
 
   /// Initialize with a task to be executed immediately
@@ -94,7 +94,7 @@ open class Deferred<Success, Failure: Error>
   public init(notifyingOn queue: DispatchQueue, synchronous task: (Resolver<Success, Failure>) -> Void)
   {
     self.queue = queue
-    CAtomicsInitialize(deferredState, Int(state: .executing))
+    storage.initialize(to: .init(Int(state: .executing)))
     task(Resolver(self))
   }
 
@@ -180,14 +180,14 @@ open class Deferred<Success, Failure: Error>
 
   fileprivate func resolve(_ result: Result<Success, Failure>)
   {
-    var current = CAtomicsLoad(deferredState, .relaxed)
+    var (done, current) = (false, deferredState.load(ordering: .relaxed))
     guard current.state != .resolved else { return }
 
     let resolved = UnsafeMutablePointer<Result<Success, Failure>>.allocate(capacity: 1)
     resolved.initialize(to: result)
 
     let final = Int(resolved: resolved)
-    current = CAtomicsLoad(deferredState, .relaxed)
+    current = deferredState.load(ordering: .relaxed)
     repeat {
       if current.state == .resolved
       {
@@ -198,7 +198,10 @@ open class Deferred<Success, Failure: Error>
       // The atomic compare-and-swap operation uses memory order `.acqrel`.
       // "release" ordering ensures visibility of changes to `resolvedPointer(from:)` above to another thread.
       // "acquire" ordering ensures visibility of changes to `waiterQueue(from:)` below from another thread.
-    } while !CAtomicsCompareAndExchangeWeak(deferredState, &current, final, .acqrel, .relaxed)
+      (done, current) = deferredState.weakCompareExchange(expected: current, desired: final,
+                                                          successOrdering: .acquiringAndReleasing,
+                                                          failureOrdering: .relaxed)
+    } while !done
 
     precondition(current.state != .resolved)
     if let waiters = current.waiterQueue(for: Deferred.self)
@@ -239,7 +242,7 @@ open class Deferred<Success, Failure: Error>
 
   fileprivate func retainSource(_ source: AnyObject)
   {
-    let current = CAtomicsLoad(deferredState, .relaxed)
+    let current = deferredState.load(ordering: .relaxed)
     if current.state != .resolved
     {
       let waiter = UnsafeMutablePointer<Waiter<Success, Failure>>.allocate(capacity: 1)
@@ -258,7 +261,7 @@ open class Deferred<Success, Failure: Error>
 
   private func enqueueWaiter(waiter: UnsafeMutablePointer<Waiter<Success, Failure>>) -> Bool
   {
-    var current = CAtomicsLoad(deferredState, .relaxed)
+    var (done, current) = (false, deferredState.load(ordering: .relaxed))
     let desired = Int(waiter: waiter)
     repeat {
       if current.state == .resolved { return false }
@@ -268,7 +271,10 @@ open class Deferred<Success, Failure: Error>
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-    } while !CAtomicsCompareAndExchangeWeak(deferredState, &current, desired, .release, .relaxed)
+      (done, current) = deferredState.weakCompareExchange(expected: current, desired: desired,
+                                                          successOrdering: .releasing,
+                                                          failureOrdering: .relaxed)
+    } while !done
 
     if let taskp = current.deferredTask(for: Deferred.self)
     { // initial task needs to run
@@ -300,7 +306,7 @@ open class Deferred<Success, Failure: Error>
 
   open func notify(queue: DispatchQueue? = nil, boostQoS: Bool = true, handler: @escaping (_ result: Result<Success, Failure>) -> Void)
   {
-    var current = CAtomicsLoad(deferredState, .acquire)
+    var current = deferredState.load(ordering: .acquiring)
     if current.state != .resolved
     {
       let waiter = UnsafeMutablePointer<Waiter<Success, Failure>>.allocate(capacity: 1)
@@ -319,7 +325,7 @@ open class Deferred<Success, Failure: Error>
       // this Deferred has become resolved; clean up
       waiter.deinitialize(count: 1)
       waiter.deallocate()
-      current = CAtomicsLoad(deferredState, .acquire)
+      current = deferredState.load(ordering: .acquiring)
     }
 
     // this Deferred is resolved
@@ -332,7 +338,7 @@ open class Deferred<Success, Failure: Error>
 
   public func beginExecution()
   {
-    var current = CAtomicsLoad(deferredState, .relaxed)
+    var (done, current) = (false, deferredState.load(ordering: .relaxed))
     let desired = Int(state: .executing)
     repeat {
       guard current.state == .waiting else { return }
@@ -342,7 +348,10 @@ open class Deferred<Success, Failure: Error>
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-    } while !CAtomicsCompareAndExchangeWeak(deferredState, &current, desired, .release, .relaxed)
+      (done, current) = deferredState.weakCompareExchange(expected: current, desired: desired,
+                                                          successOrdering: .releasing,
+                                                          failureOrdering: .relaxed)
+    } while !done
 
     if let taskp = current.deferredTask(for: Deferred.self) { executeDeferredTask(taskp) }
   }
@@ -482,7 +491,7 @@ extension Deferred: ResultWrapper
   /// - returns: this `Deferred`'s `Result`
 
   public var result: Result<Success, Failure> {
-    var current = CAtomicsLoad(deferredState, .acquire)
+    var current = deferredState.load(ordering: .acquiring)
     if current.state != .resolved
     {
       if let qosClass = DispatchQoS.QoSClass.current, qosClass > queue.qos.qosClass
@@ -493,7 +502,7 @@ extension Deferred: ResultWrapper
       let s = DispatchSemaphore(value: 0)
       self.notify(boostQoS: false, handler: { _ in s.signal() })
       s.wait()
-      current = CAtomicsLoad(deferredState, .acquire)
+      current = deferredState.load(ordering: .acquiring)
     }
 
     // this Deferred is resolved
@@ -510,14 +519,14 @@ extension Deferred
   /// - returns: a `deferredState.pointee` that describes this `Deferred`
 
   public var state: DeferredState {
-    return CAtomicsLoad(deferredState, .relaxed).state
+    return deferredState.load(ordering: .relaxed).state
   }
 
   /// Query whether this `Deferred` has become resolved.
   /// - returns: `true` iff this `Deferred` has become resolved.
 
   public var isResolved: Bool {
-    return CAtomicsLoad(deferredState, .relaxed).state == .resolved
+    return deferredState.load(ordering: .relaxed).state == .resolved
   }
 
   /// Get this `Deferred`'s `Result` if has been resolved, `nil` otherwise.
@@ -528,7 +537,7 @@ extension Deferred
 
   public func peek() -> Result<Success, Failure>?
   {
-    let current = CAtomicsLoad(deferredState, .acquire)
+    let current = deferredState.load(ordering: .acquiring)
     guard let resolved = current.resolution(for: Deferred.self) else { return nil }
     return resolved.pointee
   }
