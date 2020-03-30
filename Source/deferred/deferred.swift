@@ -569,8 +569,7 @@ extension Deferred
   /// - returns: a `deferredState.pointee` that describes this `Deferred`
 
   public var state: DeferredState {
-    let state = CAtomicsLoad(deferredState, .acquire)
-    return state.tag
+    return CAtomicsLoad(deferredState, .relaxed).tag
   }
 
   /// Query whether this `Deferred` has become resolved.
