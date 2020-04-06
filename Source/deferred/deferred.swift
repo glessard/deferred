@@ -7,7 +7,7 @@
 //
 
 import Dispatch
-import Atomics
+import SwiftCompatibleAtomics
 
 /// An asynchronous computation.
 ///

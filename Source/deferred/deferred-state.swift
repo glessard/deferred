@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import protocol Atomics.AtomicValue
+import protocol SwiftCompatibleAtomics.AtomicValue
 
 /// The possible states of a `Deferred`.
 ///
