@@ -29,8 +29,8 @@ open class Deferred<Success, Failure: Error>
 {
   let queue: DispatchQueue
 
-  private var deferredState: UnsafeAtomic<Int> { return UnsafeAtomic<Int>(at: storage) }
-  private let storage = UnsafeMutablePointer<UnsafeAtomic<Int>.Storage>.allocate(capacity: 1)
+  private var deferredState: UnsafeAtomic<InternalState> { return UnsafeAtomic(at: storage) }
+  private let storage = UnsafeMutablePointer<UnsafeAtomic<InternalState>.Storage>.allocate(capacity: 1)
 
   deinit {
     let current = deferredState.destroy()
@@ -55,7 +55,7 @@ open class Deferred<Success, Failure: Error>
   fileprivate init(queue: DispatchQueue)
   {
     self.queue = queue
-    storage.initialize(to: .init(Int(state: .waiting)))
+    storage.initialize(to: .init(InternalState(state: .waiting)))
   }
 
   /// Initialize as resolved with a `Result`
@@ -68,7 +68,7 @@ open class Deferred<Success, Failure: Error>
     self.queue = queue
     let resolved = UnsafeMutablePointer<Result<Success, Failure>>.allocate(capacity: 1)
     resolved.initialize(to: result)
-    storage.initialize(to: .init(Int(resolved: resolved)))
+    storage.initialize(to: .init(InternalState(resolved: resolved)))
   }
 
   /// Initialize with a task to be computed in the background, on the specified queue
@@ -81,7 +81,7 @@ open class Deferred<Success, Failure: Error>
     self.queue = queue
     let taskp = UnsafeMutablePointer<DeferredTask<Success, Failure>>.allocate(capacity: 1)
     taskp.initialize(to: DeferredTask(task: task))
-    storage.initialize(to: .init(Int(task: taskp)))
+    storage.initialize(to: .init(InternalState(task: taskp)))
   }
 
   /// Initialize with a task to be executed immediately
@@ -94,7 +94,7 @@ open class Deferred<Success, Failure: Error>
   public init(notifyingOn queue: DispatchQueue, synchronous task: (Resolver<Success, Failure>) -> Void)
   {
     self.queue = queue
-    storage.initialize(to: .init(Int(state: .executing)))
+    storage.initialize(to: .init(InternalState(state: .executing)))
     task(Resolver(self))
   }
 
@@ -186,7 +186,7 @@ open class Deferred<Success, Failure: Error>
     let resolved = UnsafeMutablePointer<Result<Success, Failure>>.allocate(capacity: 1)
     resolved.initialize(to: result)
 
-    let final = Int(resolved: resolved)
+    let final = InternalState(resolved: resolved)
     current = deferredState.load(ordering: .relaxed)
     repeat {
       if current.state == .resolved
@@ -262,7 +262,7 @@ open class Deferred<Success, Failure: Error>
   private func enqueueWaiter(waiter: UnsafeMutablePointer<Waiter<Success, Failure>>) -> Bool
   {
     var (done, current) = (false, deferredState.load(ordering: .relaxed))
-    let desired = Int(waiter: waiter)
+    let desired = InternalState(waiter: waiter)
     repeat {
       if current.state == .resolved { return false }
 
@@ -339,7 +339,7 @@ open class Deferred<Success, Failure: Error>
   public func beginExecution()
   {
     var (done, current) = (false, deferredState.load(ordering: .relaxed))
-    let desired = Int(state: .executing)
+    let desired = InternalState(state: .executing)
     repeat {
       guard current.state == .waiting else { return }
       // execution state has not yet been marked as begun

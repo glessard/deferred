@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import protocol Atomics.AtomicValue
 
 /// The possible states of a `Deferred`.
 ///
@@ -30,16 +31,23 @@ struct DeferredTask<Success, Failure: Error>
 
 /// Express the internal state of a `Deferred`
 
-extension Int
+struct InternalState: AtomicValue, RawRepresentable
 {
+  var rawValue: Int
+
+  init(rawValue: Int)
+  {
+    self.rawValue = rawValue
+  }
+
   init(state: DeferredState)
   {
-    self = state.rawValue & stateMask
+    rawValue = state.rawValue & stateMask
   }
 
   private init(_ pointer: UnsafeMutableRawPointer, state: DeferredState)
   {
-    self = Int(bitPattern: pointer) | (state.rawValue & stateMask)
+    rawValue = Int(bitPattern: pointer) | (state.rawValue & stateMask)
   }
 
   init<Success, Failure>(resolved: UnsafeMutablePointer<Result<Success, Failure>>)
@@ -57,8 +65,8 @@ extension Int
     self.init(waiter, state: .executing)
   }
 
-  var state: DeferredState { return DeferredState(rawValue: self & stateMask)! }
-  private var pointer: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: self & ~stateMask) }
+  var state: DeferredState { return DeferredState(rawValue: rawValue & stateMask)! }
+  private var pointer: UnsafeMutableRawPointer? { return UnsafeMutableRawPointer(bitPattern: rawValue & ~stateMask) }
 
   /// Get a pointer to a `DeferredTask` that will resolve this `Deferred`
 
