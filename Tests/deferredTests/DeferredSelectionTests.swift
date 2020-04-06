@@ -2,8 +2,8 @@
 //  DeferredSelectionTests.swift
 //  deferredTests
 //
-//  Created by Guillaume Lessard on 5/2/19.
-//  Copyright © 2019 Guillaume Lessard. All rights reserved.
+//  Created by Guillaume Lessard on 2019-05-02.
+//  Copyright © 2019-2020 Guillaume Lessard. All rights reserved.
 //
 
 import XCTest

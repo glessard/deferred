@@ -3,7 +3,7 @@
 //  deferred
 //
 //  Created by Guillaume Lessard on 19/11/2015.
-//  Copyright © 2015 Guillaume Lessard. All rights reserved.
+//  Copyright © 2015-2020 Guillaume Lessard. All rights reserved.
 //
 
 public enum Cancellation: Error, Equatable, Hashable

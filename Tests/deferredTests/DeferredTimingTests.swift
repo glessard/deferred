@@ -2,8 +2,8 @@
 //  DeferredTimingTests.swift
 //  deferred
 //
-//  Created by Guillaume Lessard on 29/04/2016.
-//  Copyright © 2016 Guillaume Lessard. All rights reserved.
+//  Created by Guillaume Lessard on 2016-04-29.
+//  Copyright © 2016-2020 Guillaume Lessard. All rights reserved.
 //
 
 import XCTest

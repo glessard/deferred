@@ -3,7 +3,7 @@
 //  deferredTests
 //
 //  Created by Guillaume Lessard
-//  Copyright © 2017-2019 Guillaume Lessard. All rights reserved.
+//  Copyright © 2017-2020 Guillaume Lessard. All rights reserved.
 //
 
 import XCTest

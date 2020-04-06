@@ -2,8 +2,8 @@
 //  nzRandom.swift
 //  deferred
 //
-//  Created by Guillaume Lessard on 12/12/2016.
-//  Copyright © 2016 Guillaume Lessard. All rights reserved.
+//  Created by Guillaume Lessard on 2016-12-12.
+//  Copyright © 2016-2020 Guillaume Lessard. All rights reserved.
 //
 
 func nzRandom() -> Int

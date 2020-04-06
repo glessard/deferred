@@ -2,8 +2,8 @@
 //  deferred-combine.swift
 //  deferred
 //
-//  Created by Guillaume Lessard on 06/11/2015.
-//  Copyright © 2015 Guillaume Lessard. All rights reserved.
+//  Created by Guillaume Lessard on 2015-11-06.
+//  Copyright © 2015-2020 Guillaume Lessard. All rights reserved.
 //
 
 import Dispatch

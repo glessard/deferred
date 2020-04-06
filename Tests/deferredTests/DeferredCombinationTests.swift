@@ -2,8 +2,8 @@
 //  DeferredCombinationTests.swift
 //  deferred
 //
-//  Created by Guillaume Lessard on 30/01/2017.
-//  Copyright © 2017 Guillaume Lessard. All rights reserved.
+//  Created by Guillaume Lessard on 2017-01-30.
+//  Copyright © 2017-2020 Guillaume Lessard. All rights reserved.
 //
 
 import XCTest

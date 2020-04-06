@@ -3,7 +3,7 @@
 //  deferred-tests
 //
 //  Created by Guillaume Lessard on 2015-07-28.
-//  Copyright © 2015 Guillaume Lessard. All rights reserved.
+//  Copyright © 2015-2020 Guillaume Lessard. All rights reserved.
 //
 
 import XCTest

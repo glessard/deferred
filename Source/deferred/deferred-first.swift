@@ -2,8 +2,8 @@
 //  deferred-first.swift
 //  deferred
 //
-//  Created by Guillaume Lessard on 10/9/17.
-//  Copyright © 2017 Guillaume Lessard. All rights reserved.
+//  Created by Guillaume Lessard on 2017-09-10.
+//  Copyright © 2017-2020 Guillaume Lessard. All rights reserved.
 //
 
 import Dispatch

@@ -3,7 +3,7 @@
 //  deferred
 //
 //  Created by Guillaume Lessard on 2015-07-13.
-//  Copyright © 2015 Guillaume Lessard. All rights reserved.
+//  Copyright © 2015-2020 Guillaume Lessard. All rights reserved.
 //
 
 import Dispatch
