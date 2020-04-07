@@ -61,7 +61,7 @@ open class Deferred<Success, Failure: Error>
 {
   let queue: DispatchQueue
 
-  private var deferredState = UnsafeMutablePointer<AtomicInt>.allocate(capacity: 1)
+  private let deferredState = UnsafeMutablePointer<AtomicInt>.allocate(capacity: 1)
 
   /// Get a pointer to a `DeferredTask` that will resolve this `Deferred`
 
