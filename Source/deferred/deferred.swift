@@ -259,7 +259,7 @@ open class Deferred<Success, Failure: Error>
       // The atomic compare-and-swap operation uses memory order `.acqrel`.
       // "release" ordering ensures visibility of changes to `resolvedPointer(from:)` above to another thread.
       // "acquire" ordering ensures visibility of changes to `waiterQueue(from:)` below from another thread.
-    } while !CAtomicsCompareAndExchange(deferredState, &state, final, .weak, .acqrel, .relaxed)
+    } while !CAtomicsCompareAndExchangeWeak(deferredState, &state, final, .acqrel, .relaxed)
 
     precondition(state.tag != .resolved)
     if let waiters = waiterQueue(from: state)
@@ -328,7 +328,7 @@ open class Deferred<Success, Failure: Error>
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-    } while !CAtomicsCompareAndExchange(deferredState, &state, Int(waiter, tag: .executing), .weak, .release, .relaxed)
+    } while !CAtomicsCompareAndExchangeWeak(deferredState, &state, Int(waiter, tag: .executing), .release, .relaxed)
 
     if let taskp = deferredTask(from: state)
     { // initial task needs to run
@@ -401,7 +401,7 @@ open class Deferred<Success, Failure: Error>
       // this means that this write is in the release sequence of all previous writes.
       // a subsequent read-from `deferredState` will therefore synchronize-with all previous writes.
       // this matters for the `resolve(_:)` function, which operates on the queue of `Waiter` instances.
-    } while !CAtomicsCompareAndExchange(deferredState, &state, .executing, .weak, .release, .relaxed)
+    } while !CAtomicsCompareAndExchangeWeak(deferredState, &state, .executing, .release, .relaxed)
 
     if let taskp = deferredTask(from: state) { executeDeferredTask(taskp) }
   }

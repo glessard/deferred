@@ -8,7 +8,7 @@ let package = Package(
     .library(name: "deferred", type: .static, targets: ["deferred"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/glessard/swift-atomics", from: "6.0.0"),
+    .package(url: "https://github.com/glessard/swift-atomics", from: "6.2.0"),
     .package(url: "https://github.com/glessard/CurrentQoS", from: "1.1.0"),
   ],
   targets: [
