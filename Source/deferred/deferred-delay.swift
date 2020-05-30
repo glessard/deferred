@@ -83,3 +83,52 @@ extension Deferred
     }
   }
 }
+
+extension Deferred
+{
+  /// Return a `Deferred` that will delay the upstream propagation of
+  /// the demand when downstream `Deferred`s begin executing.
+  ///
+  /// The delay is from the time this function is called.
+  ///
+  /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
+  /// - returns: a `Deferred` reference
+
+  public func delayingDemand(seconds delay: Double) -> Deferred
+  {
+    return delayingDemand(until: .now() + delay)
+  }
+
+  /// Return a `Deferred` that will delay the upstream propagation of
+  /// the demand when downstream `Deferred`s begin executing.
+  ///
+  /// The delay is from the time this function is called.
+  ///
+  /// - parameter delay: a time interval, as `DispatchTimeInterval`
+  /// - returns: a `Deferred` reference
+
+  public func delayingDemand(_ delay: DispatchTimeInterval) -> Deferred
+  {
+    return delayingDemand(until: .now() + delay)
+  }
+
+  /// Return a `Deferred` that will delay the upstream propagation of
+  /// the demand when downstream `Deferred`s begin executing.
+  ///
+  /// The delay is from the time this function is called.
+  ///
+  /// - parameter time: a timestamp in the future
+  /// - returns: a `Deferred` reference
+
+  public func delayingDemand(until time: DispatchTime) -> Deferred
+  {
+    guard time > .now() else { return self }
+
+    return Deferred(queue: self.queue) {
+      resolver in
+      self.queue.asyncAfter(deadline: time) {
+        self.notify { resolver.resolve($0) }
+      }
+    }
+  }
+}

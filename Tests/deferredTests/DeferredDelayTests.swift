@@ -70,4 +70,21 @@ class DelayTests: XCTestCase
     d2.onValue { _ in fatalError(#function) }
     XCTAssertEqual(d2.state, .executing)
   }
+
+  func testDelayedDemand()
+  {
+    let delay = 0.01
+    let d1 = Deferred<Date, Never>(task: { $0.resolve(value: Date()) }).delayingDemand(seconds: delay)
+
+    let t1 = Date()
+    let t2 = d1.get()
+    XCTAssertGreaterThanOrEqual(t2.timeIntervalSince(t1), delay)
+
+    let t3 = Date()
+    let d2 = Deferred<Date, Never>(task: { $0.resolve(value: Date()) }).delayingDemand(.seconds(-1))
+    let d3 = d2.map { $0.timeIntervalSince(t3) }
+    let t4 = d3.get()
+    XCTAssertGreaterThanOrEqual(t4, 0)
+    XCTAssertLessThanOrEqual(t4, delay) // this is not a robust assertion.
+  }
 }
