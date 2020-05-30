@@ -20,7 +20,8 @@ extension Deferred
   ///
   /// Note that a cancellation or error will result in early resolution.
   ///
-  /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
+  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
+  /// - parameter delay: a number of seconds as a `Double` or `NSTimeInterval`
   /// - returns: a `Deferred` reference
 
   public func delay(queue: DispatchQueue? = nil, seconds delay: Double) -> Deferred
@@ -32,6 +33,7 @@ extension Deferred
   ///
   /// Note that a cancellation or error will result in early resolution.
   ///
+  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
   /// - parameter delay: a time interval, as `DispatchTimeInterval`
   /// - returns: a `Deferred` reference
 
@@ -44,7 +46,8 @@ extension Deferred
   ///
   /// Note that a cancellation or error will result in early resolution.
   ///
-  /// - parameter seconds: a number of seconds as a `Double` or `NSTimeInterval`
+  /// - parameter queue: the `DispatchQueue` to attach to the new `Deferred`; defaults to `self`'s queue.
+  /// - parameter time: a timestamp in the future
   /// - returns: a `Deferred` reference
 
   public func delay(queue: DispatchQueue? = nil, until time: DispatchTime) -> Deferred
