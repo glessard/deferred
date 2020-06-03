@@ -24,7 +24,6 @@ extension Deferred
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(seconds: Double, reason: String = "") -> Deferred<Success, Error>
   {
     return self.timeout(after: .now() + seconds, reason: reason)
@@ -38,7 +37,6 @@ extension Deferred
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(_ timeout: DispatchTimeInterval, reason: String = "") -> Deferred<Success, Error>
   {
     return self.timeout(after: .now() + timeout, reason: reason)
@@ -52,28 +50,40 @@ extension Deferred
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred<Success, Error>
   {
     if self.isResolved { return self.withAnyError }
 
-    let withTimeout: Deferred<Success, Error>
+    let broadened: Deferred<Success, Error>
     if let t = self as? Deferred<Success, Error>
-    { withTimeout = t }
+    { broadened = t }
     else
-    { withTimeout = self.withAnyError }
+    { broadened = self.withAnyError }
+
+    if self.isCancellable
+    {
+      if deadline < .now()
+      {
+        self.cancel(.timedOut(reason))
+      }
+      else if deadline != .distantFuture
+      {
+        let queue = DispatchQueue(label: "timeout", qos: qos)
+        queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(.timedOut(reason)) }
+      }
+      return broadened
+    }
 
     if deadline < .now()
     {
-      withTimeout.cancel(.timedOut(reason))
-      return withTimeout
+      broadened.cancel(.timedOut(reason))
     }
     else if deadline != .distantFuture
     {
       let queue = DispatchQueue(label: "timeout", qos: qos)
-      queue.asyncAfter(deadline: deadline) { [weak withTimeout] in withTimeout?.cancel(.timedOut(reason)) }
+      queue.asyncAfter(deadline: deadline) { [weak broadened] in broadened?.cancel(.timedOut(reason)) }
     }
-    return withTimeout
+    return broadened
   }
 }
 
@@ -143,7 +153,6 @@ extension Deferred where Failure == Never
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(seconds: Double, reason: String = "") -> Deferred<Success, Cancellation>
   {
     return self.timeout(after: .now() + seconds, reason: reason)
@@ -157,7 +166,6 @@ extension Deferred where Failure == Never
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(_ timeout: DispatchTimeInterval, reason: String = "") -> Deferred<Success, Cancellation>
   {
     return self.timeout(after: .now() + timeout, reason: reason)
@@ -171,7 +179,6 @@ extension Deferred where Failure == Never
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred<Success, Cancellation>
   {
     return self.setFailureType(to: Cancellation.self).timeout(after: deadline, reason: reason)

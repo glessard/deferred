@@ -224,9 +224,17 @@ open class Deferred<Success, Failure: Error>
   ///
   /// - returns: whether the `cancel()` function should proceed.
 
-  open func attemptCancellation() -> Bool
-  {
+  open var isCancellable: Bool {
     return (Cancellation.canceled() is Failure)
+  }
+
+  @discardableResult
+  open func cancel(_ error: Cancellation) -> Bool
+  {
+    guard let error = (error as? Failure) else { return false }
+
+    resolve(.failure(error))
+    return true
   }
 
   // MARK: retain source
@@ -415,18 +423,6 @@ extension Deferred where Failure == Cancellation
 {
   /// Attempt to cancel this `Deferred`
   ///
-  /// This method can only succeed if a `Cancellation` can be cast as a `Failure`.
-  ///
-  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
-  /// - returns: whether the cancellation was performed successfully.
-
-  public func cancel(_ error: Cancellation)
-  {
-    if attemptCancellation() { resolve(.failure(error)) }
-  }
-
-  /// Attempt to cancel this `Deferred`
-  ///
   /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
   /// ```
   /// Deferred<Success>(error: DeferredError.canceled(reason))
@@ -443,18 +439,6 @@ extension Deferred where Failure == Cancellation
 
 extension Deferred where Failure == Error
 {
-  /// Attempt to cancel this `Deferred`
-  ///
-  /// This method can only succeed if a `Cancellation` can be cast as a `Failure`.
-  ///
-  /// - parameter error: a `DeferredError` detailing the reason for the attempted cancellation.
-  /// - returns: whether the cancellation was performed successfully.
-
-  public func cancel(_ error: Cancellation)
-  {
-    if attemptCancellation() { resolve(.failure(error)) }
-  }
-
   /// Attempt to cancel this `Deferred`
   ///
   /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
