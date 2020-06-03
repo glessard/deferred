@@ -24,6 +24,12 @@ class DeferredTimeoutTests: XCTestCase
 
     let t3 = Deferred<Int, Error>(task: { _ in }).timeout(seconds: 0.01, reason: "b")
     XCTAssertEqual(t3.error, Cancellation.timedOut("b"))
+
+    let t4 = Deferred<Void, TestError>(task: { _ in }).timeout(seconds: 0.01)
+    XCTAssertEqual(t4.error, Cancellation.timedOut(""))
+
+    let t5 = Deferred<Never, Error>(task: { _ in }).timeout(after: .now() + .seconds(Int.min), reason: "duh")
+    XCTAssertEqual(t5.error, Cancellation.timedOut("duh"))
   }
 
   func testTimeout2()
