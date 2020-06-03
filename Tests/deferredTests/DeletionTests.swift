@@ -101,19 +101,19 @@ class DeletionTests: XCTestCase
             Thread.sleep(until: Date() + 0.001) // work hard
             print(".", terminator: "")
             progress += 1
-          } while progress < 20
+          } while progress < 200
           resolver.resolve(value: .pi)
         }
       }
     }
 
-    let validated = bigComputation().validate(predicate: { $0 > 3.14159 && $0 < 3.14160 })
     let timeout = 0.1
-    validated.timeout(seconds: timeout, reason: String(timeout))
+    let validated = bigComputation().validate(predicate: { $0 > 3.14159 && $0 < 3.14160 })
+                                    .timeout(seconds: timeout, reason: String(timeout))
 
     do {
       let pi = try validated.get()
-      print(" ", pi)
+      XCTFail("Task should have timed out, got \(pi) instead.")
     }
     catch Cancellation.timedOut(let message) {
       print()

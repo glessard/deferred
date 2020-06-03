@@ -57,9 +57,9 @@ Long background computations that support cancellation and timeout can be implem
     }
 
     // let the child `Deferred` keep a reference to our big computation
-    let validated = bigComputation().validate(predicate: { $0 > 3.14159 && $0 < 3.14160 })
     let timeout = 0.1
-    validated.timeout(seconds: timeout, reason: String(timeout))
+    let validated = bigComputation().validate(predicate: { $0 > 3.14159 && $0 < 3.14160 })
+                                    .timeout(seconds: timeout, reason: String(timeout))
 
     do {
       print(validated.state)       // still waiting: no request yet
