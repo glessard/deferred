@@ -24,7 +24,6 @@ extension Deferred
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(seconds: Double, reason: String = "") -> Deferred<Success, Error>
   {
     return self.timeout(after: .now() + seconds, reason: reason)
@@ -38,7 +37,6 @@ extension Deferred
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(_ timeout: DispatchTimeInterval, reason: String = "") -> Deferred<Success, Error>
   {
     return self.timeout(after: .now() + timeout, reason: reason)
@@ -52,7 +50,6 @@ extension Deferred
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred<Success, Error>
   {
     if self.isResolved { return self.withAnyError }
@@ -143,7 +140,6 @@ extension Deferred where Failure == Never
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(seconds: Double, reason: String = "") -> Deferred<Success, Cancellation>
   {
     return self.timeout(after: .now() + seconds, reason: reason)
@@ -157,7 +153,6 @@ extension Deferred where Failure == Never
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(_ timeout: DispatchTimeInterval, reason: String = "") -> Deferred<Success, Cancellation>
   {
     return self.timeout(after: .now() + timeout, reason: reason)
@@ -171,7 +166,6 @@ extension Deferred where Failure == Never
   /// - parameter reason: the reason for the cancellation if the operation times out. Defaults to "Deferred operation timed out".
   /// - returns: self
 
-  @discardableResult
   public func timeout(after deadline: DispatchTime, reason: String = "") -> Deferred<Success, Cancellation>
   {
     return self.setFailureType(to: Cancellation.self).timeout(after: deadline, reason: reason)
