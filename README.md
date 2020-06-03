@@ -79,7 +79,7 @@ In the above example, our computation closure works hard to compute the ratio of
 
 With the swift package manager, add the following to your package manifest's dependencies:
 
-    .package(url: "https://github.com/glessard/deferred.git", from: "6.0.0")
+    .package(url: "https://github.com/glessard/deferred.git", from: "6.4.0")
 
 To integrate in an Xcode 10 project, tools such as `Accio` and `xspm` are good options. The repository contains an Xcode 10 project with manually-assembled example iOS target. It requires some git submodules to be loaded using the command `git submodule update --init`.
 
