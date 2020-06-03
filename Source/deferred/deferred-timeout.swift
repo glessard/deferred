@@ -54,23 +54,36 @@ extension Deferred
   {
     if self.isResolved { return self.withAnyError }
 
-    let withTimeout: Deferred<Success, Error>
+    let broadened: Deferred<Success, Error>
     if let t = self as? Deferred<Success, Error>
-    { withTimeout = t }
+    { broadened = t }
     else
-    { withTimeout = self.withAnyError }
+    { broadened = self.withAnyError }
+
+    if self.isCancellable
+    {
+      if deadline < .now()
+      {
+        self.cancel(.timedOut(reason))
+      }
+      else if deadline != .distantFuture
+      {
+        let queue = DispatchQueue(label: "timeout", qos: qos)
+        queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(.timedOut(reason)) }
+      }
+      return broadened
+    }
 
     if deadline < .now()
     {
-      withTimeout.cancel(.timedOut(reason))
-      return withTimeout
+      broadened.cancel(.timedOut(reason))
     }
     else if deadline != .distantFuture
     {
       let queue = DispatchQueue(label: "timeout", qos: qos)
-      queue.asyncAfter(deadline: deadline) { [weak withTimeout] in withTimeout?.cancel(.timedOut(reason)) }
+      queue.asyncAfter(deadline: deadline) { [weak broadened] in broadened?.cancel(.timedOut(reason)) }
     }
-    return withTimeout
+    return broadened
   }
 }
 
