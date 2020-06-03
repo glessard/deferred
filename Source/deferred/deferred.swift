@@ -214,19 +214,24 @@ open class Deferred<Success, Failure: Error>
     // This `Deferred` has been resolved
   }
 
-  /// Find out whether a cancellation attempt should proceed.
+  /// Find out whether a cancellation attempt can succeed.
   ///
   /// This is a customization point for subclasses of `Deferred`, and
   /// should not be called by client code.
   ///
-  /// As `Deferred`'s cancellation operation does not occur in this
-  /// function, calling this is likely useless for client code.
-  ///
-  /// - returns: whether the `cancel()` function should proceed.
+  /// - returns: whether the `cancel()` function can ever succeed.
 
   open var isCancellable: Bool {
     return (Cancellation.canceled() is Failure)
   }
+
+  /// Attempt to cancel this `Deferred`.
+  ///
+  /// This is a customization point for subclasses of `Deferred` but
+  /// there are only limited cases where it could be useful.
+  ///
+  /// - parameter error: the Cancellation error to use in resolving this `Deferred`
+  /// - returns: whether the cancellation attempt was made
 
   @discardableResult
   open func cancel(_ error: Cancellation) -> Bool
