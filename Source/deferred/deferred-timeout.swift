@@ -60,16 +60,16 @@ extension Deferred
     else
     { broadened = self.withAnyError }
 
-    if convertCancellation(.timedOut(reason)) != nil
+    if let error = convertCancellation(Cancellation.timedOut(reason))
     {
       if deadline < .now()
       {
-        self.cancel(.timedOut(reason))
+        self.cancel(error)
       }
       else if deadline != .distantFuture
       {
         let queue = DispatchQueue(label: "timeout", qos: qos)
-        queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(.timedOut(reason)) }
+        queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(error) }
       }
       return broadened
     }
