@@ -60,7 +60,7 @@ extension Deferred
     else
     { broadened = self.withAnyError }
 
-    if self.isCancellable
+    if convertCancellation(.timedOut(reason)) != nil
     {
       if deadline < .now()
       {
