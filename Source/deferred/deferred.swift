@@ -214,15 +214,17 @@ open class Deferred<Success, Failure: Error>
     // This `Deferred` has been resolved
   }
 
-  /// Find out whether a cancellation attempt can succeed.
+  /// Convert a `Cancellation` to the correct type of `Failure` for this `Deferred`
   ///
   /// This is a customization point for subclasses of `Deferred`, and
-  /// should not be called by client code.
+  /// is of limited utility to client code. It can be used to determine
+  /// whether a `Deferred` is at all capable of cancellation, but little else.
   ///
-  /// - returns: whether the `cancel()` function can ever succeed.
+  /// - returns: a converted `Failure` instance, or `nil` if cancellation will fail.
 
-  open var isCancellable: Bool {
-    return (Cancellation.canceled() is Failure)
+  open func convertCancellation(_ error: Cancellation) -> Failure?
+  {
+    return (error as? Failure)
   }
 
   /// Attempt to cancel this `Deferred`.
@@ -231,15 +233,13 @@ open class Deferred<Success, Failure: Error>
   /// there are only limited cases where it could be useful.
   ///
   /// - parameter error: the Cancellation error to use in resolving this `Deferred`
-  /// - returns: whether the cancellation attempt was made
 
-  @discardableResult
-  open func cancel(_ error: Cancellation) -> Bool
+  open func cancel(_ error: Cancellation)
   {
-    guard let error = (error as? Failure) else { return false }
-
-    resolve(.failure(error))
-    return true
+    if let error = convertCancellation(error)
+    {
+      resolve(.failure(error))
+    }
   }
 
   // MARK: retain source
@@ -430,7 +430,7 @@ extension Deferred where Failure == Cancellation
   ///
   /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
   /// ```
-  /// Deferred<Success>(error: DeferredError.canceled(reason))
+  /// Deferred<Success, Cancellation>(error: Cancellation.canceled(reason))
   /// ```
   ///
   /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
@@ -448,7 +448,7 @@ extension Deferred where Failure == Error
   ///
   /// A successful cancellation will result in a `Deferred` equivalent to as if it had been initialized as follows:
   /// ```
-  /// Deferred<Success>(error: DeferredError.canceled(reason))
+  /// Deferred<Success, Error>(error: Cancellation.canceled(reason))
   /// ```
   ///
   /// - parameter reason: a `String` detailing the reason for the attempted cancellation. Defaults to an empty `String`.
