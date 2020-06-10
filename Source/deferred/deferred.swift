@@ -438,7 +438,7 @@ extension Deferred where Failure == Cancellation
 
   public func cancel(_ reason: String = "")
   {
-    cancel(.canceled(reason))
+    cancel(Cancellation.canceled(reason))
   }
 }
 
@@ -456,7 +456,7 @@ extension Deferred where Failure == Error
 
   public func cancel(_ reason: String = "")
   {
-    cancel(.canceled(reason))
+    cancel(Cancellation.canceled(reason))
   }
 }
 

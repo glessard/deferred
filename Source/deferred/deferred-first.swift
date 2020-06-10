@@ -570,9 +570,9 @@ extension Deferred
     if Cancellation.notSelected is Failure
     {
       if let s = self as? Deferred<Success, Cancellation>
-      { s.cancel(.notSelected) }
+      { s.cancel(Cancellation.notSelected) }
       else if let s = self as? Deferred<Success, Error>
-      { s.cancel(.notSelected) }
+      { s.cancel(Cancellation.notSelected) }
     }
   }
 }
