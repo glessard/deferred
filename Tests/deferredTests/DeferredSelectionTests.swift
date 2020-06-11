@@ -152,7 +152,7 @@ class DeferredSelectionTests: XCTestCase
         if i == e
         { tbd.beginExecution() }
         else
-        { tbd.notify { XCTAssertEqual($0, Cancellation.notSelected) } }
+        { tbd.notify { XCTAssertEqual($0.error?.isTimeout, true) } }
         d.append(tbd)
       }
       q.sync { XCTAssertEqual(r.count, d.count) }
@@ -184,7 +184,7 @@ class DeferredSelectionTests: XCTestCase
         if i == e
         { tbd.beginExecution() }
         else
-        { tbd.notify { XCTAssertEqual($0, Cancellation.notSelected) } }
+        { tbd.notify { XCTAssertEqual($0.error?.isTimeout, true) } }
         d.append(tbd)
       }
       q.sync { XCTAssertEqual(r.count, d.count) }
@@ -223,7 +223,7 @@ class DeferredSelectionTests: XCTestCase
                                  DeallocWitness<Int, Error>(e2, queue: q2, task: { t2 = $0 }).execute,
                                  cancelOthers: true)
     q2.sync { XCTAssertNotNil(r2) }
-    s1.notify { XCTAssertEqual($0, Cancellation.notSelected) }
+    s1.notify { XCTAssertEqual($0.error?.isTimeout, true) }
     s2.notify { XCTAssertEqual($0, r2) }
 
     t2.resolve(value: r2)
@@ -242,9 +242,9 @@ class DeferredSelectionTests: XCTestCase
                                      cancelOthers: true)
 
     XCTAssertEqual(s1.error, TestError(r1))
-    XCTAssertEqual(d2.error, Cancellation.notSelected)
-    XCTAssertEqual(s2.error, Cancellation.notSelected)
-    XCTAssertEqual(s3.error, Cancellation.notSelected)
+    XCTAssertEqual(d2.error?.isTimeout, true)
+    XCTAssertEqual(s2.error?.isTimeout, true)
+    XCTAssertEqual(s3.error?.isTimeout, true)
   }
 
   func testSelectFirstResolvedQuaternary()
@@ -259,10 +259,10 @@ class DeferredSelectionTests: XCTestCase
                                          cancelOthers: true)
 
     XCTAssertEqual(s1.error, TestError(r1))
-    XCTAssertEqual(d2.error, Cancellation.notSelected)
-    XCTAssertEqual(s2.error, Cancellation.notSelected)
-    XCTAssertEqual(s3.error, Cancellation.notSelected)
-    XCTAssertEqual(s4.error, Cancellation.notSelected)
+    XCTAssertEqual(d2.error?.isTimeout, true)
+    XCTAssertEqual(s2.error?.isTimeout, true)
+    XCTAssertEqual(s3.error?.isTimeout, true)
+    XCTAssertEqual(s4.error?.isTimeout, true)
   }
 
   func testSelectFirstValueBinary1()
@@ -282,8 +282,8 @@ class DeferredSelectionTests: XCTestCase
 
     waitForExpectations(timeout: 1.0) { _ in d1.cancel() }
     XCTAssertEqual(s2.value, d2.value)
-    XCTAssertEqual(s1.error, Cancellation.notSelected)
-    XCTAssertEqual(d1.error, Cancellation.notSelected)
+    XCTAssertEqual(s1.error?.isTimeout, true)
+    XCTAssertEqual(d1.error?.isTimeout, true)
   }
 
   func testSelectFirstValueBinary2()
@@ -340,9 +340,9 @@ class DeferredSelectionTests: XCTestCase
                                   cancelOthers: true)
 
     XCTAssertEqual(s1.value, r1)
-    XCTAssertEqual(s2.error, Cancellation.notSelected)
-    XCTAssertEqual(t3.error, Cancellation.notSelected)
-    XCTAssertEqual(s3.error, Cancellation.notSelected)
+    XCTAssertEqual(s2.error?.isTimeout, true)
+    XCTAssertEqual(t3.error?.isTimeout, true)
+    XCTAssertEqual(s3.error?.isTimeout, true)
   }
 
   func testSelectFirstValueTernary2()
@@ -371,11 +371,11 @@ class DeferredSelectionTests: XCTestCase
                                       Deferred<Int, Error>(),
                                       cancelOthers: true)
 
-    XCTAssertEqual(s1.error, Cancellation.notSelected)
+    XCTAssertEqual(s1.error?.isTimeout, true)
     XCTAssertEqual(s2.value, r)
-    XCTAssertEqual(t3.error, Cancellation.notSelected)
-    XCTAssertEqual(s3.error, Cancellation.notSelected)
-    XCTAssertEqual(s4.error, Cancellation.notSelected)
+    XCTAssertEqual(t3.error?.isTimeout, true)
+    XCTAssertEqual(s3.error?.isTimeout, true)
+    XCTAssertEqual(s4.error?.isTimeout, true)
   }
 
   func testSelectFirstValueQuaternary2()
@@ -394,5 +394,15 @@ class DeferredSelectionTests: XCTestCase
     XCTAssertEqual(s2.error, TestError(r2))
     XCTAssertEqual(s3.error, TestError(r3))
     XCTAssertEqual(s4.error, TestError(r4))
+  }
+}
+
+extension Error
+{
+  var isTimeout: Bool {
+    if case .timedOut? = self as? Cancellation
+    { return true }
+    else
+    { return false }
   }
 }

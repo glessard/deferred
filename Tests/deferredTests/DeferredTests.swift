@@ -247,7 +247,6 @@ class DeferredTests: XCTestCase
       .canceled(customMessage),
       .timedOut(""),
       .timedOut(customMessage),
-      .notSelected
     ]
 
     let cancellationStrings = cancellations.map(String.init(describing: ))
