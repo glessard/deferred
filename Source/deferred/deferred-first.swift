@@ -75,6 +75,7 @@ public func firstValue<Success, Failure, C: Collection>(_ deferreds: C, queue: D
 {
   if deferreds.isEmpty { return nil }
 
+  let timeoutMessage = "too slow in \(#function)"
   return Deferred<Success, Failure>(queue: queue) {
     first in
     let errors = deferreds.map {
@@ -91,7 +92,7 @@ public func firstValue<Success, Failure, C: Collection>(_ deferreds: C, queue: D
     // clean up (closure also retains sources)
     first.notify {
       withExtendedLifetime(combined) {}
-      if cancelOthers { deferreds.forEach { $0.notSelected() } }
+      if cancelOthers { deferreds.forEach { $0.notSelected(timeoutMessage) } }
     }
   }
 }
@@ -173,6 +174,7 @@ public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, queue: Dis
 {
   guard let deferreds = NonEmptySequence(elements: deferreds) else { return nil }
 
+  let timeoutMessage = "too slow in \(#function)"
   return Deferred<Success, Failure>(queue: queue) {
     first in
     // We loop over the elements on a concurrent thread
@@ -197,7 +199,7 @@ public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, queue: Dis
       // clean up (closure also retains sources)
       first.notify {
         withExtendedLifetime(combined) {}
-        if cancelOthers { values.forEach { $0.notSelected() } }
+        if cancelOthers { values.forEach { $0.notSelected(timeoutMessage) } }
       }
     }
   }
@@ -243,13 +245,14 @@ public func firstResolved<Success, Failure, C>(_ deferreds: C, queue: DispatchQu
 {
   if deferreds.count == 0 { return nil }
 
+  let timeoutMessage = "too slow in \(#function)"
   return Deferred<Success, Failure>(queue: queue) {
     first in
     let deferreds = Array(deferreds)
     for deferred in deferreds { deferred.notify(handler: first.resolve) }
 
     // clean up (closure also retains sources)
-    first.notify { if cancelOthers { deferreds.forEach { $0.notSelected() } } }
+    first.notify { if cancelOthers { deferreds.forEach { $0.notSelected(timeoutMessage) } } }
   }
 }
 
@@ -295,6 +298,7 @@ public func firstResolved<Success, Failure, S>(_ deferreds: S, queue: DispatchQu
 {
   guard let deferreds = NonEmptySequence(elements: deferreds) else { return nil }
 
+  let timeoutMessage = "too slow in \(#function)"
   return Deferred<Success, Failure>(queue: queue) {
     first in
     // We loop over the elements on a concurrent thread
@@ -307,7 +311,7 @@ public func firstResolved<Success, Failure, S>(_ deferreds: S, queue: DispatchQu
       }
 
       // clean up (closure also retains sources)
-      first.notify { if cancelOthers { sources.forEach { $0.notSelected() } } }
+      first.notify { if cancelOthers { sources.forEach { $0.notSelected(timeoutMessage) } } }
     }
   }
 }
@@ -318,6 +322,7 @@ public func firstResolved<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
   -> (Deferred<T1, Error>, Deferred<T2, Error>)
 {
   // find which input gets resolved first
+  let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
@@ -327,14 +332,14 @@ public func firstResolved<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
     resolver.notify {
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.notSelected()
-        d2.notSelected()
+        d1.notSelected(timeoutMessage)
+        d2.notSelected(timeoutMessage)
       }
     }
   }
 
-  let o1 = select(input: d1, if: selected)
-  let o2 = select(input: d2, if: selected)
+  let o1 = select(input: d1, if: selected, timeoutMessage)
+  let o2 = select(input: d2, if: selected, timeoutMessage)
 
   return (o1, o2)
 }
@@ -346,6 +351,7 @@ public func firstResolved<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>)
 {
   // find which input gets resolved first
+  let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
@@ -356,16 +362,16 @@ public func firstResolved<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
     resolver.notify {
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.notSelected()
-        d2.notSelected()
-        d3.notSelected()
+        d1.notSelected(timeoutMessage)
+        d2.notSelected(timeoutMessage)
+        d3.notSelected(timeoutMessage)
       }
     }
   }
 
-  let o1 = select(input: d1, if: selected)
-  let o2 = select(input: d2, if: selected)
-  let o3 = select(input: d3, if: selected)
+  let o1 = select(input: d1, if: selected, timeoutMessage)
+  let o2 = select(input: d2, if: selected, timeoutMessage)
+  let o3 = select(input: d3, if: selected, timeoutMessage)
 
   return (o1, o2, o3)
 }
@@ -378,6 +384,7 @@ public func firstResolved<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>, Deferred<T4, Error>)
 {
   // find which input gets resolved first
+  let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Never>() {
     resolver in
     d1.notify { [id = ObjectIdentifier(d1)] _ in resolver.resolve(value: id) }
@@ -389,18 +396,18 @@ public func firstResolved<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>
     resolver.notify {
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.notSelected()
-        d2.notSelected()
-        d3.notSelected()
-        d4.notSelected()
+        d1.notSelected(timeoutMessage)
+        d2.notSelected(timeoutMessage)
+        d3.notSelected(timeoutMessage)
+        d4.notSelected(timeoutMessage)
       }
     }
   }
 
-  let o1 = select(input: d1, if: selected)
-  let o2 = select(input: d2, if: selected)
-  let o3 = select(input: d3, if: selected)
-  let o4 = select(input: d4, if: selected)
+  let o1 = select(input: d1, if: selected, timeoutMessage)
+  let o2 = select(input: d2, if: selected, timeoutMessage)
+  let o3 = select(input: d3, if: selected, timeoutMessage)
+  let o4 = select(input: d4, if: selected, timeoutMessage)
 
   return (o1, o2, o3, o4)
 }
@@ -426,7 +433,8 @@ private func resolveSelection<T, F>(_ queue: DispatchQueue,
 }
 
 private func select<T, F, E: Error>(input deferred: Deferred<T, F>,
-                                    if selected:    Deferred<ObjectIdentifier, E>)
+                                    if selected:    Deferred<ObjectIdentifier, E>,
+                                    _ timeoutMessage: String)
   -> Deferred<T, Error>
 {
   return Deferred<T, Error>(queue: deferred.queue) {
@@ -437,7 +445,7 @@ private func select<T, F, E: Error>(input deferred: Deferred<T, F>,
       {
       case .success(let id) where id != ObjectIdentifier(deferred):
         // another input of `selected` got resolved first
-        resolver.cancel(.notSelected)
+        resolver.cancel(.timedOut(timeoutMessage))
       default:
         resolver.resolve(deferred.result.withAnyError)
       }
@@ -453,6 +461,7 @@ public func firstValue<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
 {
   // find which input first gets a value
   let queue = DispatchQueue(label: "select", qos: .current)
+  let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Invalidation>(queue: queue) {
     resolver in
     let errors = (
@@ -469,14 +478,14 @@ public func firstValue<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
       withExtendedLifetime(combined) {}
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.notSelected()
-        d2.notSelected()
+        d1.notSelected(timeoutMessage)
+        d2.notSelected(timeoutMessage)
       }
     }
   }
 
-  let o1 = select(input: d1, if: selected)
-  let o2 = select(input: d2, if: selected)
+  let o1 = select(input: d1, if: selected, timeoutMessage)
+  let o2 = select(input: d2, if: selected, timeoutMessage)
 
   return (o1, o2)
 }
@@ -489,6 +498,7 @@ public func firstValue<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
 {
   // find which input first gets a value
   let queue = DispatchQueue(label: "select", qos: .current)
+  let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Invalidation>() {
     resolver in
     let errors = (
@@ -506,16 +516,16 @@ public func firstValue<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
       withExtendedLifetime(combined) {}
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.notSelected()
-        d2.notSelected()
-        d3.notSelected()
+        d1.notSelected(timeoutMessage)
+        d2.notSelected(timeoutMessage)
+        d3.notSelected(timeoutMessage)
       }
     }
   }
 
-  let o1 = select(input: d1, if: selected)
-  let o2 = select(input: d2, if: selected)
-  let o3 = select(input: d3, if: selected)
+  let o1 = select(input: d1, if: selected, timeoutMessage)
+  let o2 = select(input: d2, if: selected, timeoutMessage)
+  let o3 = select(input: d3, if: selected, timeoutMessage)
 
   return (o1, o2, o3)
 }
@@ -529,6 +539,7 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
 {
   // find which input first gets a value
   let queue = DispatchQueue(label: "select", qos: .current)
+  let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Invalidation>() {
     resolver in
     let errors = (
@@ -547,32 +558,26 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
       withExtendedLifetime(combined) {}
       if cancelOthers
       { // attempt to cancel the unresolved input
-        d1.notSelected()
-        d2.notSelected()
-        d3.notSelected()
-        d4.notSelected()
+        d1.notSelected(timeoutMessage)
+        d2.notSelected(timeoutMessage)
+        d3.notSelected(timeoutMessage)
+        d4.notSelected(timeoutMessage)
       }
     }
   }
 
-  let o1 = select(input: d1, if: selected)
-  let o2 = select(input: d2, if: selected)
-  let o3 = select(input: d3, if: selected)
-  let o4 = select(input: d4, if: selected)
+  let o1 = select(input: d1, if: selected, timeoutMessage)
+  let o2 = select(input: d2, if: selected, timeoutMessage)
+  let o3 = select(input: d3, if: selected, timeoutMessage)
+  let o4 = select(input: d4, if: selected, timeoutMessage)
 
   return (o1, o2, o3, o4)
 }
 
 extension Deferred
 {
-  fileprivate func notSelected()
+  fileprivate func notSelected(_ message: String)
   {
-    if Cancellation.notSelected is Failure
-    {
-      if let s = self as? Deferred<Success, Cancellation>
-      { s.cancel(Cancellation.notSelected) }
-      else if let s = self as? Deferred<Success, Error>
-      { s.cancel(Cancellation.notSelected) }
-    }
+    cancel(Cancellation.timedOut(message))
   }
 }
