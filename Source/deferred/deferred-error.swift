@@ -18,8 +18,6 @@ public enum Cancellation: Error, Equatable, Hashable
   public static func canceled() -> Cancellation { return .canceled("") }
   public static func timedOut() -> Cancellation { return .timedOut("") }
 #endif
-
-  case notSelected // not selected in a race between multiple deferreds
 }
 
 extension Cancellation: CustomStringConvertible
@@ -29,14 +27,10 @@ extension Cancellation: CustomStringConvertible
     {
     case .canceled(let message):
       return message.isEmpty ?
-        "Deferred was canceled before a result became available" :
-        "Deferred canceled: \(message)"
+        "canceled" : "canceled: \(message)"
     case .timedOut(let message):
       return message.isEmpty ?
-        "Deferred operation timed out before a result became available" :
-        "Deferred operation timed out: \(message)"
-    case .notSelected:
-      return "Deferred was canceled when another got resolved more quickly"
+        "timed out" : "timed out: \(message)"
     }
   }
 }

@@ -222,9 +222,9 @@ open class Deferred<Success, Failure: Error>
   ///
   /// - returns: a converted `Failure` instance, or `nil` if cancellation will fail.
 
-  open func convertCancellation(_ error: Cancellation) -> Failure?
+  open func convertCancellation<E: Error>(_ error: E) -> Failure?
   {
-    return (error as? Failure)
+    return (error as? Cancellation) as? Failure
   }
 
   /// Attempt to cancel this `Deferred`.
@@ -234,7 +234,7 @@ open class Deferred<Success, Failure: Error>
   ///
   /// - parameter error: the Cancellation error to use in resolving this `Deferred`
 
-  open func cancel(_ error: Cancellation)
+  open func cancel<E: Error>(_ error: E)
   {
     if let error = convertCancellation(error)
     {
@@ -438,7 +438,7 @@ extension Deferred where Failure == Cancellation
 
   public func cancel(_ reason: String = "")
   {
-    cancel(.canceled(reason))
+    cancel(Cancellation.canceled(reason))
   }
 }
 
@@ -456,7 +456,7 @@ extension Deferred where Failure == Error
 
   public func cancel(_ reason: String = "")
   {
-    cancel(.canceled(reason))
+    cancel(Cancellation.canceled(reason))
   }
 }
 

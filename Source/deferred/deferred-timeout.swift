@@ -60,28 +60,29 @@ extension Deferred
     else
     { broadened = self.withAnyError }
 
-    if convertCancellation(.timedOut(reason)) != nil
+    let timedOut = Cancellation.timedOut(reason)
+    if let timedOut = convertCancellation(timedOut)
     {
       if deadline < .now()
       {
-        self.cancel(.timedOut(reason))
+        self.cancel(timedOut)
       }
       else if deadline != .distantFuture
       {
         let queue = DispatchQueue(label: "timeout", qos: qos)
-        queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(.timedOut(reason)) }
+        queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(timedOut) }
       }
       return broadened
     }
 
     if deadline < .now()
     {
-      broadened.cancel(.timedOut(reason))
+      broadened.cancel(timedOut)
     }
     else if deadline != .distantFuture
     {
       let queue = DispatchQueue(label: "timeout", qos: qos)
-      queue.asyncAfter(deadline: deadline) { [weak broadened] in broadened?.cancel(.timedOut(reason)) }
+      queue.asyncAfter(deadline: deadline) { [weak broadened] in broadened?.cancel(timedOut) }
     }
     return broadened
   }
@@ -130,14 +131,15 @@ extension Deferred where Failure == Cancellation
   {
     if self.isResolved { return self }
 
+    let timedOut = Cancellation.timedOut(reason)
     if deadline < .now()
     {
-      cancel(.timedOut(reason))
+      cancel(timedOut)
     }
     else if deadline != .distantFuture
     {
       let queue = DispatchQueue(label: "timeout", qos: qos)
-      queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(.timedOut(reason)) }
+      queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(timedOut) }
     }
     return self
   }
