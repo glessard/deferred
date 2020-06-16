@@ -14,6 +14,5 @@ let package = Package(
   targets: [
     .target(name: "deferred", dependencies: ["CAtomics", "CurrentQoS"]),
     .testTarget(name: "deferredTests", dependencies: ["deferred"]),
-  ],
-  swiftLanguageVersions: [.v4, .v4_2, .v5]
+  ]
 )
