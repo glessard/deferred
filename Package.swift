@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
   name: "deferred",
   products: [
-    .library(name: "deferred", type: .static, targets: ["deferred"]),
+    .library(name: "deferred", targets: ["deferred"]),
   ],
   dependencies: [
     .package(url: "https://github.com/glessard/swift-atomics", from: "6.2.0"),
