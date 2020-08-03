@@ -33,6 +33,15 @@ class DeferredTests: XCTestCase
     XCTAssertEqual(d.error, TestError(value))
   }
 
+  func testResult()
+  {
+    let value = nzRandom()
+    let d = Deferred(result: Result(catching: { value }))
+    XCTAssertEqual(d.value, value)
+    XCTAssertEqual(d.state, .resolved)
+    XCTAssertEqual(d.error, nil)
+  }
+
   func testBeginExecution()
   {
     let q = DispatchQueue(label: #function)

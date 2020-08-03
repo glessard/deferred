@@ -124,6 +124,17 @@ open class Deferred<Success, Failure: Error>
     self.init(notifyingOn: queue, synchronous: task)
   }
 
+  /// Initialize as resolved with a `Result`
+  ///
+  /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
+  /// - parameter result: the `Result` of this `Deferred`
+
+  public convenience init(qos: DispatchQoS = .current, result: Result<Success, Failure>)
+  {
+    let queue = DispatchQueue(label: "deferred", qos: qos)
+    self.init(queue: queue, result: result)
+  }
+
   /// Initialize as resolved with a `Success`
   ///
   /// - parameter qos: the QoS at which the notifications should be performed; defaults to the current QoS class.
