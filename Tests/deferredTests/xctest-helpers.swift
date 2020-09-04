@@ -10,12 +10,12 @@ func XCTAssertEqual<E: Error & Equatable>(_ error: Error?, _ target: E,
 {
   if let e = error as? E
   {
-    XCTAssertEqual(e, target, message(), file: file, line: line)
+    XCTAssertEqual(e, target, message(), file: (file), line: line)
   }
   else
   {
     let d = error.map(String.init(describing:))
-    XCTAssertEqual(d, String(describing: target), message(), file: file, line: line)
+    XCTAssertEqual(d, String(describing: target), message(), file: (file), line: line)
   }
 }
 
@@ -25,7 +25,7 @@ func XCTAssertEqual(_ error: Error?, _ target: Error?,
 { // a substantially bogus, last-resort tool, but kinda useful for XCTest
   XCTAssertEqual(error.map { String(describing: $0) },
                  target.map { String(describing: $0) },
-                 message(), file: file, line: line)
+                 message(), file: (file), line: line)
 }
 
 func XCTAssertEqual<Success: Equatable, Failure: Error>(_ result: Result<Success, Failure>?, _ value: Success,
@@ -34,11 +34,11 @@ func XCTAssertEqual<Success: Equatable, Failure: Error>(_ result: Result<Success
 {
   if case .success(let v)? = result
   {
-    XCTAssertEqual(v, value, message(), file: file, line: line)
+    XCTAssertEqual(v, value, message(), file: (file), line: line)
   }
   else
   {
-    XCTAssertEqual(nil, value, message(), file: file, line: line)
+    XCTAssertEqual(nil, value, message(), file: (file), line: line)
   }
 }
 
@@ -48,7 +48,7 @@ func XCTAssertEqual<Success, Failure: Error & Equatable>(_ result: Result<Succes
 {
   if case .failure(let e)? = result
   {
-    XCTAssertEqual(e, error, message(), file: file, line: line)
+    XCTAssertEqual(e, error, message(), file: (file), line: line)
   }
   else
   {
