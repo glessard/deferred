@@ -33,7 +33,7 @@ extension Deferred
   /// This is a simple specialization of `notify` that runs only on the happy (success) path.
   ///
   /// - parameter queue: the `DispatchQueue` on which to execute the notification; defaults to `self`'s queue.
-  /// - parameter task: the closure to be enqueued
+  /// - parameter handler: the closure to be enqueued
   /// - parameter value: the value of the just-resolved `Deferred`
 
   @inlinable
