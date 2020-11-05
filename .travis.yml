@@ -17,7 +17,7 @@ jobs:
       env: SWIFT=5.2.4
 
     - os: osx
-      osx_image: xcode12
+      osx_image: xcode12.1
       env: SWIFT=5.3
 
     - os: linux
@@ -28,6 +28,9 @@ jobs:
 
     - os: linux
       env: SWIFT=5.2.5
+
+    - os: linux
+      env: SWIFT=5.3
 
 before_install:
   - clang --version
