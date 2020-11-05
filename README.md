@@ -1,4 +1,4 @@
-# Deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=master)](https://travis-ci.org/glessard/deferred)
+# Deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=main)](https://travis-ci.org/glessard/deferred)
 A lock-free, asynchronous `Result` for Swift 5 and up.
 
 `Deferred<T>` allows you to chain computations together. A `Deferred` starts with an indeterminate, *unresolved* value. At some later time it may become *resolved*. Its value is then immutable for as long as that particular `Deferred` instance exists.
