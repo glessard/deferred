@@ -88,14 +88,22 @@ class ResolverTests: XCTestCase
 
   func testNotify()
   {
-    let (r, d) = Deferred<Int, Never>.CreatePair()
+    var (r, d): (Resolver<Int, Never>, Deferred<Int, Never>?) = {
+      let (r, d) = Deferred<Int, Never>.CreatePair()
+      return (r, Optional(d))
+    }()
 
     let e = expectation(description: #function)
     r.notify { e.fulfill() }
 
     r.resolve(value: Int.random(in: 1..<10))
     waitForExpectations(timeout: 0.1)
-    XCTAssertNotNil(d.value)
+    XCTAssertNotNil(d?.value)
+
+    d = nil
+    let f = expectation(description: #function + "-2")
+    r.notify { f.fulfill() }
+    waitForExpectations(timeout: 0.1)
   }
 
   func testNeverResolved()
