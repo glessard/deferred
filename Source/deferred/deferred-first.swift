@@ -47,7 +47,7 @@ public func firstValue<Success, Failure, C: Collection>(_ deferreds: C, qos: Dis
                                                         cancelOthers: Bool = false) -> Deferred<Success, Failure>?
   where C.Element: Deferred<Success, Failure>
 {
-  let queue = DispatchQueue(label: "first-collection", qos: qos)
+  let queue = DispatchQueue(label: "first-deferred", qos: qos, target: .global(qos: qos.qosClass))
   return firstValue(deferreds, queue: queue, cancelOthers: cancelOthers)
 }
 
@@ -144,7 +144,7 @@ public func firstValue<Success, Failure, S: Sequence>(_ deferreds: S, qos: Dispa
                                                       cancelOthers: Bool = false) -> Deferred<Success, Failure>?
   where S.Element: Deferred<Success, Failure>
 {
-  let queue = DispatchQueue(label: "first-sequence", qos: qos)
+  let queue = DispatchQueue(label: "first-deferred", qos: qos, target: .global(qos: qos.qosClass))
   return firstValue(deferreds, queue: queue, cancelOthers: cancelOthers)
 }
 
@@ -222,7 +222,7 @@ public func firstResolved<Success, Failure, C>(_ deferreds: C, qos: DispatchQoS 
                                                cancelOthers: Bool = false) -> Deferred<Success, Failure>?
   where C: Collection, C.Element: Deferred<Success, Failure>
 {
-  let queue = DispatchQueue(label: "first-collection", qos: qos)
+  let queue = DispatchQueue(label: "first-deferred", qos: qos, target: .global(qos: qos.qosClass))
   return firstResolved(deferreds, queue: queue, cancelOthers: cancelOthers)
 }
 
@@ -274,7 +274,7 @@ public func firstResolved<Success, Failure, S: Sequence>(_ deferreds: S, qos: Di
                                                          cancelOthers: Bool = false) -> Deferred<Success, Failure>?
   where S.Element: Deferred<Success, Failure>
 {
-  let queue = DispatchQueue(label: "first-sequence", qos: qos)
+  let queue = DispatchQueue(label: "first-deferred", qos: qos, target: .global(qos: qos.qosClass))
   return firstResolved(deferreds, queue: queue, cancelOthers: cancelOthers)
 }
 
@@ -460,7 +460,8 @@ public func firstValue<T1, F1, T2, F2>(_ d1: Deferred<T1, F1>,
   -> (Deferred<T1, Error>, Deferred<T2, Error>)
 {
   // find which input first gets a value
-  let queue = DispatchQueue(label: "select", qos: .current)
+  let qos = DispatchQoS.current
+  let queue = DispatchQueue(label: "first-deferred", qos: qos, target: .global(qos: qos.qosClass))
   let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Invalidation>(queue: queue) {
     resolver in
@@ -497,7 +498,8 @@ public func firstValue<T1, F1, T2, F2, T3, F3>(_ d1: Deferred<T1, F1>,
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>)
 {
   // find which input first gets a value
-  let queue = DispatchQueue(label: "select", qos: .current)
+  let qos = DispatchQoS.current
+  let queue = DispatchQueue(label: "first-deferred", qos: qos, target: .global(qos: qos.qosClass))
   let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Invalidation>() {
     resolver in
@@ -538,7 +540,8 @@ public func firstValue<T1, F1, T2, F2, T3, F3, T4, F4>(_ d1: Deferred<T1, F1>,
   -> (Deferred<T1, Error>, Deferred<T2, Error>, Deferred<T3, Error>, Deferred<T4, Error>)
 {
   // find which input first gets a value
-  let queue = DispatchQueue(label: "select", qos: .current)
+  let qos = DispatchQoS.current
+  let queue = DispatchQueue(label: "first-deferred", qos: qos, target: .global(qos: qos.qosClass))
   let timeoutMessage = "too slow in \(#function)"
   let selected = Deferred<ObjectIdentifier, Invalidation>() {
     resolver in

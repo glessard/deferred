@@ -26,7 +26,7 @@ public func combine<Success, Failure, S>(qos: DispatchQoS = .current,
                                          deferreds: S) -> Deferred<[Success], Failure>
   where Failure: Error, S: Sequence, S.Element == Deferred<Success, Failure>
 {
-  let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
+  let queue = DispatchQueue(label: "reduce-deferred", qos: qos, target: .global(qos: qos.qosClass))
   return combine(queue: queue, deferreds: deferreds)
 }
 
@@ -98,7 +98,7 @@ public func reduce<S, T, F, U>(qos: DispatchQoS,
                                combine: @escaping (_ accumulated: U, _ element: T) -> U) -> Deferred<U, F>
   where S: Sequence, S.Element == Deferred<T, F>
 {
-  let queue = DispatchQueue(label: "reduce-sequence", qos: qos)
+  let queue = DispatchQueue(label: "reduce-deferred", qos: qos, target: .global(qos: qos.qosClass))
   return reduce(queue: queue, deferreds: deferreds, initial: initial, combine: combine)
 }
 
@@ -159,8 +159,8 @@ public func reduce<S, T, F, U>(queue: DispatchQueue,
 {
   return Deferred<U, F>(queue: queue) {
     resolver in
-    // We execute `Sequence.reduce` asynchronously because
-    // nothing prevents S from blocking on `Sequence.next()`
+    // We execute `Sequence.reduce`  on a concurrent thread
+    // because nothing prevents S from blocking on `Sequence.next()`
     DispatchQueue.global(qos: queue.qos.qosClass).async {
       let r = deferreds.reduce(Deferred<U, F>(queue: queue, value: initial)) {
         (accumulator, deferred) in

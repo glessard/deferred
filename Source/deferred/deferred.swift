@@ -107,7 +107,7 @@ open class Deferred<Success, Failure: Error>
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping (Resolver<Success, Failure>) -> Void)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     self.init(queue: queue, task: task)
   }
 
@@ -120,7 +120,7 @@ open class Deferred<Success, Failure: Error>
 
   public convenience init(notifyingAt qos: DispatchQoS, synchronous task: (Resolver<Success, Failure>) -> Void)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     self.init(notifyingOn: queue, synchronous: task)
   }
 
@@ -131,7 +131,7 @@ open class Deferred<Success, Failure: Error>
 
   public convenience init(qos: DispatchQoS = .current, result: Result<Success, Failure>)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     self.init(queue: queue, result: result)
   }
 
@@ -142,7 +142,7 @@ open class Deferred<Success, Failure: Error>
 
   public convenience init(qos: DispatchQoS = .current, value: Success)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     self.init(queue: queue, value: value)
   }
 
@@ -163,7 +163,7 @@ open class Deferred<Success, Failure: Error>
 
   public convenience init(qos: DispatchQoS = .current, error: Failure)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     self.init(queue: queue, error: error)
   }
 
@@ -401,7 +401,7 @@ extension Deferred where Failure == Error
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping () throws -> Success)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     self.init(queue: queue, task: task)
   }
 }
@@ -425,7 +425,7 @@ extension Deferred where Failure == Never
 
   public convenience init(qos: DispatchQoS = .current, task: @escaping () -> Success)
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     self.init(queue: queue, task: task)
   }
 }
@@ -719,7 +719,7 @@ extension Deferred
 
   public static func CreatePair(qos: DispatchQoS = .current) -> (resolver: Resolver<Success, Failure>, deferred: Deferred<Success, Failure>)
   {
-    let queue = DispatchQueue(label: "tbd", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     return CreatePair(queue: queue)
   }
 }

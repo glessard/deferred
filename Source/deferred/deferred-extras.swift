@@ -97,9 +97,9 @@ extension Deferred
   /// - parameter serially: whether the notifications should be dispatched on a serial queue; defaults to `true`
   /// - returns: a new `Deferred` whose notifications will execute at QoS `qos`
 
-  public func enqueuing(at qos: DispatchQoS, serially: Bool = true) -> Deferred
+  public func enqueuing(at qos: DispatchQoS) -> Deferred
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos, attributes: serially ? [] : .concurrent)
+    let queue = DispatchQueue(label: "\(self.queue.label)-enqueuing", qos: qos, target: self.queue)
     return enqueuing(on: queue)
   }
 }
@@ -139,7 +139,7 @@ extension Deferred
   public func map<Other>(qos: DispatchQoS,
                          transform: @escaping (_ value: Success) -> Other) -> Deferred<Other, Failure>
   {
-    let queue = DispatchQueue(label: "deferred-map", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-map", qos: qos, target: self.queue)
     return map(queue: queue, transform: transform)
   }
 
@@ -174,7 +174,7 @@ extension Deferred
   public func tryMap<Other>(qos: DispatchQoS,
                             transform: @escaping (_ value: Success) throws -> Other) -> Deferred<Other, Error>
   {
-    let queue = DispatchQueue(label: "deferred-trymap", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-trymap", qos: qos, target: self.queue)
     return tryMap(queue: queue, transform: transform)
   }
 
@@ -209,7 +209,7 @@ extension Deferred
   public func mapError<OtherFailure>(qos: DispatchQoS,
                                      transform: @escaping (_ error: Failure) -> OtherFailure) -> Deferred<Success, OtherFailure>
   {
-    let queue = DispatchQueue(label: "deferred-maperror", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-maperror", qos: qos, target: self.queue)
     return mapError(queue: queue, transform: transform)
   }
 
@@ -297,7 +297,7 @@ extension Deferred
   public func flatMap<Other>(qos: DispatchQoS,
                              transform: @escaping (_ value: Success) -> Deferred<Other, Failure>) -> Deferred<Other, Failure>
   {
-    let queue = DispatchQueue(label: "deferred-flatmap", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-flatmap", qos: qos, target: self.queue)
     return flatMap(queue: queue, transform: transform)
   }
 
@@ -347,7 +347,7 @@ extension Deferred
   public func tryFlatMap<Other>(qos: DispatchQoS,
                                 transform: @escaping (_ value: Success) throws -> Deferred<Other, Error>) -> Deferred<Other, Error>
   {
-    let queue = DispatchQueue(label: "deferred-flatmap", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-flatmap", qos: qos, target: self.queue)
     return tryFlatMap(queue: queue, transform: transform)
   }
 
@@ -398,7 +398,7 @@ extension Deferred
   public func flatMapError<OtherFailure>(qos: DispatchQoS,
                                          transform: @escaping(_ error: Failure) -> Deferred<Success, OtherFailure>) -> Deferred<Success, OtherFailure>
   {
-    let queue = DispatchQueue(label: "deferred-flatmaperror", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue)-flatmaperror", qos: qos, target: self.queue)
     return flatMapError(queue: queue, transform: transform)
   }
 }
@@ -565,7 +565,7 @@ extension Deferred
   public func recover(qos: DispatchQoS,
                       transform: @escaping (_ error: Failure) -> Deferred) -> Deferred
   {
-    let queue = DispatchQueue(label: "deferred-recover", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-recover", qos: qos, target: self.queue)
     return recover(queue: queue, transform: transform)
   }
 
@@ -580,7 +580,7 @@ extension Deferred
   public static func Retrying(_ attempts: Int, qos: DispatchQoS = .current,
                               task: @escaping () -> Deferred) -> Deferred
   {
-    let queue = DispatchQueue(label: "retrying", qos: qos)
+    let queue = DispatchQueue(label: "deferred-retry", qos: qos, target: .global(qos: qos.qosClass))
     return Deferred.Retrying(attempts, queue: queue, task: task)
   }
 
@@ -655,7 +655,7 @@ extension Deferred where Failure == Error
   public func recover(qos: DispatchQoS,
                       transform: @escaping (_ error: Error) throws -> Success) -> Deferred
   {
-    let queue = DispatchQueue(label: "deferred-recover", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-recover", qos: qos, target: self.queue)
     return recover(queue: queue, transform: transform)
   }
 
@@ -670,7 +670,7 @@ extension Deferred where Failure == Error
   public static func Retrying(_ attempts: Int, qos: DispatchQoS = .current,
                                task: @escaping () throws -> Success) -> Deferred
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred-retry", qos: qos, target: .global(qos: qos.qosClass))
     return Deferred.Retrying(attempts, queue: queue, task: task)
   }
 
@@ -763,7 +763,7 @@ extension Deferred
   public func apply<Other>(qos: DispatchQoS,
                            transform: Deferred<(_ value: Success) -> Other, Never>) -> Deferred<Other, Failure>
   {
-    let queue = DispatchQueue(label: "deferred-apply", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-apply", qos: qos, target: self.queue)
     return apply(queue: queue, transform: transform)
   }
 }
@@ -803,7 +803,7 @@ extension Deferred
   public func validate(qos: DispatchQoS,
                        predicate: @escaping (_ value: Success) -> Bool, message: String = "") -> Deferred<Success, Error>
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-validate", qos: qos, target: self.queue)
     return validate(queue: queue, predicate: predicate, message: message)
   }
 
@@ -838,7 +838,7 @@ extension Deferred
   public func validate(qos: DispatchQoS,
                        predicate: @escaping (_ value: Success) throws -> Void) -> Deferred<Success, Error>
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "\(self.queue.label)-validate", qos: qos, target: self.queue)
     return validate(queue: queue, predicate: predicate)
   }
 }
@@ -870,7 +870,7 @@ extension Optional
 
   public func deferred(qos: DispatchQoS = .current) -> Deferred<Wrapped, Invalidation>
   {
-    let queue = DispatchQueue(label: "deferred", qos: qos)
+    let queue = DispatchQueue(label: "deferred", qos: qos, target: .global(qos: qos.qosClass))
     return self.deferred(queue: queue)
   }
 }
