@@ -69,7 +69,7 @@ extension Deferred
       }
       else if deadline != .distantFuture
       {
-        let queue = DispatchQueue(label: "timeout", qos: qos)
+        let queue = DispatchQueue.global(qos: qos.qosClass)
         queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(timedOut) }
       }
       return broadened
@@ -81,7 +81,7 @@ extension Deferred
     }
     else if deadline != .distantFuture
     {
-      let queue = DispatchQueue(label: "timeout", qos: qos)
+      let queue = DispatchQueue.global(qos: qos.qosClass)
       queue.asyncAfter(deadline: deadline) { [weak broadened] in broadened?.cancel(timedOut) }
     }
     return broadened
@@ -138,7 +138,7 @@ extension Deferred where Failure == Cancellation
     }
     else if deadline != .distantFuture
     {
-      let queue = DispatchQueue(label: "timeout", qos: qos)
+      let queue = DispatchQueue.global(qos: qos.qosClass)
       queue.asyncAfter(deadline: deadline) { [weak self] in self?.cancel(timedOut) }
     }
     return self

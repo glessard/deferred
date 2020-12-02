@@ -49,7 +49,7 @@ class DeferredTimingTests: XCTestCase
     let iterations = propagationTestCount
 
     measureMetrics(XCTestCase.defaultPerformanceMetrics, automaticallyStartMeasuring: false) {
-      let start = Deferred<Date, Never>(queue: DispatchQueue(label: "", qos: .userInitiated)) {
+      let start = Deferred<Date, Never>(queue: DispatchQueue(label: #function, qos: .userInitiated)) {
         start in
         for _ in 0..<iterations
         {

@@ -82,7 +82,7 @@ extension Collection
   public func deferredMap<Success>(qos: DispatchQoS = .current,
                                    task: @escaping (_ element: Self.Element) throws -> Success) -> [Deferred<Success, Error>]
   {
-    let queue = DispatchQueue(label: "deferred-map", qos: qos)
+    let queue = DispatchQueue(label: "parallel-deferred", qos: qos, attributes: .concurrent, target: .global(qos: qos.qosClass))
     return deferredMap(queue: queue, task: task)
   }
 
@@ -96,7 +96,7 @@ extension Collection
   public func deferredMap<Success>(qos: DispatchQoS = .current,
                                    task: @escaping (_ element: Self.Element) -> Success) -> [Deferred<Success, Never>]
   {
-    let queue = DispatchQueue(label: "deferred-map", qos: qos)
+    let queue = DispatchQueue(label: "parallel-deferred", qos: qos, attributes: .concurrent, target: .global(qos: qos.qosClass))
     return deferredMap(queue: queue, task: task)
   }
 
@@ -111,7 +111,11 @@ extension Collection
                                    task: @escaping (_ element: Self.Element) throws -> Success) -> [Deferred<Success, Error>]
   {
     let count = self.count
-    let pairs = (0..<count).map { _ in Deferred<Success, Error>.CreatePair(queue: queue) }
+    let pairs = (0..<count).map {
+      Deferred<Success, Error>.CreatePair(
+        queue: DispatchQueue(label: "\(queue.label)-\($0)", qos: queue.qos, target: queue)
+      )
+    }
     let resolvers = pairs.map { $0.0 }
 
     queue.async {
@@ -143,7 +147,11 @@ extension Collection
                                    task: @escaping (_ element: Self.Element) -> Success) -> [Deferred<Success, Never>]
   {
     let count = self.count
-    let pairs = (0..<count).map { _ in Deferred<Success, Never>.CreatePair(queue: queue) }
+    let pairs = (0..<count).map {
+      Deferred<Success, Never>.CreatePair(
+        queue: DispatchQueue(label: "\(queue.label)-\($0)", qos: queue.qos, target: queue)
+      )
+    }
     let resolvers = pairs.map { $0.0 }
 
     queue.async {

@@ -176,7 +176,7 @@ class DeferredExtrasTests: XCTestCase
   func testRetrying2()
   {
     let retries = 5
-    let queue = DispatchQueue(label: "test", qos: .background)
+    let queue = DispatchQueue(label: #function, qos: .background)
 
     var counter = retries+retries-1
     func transform() throws -> Int
@@ -333,7 +333,7 @@ class DeferredExtrasTests: XCTestCase
     let r1 = nzRandom()
     let r2 = nzRandom()
 
-    let t1 = Deferred<Int, Never>(value: r1).enqueuing(at: .utility, serially: false)
+    let t1 = Deferred<Int, Never>(value: r1).enqueuing(at: .utility)
     XCTAssertEqual(t1.value, r1)
 
     let t2 = Deferred<Int, Never>(value: r2).delay(seconds: 0.01).enqueuing(at: .userInitiated)
@@ -344,7 +344,7 @@ class DeferredExtrasTests: XCTestCase
   {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     let q = DispatchQueue.global(qos: .utility)
-    let qb = Deferred(queue: q, task: { qos_class_self() }).enqueuing(at: .background, serially: false)
+    let qb = Deferred(queue: q, task: { qos_class_self() }).enqueuing(at: .background)
     // Verify that the block's QOS was adjusted and is different from the queue's
     XCTAssertEqual(qb.value, QOS_CLASS_UTILITY)
     XCTAssertEqual(qb.qos, DispatchQoS.background)
@@ -360,7 +360,7 @@ class DeferredExtrasTests: XCTestCase
     }
 
     let e2 = expectation(description: "e2")
-    let q2 = qb.enqueuing(at: .background, serially: true)
+    let q2 = qb.enqueuing(at: .background)
     q2.notify { _ in e2.fulfill() }
 
     let e3 = expectation(description: "e3")

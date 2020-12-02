@@ -88,14 +88,22 @@ class ResolverTests: XCTestCase
 
   func testNotify()
   {
-    let (r, d) = Deferred<Int, Never>.CreatePair()
+    var (r, d): (Resolver<Int, Never>, Deferred<Int, Never>?) = {
+      let (r, d) = Deferred<Int, Never>.CreatePair()
+      return (r, Optional(d))
+    }()
 
     let e = expectation(description: #function)
     r.notify { e.fulfill() }
 
     r.resolve(value: Int.random(in: 1..<10))
     waitForExpectations(timeout: 0.1)
-    XCTAssertNotNil(d.value)
+    XCTAssertNotNil(d?.value)
+
+    d = nil
+    let f = expectation(description: #function + "-2")
+    r.notify { f.fulfill() }
+    waitForExpectations(timeout: 0.1)
   }
 
   func testNeverResolved()
@@ -149,7 +157,7 @@ class ParallelTests: XCTestCase
   {
     // Verify that "accidentally" passing a serial queue to inParallel doesn't cause a deadlock
 
-    let q = DispatchQueue(label: "test1", qos: .utility)
+    let q = DispatchQueue(label: #function, qos: .utility)
 
     let count = 20
     let d = Deferred.inParallel(count: count, queue: q) { $0 }

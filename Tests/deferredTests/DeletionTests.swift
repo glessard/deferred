@@ -36,7 +36,7 @@ class DeletionTests: XCTestCase
     let witness: Deferred<Void, Never>
     let e = expectation(description: "deallocation delay")
     do {
-      let queue = DispatchQueue(label: "\(#function)")
+      let queue = DispatchQueue(label: #function)
       let delayed = Deferred<Void, Never>(queue: queue, value: ()).delay(.milliseconds(50))
       _ = delayed.map { XCTFail("a value no one waits for should not be computed") }
       witness = delayed.map { e.fulfill() }
