@@ -176,7 +176,7 @@ class DeferredExtrasTests: XCTestCase
   func testRetrying2()
   {
     let retries = 5
-    let queue = DispatchQueue(label: "test", qos: .background)
+    let queue = DispatchQueue(label: #function, qos: .background)
 
     var counter = retries+retries-1
     func transform() throws -> Int

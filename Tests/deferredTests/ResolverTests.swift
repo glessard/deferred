@@ -157,7 +157,7 @@ class ParallelTests: XCTestCase
   {
     // Verify that "accidentally" passing a serial queue to inParallel doesn't cause a deadlock
 
-    let q = DispatchQueue(label: "test1", qos: .utility)
+    let q = DispatchQueue(label: #function, qos: .utility)
 
     let count = 20
     let d = Deferred.inParallel(count: count, queue: q) { $0 }
