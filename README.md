@@ -1,7 +1,7 @@
 # Deferred [![Build Status](https://travis-ci.org/glessard/deferred.svg?branch=main)](https://travis-ci.org/glessard/deferred)
 A lock-free, asynchronous `Result` for Swift 5 and up.
 
-`Deferred<T>` allows you to chain computations together. A `Deferred` starts with an indeterminate, *unresolved* value. At some later time it may become *resolved*. Its value is then immutable for as long as that particular `Deferred` instance exists.
+`Deferred<T, E: Error>` allows you to chain computations together. A `Deferred` starts with an indeterminate, *unresolved* value. At some later time it may become *resolved*. Its value is then immutable for as long as that particular `Deferred` instance exists.
 Until a `Deferred` becomes resolved, computations that depend on it can be saved for future execution using a lock-free, thread-safe algorithm. The results of these computations are also represented by `Deferred` instances. Errors thrown at any point in a `Deferred` context are propagated effortlessly.
 
 `Deferred` started out as an approximation of OCaml's module [Deferred](https://ocaml.janestreet.com/ocaml-core/111.25.00/doc/async_kernel/#Deferred).
@@ -29,12 +29,12 @@ The `result` property of `Deferred` (and its adjuncts, `value` , `error` and `ge
 
 ### Task execution scheduling
 
-Tasks execute when a request exists. When creating a `Deferred` object, allocations are made, but no code is run immediately. When a code that depends on a `Deferred` requests the result, then the task is scheduled for execution. Requests are made by calling the `notify()`, `onValue()`, `onError()`, or `beginExecution()` methods (non-blocking); the `result`, `value` or `error` properties (blocking). Requests propagate up a chain of `Deferred`s.
+Tasks execute when a request exists. When creating a `Deferred` object, allocations are made, but no code is run immediately. When code that depends on a `Deferred` requests the result, then the task is scheduled for execution. Requests are made by calling the `notify()`, `onValue()`, `onError()`, or `beginExecution()` methods (non-blocking); and the `result`, `value` or `error` properties (blocking). Requests propagate up the chain of `Deferred`s.
 
 
 ### Long computations, cancellations and timeouts
 
-Long background computations that support cancellation and timeout can be implemented easily by using the callback-style initializer for `Deferred<T>`. It takes a closure whose parameter is a `Resolver`. `Resolver` is associated with a specific instance of `Deferred`, and allows your code to be the data source of that `Deferred` instance. It also allows the data source to monitor the state of the `Deferred`.
+Long background computations that support cancellation and timeout can be implemented easily by using the callback-style initializer for `Deferred`. It takes a closure whose parameter is a `Resolver`. `Resolver` is associated with a specific instance of `Deferred`, and allows your code to be the data source of that `Deferred` instance. It also allows the data source to monitor the state of the `Deferred`.
 
     func bigComputation() -> Deferred<Double, Never>
     {
@@ -79,9 +79,7 @@ In the above example, our computation closure works hard to compute the ratio of
 
 With the swift package manager, add the following to your package manifest's dependencies:
 
-    .package(url: "https://github.com/glessard/deferred.git", from: "6.4.0")
-
-To integrate in an Xcode 10 project, tools such as `Accio` and `xspm` are good options. The repository contains an Xcode 10 project with manually-assembled example iOS target. It requires some git submodules to be loaded using the command `git submodule update --init`.
+    .package(url: "https://github.com/glessard/deferred.git", from: "6.7.0")
 
 #### License
 
